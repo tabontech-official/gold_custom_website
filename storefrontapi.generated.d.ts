@@ -617,6 +617,59 @@ export type FeaturedCollectionQuery = {
   };
 };
 
+export type CategoryCollectionFragment = Pick<
+  StorefrontAPI.Collection,
+  'id' | 'title' | 'handle'
+> & {image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>};
+
+export type ShopByCategoriesQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type ShopByCategoriesQuery = {
+  rings?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  chains?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  bracelets?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  earrings?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  pendants?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  necklaces?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  diamond?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+  engagementRings?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    }
+  >;
+};
+
 export type RecommendedProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle'
@@ -836,6 +889,28 @@ export type CollectionQuery = {
         pageInfo: Pick<
           StorefrontAPI.PageInfo,
           'hasPreviousPage' | 'hasNextPage' | 'endCursor' | 'startCursor'
+        >;
+      };
+      bestSelling: {
+        nodes: Array<
+          Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title'> & {
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
         >;
       };
     }
@@ -1495,6 +1570,10 @@ interface GeneratedQueryTypes {
     return: FeaturedCollectionQuery;
     variables: FeaturedCollectionQueryVariables;
   };
+  '#graphql\n  fragment CategoryCollection on Collection {\n    id\n    title\n    handle\n    image {\n      url\n      altText\n    }\n  }\n  query ShopByCategories($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    rings: collection(handle: "rings") {\n      ...CategoryCollection\n    }\n    chains: collection(handle: "chains") {\n      ...CategoryCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...CategoryCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...CategoryCollection\n    }\n    pendants: collection(handle: "pendants") {\n      ...CategoryCollection\n    }\n    necklaces: collection(handle: "necklaces") {\n      ...CategoryCollection\n    }\n    diamond: collection(handle: "diamond") {\n      ...CategoryCollection\n    }\n    engagementRings: collection(handle: "engagement-rings") {\n      ...CategoryCollection\n    }\n  }\n': {
+    return: ShopByCategoriesQuery;
+    variables: ShopByCategoriesQueryVariables;
+  };
   '#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n  }\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 4, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...RecommendedProduct\n      }\n    }\n  }\n': {
     return: RecommendedProductsQuery;
     variables: RecommendedProductsQueryVariables;
@@ -1511,7 +1590,7 @@ interface GeneratedQueryTypes {
     return: BlogsQuery;
     variables: BlogsQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };

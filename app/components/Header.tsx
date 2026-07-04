@@ -9,7 +9,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
-import {MEGA_MENU, getColumnItems} from '~/lib/megaMenu';
+import {MEGA_MENU, getColumnItems, toRelativeUrl} from '~/lib/megaMenu';
 import {
   getEmptyPredictiveSearchResult,
   type PredictiveSearchReturn,
@@ -64,7 +64,6 @@ export function Header({
           publicStoreDomain={publicStoreDomain}
         />
         <div className="header-actions">
-          <HeaderSearchBar />
           <HeaderCtas cart={cart} isLoggedIn={isLoggedIn} />
         </div>
       </header>
@@ -337,17 +336,6 @@ function MobileMenu({
   );
 }
 
-function toRelativeUrl(
-  url: string,
-  primaryDomainUrl: string,
-  publicStoreDomain: string,
-): string {
-  return url.includes('myshopify.com') ||
-    url.includes(publicStoreDomain) ||
-    url.includes(primaryDomainUrl)
-    ? new URL(url).pathname
-    : url;
-}
 
 function HeaderCtas({
   cart,
@@ -363,13 +351,6 @@ function HeaderCtas({
         to="/account"
       >
         <UserIcon />
-        <span>
-          <Suspense fallback="Account">
-            <Await resolve={isLoggedIn} errorElement="Account">
-              {(isLoggedIn) => (isLoggedIn ? 'Account' : 'Sign In')}
-            </Await>
-          </Suspense>
-        </span>
       </NavLink>
       <a className="header-cta-icon" href="tel:9299305655" aria-label="Call us">
         <PhoneIcon />

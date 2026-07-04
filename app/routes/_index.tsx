@@ -11,6 +11,7 @@ import type {
   RecommendedProductsQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
+import {FeatureStrip} from '~/components/FeatureStrip';
 
 export const meta: Route.MetaFunction = () => {
   return [{title: 'Fine Jewelry & Watches | Gold Jewelry Co.'}];
@@ -31,13 +32,23 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}] = await Promise.all([
+  const [{collections}, categoryResponse] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
-    // Add other queries here, so that they are loaded in parallel
+    context.storefront.query(SHOP_BY_CATEGORIES_QUERY),
   ]);
 
   return {
     featuredCollection: collections.nodes[0],
+    categories: [
+      categoryResponse.rings,
+      categoryResponse.chains,
+      categoryResponse.bracelets,
+      categoryResponse.earrings,
+      categoryResponse.pendants,
+      categoryResponse.necklaces,
+      categoryResponse.diamond,
+      categoryResponse.engagementRings,
+    ].filter(Boolean),
   };
 }
 
@@ -66,7 +77,7 @@ export default function Homepage() {
     <div className="home">
       <Hero />
       <FeatureStrip />
-      <ShopByCategory />
+      <ShopByCategory categories={data.categories} />
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
       <FeatureStrip />
@@ -99,40 +110,17 @@ function Hero() {
   );
 }
 
-const FEATURES = [
-  {icon: '✦', label: 'Lifetime Warranty'},
-  {icon: '⤴', label: 'Lifetime Upgrade'},
-  {icon: '🚚', label: 'Free Shipping & Returns'},
-  {icon: '%', label: '0% APR Financing'},
-];
+type CategoryTile = {
+  id: string;
+  title: string;
+  handle: string;
+  image?: {
+    url: string;
+    altText: string | null;
+  };
+};
 
-function FeatureStrip() {
-  return (
-    <div className="feature-strip">
-      {FEATURES.map((feature) => (
-        <div className="feature-strip-item" key={feature.label}>
-          <span className="feature-strip-icon" aria-hidden="true">
-            {feature.icon}
-          </span>
-          <span>{feature.label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const CATEGORIES = [
-  {label: 'Rings', handle: 'rings'},
-  {label: 'Chains', handle: 'chains'},
-  {label: 'Bracelets', handle: 'bracelets'},
-  {label: 'Earrings', handle: 'earrings'},
-  {label: 'Pendants', handle: 'pendants'},
-  {label: 'Necklaces', handle: 'necklaces'},
-  {label: 'Diamond', handle: 'diamond'},
-  {label: 'Engagement', handle: 'engagement-rings'},
-];
-
-function ShopByCategory() {
+function ShopByCategory({categories}: {categories: CategoryTile[]}) {
   return (
     <section className="home-section">
       <div className="section-inner">
@@ -141,16 +129,26 @@ function ShopByCategory() {
           <h2>Shop by Category</h2>
         </div>
         <div className="category-grid">
-          {CATEGORIES.map((category) => (
+          {categories.map((category) => (
             <Link
-              key={category.handle}
+              key={category.id}
               to={`/collections/${category.handle}`}
               className="category-tile"
             >
-              <span className="category-tile-circle" aria-hidden="true">
-                {category.label.charAt(0)}
-              </span>
-              <span>{category.label}</span>
+              {category.image?.url ? (
+                <Image
+                  data={category.image}
+                  alt={category.image.altText ?? category.title}
+                  aspectRatio="4/3"
+                  className="category-tile-image"
+                  sizes="(max-width: 40em) 100vw, 18vw"
+                />
+              ) : (
+                <span className="category-tile-circle" aria-hidden="true">
+                  {category.title.charAt(0)}
+                </span>
+              )}
+              <span>{category.title}</span>
             </Link>
           ))}
         </div>
@@ -292,6 +290,45 @@ const FEATURED_COLLECTION_QUERY = `#graphql
       nodes {
         ...FeaturedCollection
       }
+    }
+  }
+` as const;
+
+const SHOP_BY_CATEGORIES_QUERY = `#graphql
+  fragment CategoryCollection on Collection {
+    id
+    title
+    handle
+    image {
+      url
+      altText
+    }
+  }
+  query ShopByCategories($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    rings: collection(handle: "rings") {
+      ...CategoryCollection
+    }
+    chains: collection(handle: "chains") {
+      ...CategoryCollection
+    }
+    bracelets: collection(handle: "bracelets") {
+      ...CategoryCollection
+    }
+    earrings: collection(handle: "earrings") {
+      ...CategoryCollection
+    }
+    pendants: collection(handle: "pendants") {
+      ...CategoryCollection
+    }
+    necklaces: collection(handle: "necklaces") {
+      ...CategoryCollection
+    }
+    diamond: collection(handle: "diamond") {
+      ...CategoryCollection
+    }
+    engagementRings: collection(handle: "engagement-rings") {
+      ...CategoryCollection
     }
   }
 ` as const;

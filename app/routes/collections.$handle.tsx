@@ -1,10 +1,16 @@
-import {redirect, useLoaderData} from 'react-router';
+import {redirect, useLoaderData, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
+import {ProductSlider} from '~/components/ProductSlider';
+import {CategorySlider} from '~/components/CategorySlider';
+import {CollectionSubNav} from '~/components/CollectionSubNav';
+import {CollectionPromo} from '~/components/CollectionPromo';
+import {FeatureStrip} from '~/components/FeatureStrip';
 import type {ProductItemFragment} from 'storefrontapi.generated';
+import type {RootLoader} from '~/root';
 
 export const meta: Route.MetaFunction = ({data}) => {
   return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
@@ -67,23 +73,82 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+
+  const relatedProducts = collection.products.nodes.slice(0, 8);
+  const bestSelling = collection.bestSelling?.nodes ?? [];
 
   return (
     <div className="collection">
-      <h1>{collection.title}</h1>
-      <p className="collection-description">{collection.description}</p>
-      <PaginatedResourceSection<ProductItemFragment>
-        connection={collection.products}
-        resourcesClassName="products-grid"
-      >
-        {({node: product, index}) => (
-          <ProductItem
-            key={product.id}
-            product={product}
-            loading={index < 8 ? 'eager' : undefined}
+      <section className="collection-hero">
+        <div className="section-inner collection-hero-inner">
+          <span className="eyebrow">Shop {collection.title}</span>
+          <h1>{collection.title}</h1>
+          {collection.description && (
+            <p className="collection-description">{collection.description}</p>
+          )}
+        </div>
+      </section>
+
+      {rootData?.header && (
+        <div className="section-inner">
+          <CollectionSubNav
+            handle={collection.handle}
+            header={rootData.header}
+            publicStoreDomain={rootData.publicStoreDomain}
           />
-        )}
-      </PaginatedResourceSection>
+        </div>
+      )}
+
+      <ProductSlider
+        eyebrow="Discover"
+        heading={`Related to ${collection.title}`}
+        products={relatedProducts}
+      />
+
+      <CollectionPromo
+        eyebrow="Our Promise"
+        heading="Crafted in Solid Gold, Backed for Life"
+        copy="Every piece is hallmarked, insured against wear, and covered by our lifetime warranty and upgrade program."
+        ctaLabel="Book a Private Consultation"
+        ctaTo="mailto:info@bayamjewelry.com"
+      />
+
+      <CategorySlider excludeHandle={collection.handle} />
+
+      <FeatureStrip />
+
+      {bestSelling.length > 0 && (
+        <ProductSlider
+          eyebrow="Customer Favorites"
+          heading="Best Sellers"
+          products={bestSelling}
+          viewAllTo={`/collections/${collection.handle}`}
+          viewAllLabel="Shop All"
+        />
+      )}
+
+      <section className="home-section is-soft">
+        <div className="section-inner">
+          <div className="home-section-heading">
+            <span className="eyebrow">Full Collection</span>
+            <h2>Shop All {collection.title}</h2>
+          </div>
+          <PaginatedResourceSection<ProductItemFragment>
+            connection={collection.products}
+            resourcesClassName="products-grid"
+          >
+            {({node: product, index}) => (
+              <ProductItem
+                key={product.id}
+                product={product}
+                loading={index < 8 ? 'eager' : undefined}
+              />
+            )}
+          </PaginatedResourceSection>
+        </div>
+      </section>
+
       <Analytics.CollectionView
         data={{
           collection: {
@@ -154,6 +219,11 @@ const COLLECTION_QUERY = `#graphql
           hasNextPage
           endCursor
           startCursor
+        }
+      }
+      bestSelling: products(first: 8, sortKey: BEST_SELLING) {
+        nodes {
+          ...ProductItem
         }
       }
     }

@@ -93,3 +93,22 @@ export function getColumnItems(
 ): NonNullable<HeaderQuery['ringsPrimary']>['items'] {
   return column.menuKeys.flatMap((key) => header[key]?.items ?? []);
 }
+
+/** Finds the mega-menu department whose `to` matches a given collection path. */
+export function getMegaMenuDepartmentForHandle(
+  handle: string,
+): MegaMenuDepartment | undefined {
+  return MEGA_MENU.find((department) => department.to === `/collections/${handle}`);
+}
+
+export function toRelativeUrl(
+  url: string,
+  primaryDomainUrl: string,
+  publicStoreDomain: string,
+): string {
+  return url.includes('myshopify.com') ||
+    url.includes(publicStoreDomain) ||
+    url.includes(primaryDomainUrl)
+    ? new URL(url).pathname
+    : url;
+}
