@@ -1,6 +1,7 @@
 export type StorefrontCategory = {
   label: string;
   handle: string;
+  tags?: string[];
 };
 
 /**
@@ -10,9 +11,43 @@ export type StorefrontCategory = {
  * full nested department/column structure used by the header nav.
  */
 export const CATEGORIES: StorefrontCategory[] = [
-  {label: 'Rings', handle: 'rings'},
-  {label: 'Chains', handle: 'chains'},
-  {label: 'Bracelets', handle: 'bracelets'},
+  {
+    label: 'Rings',
+    handle: 'rings',
+    tags: [
+      'All Products',
+      'Gold Ring',
+      'Gold Ring for Women',
+      "Men's Gold Rings",
+      'Yellow Gold',
+      'Diamond Rings',
+      'Engagement',
+    ],
+  },
+  {
+    label: 'Chains',
+    handle: 'chains',
+    tags: [
+      'All Products',
+      'Cuban Link',
+      'Figaro Chain',
+      'Rope Chain',
+      'Box Chain',
+      'Miami Cuban',
+      'Presidential',
+    ],
+  },
+  {
+    label: 'Bracelets',
+    handle: 'bracelets',
+    tags: [
+      'All Products',
+      'Gold Bracelet',
+      'Miami Bracelet',
+      'Cuban Link Bracelet',
+      'Figaro Bracelet',
+    ],
+  },
   {label: 'Earrings', handle: 'earrings'},
   {label: 'Pendants', handle: 'pendants'},
   {label: 'Necklaces', handle: 'necklaces'},

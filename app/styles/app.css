@@ -905,10 +905,6 @@ button.reset:hover:not(:has(> *)) {
   font-family: var(--font-body);
 }
 
-.footer-main {
-  
-}
-
 .footer-col h4 {
   color: #fff;
   font-family: var(--font-body);
@@ -1199,9 +1195,9 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .home-section {
-  padding: 3rem 0;
+  padding: 1.5rem 0;
   @media (min-width: 48em) {
-    padding: 5rem 0;
+    padding: 2.5rem 0;
   }
 }
 
@@ -1210,12 +1206,15 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .home-section-heading {
-  margin-bottom: 2.5rem;
-  text-align: center;
+  margin-bottom: 1rem;
+  text-align: left;
 }
 
 .home-section-heading h2 {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
+  margin-top: 0;
+  border-bottom: 2px solid var(--color-ink);
+  padding-bottom: 0.6rem;
 }
 
 .home-section-heading p {
@@ -1282,18 +1281,50 @@ button.reset:hover:not(:has(> *)) {
 
 /* Hero */
 .hero {
-  background:
-    radial-gradient(
-      circle at 15% 20%,
-      rgba(184, 147, 95, 0.16),
-      transparent 55%
-    ),
-    linear-gradient(135deg, #fbf4e8 0%, #f4ead7 45%, #efe0c4 100%);
+  background: var(--color-charcoal);
+  color: #fff;
+  min-height: clamp(32rem, 78vh, 46rem);
   padding: 4.5rem 0 4rem;
   position: relative;
+  isolation: isolate;
   @media (min-width: 48em) {
     padding: 7rem 0 6rem;
   }
+}
+
+.hero::after {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(20, 18, 16, 0.5),
+      rgba(20, 18, 16, 0.24) 48%,
+      rgba(20, 18, 16, 0.38)
+    ),
+    linear-gradient(to bottom, rgba(20, 18, 16, 0.1), rgba(20, 18, 16, 0.34));
+  content: '';
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.hero-bg {
+  animation: heroFade 10s infinite;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  z-index: -2;
+}
+
+.hero-bg-cover {
+  background-image: url('/cover.jpg');
+}
+
+.hero-bg-cover-alt {
+  animation-delay: 5s;
+  background-image: url('/cover1.png');
 }
 
 .hero-inner {
@@ -1339,8 +1370,22 @@ button.reset:hover:not(:has(> *)) {
   100% { transform: translateX(-50%); }
 }
 
+@keyframes heroFade {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  95% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 .hero-eyebrow {
-  color: var(--color-gold-dark);
+  color: var(--color-gold-soft);
 }
 
 .hero h1 {
@@ -1350,7 +1395,7 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .hero p {
-  color: var(--color-ink-soft);
+  color: #f0e9df;
   font-size: 1.05rem;
   margin-bottom: 2rem;
 }
@@ -1416,7 +1461,7 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .category-carousel-viewport {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .category-carousel-track {
@@ -1425,13 +1470,18 @@ button.reset:hover:not(:has(> *)) {
   padding: 0.5rem 0;
   overflow-x: auto;
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
 }
 
 .category-carousel-track::-webkit-scrollbar { display: none; }
 
 .carousel-item {
-  min-width: 370px; /* increased another ~20% */
   flex: 0 0 auto;
+  min-width: clamp(180px, 28vw, 320px); /* responsive and capped */
+  max-width: 36vw;
 }
 
 .carousel-btn {
@@ -1470,10 +1520,11 @@ button.reset:hover:not(:has(> *)) {
 
 .category-tile-image {
   border-radius: 0;
-  min-height: 269px; /* increased another ~20% */
-  min-width: 100%;
-  object-fit: cover;
   width: 100%;
+  height: clamp(140px, 20vw, 280px); /* responsive height to avoid oversized images */
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
 }
 
 .category-tile-circle {
@@ -1673,9 +1724,120 @@ button.reset:hover:not(:has(> *)) {
   margin-bottom: 2rem;
 }
 
+.product-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: inherit;
+  overflow: hidden;
+}
+
+.product-image-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--color-bg-soft);
+}
+
+.product-image-link {
+  display: block;
+  aspect-ratio: 1 / 1;
+  position: relative;
+}
+
 .product-item img {
   height: auto;
   width: 100%;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.product-item img.is-loading {
+  opacity: 0;
+}
+
+.product-item img.is-loaded {
+  opacity: 1;
+  transition: opacity 220ms ease;
+}
+
+.product-image-skeleton {
+  animation: skeletonShimmer 1.35s ease-in-out infinite;
+  aspect-ratio: 1 / 1;
+  background:
+    linear-gradient(
+      105deg,
+      #eee8dd 0%,
+      #f8f4ed 42%,
+      #e9dfd1 66%,
+      #eee8dd 100%
+    );
+  background-size: 220% 100%;
+  border-radius: inherit;
+  display: block;
+  inset: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+.product-skeleton .product-image-skeleton {
+  border-radius: 18px;
+  position: relative;
+}
+
+.product-text-skeleton {
+  animation: skeletonShimmer 1.35s ease-in-out infinite;
+  background:
+    linear-gradient(
+      105deg,
+      #eee8dd 0%,
+      #f8f4ed 42%,
+      #e9dfd1 66%,
+      #eee8dd 100%
+    );
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  height: 0.85rem;
+}
+
+.product-text-skeleton.is-title {
+  max-width: 82%;
+}
+
+.product-text-skeleton.is-price {
+  margin-top: 0.65rem;
+  max-width: 38%;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: 160% 0;
+  }
+  100% {
+    background-position: -60% 0;
+  }
+}
+
+.product-card-body {
+  padding: 0.75rem 0 0;
+}
+
+.product-item-copy {
+  text-decoration: none;
+  color: inherit;
+}
+
+.product-item-copy h4 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+
+.product-item-copy small {
+  color: var(--color-ink-soft);
 }
 
 /*
@@ -1999,8 +2161,12 @@ button.reset:hover:not(:has(> *)) {
   overflow-x: auto;
   padding: 0 1.5rem 0.5rem;
   scroll-padding-left: 1.5rem;
-  scroll-snap-type: x mandatory;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+  cursor: grab;
   @media (min-width: 48em) {
     padding: 0 3rem 0.5rem;
     scroll-padding-left: 3rem;
@@ -2009,6 +2175,10 @@ button.reset:hover:not(:has(> *)) {
 
 .slider-track::-webkit-scrollbar {
   display: none;
+}
+
+.slider-track.is-dragging {
+  cursor: grabbing;
 }
 
 .slider-item {
@@ -2023,6 +2193,91 @@ button.reset:hover:not(:has(> *)) {
 
 .category-slider-item {
   width: 7.5rem;
+}
+
+/* Category tags (pills) shown above sliders */
+/* Category tags (pills) shown above sliders - compact, left-aligned like the design */
+.category-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 1rem;
+  justify-content: flex-start;
+}
+
+.category-tag {
+  background: transparent;
+  border: 1px solid var(--color-ink-soft);
+  color: var(--color-ink);
+  padding: 0.5rem 0.9rem;
+  font-size: 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-transform: none;
+}
+
+.category-tag:hover {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
+.category-tag.is-active {
+  background: var(--color-ink);
+  color: var(--color-white, #fff);
+  border-color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Left-aligned section headings to match provided design */
+.home-section-heading {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.home-section-heading h2 {
+  margin-top: 0.25rem;
+  border-bottom: 2px solid var(--color-dark);
+  padding-bottom: 0.85rem;
+}
+
+.category-tag {
+  background: transparent;
+  border: 1px solid var(--color-ink-soft);
+  color: var(--color-ink);
+  padding: 0.4rem 0.85rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 120ms ease;
+  text-transform: none;
+}
+
+.category-tag:hover {
+  border-color: var(--color-ink);
+  color: var(--color-ink);
+}
+
+.category-tag.is-active {
+  background: var(--color-ink);
+  color: var(--color-white, #fff);
+  border-color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* Hide product-level menu tags/badges that appear on product tiles */
+.product-badge,
+.product-tag,
+.product-item .badge,
+.product-item .tag,
+.product-item .menu-tag,
+.product-item .product-badge {
+  display: none !important;
+}
+
+/* Reduce slider item spacing to match compact grid look */
+.slider-track {
+  gap: 1.5rem;
 }
 
 /* Custom brand promo banner between sliders */

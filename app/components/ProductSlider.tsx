@@ -1,6 +1,7 @@
 import {useRef} from 'react';
 import {Link} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
+import {useDragScroll} from '~/hooks/useDragScroll';
 import type {
   CollectionItemFragment,
   ProductItemFragment,
@@ -18,14 +19,19 @@ export function ProductSlider({
   products,
   viewAllTo,
   viewAllLabel = 'View All',
+  showArrows = true,
+  showHeading = true,
 }: {
   eyebrow: string;
   heading: string;
   products: SliderProduct[];
   viewAllTo?: string;
   viewAllLabel?: string;
+  showArrows?: boolean;
+  showHeading?: boolean;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  useDragScroll(trackRef);
 
   if (!products.length) return null;
 
@@ -41,37 +47,41 @@ export function ProductSlider({
   return (
     <section className="slider-section">
       <div className="section-inner">
-        <div className="slider-section-header">
-          <div>
-            <span className="eyebrow">{eyebrow}</span>
-            <h2>{heading}</h2>
-          </div>
-          <div className="slider-section-controls">
-            {viewAllTo && (
-              <Link className="slider-viewall" to={viewAllTo}>
-                {viewAllLabel} &rarr;
-              </Link>
-            )}
-            <div className="slider-arrows">
-              <button
-                aria-label="Scroll left"
-                className="slider-arrow reset"
-                onClick={() => scrollByAmount(-1)}
-                type="button"
-              >
-                &larr;
-              </button>
-              <button
-                aria-label="Scroll right"
-                className="slider-arrow reset"
-                onClick={() => scrollByAmount(1)}
-                type="button"
-              >
-                &rarr;
-              </button>
+        {showHeading && (
+          <div className="slider-section-header">
+            <div>
+              <span className="eyebrow">{eyebrow}</span>
+              <h2>{heading}</h2>
+            </div>
+            <div className="slider-section-controls">
+              {viewAllTo && (
+                <Link className="slider-viewall" to={viewAllTo}>
+                  {viewAllLabel} &rarr;
+                </Link>
+              )}
+              {showArrows && (
+                <div className="slider-arrows">
+                  <button
+                    aria-label="Scroll left"
+                    className="slider-arrow reset"
+                    onClick={() => scrollByAmount(-1)}
+                    type="button"
+                  >
+                    &larr;
+                  </button>
+                  <button
+                    aria-label="Scroll right"
+                    className="slider-arrow reset"
+                    onClick={() => scrollByAmount(1)}
+                    type="button"
+                  >
+                    &rarr;
+                  </button>
+                </div>
+              )}
             </div>
           </div>
-        </div>
+        )}
       </div>
       <div className="slider-track" ref={trackRef}>
         {products.map((product, index) => (
