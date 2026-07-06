@@ -5,9 +5,8 @@ import {
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/_index';
-import {Suspense, useRef, useState, useEffect} from 'react';
+import {Suspense, useState, useEffect} from 'react';
 import {Image} from '@shopify/hydrogen';
-import {useDragScroll} from '~/hooks/useDragScroll';
 import type {
   FeaturedCollectionFragment,
   RecommendedProductsQuery,
@@ -15,6 +14,7 @@ import type {
 import {ProductItem} from '~/components/ProductItem';
 import {FeatureStrip} from '~/components/FeatureStrip';
 import {ProductSlider} from '~/components/ProductSlider';
+import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
 import {
   getMegaMenuDepartmentForHandle,
@@ -99,8 +99,6 @@ export default function Homepage() {
       <FeaturedCollection collection={data.featuredCollection} />
       <RecommendedProducts products={data.recommendedProducts} />
       <FeatureStrip />
-      <Showroom />
-      <SocialStrip />
     </div>
   );
 }
@@ -125,23 +123,32 @@ function Hero() {
             Shop Women&rsquo;s
           </Link>
         </div>
-            <div className="hero-ticker" aria-hidden="false">
-              <div className="ticker-track">
-                <span>Lifetime Warranty ⤴</span>
-                <span>Lifetime Upgrade</span>
-                <span>Free Shipping &amp; Returns 🚚</span>
-                <span>0% APR Financing</span>
-                <span>Lifetime Warranty ⤴</span>
-                <span>Lifetime Upgrade</span>
-                <span>Free Shipping &amp; Returns 🚚</span>
-                <span>0% APR Financing</span>
-              </div>
+        <div className="hero-ticker" aria-hidden="false">
+          <div className="ticker-track">
+            <div className="ticker-group">
+              <span>Lifetime Warranty</span>
+              <span>Lifetime Upgrade</span>
+              <span>Free Shipping &amp; Returns</span>
+              <span>0% APR Financing</span>
             </div>
+            <div className="ticker-group" aria-hidden="true">
+              <span>Lifetime Warranty</span>
+              <span>Lifetime Upgrade</span>
+              <span>Free Shipping &amp; Returns</span>
+              <span>0% APR Financing</span>
+            </div>
+            <div className="ticker-group" aria-hidden="true">
+              <span>Lifetime Warranty</span>
+              <span>Lifetime Upgrade</span>
+              <span>Free Shipping &amp; Returns</span>
+              <span>0% APR Financing</span>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
-
 type CategoryTile = any;
 
 function ShopByCategory({
@@ -165,8 +172,6 @@ function ShopByCategory({
     diamond: '/dimond.jpg',
     'engagement-rings': '/enganment.jpg',
   };
-  const categoryTrackRef = useRef<HTMLDivElement>(null);
-  useDragScroll(categoryTrackRef);
   return (
     <>
       <section className="home-section">
@@ -175,43 +180,39 @@ function ShopByCategory({
             <span className="eyebrow">Explore</span>
             <h2>Shop by Category</h2>
           </div>
-          <div className="category-carousel">
-            <div className="category-carousel-viewport">
-              <div className="category-carousel-track" ref={categoryTrackRef}>
-                {categories.map((category) => {
-                const publicSrc = publicImages[category.handle];
-                return (
-                  <Link
-                    key={category.id}
-                    to={`/collections/${category.handle}`}
-                    className="category-tile carousel-item"
-                  >
-                    {publicSrc ? (
-                      <img
-                        src={publicSrc}
-                        alt={category.title}
-                        className="category-tile-image"
-                      />
-                    ) : category.image?.url ? (
-                      <Image
-                        data={category.image}
-                        alt={category.image.altText ?? category.title}
-                        aspectRatio="4/3"
-                        className="category-tile-image"
-                        sizes="(max-width: 40em) 100vw, 18vw"
-                      />
-                    ) : (
-                      <span className="category-tile-circle" aria-hidden="true">
-                        {category.title.charAt(0)}
-                      </span>
-                    )}
-                    <span>{category.title}</span>
-                  </Link>
-                );
-              })}
-                </div>
-            </div>
-          </div>
+          <HorizontalCarousel className="category-carousel" ariaLabel="categories">
+            {categories.map((category) => {
+              const publicSrc = publicImages[category.handle];
+              return (
+                <Link
+                  key={category.id}
+                  to={`/collections/${category.handle}`}
+                  className="category-tile carousel-item"
+                >
+                  {publicSrc ? (
+                    <img
+                      src={publicSrc}
+                      alt={category.title}
+                      className="category-tile-image"
+                    />
+                  ) : category.image?.url ? (
+                    <Image
+                      data={category.image}
+                      alt={category.image.altText ?? category.title}
+                      aspectRatio="4/3"
+                      className="category-tile-image"
+                      sizes="(max-width: 40em) 100vw, 18vw"
+                    />
+                  ) : (
+                    <span className="category-tile-circle" aria-hidden="true">
+                      {category.title.charAt(0)}
+                    </span>
+                  )}
+                  <span>{category.title}</span>
+                </Link>
+              );
+            })}
+          </HorizontalCarousel>
         </div>
       </section>
 
@@ -376,7 +377,6 @@ function CategoryProductsSection({
             eyebrow={collection.title}
             heading={collection.title}
             products={products}
-            showArrows={false}
             showHeading={false}
           />
         )}
@@ -427,72 +427,28 @@ function RecommendedProducts({
           <span className="eyebrow">Best Sellers</span>
           <h2>New Arrivals</h2>
         </div>
-        <Suspense fallback={<RecommendedProductsSkeleton />}>
+        <Suspense fallback={<ProductSliderSkeleton />}>
           <Await resolve={products}>
-            {(response) => (
-              <div className="recommended-products-grid">
-                {response
-                  ? response.products.nodes.map((product) => (
-                      <ProductItem
-                        key={product.id}
-                        product={product}
-                        className="recommended-product"
-                      />
-                    ))
-                  : null}
-              </div>
-            )}
+            {(response) =>
+              response?.products.nodes?.length ? (
+                <ProductSlider
+                  eyebrow="Best Sellers"
+                  heading="New Arrivals"
+                  products={response.products.nodes}
+                  showHeading={false}
+                />
+              ) : (
+                <p className="recommended-products-empty">
+                  New arrivals are loading or unavailable right now.
+                </p>
+              )
+            }
           </Await>
         </Suspense>
         <div className="home-section-footer">
           <Link to="/collections/all" className="btn btn-outline">
             View All Products
           </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Showroom() {
-  return (
-    <section className="showroom" id="showroom">
-      <div className="showroom-inner">
-        <span className="eyebrow" style={{color: 'var(--color-gold)'}}>
-          Visit Us
-        </span>
-        <h2>Where Luxury Comes to Life</h2>
-        <p>
-          Visit our exclusive NYC showroom and discover our stunning
-          collection in person, with a personal stylist by your side.
-        </p>
-        <p className="showroom-address">
-          10 W 46th St, Floor 17, New York, NY 10036
-        </p>
-        <a href="mailto:info@bayamjewelry.com" className="btn btn-primary on-dark">
-          Book an Appointment
-        </a>
-      </div>
-    </section>
-  );
-}
-
-function SocialStrip() {
-  return (
-    <section className="home-section social-strip">
-      <div className="section-inner">
-        <span className="eyebrow">@yourjewelry</span>
-        <h2>Follow Us on Instagram</h2>
-        <div className="social-strip-icons">
-          <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram">
-            IG
-          </a>
-          <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook">
-            FB
-          </a>
-          <a href="https://tiktok.com" target="_blank" rel="noreferrer" aria-label="TikTok">
-            TT
-          </a>
         </div>
       </div>
     </section>
@@ -507,16 +463,6 @@ function ProductSliderSkeleton() {
           <ProductCardSkeleton key={index} className="slider-item" />
         ))}
       </div>
-    </div>
-  );
-}
-
-function RecommendedProductsSkeleton() {
-  return (
-    <div className="recommended-products-grid" aria-label="Loading products">
-      {Array.from({length: 4}).map((_, index) => (
-        <ProductCardSkeleton key={index} className="recommended-product" />
-      ))}
     </div>
   );
 }
@@ -637,10 +583,14 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       width
       height
     }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+    }
   }
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 4, sortKey: UPDATED_AT, reverse: true) {
+    products(first: 12, sortKey: UPDATED_AT, reverse: true) {
       nodes {
         ...RecommendedProduct
       }

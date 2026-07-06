@@ -1,7 +1,6 @@
-import {useRef} from 'react';
 import {Link} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
-import {useDragScroll} from '~/hooks/useDragScroll';
+import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import type {
   CollectionItemFragment,
   ProductItemFragment,
@@ -30,19 +29,7 @@ export function ProductSlider({
   showArrows?: boolean;
   showHeading?: boolean;
 }) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  useDragScroll(trackRef);
-
   if (!products.length) return null;
-
-  function scrollByAmount(direction: 1 | -1) {
-    const track = trackRef.current;
-    if (!track) return;
-    track.scrollBy({
-      left: direction * Math.min(track.clientWidth * 0.85, 640),
-      behavior: 'smooth',
-    });
-  }
 
   return (
     <section className="slider-section">
@@ -53,37 +40,21 @@ export function ProductSlider({
               <span className="eyebrow">{eyebrow}</span>
               <h2>{heading}</h2>
             </div>
-            <div className="slider-section-controls">
-              {viewAllTo && (
+            {viewAllTo && (
+              <div className="slider-section-controls">
                 <Link className="slider-viewall" to={viewAllTo}>
                   {viewAllLabel} &rarr;
                 </Link>
-              )}
-              {showArrows && (
-                <div className="slider-arrows">
-                  <button
-                    aria-label="Scroll left"
-                    className="slider-arrow reset"
-                    onClick={() => scrollByAmount(-1)}
-                    type="button"
-                  >
-                    &larr;
-                  </button>
-                  <button
-                    aria-label="Scroll right"
-                    className="slider-arrow reset"
-                    onClick={() => scrollByAmount(1)}
-                    type="button"
-                  >
-                    &rarr;
-                  </button>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
       </div>
-      <div className="slider-track" ref={trackRef}>
+      <HorizontalCarousel
+        className="slider-carousel"
+        ariaLabel={heading}
+        showButtons={showArrows}
+      >
         {products.map((product, index) => (
           <ProductItem
             key={product.id}
@@ -92,7 +63,7 @@ export function ProductSlider({
             loading={index < 4 ? 'eager' : undefined}
           />
         ))}
-      </div>
+      </HorizontalCarousel>
     </section>
   );
 }

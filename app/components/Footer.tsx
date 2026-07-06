@@ -121,7 +121,7 @@ export function Footer({
                       <a href="mailto:info@bayamjewelry.com">info@bayamjewelry.com</a>
                     </li>
                     <li>
-                      <a href="#showroom">Book an Appointment</a>
+                      <a href="/contact">Book an Appointment</a>
                     </li>
                   </ul>
                 </div>

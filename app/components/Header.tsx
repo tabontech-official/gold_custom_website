@@ -1,4 +1,4 @@
-import {Suspense, useRef, useState} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {Await, Link, NavLink, useAsyncValue, useFetcher} from 'react-router';
 import {
   Image,
@@ -16,6 +16,12 @@ import {
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
 
+const HEADER_UTILITY_MESSAGES = [
+  'Complimentary shipping and returns',
+  'Lifetime warranty on every piece',
+  'Private NYC styling appointments',
+];
+
 interface HeaderProps {
   header: HeaderQuery;
   cart: Promise<CartApiQueryFragment | null>;
@@ -32,17 +38,34 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop} = header;
+  const [utilityMessageIndex, setUtilityMessageIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setUtilityMessageIndex(
+        (currentIndex) => (currentIndex + 1) % HEADER_UTILITY_MESSAGES.length,
+      );
+    }, 2500);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
   return (
     <>
       <div className="header-utility">
         <span className="header-utility-location">
           From New York, NY
-          <a className="header-utility-book-btn" href="#showroom">
+          <a className="header-utility-book-btn" href="/contact">
             Book An Appointment
           </a>
         </span>
-        <span className="header-utility-message">
-          Complimentary shipping and returns
+        <span className="header-utility-message" aria-live="polite">
+          <span
+            key={utilityMessageIndex}
+            className="header-utility-message-text"
+          >
+            {HEADER_UTILITY_MESSAGES[utilityMessageIndex]}
+          </span>
         </span>
         <span className="header-utility-support">Fine jewelry specialists</span>
       </div>

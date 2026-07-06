@@ -1,6 +1,9 @@
+import {Suspense} from 'react';
 import {
   redirect,
   useLoaderData,
+  Link,
+  Await,
 } from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
@@ -14,6 +17,9 @@ import {
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductImage} from '~/components/ProductImage';
 import {ProductForm} from '~/components/ProductForm';
+import {FeatureStrip} from '~/components/FeatureStrip';
+import {ProductSlider} from '~/components/ProductSlider';
+import {ShopByCategory} from '~/components/ShopByCategory';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
@@ -77,14 +83,21 @@ async function loadCriticalData({
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Put any API calls that is not critical to be available on first page render
-  // For example: product reviews, product recommendations, social feeds.
+  // Related products — fetched after first paint so they never block the page.
+  const recommendedProducts = context.storefront
+    .query(PRODUCT_RECOMMENDATIONS_QUERY, {
+      variables: {productHandle: params.handle},
+    })
+    .catch((error: Error) => {
+      console.error(error);
+      return null;
+    });
 
-  return {};
+  return {recommendedProducts};
 }
 
 export default function Product() {
-  const {product} = useLoaderData<typeof loader>();
+  const {product, recommendedProducts} = useLoaderData<typeof loader>();
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -102,31 +115,60 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
+  const {title, descriptionHtml, vendor} = product;
 
   return (
     <div className="product">
-      <ProductImage image={selectedVariant?.image} />
-      <div className="product-main">
-        <h1>{title}</h1>
-        <ProductPrice
-          price={selectedVariant?.price}
-          compareAtPrice={selectedVariant?.compareAtPrice}
-        />
-        <br />
-        <ProductForm
-          productOptions={productOptions}
-          selectedVariant={selectedVariant}
-        />
-        <br />
-        <br />
-        <p>
-          <strong>Description</strong>
-        </p>
-        <br />
-        <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
-        <br />
+      <nav className="product-breadcrumb" aria-label="Breadcrumb">
+        <Link to="/">Home</Link>
+        <span aria-hidden="true">/</span>
+        <Link to="/collections/all">Shop</Link>
+        <span aria-hidden="true">/</span>
+        <span className="is-current">{title}</span>
+      </nav>
+
+      <div className="product-layout">
+        <div className="product-gallery">
+          <ProductImage image={selectedVariant?.image} />
+        </div>
+
+        <div className="product-main">
+          {vendor && <span className="eyebrow product-vendor">{vendor}</span>}
+          <h1>{title}</h1>
+          <ProductPrice
+            price={selectedVariant?.price}
+            compareAtPrice={selectedVariant?.compareAtPrice}
+          />
+
+          <ProductForm
+            productOptions={productOptions}
+            selectedVariant={selectedVariant}
+          />
+
+          <ul className="product-assurances">
+            <li>Free U.S. shipping over $99</li>
+            <li>1-year warranty</li>
+            <li>14-day returns</li>
+          </ul>
+
+          {descriptionHtml && (
+            <details className="product-details">
+              <summary>Product Details</summary>
+              <div
+                className="product-details-body"
+                dangerouslySetInnerHTML={{__html: descriptionHtml}}
+              />
+            </details>
+          )}
+        </div>
       </div>
+
+      <RelatedProducts products={recommendedProducts} />
+
+      <ShopByCategory />
+
+      <FeatureStrip />
+
       <Analytics.ProductView
         data={{
           products: [
@@ -143,6 +185,40 @@ export default function Product() {
         }}
       />
     </div>
+  );
+}
+
+function RelatedProducts({
+  products,
+}: {
+  products: Promise<{productRecommendations: any[]} | null>;
+}) {
+  return (
+    <section className="home-section">
+      <div className="section-inner">
+        <div className="home-section-heading">
+          <span className="eyebrow">You may also like</span>
+          <h2>Related Products</h2>
+        </div>
+        <Suspense fallback={null}>
+          <Await resolve={products}>
+            {(data) => {
+              const items = (data?.productRecommendations ?? []).slice(0, 8);
+              if (!items.length) return null;
+              return (
+                <ProductSlider
+                  eyebrow="You may also like"
+                  heading="Related Products"
+                  products={items}
+                  showHeading={false}
+                  showArrows
+                />
+              );
+            }}
+          </Await>
+        </Suspense>
+      </div>
+    </section>
   );
 }
 
@@ -236,4 +312,38 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+` as const;
+
+const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+  fragment RecommendedItem on Product {
+    id
+    title
+    handle
+    priceRange {
+      minVariantPrice {
+        amount
+        currencyCode
+      }
+    }
+    featuredImage {
+      id
+      url
+      altText
+      width
+      height
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+    }
+  }
+  query ProductRecommendations(
+    $productHandle: String
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    productRecommendations(productHandle: $productHandle) {
+      ...RecommendedItem
+    }
+  }
 ` as const;

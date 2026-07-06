@@ -87,6 +87,10 @@ const COLLECTION_ITEM_FRAGMENT = `#graphql
       width
       height
     }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+    }
     priceRange {
       minVariantPrice {
         ...MoneyCollectionItem

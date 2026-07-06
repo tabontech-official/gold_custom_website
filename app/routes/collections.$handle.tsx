@@ -5,7 +5,7 @@ import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 import {ProductSlider} from '~/components/ProductSlider';
-import {CategorySlider} from '~/components/CategorySlider';
+import {ShopByCategory} from '~/components/ShopByCategory';
 import {CollectionSubNav} from '~/components/CollectionSubNav';
 import {CollectionPromo} from '~/components/CollectionPromo';
 import {FeatureStrip} from '~/components/FeatureStrip';
@@ -84,9 +84,7 @@ export default function Collection() {
         <div className="section-inner collection-hero-inner">
           <span className="eyebrow">Shop {collection.title}</span>
           <h1>{collection.title}</h1>
-          {collection.description && (
-            <p className="collection-description">{collection.description}</p>
-          )}
+          {/* collection.description is SEO copy — intentionally not rendered */}
         </div>
       </section>
 
@@ -114,7 +112,7 @@ export default function Collection() {
         ctaTo="mailto:info@bayamjewelry.com"
       />
 
-      <CategorySlider excludeHandle={collection.handle} />
+      <ShopByCategory excludeHandle={collection.handle} />
 
       <FeatureStrip />
 
@@ -176,6 +174,10 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
       url
       width
       height
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
     }
     priceRange {
       minVariantPrice {

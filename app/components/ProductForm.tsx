@@ -25,7 +25,7 @@ export function ProductForm({
 
         return (
           <div className="product-options" key={option.name}>
-            <h5>{option.name}</h5>
+            <h5 className="product-options-label">{option.name}</h5>
             <div className="product-options-grid">
               {option.optionValues.map((value) => {
                 const {
@@ -97,11 +97,11 @@ export function ProductForm({
                 }
               })}
             </div>
-            <br />
           </div>
         );
       })}
       <AddToCartButton
+        className="btn btn-primary product-atc"
         disabled={!selectedVariant || !selectedVariant.availableForSale}
         onClick={() => {
           open('cart');
