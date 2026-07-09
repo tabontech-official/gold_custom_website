@@ -5591,6 +5591,51 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
+@media (min-width: 42em) {
+  .trust-promise-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 72em) {
+  .trust-promise-section {
+    padding: 4rem 0;
+  }
+
+  /* Staircase: 4 across, each box stepped progressively lower */
+  .trust-promise-grid {
+    align-items: start;
+    gap: 1.5rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .trust-promise-card:nth-child(2) {
+    margin-top: 3rem;
+  }
+
+  .trust-promise-card:nth-child(3) {
+    margin-top: 6rem;
+  }
+
+  .trust-promise-card:nth-child(4) {
+    margin-top: 9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trust-promise-card,
+  .trust-promise-card::before,
+  .trust-promise-card::after,
+  .trust-promise-icon {
+    transition: none;
+  }
+
+  .trust-promise-card:hover,
+  .trust-promise-card:hover .trust-promise-icon {
+    transform: none;
+  }
+}
+
 /*
 * --------------------------------------------------
 * Diamond value section
@@ -5691,20 +5736,9 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
-@media (min-width: 42em) {
-  .trust-promise-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (min-width: 72em) {
   .trust-promise-section {
     padding: 4rem 0;
-  }
-
-  .trust-promise-grid {
-    gap: 1.5rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
