@@ -4,12 +4,16 @@ import type {HeaderQuery} from 'storefrontapi.generated';
 import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
-import {ProductSlider} from '~/components/ProductSlider';
-import {ShopByCategory} from '~/components/ShopByCategory';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNav} from '~/components/CollectionSubNav';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
-import {FeatureStrip} from '~/components/FeatureStrip';
+import {
+  SHOP_BY_CATEGORIES_QUERY,
+  TRUST_BADGES_QUERY,
+  ShopByCategory,
+  TrustPromise,
+  parseTrustBadges,
+} from '~/routes/_index';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   MEGA_MENU,
@@ -23,6 +27,23 @@ function displayTitle(collection?: {handle: string; title: string} | null) {
   if (!collection) return '';
   return collection.handle === 'all' ? 'All Products' : collection.title;
 }
+
+const COLLECTION_PRODUCT_BREAKS = [
+  {
+    image: '/cover3.png',
+    eyebrow: 'Women\'s Diamond Jewelry',
+    title: 'Radiant diamonds made to hold the moment.',
+    variant: 'cover3',
+    align: 'left',
+  },
+  {
+    image: '/cover4.png',
+    eyebrow: 'Men\'s Diamond Studs',
+    title: 'Sharp brilliance, built for everyday presence.',
+    variant: 'cover4',
+    align: 'right',
+  },
+] as const;
 
 function getCollectionParentCrumb({
   handle,
@@ -53,6 +74,24 @@ function getCollectionParentCrumb({
   );
 
   return parent ? {label: parent.label, to: parent.to} : null;
+}
+
+function CollectionProductBreak({
+  item,
+}: {
+  item: (typeof COLLECTION_PRODUCT_BREAKS)[number];
+}) {
+  return (
+    <div
+      className={`collection-product-break is-${item.align} is-${item.variant}`}
+      style={{backgroundImage: `url("${item.image}")`}}
+    >
+      <div className="collection-product-break-copy">
+        <span>{item.eyebrow}</span>
+        <h3>{item.title}</h3>
+      </div>
+    </div>
+  );
 }
 
 export const meta: Route.MetaFunction = ({data}) => {
@@ -87,7 +126,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw redirect('/collections');
   }
 
-  const [{collection}] = await Promise.all([
+  const [{collection}, categoryResponse, trustBadgesResponse] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
@@ -97,6 +136,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
         ...paginationVariables,
       },
       // Add other queries here, so that they are loaded in parallel
+    }),
+    storefront.query(SHOP_BY_CATEGORIES_QUERY),
+    storefront.query(TRUST_BADGES_QUERY).catch((error: Error) => {
+      console.error(error);
+      return null;
     }),
   ]);
 
@@ -111,6 +155,17 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   return {
     collection,
+    categories: [
+      categoryResponse.rings,
+      categoryResponse.chains,
+      categoryResponse.bracelets,
+      categoryResponse.earrings,
+      categoryResponse.pendants,
+      categoryResponse.necklaces,
+      categoryResponse.diamond,
+      categoryResponse.engagementRings,
+    ].filter(Boolean),
+    trustBadges: parseTrustBadges(trustBadgesResponse),
   };
 }
 
@@ -124,7 +179,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection} = useLoaderData<typeof loader>();
+  const {collection, categories, trustBadges} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const parentCrumb = getCollectionParentCrumb({
     handle: collection.handle,
@@ -132,7 +187,6 @@ export default function Collection() {
     publicStoreDomain: rootData?.publicStoreDomain,
   });
 
-  const bestSelling = collection.bestSelling?.nodes ?? [];
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
   const filters = (collection.products.filters ?? []).map((filter) => ({
     id: filter.id,
@@ -185,9 +239,11 @@ export default function Collection() {
               hasNextPage,
               hasPreviousPage,
             }) => {
-              // First two rows, an editorial break, then the rest.
-              const firstChunk = nodes.slice(0, 8);
-              const rest = nodes.slice(8);
+              const productRows = [];
+              for (let index = 0; index < nodes.length; index += 8) {
+                productRows.push(nodes.slice(index, index + 8));
+              }
+
               return (
                 <div className="load-more">
                   {hasPreviousPage && (
@@ -204,41 +260,32 @@ export default function Collection() {
                     </p>
                   ) : (
                     <>
-                      <div className="products-grid">
-                        {firstChunk.map((product, index) => (
-                          <ProductItem
-                            key={product.id}
-                            product={product}
-                            loading={index < 8 ? 'eager' : undefined}
-                          />
-                        ))}
-                      </div>
-
-                      {rest.length > 0 && (
-                        <>
-                          <div className="grid-break">
-                            <div className="grid-break-copy">
-                              <span className="eyebrow">Crafted for Life</span>
-                              <h3>
-                                Hallmarked, insured, and backed by our lifetime
-                                warranty.
-                              </h3>
-                            </div>
-                            <a
-                              className="btn btn-primary"
-                              href="mailto:info@bayamjewelry.com"
-                            >
-                              Book a Consultation
-                            </a>
-                          </div>
-
+                      {productRows.map((row, rowIndex) => (
+                        <div className="collection-product-row" key={row[0]?.id ?? rowIndex}>
                           <div className="products-grid">
-                            {rest.map((product) => (
-                              <ProductItem key={product.id} product={product} />
+                            {row.map((product, productIndex) => (
+                              <ProductItem
+                                key={product.id}
+                                product={product}
+                                loading={
+                                  rowIndex === 0 && productIndex < 8
+                                    ? 'eager'
+                                    : undefined
+                                }
+                              />
                             ))}
                           </div>
-                        </>
-                      )}
+
+                          {rowIndex < productRows.length - 1 &&
+                            rowIndex < COLLECTION_PRODUCT_BREAKS.length && (
+                            <CollectionProductBreak
+                              item={
+                                COLLECTION_PRODUCT_BREAKS[rowIndex]
+                              }
+                            />
+                          )}
+                        </div>
+                      ))}
                     </>
                   )}
 
@@ -266,19 +313,8 @@ export default function Collection() {
         </div>
       </section>
 
-      {bestSelling.length > 0 && (
-        <ProductSlider
-          eyebrow="Customer Favorites"
-          heading="Best Sellers"
-          products={bestSelling}
-          viewAllTo={`/collections/${collection.handle}`}
-          viewAllLabel="Shop All"
-        />
-      )}
-
-      <ShopByCategory excludeHandle={collection.handle} />
-
-      <FeatureStrip />
+      <ShopByCategory categories={categories} />
+      <TrustPromise badges={trustBadges} />
 
       <Analytics.CollectionView
         data={{

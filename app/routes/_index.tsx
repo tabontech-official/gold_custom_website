@@ -6,7 +6,6 @@ import type {
   NewArrivalsByGenderQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
-import {FeatureStrip} from '~/components/FeatureStrip';
 import {MarketBar} from '~/components/MarketBar';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
@@ -107,7 +106,6 @@ export default function Homepage() {
         collection={data.featuredCollection}
         bestSelling={data.bestSellingProducts}
       />
-      <FeatureStrip />
       <PromiseTicker />
     </div>
   );
@@ -158,7 +156,7 @@ function PromiseTicker() {
 }
 type CategoryTile = any;
 
-const TRUST_PROMISES = [
+export const TRUST_PROMISES = [
   {
     title: 'Certified Purity',
     copy:
@@ -205,7 +203,7 @@ const TRUST_PROMISES = [
   },
 ];
 
-function parseTrustBadges(response: any) {
+export function parseTrustBadges(response: any) {
   const fields = response?.metaobject?.fields;
   if (!Array.isArray(fields)) return TRUST_PROMISES;
 
@@ -230,7 +228,7 @@ function parseTrustBadges(response: any) {
   });
 }
 
-function TrustPromise({badges}: {badges: typeof TRUST_PROMISES}) {
+export function TrustPromise({badges}: {badges: typeof TRUST_PROMISES}) {
   return (
     <section className="home-section trust-promise-section">
       <div className="section-inner">
@@ -257,7 +255,7 @@ function TrustPromise({badges}: {badges: typeof TRUST_PROMISES}) {
   );
 }
 
-function ShopByCategory({categories}: {categories: CategoryTile[] | any[]}) {
+export function ShopByCategory({categories}: {categories: CategoryTile[] | any[]}) {
   const publicImages: Record<string, string> = {
     rings: '/gold%20ring.jpg',
     chains: '/chain.jpg',
@@ -584,7 +582,7 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   }
 ` as const;
 
-const SHOP_BY_CATEGORIES_QUERY = `#graphql
+export const SHOP_BY_CATEGORIES_QUERY = `#graphql
   fragment CategoryCollection on Collection {
     id
     title
@@ -623,7 +621,7 @@ const SHOP_BY_CATEGORIES_QUERY = `#graphql
   }
 ` as const;
 
-const TRUST_BADGES_QUERY = `#graphql
+export const TRUST_BADGES_QUERY = `#graphql
   query TrustBadges($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
     metaobject(

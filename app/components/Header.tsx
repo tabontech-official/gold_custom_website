@@ -293,6 +293,7 @@ function MegaMenuItem({
   relativeUrl: (url: string) => string;
 }) {
   const fetcher = useFetcher<{products: FeaturedProduct[]}>();
+  const [isClosing, setIsClosing] = useState(false);
   const handle = department.to.replace('/collections/', '');
 
   // Lazy-load this department's real products the first time it's hovered.
@@ -308,14 +309,23 @@ function MegaMenuItem({
     .filter((item) => item.url);
   const featuredProducts = products.slice(0, 2);
 
+  function closeMegaMenu() {
+    setIsClosing(true);
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }
+
   return (
     <div
-      className="mega-menu-item"
+      className={`mega-menu-item${isClosing ? ' is-closing' : ''}`}
       onFocus={loadProducts}
       onMouseEnter={loadProducts}
+      onMouseLeave={() => setIsClosing(false)}
     >
       <NavLink
         className="header-menu-item"
+        onClick={closeMegaMenu}
         prefetch="intent"
         to={department.to}
       >
@@ -327,7 +337,11 @@ function MegaMenuItem({
             <ul className="mega-menu-link-list">
               {menuItems.map((item) => (
                 <li key={item.id}>
-                  <NavLink prefetch="intent" to={relativeUrl(item.url ?? '')}>
+                  <NavLink
+                    onClick={closeMegaMenu}
+                    prefetch="intent"
+                    to={relativeUrl(item.url ?? '')}
+                  >
                     {item.title}
                   </NavLink>
                 </li>
@@ -335,6 +349,7 @@ function MegaMenuItem({
             </ul>
             <NavLink
               className="mega-menu-shop-button"
+              onClick={closeMegaMenu}
               prefetch="intent"
               to={department.to}
             >
@@ -350,6 +365,7 @@ function MegaMenuItem({
                   <Link
                     className="mega-menu-card"
                     key={product.id}
+                    onClick={closeMegaMenu}
                     prefetch="intent"
                     to={`/products/${product.handle}`}
                   >
