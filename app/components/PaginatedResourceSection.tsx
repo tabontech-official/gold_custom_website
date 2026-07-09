@@ -2,7 +2,8 @@ import * as React from 'react';
 import {Pagination} from '@shopify/hydrogen';
 
 /**
- * <PaginatedResourceSection > is a component that encapsulate how the previous and next behaviors throughout your application.
+ * Append-style "Load More" grid. Hydrogen's <Pagination> accumulates the nodes
+ * across pages, so tapping "Load More" grows the grid instead of replacing it.
  */
 export function PaginatedResourceSection<NodesType>({
   connection,
@@ -15,24 +16,37 @@ export function PaginatedResourceSection<NodesType>({
 }) {
   return (
     <Pagination connection={connection}>
-      {({nodes, isLoading, PreviousLink, NextLink}) => {
+      {({nodes, isLoading, PreviousLink, NextLink, hasNextPage, hasPreviousPage}) => {
         const resourcesMarkup = nodes.map((node, index) =>
           children({node, index}),
         );
 
         return (
-          <div>
-            <PreviousLink>
-              {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
-            </PreviousLink>
+          <div className="load-more">
+            {hasPreviousPage && (
+              <div className="load-more-bar">
+                <PreviousLink className="load-more-btn is-ghost">
+                  {isLoading ? 'Loading…' : '↑ Load previous'}
+                </PreviousLink>
+              </div>
+            )}
+
             {resourcesClassName ? (
               <div className={resourcesClassName}>{resourcesMarkup}</div>
             ) : (
               resourcesMarkup
             )}
-            <NextLink>
-              {isLoading ? 'Loading...' : <span>Load more ↓</span>}
-            </NextLink>
+
+            <div className="load-more-bar">
+              <span className="load-more-count">{nodes.length} pieces shown</span>
+              {hasNextPage ? (
+                <NextLink className="load-more-btn">
+                  {isLoading ? 'Loading…' : 'Load More'}
+                </NextLink>
+              ) : (
+                <span className="load-more-end">That&rsquo;s the whole collection</span>
+              )}
+            </div>
           </div>
         );
       }}

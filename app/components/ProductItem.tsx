@@ -3,7 +3,6 @@ import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
 import type {
   ProductItemFragment,
-  CollectionItemFragment,
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 import {AddToCartButton} from './AddToCartButton';
@@ -40,7 +39,6 @@ export function ProductItem({
   className,
 }: {
   product:
-    | CollectionItemFragment
     | ProductItemFragment
     | RecommendedProductFragment
     | any;

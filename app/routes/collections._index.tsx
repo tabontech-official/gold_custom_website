@@ -21,7 +21,7 @@ export async function loader(args: Route.LoaderArgs) {
  */
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
+    pageBy: 24,
   });
 
   const [{collections}] = await Promise.all([
@@ -47,21 +47,38 @@ export default function Collections() {
   const {collections} = useLoaderData<typeof loader>();
 
   return (
-    <div className="collections">
-      <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Collections'}]} />
-      <h1>Collections</h1>
-      <PaginatedResourceSection<CollectionFragment>
-        connection={collections}
-        resourcesClassName="collections-grid"
-      >
-        {({node: collection, index}) => (
-          <CollectionItem
-            key={collection.id}
-            collection={collection}
-            index={index}
-          />
-        )}
-      </PaginatedResourceSection>
+    <div className="collection collections">
+      <div className="section-inner">
+        <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Categories'}]} />
+      </div>
+
+      <section className="collection-hero">
+        <div className="section-inner collection-hero-inner">
+          <span className="eyebrow">Browse the Atelier</span>
+          <h1>Shop by Category</h1>
+          <p className="collection-description">
+            From solid-gold chains to certified-diamond rings — explore every
+            corner of the house.
+          </p>
+        </div>
+      </section>
+
+      <section className="home-section is-soft">
+        <div className="section-inner">
+          <PaginatedResourceSection<CollectionFragment>
+            connection={collections}
+            resourcesClassName="collections-grid"
+          >
+            {({node: collection, index}) => (
+              <CollectionItem
+                key={collection.id}
+                collection={collection}
+                index={index}
+              />
+            )}
+          </PaginatedResourceSection>
+        </div>
+      </section>
     </div>
   );
 }
@@ -73,6 +90,9 @@ function CollectionItem({
   collection: CollectionFragment;
   index: number;
 }) {
+  // Skip the many empty / unpublished tag-collections so the grid stays real.
+  if (!collection.products?.nodes?.length) return null;
+
   return (
     <Link
       className="collection-item"
@@ -80,7 +100,7 @@ function CollectionItem({
       to={`/collections/${collection.handle}`}
       prefetch="intent"
     >
-      {collection?.image && (
+      {collection.image ? (
         <Image
           alt={collection.image.altText || collection.title}
           aspectRatio="1/1"
@@ -88,8 +108,14 @@ function CollectionItem({
           loading={index < 3 ? 'eager' : undefined}
           sizes="(min-width: 45em) 400px, 100vw"
         />
+      ) : (
+        <span className="collection-item-fallback" aria-hidden="true">
+          {collection.title.charAt(0)}
+        </span>
       )}
-      <h5>{collection.title}</h5>
+      <div className="collection-item-info">
+        <h5>{collection.title}</h5>
+      </div>
     </Link>
   );
 }
@@ -105,6 +131,11 @@ const COLLECTIONS_QUERY = `#graphql
       altText
       width
       height
+    }
+    products(first: 1) {
+      nodes {
+        id
+      }
     }
   }
   query StoreCollections(

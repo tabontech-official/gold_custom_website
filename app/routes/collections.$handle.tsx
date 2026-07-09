@@ -1,20 +1,62 @@
 import {redirect, useLoaderData, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/collections.$handle';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import type {HeaderQuery} from 'storefrontapi.generated';
+import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {ProductItem} from '~/components/ProductItem';
 import {ProductSlider} from '~/components/ProductSlider';
 import {ShopByCategory} from '~/components/ShopByCategory';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNav} from '~/components/CollectionSubNav';
-import {CollectionPromo} from '~/components/CollectionPromo';
+import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {FeatureStrip} from '~/components/FeatureStrip';
-import type {ProductItemFragment} from 'storefrontapi.generated';
+import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
+import {
+  MEGA_MENU,
+  getColumnItems,
+  getMegaMenuDepartmentForHandle,
+  toRelativeUrl,
+} from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 
+function displayTitle(collection?: {handle: string; title: string} | null) {
+  if (!collection) return '';
+  return collection.handle === 'all' ? 'All Products' : collection.title;
+}
+
+function getCollectionParentCrumb({
+  handle,
+  header,
+  publicStoreDomain,
+}: {
+  handle: string;
+  header?: HeaderQuery;
+  publicStoreDomain?: string;
+}) {
+  if (!header || !publicStoreDomain) return null;
+
+  const directDepartment = getMegaMenuDepartmentForHandle(handle);
+  if (directDepartment) return null;
+
+  const currentPath = `/collections/${handle}`;
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+  const parent = MEGA_MENU.find((department) =>
+    department.columns.some((column) =>
+      getColumnItems(header, column).some((item) => {
+        if (!item.url) return false;
+        return (
+          toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain) ===
+          currentPath
+        );
+      }),
+    ),
+  );
+
+  return parent ? {label: parent.label, to: parent.to} : null;
+}
+
 export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.collection.title ?? ''} Collection`}];
+  return [{title: `${displayTitle(data?.collection)} | Gold Jewelry Co.`}];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -35,8 +77,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 8,
+    pageBy: 24,
   });
+  const url = new URL(request.url);
+  const filters = getFiltersFromParam(url.searchParams);
+  const sort = getSortFromParam(url.searchParams.get('sort'));
 
   if (!handle) {
     throw redirect('/collections');
@@ -44,7 +89,13 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
-      variables: {handle, ...paginationVariables},
+      variables: {
+        handle,
+        filters,
+        sortKey: sort.sortKey,
+        reverse: sort.reverse,
+        ...paginationVariables,
+      },
       // Add other queries here, so that they are loaded in parallel
     }),
   ]);
@@ -75,9 +126,25 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Collection() {
   const {collection} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
+  const parentCrumb = getCollectionParentCrumb({
+    handle: collection.handle,
+    header: rootData?.header,
+    publicStoreDomain: rootData?.publicStoreDomain,
+  });
 
-  const relatedProducts = collection.products.nodes.slice(0, 8);
   const bestSelling = collection.bestSelling?.nodes ?? [];
+  // The API types `input` as a JSON scalar; it's a JSON string at runtime.
+  const filters = (collection.products.filters ?? []).map((filter) => ({
+    id: filter.id,
+    label: filter.label,
+    type: filter.type,
+    values: filter.values.map((value) => ({
+      id: value.id,
+      label: value.label,
+      count: value.count,
+      input: String(value.input),
+    })),
+  }));
 
   return (
     <div className="collection">
@@ -86,18 +153,15 @@ export default function Collection() {
           items={[
             {label: 'Home', to: '/'},
             {label: 'Shop', to: '/collections/all'},
+            parentCrumb,
             {label: collection.title},
           ]}
         />
-      </div>
-
-      <section className="collection-hero">
-        <div className="section-inner collection-hero-inner">
-          <span className="eyebrow">Shop {collection.title}</span>
-          <h1>{collection.title}</h1>
-          {/* collection.description is SEO copy — intentionally not rendered */}
+        <div className="collection-title-row">
+          <h1>{displayTitle(collection)}</h1>
+          <CollectionFilterSidebar filters={filters} />
         </div>
-      </section>
+      </div>
 
       {rootData?.header && (
         <div className="section-inner">
@@ -109,23 +173,98 @@ export default function Collection() {
         </div>
       )}
 
-      <ProductSlider
-        eyebrow="Discover"
-        heading={`Related to ${collection.title}`}
-        products={relatedProducts}
-      />
+      <section className="home-section is-soft">
+        <div className="section-inner collection-layout">
+          <div className="collection-main">
+          <Pagination connection={collection.products}>
+            {({
+              nodes,
+              isLoading,
+              PreviousLink,
+              NextLink,
+              hasNextPage,
+              hasPreviousPage,
+            }) => {
+              // First two rows, an editorial break, then the rest.
+              const firstChunk = nodes.slice(0, 8);
+              const rest = nodes.slice(8);
+              return (
+                <div className="load-more">
+                  {hasPreviousPage && (
+                    <div className="load-more-bar">
+                      <PreviousLink className="load-more-btn is-ghost">
+                        {isLoading ? 'Loading…' : '↑ Load previous'}
+                      </PreviousLink>
+                    </div>
+                  )}
 
-      <CollectionPromo
-        eyebrow="Our Promise"
-        heading="Crafted in Solid Gold, Backed for Life"
-        copy="Every piece is hallmarked, insured against wear, and covered by our lifetime warranty and upgrade program."
-        ctaLabel="Book a Private Consultation"
-        ctaTo="mailto:info@bayamjewelry.com"
-      />
+                  {nodes.length === 0 ? (
+                    <p className="collection-empty">
+                      No pieces match these filters. Try clearing a filter.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="products-grid">
+                        {firstChunk.map((product, index) => (
+                          <ProductItem
+                            key={product.id}
+                            product={product}
+                            loading={index < 8 ? 'eager' : undefined}
+                          />
+                        ))}
+                      </div>
 
-      <ShopByCategory excludeHandle={collection.handle} />
+                      {rest.length > 0 && (
+                        <>
+                          <div className="grid-break">
+                            <div className="grid-break-copy">
+                              <span className="eyebrow">Crafted for Life</span>
+                              <h3>
+                                Hallmarked, insured, and backed by our lifetime
+                                warranty.
+                              </h3>
+                            </div>
+                            <a
+                              className="btn btn-primary"
+                              href="mailto:info@bayamjewelry.com"
+                            >
+                              Book a Consultation
+                            </a>
+                          </div>
 
-      <FeatureStrip />
+                          <div className="products-grid">
+                            {rest.map((product) => (
+                              <ProductItem key={product.id} product={product} />
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  <div className="load-more-bar">
+                    <span className="load-more-count">
+                      {nodes.length} pieces shown
+                    </span>
+                    {hasNextPage ? (
+                      <NextLink className="load-more-btn">
+                        {isLoading ? 'Loading…' : 'Load More'}
+                      </NextLink>
+                    ) : (
+                      nodes.length > 0 && (
+                        <span className="load-more-end">
+                          That&rsquo;s the whole collection
+                        </span>
+                      )
+                    )}
+                  </div>
+                </div>
+              );
+            }}
+          </Pagination>
+          </div>
+        </div>
+      </section>
 
       {bestSelling.length > 0 && (
         <ProductSlider
@@ -137,26 +276,9 @@ export default function Collection() {
         />
       )}
 
-      <section className="home-section is-soft">
-        <div className="section-inner">
-          <div className="home-section-heading">
-            <span className="eyebrow">Full Collection</span>
-            <h2>Shop All {collection.title}</h2>
-          </div>
-          <PaginatedResourceSection<ProductItemFragment>
-            connection={collection.products}
-            resourcesClassName="products-grid"
-          >
-            {({node: product, index}) => (
-              <ProductItem
-                key={product.id}
-                product={product}
-                loading={index < 8 ? 'eager' : undefined}
-              />
-            )}
-          </PaginatedResourceSection>
-        </div>
-      </section>
+      <ShopByCategory excludeHandle={collection.handle} />
+
+      <FeatureStrip />
 
       <Analytics.CollectionView
         data={{
@@ -208,6 +330,9 @@ const COLLECTION_QUERY = `#graphql
     $handle: String!
     $country: CountryCode
     $language: LanguageCode
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
     $first: Int
     $last: Int
     $startCursor: String
@@ -222,8 +347,22 @@ const COLLECTION_QUERY = `#graphql
         first: $first,
         last: $last,
         before: $startCursor,
-        after: $endCursor
+        after: $endCursor,
+        filters: $filters,
+        sortKey: $sortKey,
+        reverse: $reverse
       ) {
+        filters {
+          id
+          label
+          type
+          values {
+            id
+            label
+            count
+            input
+          }
+        }
         nodes {
           ...ProductItem
         }

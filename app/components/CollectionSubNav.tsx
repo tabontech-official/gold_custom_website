@@ -3,6 +3,7 @@ import type {HeaderQuery} from 'storefrontapi.generated';
 import {
   getColumnItems,
   getMegaMenuDepartmentForHandle,
+  MEGA_MENU,
   toRelativeUrl,
 } from '~/lib/megaMenu';
 
@@ -19,10 +20,24 @@ export function CollectionSubNav({
   header: HeaderQuery;
   publicStoreDomain: string;
 }) {
-  const department = getMegaMenuDepartmentForHandle(handle);
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+  const currentPath = `/collections/${handle}`;
+  const department =
+    getMegaMenuDepartmentForHandle(handle) ??
+    MEGA_MENU.find((menuDepartment) =>
+      menuDepartment.columns.some((column) =>
+        getColumnItems(header, column).some((item) => {
+          if (!item.url) return false;
+          return (
+            toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain) ===
+            currentPath
+          );
+        }),
+      ),
+    );
+
   if (!department) return null;
 
-  const primaryDomainUrl = header.shop.primaryDomain.url;
   const items = department.columns.flatMap((column) =>
     getColumnItems(header, column),
   );
@@ -31,7 +46,7 @@ export function CollectionSubNav({
   return (
     <nav className="subnav-pills" aria-label={`${department.label} subcategories`}>
       <NavLink to={department.to} end className={pillClassName}>
-        All
+        All {department.label}
       </NavLink>
       {items.map((item) =>
         item.url ? (

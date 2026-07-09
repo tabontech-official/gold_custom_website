@@ -17,10 +17,12 @@ export function Breadcrumb({
   items,
   className,
 }: {
-  items: Crumb[];
+  items: Array<Crumb | null | undefined>;
   className?: string;
 }) {
-  const crumbs = items.filter((item) => item && item.label);
+  const crumbs = items.filter(
+    (item): item is Crumb => Boolean(item?.label),
+  );
   if (crumbs.length === 0) return null;
 
   return (

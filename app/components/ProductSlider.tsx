@@ -2,13 +2,11 @@ import {Link} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import type {
-  CollectionItemFragment,
   ProductItemFragment,
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 
 type SliderProduct =
-  | CollectionItemFragment
   | ProductItemFragment
   | RecommendedProductFragment;
 

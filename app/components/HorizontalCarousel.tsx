@@ -1,5 +1,6 @@
 import {ReactLenis, type LenisRef} from 'lenis/react';
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
+import {enableDragScroll} from '~/lib/dragScroll';
 
 /**
  * Horizontal scroller powered by Lenis for smooth wheel / trackpad scrolling on
@@ -38,9 +39,11 @@ export function HorizontalCarousel({
     const observer = new ResizeObserver(update);
     observer.observe(wrapper);
     if (content) observer.observe(content);
+    const disableDrag = enableDragScroll(wrapper);
     return () => {
       wrapper.removeEventListener('scroll', update);
       observer.disconnect();
+      disableDrag();
     };
   }, [update]);
 

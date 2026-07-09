@@ -19,7 +19,7 @@ import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
 const HEADER_UTILITY_MESSAGES = [
   'Complimentary shipping and returns',
   'Lifetime warranty on every piece',
-  'Private NYC styling appointments',
+  'Private Los Angeles appointments',
 ];
 
 interface HeaderProps {
@@ -52,45 +52,60 @@ export function Header({
 
   return (
     <>
-      <div className="header-utility">
-        <span className="header-utility-location">
-          From New York, NY
-          <a className="header-utility-book-btn" href="/contact">
-            Book An Appointment
-          </a>
+      {/* Tier 1 — announcement micro-banner with golden shimmer */}
+      <div className="announcement-bar" aria-live="polite">
+        <Link className="announcement-link" to="/contact">
+          Book Now
+        </Link>
+        <span key={utilityMessageIndex} className="announcement-text">
+          {HEADER_UTILITY_MESSAGES[utilityMessageIndex]}
         </span>
-        <span className="header-utility-message" aria-live="polite">
-          <span
-            key={utilityMessageIndex}
-            className="header-utility-message-text"
-          >
-            {HEADER_UTILITY_MESSAGES[utilityMessageIndex]}
-          </span>
-        </span>
-        <span className="header-utility-support">Fine jewelry specialists</span>
-      </div>
-      <header className="header">
-        <HeaderMenuMobileToggle />
-        <NavLink
-          prefetch="intent"
-          to="/"
-          style={activeLinkStyle}
-          end
-          className="header-logo"
+        <a
+          className="announcement-link"
+          href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
+          target="_blank"
+          rel="noreferrer"
         >
+          Los Angeles
+        </a>
+      </div>
+
+      {/* Tier 2 — search + region | logo | account + cart */}
+      <div className="header-primary">
+        <div className="header-primary-left">
+          <HeaderMenuMobileToggle />
+          <HeaderSearchBar />
+        </div>
+        <NavLink prefetch="intent" to="/" end className="header-logo">
           {shop.name}
         </NavLink>
+        <div className="header-primary-right">
+          <HeaderCtas cart={cart} isLoggedIn={isLoggedIn} />
+        </div>
+      </div>
+
+      {/* Tier 3 — mega menu bar */}
+      <header className="header">
         <HeaderMenu
           header={header}
           viewport="desktop"
           primaryDomainUrl={header.shop.primaryDomain.url}
           publicStoreDomain={publicStoreDomain}
         />
-        <div className="header-actions">
-          <HeaderCtas cart={cart} isLoggedIn={isLoggedIn} />
-        </div>
       </header>
     </>
+  );
+}
+
+// ponytail: single market — the store ships to the US and prices in USD, so
+// this is a fixed label, not a picker. Turn it into a selector only if/when
+// more Hydrogen markets are enabled.
+function RegionSelector() {
+  return (
+    <span className="region-pill region-static">
+      <span aria-hidden="true">🇺🇸</span>
+      US / USD
+    </span>
   );
 }
 
@@ -234,49 +249,12 @@ export function HeaderMenu({
     return (
       <nav className="header-menu-desktop mega-menu" role="navigation">
         {MEGA_MENU.map((department) => (
-          <div className="mega-menu-item" key={department.id}>
-            <NavLink
-              className="header-menu-item"
-              prefetch="intent"
-              to={department.to}
-            >
-              {department.label}
-            </NavLink>
-            <div className="mega-menu-panel">
-              <div className="mega-menu-columns">
-                {department.columns.map((column, index) => {
-                  const items = getColumnItems(header, column);
-                  if (!items.length) return null;
-                  return (
-                    <div className="mega-menu-column" key={index}>
-                      {column.title && <h5>{column.title}</h5>}
-                      <ul>
-                        {items.map((item) =>
-                          item.url ? (
-                            <li key={item.id}>
-                              <NavLink
-                                prefetch="intent"
-                                to={relativeUrl(item.url)}
-                              >
-                                {item.title}
-                              </NavLink>
-                            </li>
-                          ) : null,
-                        )}
-                      </ul>
-                    </div>
-                  );
-                })}
-              </div>
-              <NavLink
-                className="mega-menu-viewall"
-                prefetch="intent"
-                to={department.to}
-              >
-                Shop All {department.label} &rarr;
-              </NavLink>
-            </div>
-          </div>
+          <MegaMenuItem
+            department={department}
+            header={header}
+            key={department.id}
+            relativeUrl={relativeUrl}
+          />
         ))}
       </nav>
     );
@@ -284,6 +262,127 @@ export function HeaderMenu({
 
   return (
     <MobileMenu header={header} relativeUrl={relativeUrl} onNavigate={close} />
+  );
+}
+
+type FeaturedProduct = {
+  id: string;
+  title: string;
+  handle: string;
+  priceRange?: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
+  featuredImage: {
+    url: string;
+    altText: string | null;
+    width: number;
+    height: number;
+  } | null;
+};
+
+function MegaMenuItem({
+  department,
+  header,
+  relativeUrl,
+}: {
+  department: (typeof MEGA_MENU)[number];
+  header: HeaderProps['header'];
+  relativeUrl: (url: string) => string;
+}) {
+  const fetcher = useFetcher<{products: FeaturedProduct[]}>();
+  const handle = department.to.replace('/collections/', '');
+
+  // Lazy-load this department's real products the first time it's hovered.
+  function loadProducts() {
+    if (fetcher.data || fetcher.state !== 'idle') return;
+    fetcher.load(`/api/collection-products?handle=${handle}`);
+  }
+
+  const products = (fetcher.data?.products ?? []).slice(0, 3);
+  const isLoading = fetcher.state === 'loading' || !fetcher.data;
+  const menuItems = department.columns
+    .flatMap((column) => getColumnItems(header, column))
+    .filter((item) => item.url);
+  const featuredProducts = products.slice(0, 2);
+
+  return (
+    <div
+      className="mega-menu-item"
+      onFocus={loadProducts}
+      onMouseEnter={loadProducts}
+    >
+      <NavLink
+        className="header-menu-item"
+        prefetch="intent"
+        to={department.to}
+      >
+        {department.label}
+      </NavLink>
+      <div className="mega-menu-panel">
+        <div className="mega-menu-inner">
+          <div className="mega-menu-links-panel">
+            <ul className="mega-menu-link-list">
+              {menuItems.map((item) => (
+                <li key={item.id}>
+                  <NavLink prefetch="intent" to={relativeUrl(item.url ?? '')}>
+                    {item.title}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+            <NavLink
+              className="mega-menu-shop-button"
+              prefetch="intent"
+              to={department.to}
+            >
+              Shop {department.label}
+            </NavLink>
+          </div>
+
+          <div className="mega-menu-featured">
+            <h3>Best Sellers</h3>
+            <div className="mega-menu-product-grid">
+              {featuredProducts.length > 0
+                ? featuredProducts.map((product) => (
+                  <Link
+                    className="mega-menu-card"
+                    key={product.id}
+                    prefetch="intent"
+                    to={`/products/${product.handle}`}
+                  >
+                    {product.featuredImage ? (
+                      <Image
+                        className="mega-menu-card-img"
+                        data={product.featuredImage}
+                        width={150}
+                        height={188}
+                        sizes="150px"
+                      />
+                    ) : (
+                      <span className="mega-menu-card-img" />
+                    )}
+                    <span className="mega-menu-card-title">{product.title}</span>
+                    {product.priceRange?.minVariantPrice && (
+                      <span className="mega-menu-card-price">
+                        <Money data={product.priceRange.minVariantPrice as any} />
+                      </span>
+                    )}
+                  </Link>
+                ))
+                : isLoading &&
+                Array.from({length: 2}).map((_, index) => (
+                  <span className="mega-menu-card" key={index}>
+                    <span className="mega-menu-card-img is-loading" />
+                  </span>
+                ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -452,7 +551,7 @@ function SearchIcon() {
 
 function PhoneIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
       <path
         d="M6.6 10.8c1.4 2.8 3.8 5.2 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.9 21 3 13.1 3 3.6c0-.6.4-1 1-1h3.4c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.4 0 .8-.3 1L6.6 10.8Z"
         stroke="currentColor"
@@ -465,7 +564,7 @@ function PhoneIcon() {
 
 function UserIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.6" />
       <path
         d="M4.5 21a7.5 7.5 0 0 1 15 0"
@@ -479,7 +578,7 @@ function UserIcon() {
 
 function BagIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
       <path
         d="M6 8h12l-1 12.5a1 1 0 0 1-1 .9H8a1 1 0 0 1-1-.9L6 8Z"
         stroke="currentColor"
@@ -511,15 +610,3 @@ function CartBanner() {
   return <CartBadge count={cart?.totalQuantity ?? 0} />;
 }
 
-function activeLinkStyle({
-  isActive,
-  isPending,
-}: {
-  isActive: boolean;
-  isPending: boolean;
-}) {
-  return {
-    fontWeight: isActive ? 'bold' : undefined,
-    color: isPending ? 'grey' : 'black',
-  };
-}

@@ -108,22 +108,46 @@ export function Footer({
                   </ul>
                 </div>
 
-                <div className="footer-col">
-                  <h4>Find Us</h4>
-                  <ul>
-                    <li>10 W 46th St, Floor 17, New York, NY 10036</li>
-                    <li>Mon &ndash; Fri 10am &ndash; 6pm EST</li>
-                    <li>Sat &ndash; Sun Closed</li>
-                    <li>
-                      <a href="tel:9299305655">929-930-5655</a>
-                    </li>
-                    <li>
-                      <a href="mailto:info@bayamjewelry.com">info@bayamjewelry.com</a>
-                    </li>
-                    <li>
-                      <a href="/contact">Book an Appointment</a>
-                    </li>
-                  </ul>
+                <div className="footer-col footer-contact-col">
+                  <h4>Stay Connected</h4>
+                  <div className="footer-contact-grid">
+                    <div>
+                      <span className="footer-contact-label">Contact</span>
+                      <ul>
+                        <li>
+                          <a href="tel:+13236888837">+1 (323) 688-8837</a>
+                        </li>
+                        <li>
+                          <a href="mailto:mr10k@goldcustom.com">
+                            mr10k@goldcustom.com
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="footer-contact-label">Location</span>
+                      <ul>
+                        <li>
+                          <a
+                            href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            550 S Hill Street Suite 660, Los Angeles, CA
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            90013
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
               </div>
 
