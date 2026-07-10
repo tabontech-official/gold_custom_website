@@ -30,14 +30,19 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const [{collections}, categoryResponse, trustBadgesResponse] = await Promise.all([
-    context.storefront.query(FEATURED_COLLECTION_QUERY),
-    context.storefront.query(SHOP_BY_CATEGORIES_QUERY),
-    context.storefront.query(TRUST_BADGES_QUERY).catch((error: Error) => {
-      console.error(error);
-      return null;
-    }),
-  ]);
+  const [{collections}, categoryResponse, trustBadgesResponse, heroResponse] =
+    await Promise.all([
+      context.storefront.query(FEATURED_COLLECTION_QUERY),
+      context.storefront.query(SHOP_BY_CATEGORIES_QUERY),
+      context.storefront.query(TRUST_BADGES_QUERY).catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
+      context.storefront.query(HERO_CONTENT_QUERY).catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
+    ]);
 
   return {
     featuredCollection: collections.nodes[0],
@@ -52,7 +57,24 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
       categoryResponse.engagementRings,
     ].filter(Boolean),
     trustBadges: parseTrustBadges(trustBadgesResponse),
+    hero: parseHeroContent(heroResponse),
   };
+}
+
+// Pulls the hero images + heading out of the hero_content metaobject.
+// Returns null when the metaobject is missing so the hardcoded hero renders.
+function parseHeroContent(response: any) {
+  const fields = response?.metaobjects?.nodes?.[0]?.fields;
+  if (!Array.isArray(fields)) return null;
+
+  const images: string[] = [];
+  let heading: string | null = null;
+  for (const field of fields as any[]) {
+    const url = field?.reference?.image?.url;
+    if (url) images.push(url);
+    if (field?.key === 'image_heading' && field?.value) heading = field.value;
+  }
+  return {heading, images};
 }
 
 /**
@@ -94,7 +116,7 @@ export default function Homepage() {
   const data = useLoaderData<typeof loader>();
   return (
     <div className="home">
-      <Hero />
+      <Hero content={data.hero} />
       <ShopByCategory categories={data.categories} />
       <TrustPromise badges={data.trustBadges} />
       <RecommendedProducts
@@ -111,16 +133,56 @@ export default function Homepage() {
   );
 }
 
-function Hero() {
+function Hero({
+  content,
+}: {
+  content: {heading: string | null; images: string[]} | null;
+}) {
+  const images = content?.images ?? [];
+  // First line of the heading renders plain, remaining lines in gold italic.
+  const [firstLine, ...restLines] = (content?.heading ?? '')
+    .trim()
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   return (
     <>
     <section className="hero">
-      <div className="hero-bg hero-bg-cover" aria-hidden="true" />
-      <div className="hero-bg hero-bg-cover-alt" aria-hidden="true" />
+      {images.length ? (
+        images.map((url, index) => (
+          <div
+            key={index}
+            className="hero-bg"
+            style={{
+              backgroundImage: `url(${url})`,
+              ...(images.length > 1
+                ? {
+                    animationDuration: `${images.length * 5}s`,
+                    animationDelay: `${index * 5}s`,
+                  }
+                : {animation: 'none', opacity: 1}),
+            }}
+            aria-hidden="true"
+          />
+        ))
+      ) : (
+        <>
+          <div className="hero-bg hero-bg-cover" aria-hidden="true" />
+          <div className="hero-bg hero-bg-cover-alt" aria-hidden="true" />
+        </>
+      )}
       <div className="hero-inner">
-        <h1>
-          Your Moment Your <span>Story in Gold..</span>
-        </h1>
+        {firstLine ? (
+          <h1>
+            {firstLine}
+            {restLines.length > 0 && <span>{restLines.join(' ')}</span>}
+          </h1>
+        ) : (
+          <h1>
+            Your Moment Your <span>Story in Gold..</span>
+          </h1>
+        )}
       </div>
     </section>
     <MarketBar />
@@ -638,6 +700,29 @@ export const TRUST_BADGES_QUERY = `#graphql
   }
 ` as const;
 
+
+// First (and only) hero_content metaobject entry: 3 rotating images + heading.
+const HERO_CONTENT_QUERY = `#graphql
+  query HeroContent($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    metaobjects(type: "hero_content", first: 1) {
+      nodes {
+        fields {
+          key
+          value
+          reference {
+            ... on MediaImage {
+              image {
+                url
+                altText
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+` as const;
 
 const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   fragment RecommendedProduct on Product {
