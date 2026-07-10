@@ -3153,9 +3153,9 @@ button.reset:hover:not(:has(> *)) {
     border-color 0.2s ease;
 }
 
-.coverflow-card.is-active:hover .coverflow-card-links,
-.coverflow-card:hover .coverflow-card-links,
-.coverflow-card:focus-within .coverflow-card-links {
+/* Only the centered card shows its Shop Now button, and it stays shown
+   (no hover needed) until another card slides to the front. */
+.coverflow-card.is-active .coverflow-card-links {
   opacity: 1;
   transform: translateY(0);
 }
