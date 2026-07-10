@@ -102,16 +102,10 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
                 </h3>
                 <div className="coverflow-card-links">
                   <Link
-                    to={`/collections/${item.handle}?gender=men`}
+                    to={`/collections/${item.handle}`}
                     onClick={(event) => event.stopPropagation()}
                   >
-                    Men
-                  </Link>
-                  <Link
-                    to={`/collections/${item.handle}?gender=women`}
-                    onClick={(event) => event.stopPropagation()}
-                  >
-                    Women
+                    Shop Now
                   </Link>
                 </div>
               </div>
