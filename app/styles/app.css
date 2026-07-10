@@ -4296,6 +4296,8 @@ button.reset:hover:not(:has(> *)) {
   aspect-ratio: 1 / 1;
   overflow: hidden;
   background: var(--color-bg-soft);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
 }
 
 .pgg-tile img,
@@ -4309,20 +4311,9 @@ button.reset:hover:not(:has(> *)) {
   border: 0;
 }
 
-/* 1 image: one large square */
+/* 1 image: one large square spanning both columns */
 .product-grid-gallery[data-count='1'] {
   grid-template-columns: 1fr;
-}
-
-/* 2 images: two vertical rectangles */
-.product-grid-gallery[data-count='2'] .pgg-tile {
-  aspect-ratio: 3 / 4;
-}
-
-/* 3 images: tall feature left, two squares stacked right */
-.product-grid-gallery[data-count='3'] .pgg-tile:first-child {
-  grid-row: span 2;
-  aspect-ratio: auto;
 }
 
 .product-gallery-empty {

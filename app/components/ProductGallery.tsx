@@ -72,6 +72,19 @@ export function ProductGallery({
   );
 }
 
+/**
+ * Shopify's Video.sources mixes MP4 renditions with an HLS stream
+ * (application/x-mpegURL), which non-Safari browsers can't play natively and
+ * won't fall back from. Drop HLS when an MP4 exists so playback works
+ * everywhere; keep original order otherwise.
+ */
+const isHls = (mime?: string | null) => /mpegurl/i.test(mime ?? '');
+
+function playableSources(sources: NonNullable<GalleryMedia['sources']>) {
+  const mp4 = sources.filter((s) => !isHls(s.mimeType));
+  return mp4.length ? mp4 : sources;
+}
+
 function GalleryTile({media: m, title}: {media: GalleryMedia; title: string}) {
   return (
     <div className="pgg-tile">
@@ -93,9 +106,10 @@ function GalleryTile({media: m, title}: {media: GalleryMedia; title: string}) {
           className="pgg-media"
           controls
           playsInline
+          preload="metadata"
           poster={m.thumbUrl || undefined}
         >
-          {m.sources.map((source) => (
+          {playableSources(m.sources).map((source) => (
             <source
               key={source.url}
               src={source.url}

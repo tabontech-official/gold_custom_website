@@ -39,7 +39,17 @@ export default async function handleRequest(
       'https://elfsightcdn.com',
       'https://*.elfsightcdn.com',
     ],
-    mediaSrc: ["'self'", 'https://cdn.shopify.com', 'blob:', 'data:'],
+    // Hosted product videos are served from the store's own domain
+    // (e.g. goldcustom.com/cdn/shop/videos/...), not cdn.shopify.com.
+    mediaSrc: [
+      "'self'",
+      'https://cdn.shopify.com',
+      'https://*.shopifycdn.com',
+      `https://${context.env.PUBLIC_STORE_DOMAIN}`,
+      'https://goldcustom.com',
+      'blob:',
+      'data:',
+    ],
     imgSrc: [
       "'self'",
       'https://cdn.shopify.com',

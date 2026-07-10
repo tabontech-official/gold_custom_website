@@ -218,52 +218,58 @@ function PromiseTicker() {
 }
 type CategoryTile = any;
 
+// Copy only — this crosses the loader serialization boundary, so it must be
+// plain JSON (no JSX). Icons live in TRUST_ICONS and are paired by title in
+// the component. ponytail: don't put React elements in loader data.
 export const TRUST_PROMISES = [
   {
     title: 'Certified Purity',
     copy:
       'Every gold and diamond piece is quality checked, hallmarked, and documented before it reaches your hands.',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M6.5 4.5h11L21 9l-9 10L3 9l3.5-4.5Z" />
-        <path d="M3 9h18M8 4.5 12 19M16 4.5 12 19" />
-      </svg>
-    ),
   },
   {
     title: 'Master Craft',
     copy:
       'Our jewelers shape each detail with refined finishing, secure settings, and everyday-wear comfort.',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.75a4 4 0 0 1 4 4v2.2a4 4 0 1 1-8 0v-2.2a4 4 0 0 1 4-4Z" />
-        <path d="m8.8 14.1-1.2 5.4 4.4-2.2 4.4 2.2-1.2-5.4" />
-      </svg>
-    ),
   },
   {
     title: 'Lifetime Care',
     copy:
       'Enjoy professional cleaning, careful inspection, and support designed to keep your jewelry brilliant.',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M12 3.5 19 6v5.2c0 4.3-2.9 7.6-7 9.3-4.1-1.7-7-5-7-9.3V6l7-2.5Z" />
-        <path d="m8.8 12 2.1 2.1 4.5-4.7" />
-      </svg>
-    ),
   },
   {
     title: 'Secure Delivery',
     copy:
       'Your order is packed with care, fully insured in transit, and presented in premium gift-ready packaging.',
-    icon: (
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4.5 8.5 12 4l7.5 4.5v7L12 20l-7.5-4.5v-7Z" />
-        <path d="M4.8 8.8 12 13l7.2-4.2M12 13v7" />
-      </svg>
-    ),
   },
 ];
+
+const TRUST_ICONS: Record<string, React.ReactNode> = {
+  'Certified Purity': (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6.5 4.5h11L21 9l-9 10L3 9l3.5-4.5Z" />
+      <path d="M3 9h18M8 4.5 12 19M16 4.5 12 19" />
+    </svg>
+  ),
+  'Master Craft': (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3.75a4 4 0 0 1 4 4v2.2a4 4 0 1 1-8 0v-2.2a4 4 0 0 1 4-4Z" />
+      <path d="m8.8 14.1-1.2 5.4 4.4-2.2 4.4 2.2-1.2-5.4" />
+    </svg>
+  ),
+  'Lifetime Care': (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 3.5 19 6v5.2c0 4.3-2.9 7.6-7 9.3-4.1-1.7-7-5-7-9.3V6l7-2.5Z" />
+      <path d="m8.8 12 2.1 2.1 4.5-4.7" />
+    </svg>
+  ),
+  'Secure Delivery': (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4.5 8.5 12 4l7.5 4.5v7L12 20l-7.5-4.5v-7Z" />
+      <path d="M4.8 8.8 12 13l7.2-4.2M12 13v7" />
+    </svg>
+  ),
+};
 
 export function parseTrustBadges(response: any) {
   const fields = response?.metaobject?.fields;
@@ -306,7 +312,7 @@ export function TrustPromise({badges}: {badges: typeof TRUST_PROMISES}) {
         <div className="trust-promise-grid">
           {badges.map((item) => (
             <article className="trust-promise-card" key={item.title}>
-              <span className="trust-promise-icon">{item.icon}</span>
+              <span className="trust-promise-icon">{TRUST_ICONS[item.title]}</span>
               <h3>{item.title}</h3>
               <p>{item.copy}</p>
             </article>
