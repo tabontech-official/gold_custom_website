@@ -13,6 +13,7 @@ import {
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {getWishlist} from '~/lib/wishlist';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
@@ -98,6 +99,7 @@ export async function loader(args: Route.LoaderArgs) {
   return {
     ...deferredData,
     ...criticalData,
+    wishlist: getWishlist(args.context.session),
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
     shop: getShopAnalytics({
       storefront,

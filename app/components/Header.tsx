@@ -1,5 +1,13 @@
 import {Suspense, useEffect, useRef, useState} from 'react';
-import {Await, Link, NavLink, useAsyncValue, useFetcher} from 'react-router';
+import {
+  Await,
+  Link,
+  NavLink,
+  useAsyncValue,
+  useFetcher,
+  useRouteLoaderData,
+} from 'react-router';
+import type {RootLoader} from '~/root';
 import {
   Image,
   Money,
@@ -494,6 +502,7 @@ function HeaderCtas({
   return (
     <nav className="header-ctas" role="navigation">
       <SearchToggle />
+      <WishlistToggle />
       <NavLink
         aria-label="Account"
         className="header-cta-link"
@@ -532,6 +541,35 @@ function SearchToggle() {
     >
       <SearchIcon />
     </button>
+  );
+}
+
+function WishlistToggle() {
+  const root = useRouteLoaderData<RootLoader>('root');
+  const count = root?.wishlist?.length ?? 0;
+  return (
+    <NavLink
+      aria-label="Wishlist"
+      className="header-cta-icon"
+      prefetch="intent"
+      to="/wishlist"
+    >
+      <HeartIcon />
+      {count > 0 && <span className="header-cart-count">{count}</span>}
+    </NavLink>
+  );
+}
+
+function HeartIcon() {
+  return (
+    <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 20.5l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 5.5 3.5 4 5.5 4c1.54 0 3.04.99 3.57 2.36h1.87C11.46 4.99 12.96 4 14.5 4 16.5 4 18 5.5 18 7.5c0 3.78-3.4 6.86-8.55 11.68L12 20.5z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

@@ -33,7 +33,7 @@ async function loadCriticalData({
   params,
 }: Route.LoaderArgs) {
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 4,
+    pageBy: 12,
   });
 
   if (!params.blogHandle) {
@@ -77,18 +77,23 @@ export default function Blog() {
       <Breadcrumb
         items={[
           {label: 'Home', to: '/'},
-          {label: 'Blogs', to: '/blogs'},
+          {label: 'Journal', to: '/blogs'},
           {label: blog.title},
         ]}
       />
-      <h1>{blog.title}</h1>
-      <div className="blog-grid">
-        <PaginatedResourceSection<ArticleItemFragment> connection={articles}>
+      <div className="section-inner">
+        <div className="editorial-heading">
+          <h1 className="editorial-title">{blog.title}</h1>
+        </div>
+        <PaginatedResourceSection<ArticleItemFragment>
+          connection={articles}
+          resourcesClassName="products-grid"
+        >
           {({node: article, index}) => (
             <ArticleItem
               article={article}
               key={article.id}
-              loading={index < 2 ? 'eager' : 'lazy'}
+              loading={index < 3 ? 'eager' : 'lazy'}
             />
           )}
         </PaginatedResourceSection>
@@ -109,25 +114,49 @@ function ArticleItem({
     month: 'long',
     day: 'numeric',
   }).format(new Date(article.publishedAt!));
+  const to = `/blogs/${article.blog.handle}/${article.handle}`;
+  const detail = articleExcerpt(article);
+
   return (
-    <div className="blog-article" key={article.id}>
-      <Link to={`/blogs/${article.blog.handle}/${article.handle}`}>
+    <article className="blog-card" key={article.id}>
+      <Link className="blog-card-media" to={to} prefetch="intent" tabIndex={-1}>
         {article.image && (
-          <div className="blog-article-image">
-            <Image
-              alt={article.image.altText || article.title}
-              aspectRatio="3/2"
-              data={article.image}
-              loading={loading}
-              sizes="(min-width: 768px) 50vw, 100vw"
-            />
-          </div>
+          <Image
+            alt={article.image.altText || article.title}
+            aspectRatio="3/2"
+            data={article.image}
+            loading={loading}
+            sizes="(min-width: 768px) 33vw, 100vw"
+          />
         )}
-        <h3>{article.title}</h3>
-        <small>{publishedAt}</small>
       </Link>
-    </div>
+      <div className="blog-card-body">
+        <time className="blog-card-date" dateTime={article.publishedAt!}>
+          {publishedAt}
+        </time>
+        <h3 className="blog-card-title">
+          <Link to={to} prefetch="intent">
+            {article.title}
+          </Link>
+        </h3>
+        {detail && <p className="blog-card-excerpt">{detail}</p>}
+        <Link className="blog-card-more" to={to} prefetch="intent">
+          Read More &rarr;
+        </Link>
+      </div>
+    </article>
   );
+}
+
+// Prefer Shopify's stripped excerpt; fall back to the first ~160 chars of the
+// article body with tags removed so a card is never left blank.
+function articleExcerpt(article: ArticleItemFragment): string {
+  if (article.excerpt?.trim()) return article.excerpt.trim();
+  const text = (article.contentHtml ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > 160 ? `${text.slice(0, 160).trimEnd()}…` : text;
 }
 
 // NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
@@ -172,6 +201,7 @@ const BLOGS_QUERY = `#graphql
       name
     }
     contentHtml
+    excerpt
     handle
     id
     image {

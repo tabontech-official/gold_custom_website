@@ -1,6 +1,6 @@
-import {useState} from 'react';
-import {Link} from 'react-router';
+import {Link, useFetcher, useRouteLoaderData} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
+import type {RootLoader} from '~/root';
 import type {
   ProductItemFragment,
   RecommendedProductFragment,
@@ -45,9 +45,9 @@ export function ProductItem({
   loading?: 'eager' | 'lazy';
   className?: string;
 }) {
-  const [wished, setWished] = useState(false);
   const {open} = useAside();
   const productUrl = `/products/${product.handle}`;
+  const wished = useIsWishlisted(product.handle);
   const image = product.featuredImage;
   const firstVariant =
     product.selectedOrFirstAvailableVariant ?? product.variants?.nodes?.[0];
@@ -79,15 +79,7 @@ export function ProductItem({
         </Link>
 
         <div className="product-card-actions">
-          <button
-            type="button"
-            className={`product-wishlist ${wished ? 'is-active' : ''}`}
-            aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
-            aria-pressed={wished}
-            onClick={() => setWished((value) => !value)}
-          >
-            <HeartIcon />
-          </button>
+          <WishlistButton handle={product.handle} wished={wished} />
 
           <div className="product-card-price">
             <Money data={product.priceRange.minVariantPrice} />
@@ -114,5 +106,33 @@ export function ProductItem({
         </div>
       </div>
     </article>
+  );
+}
+
+/** Is this handle saved? Reads the wishlist from the root loader. */
+function useIsWishlisted(handle: string): boolean {
+  const root = useRouteLoaderData<RootLoader>('root');
+  return (root?.wishlist ?? []).includes(handle);
+}
+
+// Heart toggle. Posts to /wishlist and flips optimistically while the request
+// is in flight so the shopper never waits on the server. Root revalidates on
+// the POST, so the header count and every other card stay in sync.
+function WishlistButton({handle, wished}: {handle: string; wished: boolean}) {
+  const fetcher = useFetcher();
+  const active = fetcher.state === 'idle' ? wished : !wished;
+
+  return (
+    <fetcher.Form method="post" action="/wishlist">
+      <input type="hidden" name="handle" value={handle} />
+      <button
+        type="submit"
+        className={`product-wishlist ${active ? 'is-active' : ''}`}
+        aria-label={active ? 'Remove from wishlist' : 'Add to wishlist'}
+        aria-pressed={active}
+      >
+        <HeartIcon />
+      </button>
+    </fetcher.Form>
   );
 }

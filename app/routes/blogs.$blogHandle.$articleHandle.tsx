@@ -84,29 +84,41 @@ export default function Article() {
   }).format(new Date(article.publishedAt));
 
   return (
-    <div className="article">
+    <article className="article">
       <Breadcrumb
         items={[
           {label: 'Home', to: '/'},
-          {label: 'Blogs', to: '/blogs'},
+          {label: 'Journal', to: '/blogs'},
           {label: blogLabel, to: `/blogs/${blogHandle}`},
           {label: title},
         ]}
       />
-      <h1>
-        {title}
-        <div>
-          <time dateTime={article.publishedAt}>{publishedDate}</time> &middot;{' '}
-          <address>{author?.name}</address>
-        </div>
-      </h1>
 
-      {image && <Image data={image} sizes="90vw" loading="eager" />}
+      <header className="article-header">
+        <span className="eyebrow">{blogLabel}</span>
+        <h1 className="article-title">{title}</h1>
+        <div className="article-meta">
+          <time dateTime={article.publishedAt}>{publishedDate}</time>
+          {author?.name && (
+            <>
+              <span aria-hidden="true">&middot;</span>
+              <address>{author.name}</address>
+            </>
+          )}
+        </div>
+      </header>
+
+      {image && (
+        <div className="article-hero">
+          <Image data={image} sizes="(min-width: 1100px) 1040px, 100vw" loading="eager" />
+        </div>
+      )}
+
       <div
+        className="article-body"
         dangerouslySetInnerHTML={{__html: contentHtml}}
-        className="article"
       />
-    </div>
+    </article>
   );
 }
 
