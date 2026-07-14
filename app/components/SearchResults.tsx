@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {Image, Money, Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
+import {AutoLoadMore} from '~/components/AutoLoadMore';
 
 type SearchItems = RegularSearchReturn['result']['items'];
 type PartialSearchResult<ItemType extends keyof SearchItems> = Pick<
@@ -105,7 +106,7 @@ function SearchResultsProducts({
     <div className="search-result">
       <h2>Products</h2>
       <Pagination connection={products}>
-        {({nodes, isLoading, NextLink, PreviousLink}) => {
+        {({nodes, isLoading, NextLink, PreviousLink, hasNextPage}) => {
           const ItemsMarkup = nodes.map((product) => {
             const productUrl = urlWithTrackingParams({
               baseUrl: `/products/${product.handle}`,
@@ -142,8 +143,9 @@ function SearchResultsProducts({
                 {ItemsMarkup}
                 <br />
               </div>
-              <div>
-                <NextLink>
+              <div className="load-more-bar">
+                <AutoLoadMore hasNextPage={hasNextPage} isLoading={isLoading} />
+                <NextLink className="load-more-btn">
                   {isLoading ? 'Loading...' : <span>Load more ↓</span>}
                 </NextLink>
               </div>

@@ -68,15 +68,19 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
           if (offset > n / 2) offset -= n;
           if (offset < -n / 2) offset += n;
           const abs = Math.abs(offset);
-          const visible = abs <= 2;
+          // Render one ring wider than shown so cards fade in/out instead of
+          // popping at the visibility boundary. opacity always animates.
+          const visible = abs <= 3;
           const isActive = offset === 0;
           const style = {
             '--offset': offset,
             '--abs': abs,
             zIndex: 100 - abs,
-            opacity: visible ? undefined : 0,
-            pointerEvents: visible ? undefined : 'none',
+            opacity: abs <= 2 ? 1 : 0,
+            pointerEvents: abs <= 2 ? undefined : 'none',
           } as CSSProperties;
+
+          if (!visible) return null;
 
           return (
             <article

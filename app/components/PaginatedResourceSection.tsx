@@ -1,5 +1,6 @@
 import * as React from 'react';
 import {Pagination} from '@shopify/hydrogen';
+import {AutoLoadMore} from './AutoLoadMore';
 
 /**
  * Append-style "Load More" grid. Hydrogen's <Pagination> accumulates the nodes
@@ -39,6 +40,7 @@ export function PaginatedResourceSection<NodesType>({
 
             <div className="load-more-bar">
               <span className="load-more-count">{nodes.length} pieces shown</span>
+              <AutoLoadMore hasNextPage={hasNextPage} isLoading={isLoading} />
               {hasNextPage ? (
                 <NextLink className="load-more-btn">
                   {isLoading ? 'Loading…' : 'Load More'}

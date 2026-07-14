@@ -316,14 +316,42 @@ function MegaMenuItem({
   const [isClosing, setIsClosing] = useState(false);
   const handle = department.to.replace('/collections/', '');
 
-  // Lazy-load this department's real products the first time it's hovered.
+  // Load this department's real products (and their images) once, so hovering
+  // is instant. Kicked off during browser idle time so it never competes with
+  // the initial page render; hover/focus below is just a fallback trigger.
   function loadProducts() {
     if (fetcher.data || fetcher.state !== 'idle') return;
     fetcher.load(`/api/collection-products?handle=${handle}`);
   }
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ric = window.requestIdleCallback;
+    if (ric) ric(loadProducts);
+    else window.setTimeout(loadProducts, 200);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const products = (fetcher.data?.products ?? []).slice(0, 3);
   const isLoading = fetcher.state === 'loading' || !fetcher.data;
+
+  // Warm the actual image bytes into the browser cache as soon as the product
+  // data lands, so the shown images render instantly on hover — no wait. Match
+  // the sizing the <Image> below requests (width 150, height 188) so it's an
+  // exact cache hit; Shopify's CDN honours these query params.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    for (const product of products.slice(0, 2)) {
+      const url = product.featuredImage?.url;
+      if (!url) continue;
+      const sized = new URL(url);
+      sized.searchParams.set('width', '150');
+      sized.searchParams.set('height', '188');
+      sized.searchParams.set('crop', 'center');
+      new window.Image().src = sized.toString();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fetcher.data]);
   const menuItems = department.columns
     .flatMap((column) => getColumnItems(header, column))
     .filter((item) => item.url);
