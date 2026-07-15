@@ -13,7 +13,7 @@ export type SortOption = {
 export const SORT_OPTIONS: SortOption[] = [
   {label: 'Featured', value: 'featured', sortKey: 'COLLECTION_DEFAULT', reverse: false},
   {label: 'Best Selling', value: 'best-selling', sortKey: 'BEST_SELLING', reverse: false},
-  {label: 'Newest', value: 'newest', sortKey: 'CREATED', reverse: true},
+  {label: 'New Arrivals', value: 'newest', sortKey: 'CREATED', reverse: true},
   {label: 'Price: Low to High', value: 'price-asc', sortKey: 'PRICE', reverse: false},
   {label: 'Price: High to Low', value: 'price-desc', sortKey: 'PRICE', reverse: true},
 ];
@@ -27,15 +27,8 @@ export function getFiltersFromParam(searchParams: URLSearchParams): ProductFilte
   const filters: ProductFilter[] = [];
   for (const value of searchParams.getAll('filter')) {
     try {
-      const filter = JSON.parse(value) as ProductFilter;
-      if (
-        filter &&
-        typeof filter === 'object' &&
-        ('price' in filter || 'available' in filter)
-      ) {
-        continue;
-      }
-      filters.push(filter);
+      // every facet has sidebar UI now, price slider included
+      filters.push(JSON.parse(value) as ProductFilter);
     } catch {
       // ignore malformed filter params
     }

@@ -8,13 +8,6 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {AutoLoadMore} from '~/components/AutoLoadMore';
-import {
-  SHOP_BY_CATEGORIES_QUERY,
-  TRUST_BADGES_QUERY,
-  ShopByCategory,
-  TrustPromise,
-  parseTrustBadges,
-} from '~/routes/_index';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   MEGA_MENU,
@@ -127,7 +120,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw redirect('/collections');
   }
 
-  const [{collection}, categoryResponse, trustBadgesResponse] = await Promise.all([
+  const [{collection}] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
@@ -137,11 +130,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
         ...paginationVariables,
       },
       // Add other queries here, so that they are loaded in parallel
-    }),
-    storefront.query(SHOP_BY_CATEGORIES_QUERY),
-    storefront.query(TRUST_BADGES_QUERY).catch((error: Error) => {
-      console.error(error);
-      return null;
     }),
   ]);
 
@@ -154,20 +142,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  return {
-    collection,
-    categories: [
-      categoryResponse.rings,
-      categoryResponse.chains,
-      categoryResponse.bracelets,
-      categoryResponse.earrings,
-      categoryResponse.pendants,
-      categoryResponse.necklaces,
-      categoryResponse.diamond,
-      categoryResponse.engagementRings,
-    ].filter(Boolean),
-    trustBadges: parseTrustBadges(trustBadgesResponse),
-  };
+  return {collection};
 }
 
 /**
@@ -180,7 +155,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection, categories, trustBadges} = useLoaderData<typeof loader>();
+  const {collection} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const parentCrumb = getCollectionParentCrumb({
     handle: collection.handle,
@@ -214,7 +189,6 @@ export default function Collection() {
         />
         <div className="collection-title-row">
           <h1>{displayTitle(collection)}</h1>
-          <CollectionFilterSidebar filters={filters} />
         </div>
       </div>
 
@@ -228,8 +202,9 @@ export default function Collection() {
         </div>
       )}
 
-      <section className="home-section is-soft">
+      <section className="home-section">
         <div className="section-inner collection-layout">
+          <CollectionFilterSidebar filters={filters} />
           <div className="collection-main">
           <Pagination connection={collection.products}>
             {({
@@ -317,9 +292,6 @@ export default function Collection() {
           </div>
         </div>
       </section>
-
-      <ShopByCategory categories={categories} />
-      <TrustPromise badges={trustBadges} />
 
       <Analytics.CollectionView
         data={{

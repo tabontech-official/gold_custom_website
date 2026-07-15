@@ -12,21 +12,9 @@ function HeartIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <path
-        d="M12 20.5l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 5.5 3.5 4 5.5 4c1.54 0 3.04.99 3.57 2.36h1.87C11.46 4.99 12.96 4 14.5 4 16.5 4 18 5.5 18 7.5c0 3.78-3.4 6.86-8.55 11.68L12 20.5z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-
-function CartIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M6 6h15l-1.5 9h-12L6 6zm0 0L5.2 3H2m6 17a1 1 0 100-2 1 1 0 000 2zm10 0a1 1 0 100-2 1 1 0 000 2z"
+        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
         stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
+        strokeWidth="2"
         strokeLinejoin="round"
       />
     </svg>
@@ -72,29 +60,8 @@ export function ProductItem({
           )}
         </Link>
 
-        {/* Heart + cart appear over the image on hover (always shown on touch). */}
-        <div className="product-hover-actions">
-          <WishlistButton handle={product.handle} wished={wished} />
-
-          {variantId ? (
-            <AddToCartButton
-              className="product-cart-btn"
-              disabled={!availableForSale}
-              onClick={() => open('cart')}
-              lines={[{merchandiseId: variantId, quantity: 1}]}
-            >
-              <CartIcon />
-            </AddToCartButton>
-          ) : (
-            <Link
-              to={productUrl}
-              className="product-cart-btn"
-              aria-label="View product"
-            >
-              <CartIcon />
-            </Link>
-          )}
-        </div>
+        {/* Heart sits top-right over the image, always visible. */}
+        <WishlistButton handle={product.handle} wished={wished} />
       </div>
 
       <div className="product-card-body">
@@ -104,6 +71,21 @@ export function ProductItem({
         <div className="product-card-price">
           <Money data={product.priceRange.minVariantPrice} />
         </div>
+        {/* Edgy black bar, revealed on hover (always visible on touch). */}
+        {variantId ? (
+          <AddToCartButton
+            className="btn product-card-atc"
+            disabled={!availableForSale}
+            onClick={() => open('cart')}
+            lines={[{merchandiseId: variantId, quantity: 1}]}
+          >
+            {availableForSale ? 'Add to bag' : 'Sold out'}
+          </AddToCartButton>
+        ) : (
+          <Link to={productUrl} className="btn product-card-atc">
+            View product
+          </Link>
+        )}
       </div>
     </article>
   );

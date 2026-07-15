@@ -1,4 +1,4 @@
-import type {CSSProperties} from 'react';
+import type {CSSProperties, ReactNode} from 'react';
 import {useNavigate, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
@@ -8,9 +8,11 @@ import type {ProductFragment} from 'storefrontapi.generated';
 export function ProductForm({
   productOptions,
   selectedVariant,
+  wishlistButton,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+  wishlistButton?: ReactNode;
 }) {
   const navigate = useNavigate();
   const {open} = useAside();
@@ -73,26 +75,29 @@ export function ProductForm({
       })}
 
       <div className="product-purchase-grid">
-        <AddToCartButton
-          className="btn btn-primary product-atc product-purchase-action"
-          disabled={!selectedVariant || !selectedVariant.availableForSale}
-          onClick={() => {
-            open('cart');
-          }}
-          lines={
-            selectedVariant
-              ? [
-                  {
-                    merchandiseId: selectedVariant.id,
-                    quantity: 1,
-                    selectedVariant,
-                  },
-                ]
-              : []
-          }
-        >
-          {selectedVariant?.availableForSale ? 'Add to cart' : 'Sold Out'}
-        </AddToCartButton>
+        <div className="product-buy-row">
+          <AddToCartButton
+            className="btn product-atc product-purchase-action"
+            disabled={!selectedVariant || !selectedVariant.availableForSale}
+            onClick={() => {
+              open('cart');
+            }}
+            lines={
+              selectedVariant
+                ? [
+                    {
+                      merchandiseId: selectedVariant.id,
+                      quantity: 1,
+                      selectedVariant,
+                    },
+                  ]
+                : []
+            }
+          >
+            {selectedVariant?.availableForSale ? 'Add to bag' : 'Sold out'}
+          </AddToCartButton>
+          {wishlistButton}
+        </div>
       </div>
 
       <p className="product-finance-note">

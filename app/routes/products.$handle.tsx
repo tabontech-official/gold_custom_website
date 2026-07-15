@@ -238,9 +238,6 @@ export default function Product() {
         />
 
         <div className="product-main">
-          {categoryName && (
-            <span className="eyebrow product-vendor">{categoryName}</span>
-          )}
           <h1>{title}</h1>
           {sku && <p className="product-sku">SKU / Style Code: {sku}</p>}
           <div className="product-price-row">
@@ -248,7 +245,6 @@ export default function Product() {
               price={selectedVariant?.price}
               compareAtPrice={selectedVariant?.compareAtPrice}
             />
-            <ProductWishlistButton handle={product.handle} />
           </div>
 
           <Suspense fallback={null}>
@@ -260,6 +256,7 @@ export default function Product() {
           <ProductForm
             productOptions={productOptions}
             selectedVariant={selectedVariant}
+            wishlistButton={<ProductWishlistButton handle={product.handle} />}
           />
 
           <ProductAccordions
@@ -330,11 +327,12 @@ function ProductWishlistButton({handle}: {handle: string}) {
       >
         <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
-            d="M12 20.5l-1.45-1.32C5.4 14.36 2 11.28 2 7.5 2 5.5 3.5 4 5.5 4c1.54 0 3.04.99 3.57 2.36h1.87C11.46 4.99 12.96 4 14.5 4 16.5 4 18 5.5 18 7.5c0 3.78-3.4 6.86-8.55 11.68L12 20.5z"
-            fill="currentColor"
+            d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
           />
         </svg>
-        <span>{active ? 'Saved' : 'Wishlist'}</span>
       </button>
     </fetcher.Form>
   );
