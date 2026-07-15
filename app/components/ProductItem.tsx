@@ -25,6 +25,7 @@ export function ProductItem({
   product,
   loading,
   className,
+  collectionContext,
 }: {
   product:
     | ProductItemFragment
@@ -32,9 +33,15 @@ export function ProductItem({
     | any;
   loading?: 'eager' | 'lazy';
   className?: string;
+  collectionContext?: {
+    categoryLabel?: string;
+    categoryHandle?: string;
+    subcategoryLabel?: string;
+    subcategoryHandle?: string;
+  };
 }) {
   const {open} = useAside();
-  const productUrl = `/products/${product.handle}`;
+  const productUrl = buildProductUrl(product.handle, collectionContext);
   const wished = useIsWishlisted(product.handle);
   const image = product.featuredImage;
   const firstVariant =
@@ -89,6 +96,22 @@ export function ProductItem({
       </div>
     </article>
   );
+}
+
+function buildProductUrl(
+  handle: string,
+  context?: {
+    categoryLabel?: string;
+    categoryHandle?: string;
+    subcategoryLabel?: string;
+    subcategoryHandle?: string;
+  },
+) {
+  if (!context?.categoryHandle) return `/products/${handle}`;
+  const segments = ['products', context.categoryHandle];
+  if (context.subcategoryHandle) segments.push(context.subcategoryHandle);
+  segments.push(handle);
+  return `/${segments.map(encodeURIComponent).join('/')}`;
 }
 
 /** Is this handle saved? Reads the wishlist from the root loader. */

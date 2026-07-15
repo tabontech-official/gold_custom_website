@@ -4306,10 +4306,10 @@ button.reset:hover:not(:has(> *)) {
 
 .breadcrumb .is-current {
   color: var(--color-ink);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 20rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  max-width: none;
 }
 
 .breadcrumb-sep {
@@ -4351,10 +4351,13 @@ button.reset:hover:not(:has(> *)) {
   display: block;
   align-self: start;
   overflow: hidden;
-  border: 1px solid rgba(17, 17, 17, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.34);
   border-radius: 14px;
-  background: #fff;
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85) inset,
+    0 14px 32px rgba(17, 17, 17, 0.075);
+  backdrop-filter: blur(10px);
 }
 
 .pgg-feature,
@@ -4369,6 +4372,51 @@ button.reset:hover:not(:has(> *)) {
 
 .pgg-feature {
   margin: 0.7rem;
+}
+
+.pgg-slider-controls {
+  position: absolute;
+  inset: 50% 0.95rem auto 0.95rem;
+  z-index: 4;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.pgg-slider-btn {
+  display: inline-grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1.35rem;
+  line-height: 1;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 8px 18px rgba(17, 17, 17, 0.12);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    transform 140ms ease;
+}
+
+.pgg-slider-btn:hover {
+  border-color: var(--color-gold);
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.pgg-slider-btn:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
 }
 
 .pgg-thumbs {
@@ -4481,6 +4529,16 @@ button.reset:hover:not(:has(> *)) {
     max-height: calc(100% - 1.7rem);
   }
 
+  .pgg-slider-controls {
+    inset-inline: 0.75rem;
+  }
+
+  .pgg-slider-btn {
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 1.1rem;
+  }
+
   .pgg-thumb {
     width: 3.6rem;
   }
@@ -4532,6 +4590,20 @@ button.reset:hover:not(:has(> *)) {
   border-bottom: 1px solid var(--color-border);
 }
 
+.product-details-display {
+  padding: 1.05rem 0 0.25rem;
+}
+
+.product-details-display h2 {
+  margin: 0 0 0.8rem;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--color-ink);
+}
+
 .product-details > summary {
   display: flex;
   align-items: center;
@@ -4540,7 +4612,7 @@ button.reset:hover:not(:has(> *)) {
   list-style: none;
   padding: 1.05rem 0;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
 }
@@ -4580,7 +4652,7 @@ button.reset:hover:not(:has(> *)) {
 
 .product-details-body {
   padding: 0 0 1.25rem;
-  color: var(--color-ink-soft);
+  color: var(--color-ink);
   font-size: 0.92rem;
   line-height: 1.7;
 }
@@ -4644,7 +4716,7 @@ button.reset:hover:not(:has(> *)) {
 
 .product-options {
   margin: 0;
-  text-align: center;
+  text-align: left;
 }
 
 /* Options stacked inside the form still get a small gap between each other */
@@ -4666,7 +4738,7 @@ button.reset:hover:not(:has(> *)) {
 .variant-tags {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.55rem;
 }
 

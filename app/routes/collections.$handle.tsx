@@ -162,6 +162,13 @@ export default function Collection() {
     header: rootData?.header,
     publicStoreDomain: rootData?.publicStoreDomain,
   });
+  const productCollectionContext = {
+    categoryLabel: parentCrumb?.label ?? collection.title,
+    categoryHandle:
+      parentCrumb?.to?.replace('/collections/', '') ?? collection.handle,
+    subcategoryLabel: parentCrumb ? collection.title : undefined,
+    subcategoryHandle: parentCrumb ? collection.handle : undefined,
+  };
 
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
   const filters = (collection.products.filters ?? []).map((filter) => ({
@@ -243,6 +250,7 @@ export default function Collection() {
                               <ProductItem
                                 key={product.id}
                                 product={product}
+                                collectionContext={productCollectionContext}
                                 loading={
                                   rowIndex === 0 && productIndex < 8
                                     ? 'eager'

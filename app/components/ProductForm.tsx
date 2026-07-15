@@ -1,5 +1,5 @@
 import type {CSSProperties, ReactNode} from 'react';
-import {useNavigate, Link} from 'react-router';
+import {useLocation, useNavigate, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
@@ -15,6 +15,7 @@ export function ProductForm({
   wishlistButton?: ReactNode;
 }) {
   const navigate = useNavigate();
+  const {pathname} = useLocation();
   const {open} = useAside();
 
   return (
@@ -54,8 +55,12 @@ export function ProductForm({
                     // page; otherwise we just update the variant search
                     // param in place.
                     if (value.isDifferentProduct) {
+                      const nextPath = replaceProductHandleInPath(
+                        pathname,
+                        value.handle,
+                      );
                       void navigate(
-                        `/products/${value.handle}?${value.variantUriQuery}`,
+                        `${nextPath}?${value.variantUriQuery}`,
                         {preventScrollReset: true},
                       );
                     } else {
@@ -106,6 +111,13 @@ export function ProductForm({
       </p>
     </div>
   );
+}
+
+function replaceProductHandleInPath(pathname: string, handle?: string | null) {
+  if (!handle) return pathname;
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts[0] !== 'products') return `/products/${handle}`;
+  return `/${[...parts.slice(0, -1), handle].map(encodeURIComponent).join('/')}`;
 }
 
 function getVariantTagStyle(optionName: string, valueName: string) {

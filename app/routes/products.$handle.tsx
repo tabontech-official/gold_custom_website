@@ -6,6 +6,7 @@ import {
   Await,
   Link,
   useFetcher,
+  useLocation,
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/products.$handle';
@@ -126,6 +127,11 @@ async function loadCriticalData({
 }: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
+  const url = new URL(request.url);
+  const routeParams = params as Route.LoaderArgs['params'] & {
+    category?: string;
+    subcategory?: string;
+  };
 
   if (!handle) {
     throw new Error('Expected product handle to be defined');
@@ -145,8 +151,27 @@ async function loadCriticalData({
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
+  const breadcrumbContext = getBreadcrumbContext(
+    url.searchParams,
+    routeParams,
+  );
+  const inferredCategory = getProductCategoryMatch(product);
+  if (!routeParams.category && (breadcrumbContext?.categoryHandle || inferredCategory)) {
+    const categoryHandle =
+      breadcrumbContext?.categoryHandle ?? inferredCategory?.handle;
+    if (categoryHandle) {
+      const nextPath = buildHierarchicalProductPath({
+        handle: product.handle,
+        categoryHandle,
+        subcategoryHandle: breadcrumbContext?.subcategoryHandle,
+      });
+      throw redirect(`${nextPath}${url.search}`);
+    }
+  }
+
   return {
     product,
+    breadcrumbContext,
   };
 }
 
@@ -170,7 +195,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
 }
 
 export default function Product() {
-  const {product, recommendedProducts, lengthArticles} =
+  const {product, recommendedProducts, lengthArticles, breadcrumbContext} =
     useLoaderData<typeof loader>();
   const root = useRouteLoaderData<any>('root');
 
@@ -208,23 +233,30 @@ export default function Product() {
   // Resolve the category to a shoppable collection so the crumb is clickable.
   // Shopify taxonomy names look like "Necklaces in Jewelry", so we match on
   // containment as well as exact label/handle.
-  const categoryMatch = categoryName
-    ? CATEGORIES.find((c) => {
-        const name = categoryName.toLowerCase();
-        const label = c.label.toLowerCase();
-        return (
-          name === label ||
-          name === c.handle ||
-          name.includes(label) ||
-          name.includes(c.handle)
-        );
-      })
-    : undefined;
+  const categoryMatch = getProductCategoryMatch(product);
+  const contextCategory = breadcrumbContext?.categoryHandle
+    ? {
+        label:
+          breadcrumbContext.categoryName ||
+          breadcrumbContext.categoryHandle,
+        to: `/collections/${breadcrumbContext.categoryHandle}`,
+      }
+    : null;
+  const contextSubcategory = breadcrumbContext?.subcategoryHandle
+    ? {
+        label:
+          breadcrumbContext.subcategoryName ||
+          breadcrumbContext.subcategoryHandle,
+        to: `/collections/${breadcrumbContext.subcategoryHandle}`,
+      }
+    : null;
 
   const breadcrumbs = [
     {label: 'Home', to: '/'},
     {label: 'Shop', to: '/collections/all'},
-    ...(categoryName
+    ...(contextCategory
+      ? [contextCategory]
+      : categoryName
       ? [
           {
             label: categoryMatch?.label ?? categoryName,
@@ -234,6 +266,7 @@ export default function Product() {
           },
         ]
       : []),
+    contextSubcategory,
     {label: title},
   ];
 
@@ -386,8 +419,8 @@ function ProductAccordions({
 
   return (
     <div className="product-accordions">
-      <details className="product-details">
-        <summary>Product Details</summary>
+      <section className="product-details product-details-display">
+        <h2>Product Details</h2>
         <div className="product-details-body">
           {descriptionHtml ? (
             <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
@@ -395,7 +428,7 @@ function ProductAccordions({
             <p>Details for this piece will be updated soon.</p>
           )}
         </div>
-      </details>
+      </section>
 
       <details className="product-details">
         <summary>Specifications</summary>
@@ -574,6 +607,7 @@ function ProductFaqSection({faqs}: {faqs: Faq[]}) {
 
 function LengthArticleSelect({data}: {data: LengthArticles | null}) {
   const navigate = useNavigate();
+  const {pathname} = useLocation();
   if (!data || data.options.length < 2) return null;
 
   return (
@@ -595,7 +629,9 @@ function LengthArticleSelect({data}: {data: LengthArticles | null}) {
               className={`variant-tag${selected ? ' is-selected' : ''}`}
               aria-pressed={selected}
               onClick={() => {
-                if (!selected) void navigate(`/products/${option.handle}`);
+                if (!selected) {
+                  void navigate(replaceProductHandleInPath(pathname, option.handle));
+                }
               }}
             >
               {option.length}&quot;
@@ -676,6 +712,94 @@ function normalizeMedia(nodes: any[], title: string): GalleryMedia[] {
       }
     })
     .filter((item): item is GalleryMedia => item !== null);
+}
+
+function replaceProductHandleInPath(pathname: string, handle: string) {
+  const parts = pathname.split('/').filter(Boolean);
+  if (parts[0] !== 'products') return `/products/${handle}`;
+  return `/${[...parts.slice(0, -1), handle].map(encodeURIComponent).join('/')}`;
+}
+
+function buildHierarchicalProductPath({
+  handle,
+  categoryHandle,
+  subcategoryHandle,
+}: {
+  handle: string;
+  categoryHandle: string;
+  subcategoryHandle?: string | null;
+}) {
+  const segments = ['products', categoryHandle];
+  if (subcategoryHandle) segments.push(subcategoryHandle);
+  segments.push(handle);
+  return `/${segments.map(encodeURIComponent).join('/')}`;
+}
+
+function getProductCategoryMatch(product: {
+  category?: {name?: string | null} | null;
+  productType?: string | null;
+}) {
+  const rawCategory = product.category?.name || product.productType || '';
+  const categoryName =
+    rawCategory && rawCategory.toLowerCase() !== 'uncategorized'
+      ? rawCategory
+      : '';
+  if (!categoryName) return undefined;
+
+  return CATEGORIES.find((c) => {
+    const name = categoryName.toLowerCase();
+    const label = c.label.toLowerCase();
+    return (
+      name === label ||
+      name === c.handle ||
+      name.includes(label) ||
+      name.includes(c.handle)
+    );
+  });
+}
+
+function getBreadcrumbContext(
+  params: URLSearchParams,
+  routeParams?: {category?: string; subcategory?: string},
+) {
+  const categoryHandle = normalizeCollectionHandle(params.get('category'));
+  const subcategoryHandle = normalizeCollectionHandle(params.get('subcategory'));
+  const pathCategoryHandle = normalizeCollectionHandle(
+    routeParams?.category ?? null,
+  );
+  const pathSubcategoryHandle = normalizeCollectionHandle(
+    routeParams?.subcategory ?? null,
+  );
+  const categoryName = normalizeCrumbLabel(params.get('categoryName'));
+  const subcategoryName = normalizeCrumbLabel(params.get('subcategoryName'));
+
+  if (
+    !categoryHandle &&
+    !subcategoryHandle &&
+    !pathCategoryHandle &&
+    !pathSubcategoryHandle
+  ) {
+    return null;
+  }
+
+  return {
+    categoryHandle: categoryHandle ?? pathCategoryHandle,
+    categoryName,
+    subcategoryHandle: subcategoryHandle ?? pathSubcategoryHandle,
+    subcategoryName,
+  };
+}
+
+function normalizeCollectionHandle(value: string | null) {
+  if (!value) return null;
+  const handle = value.replace(/^\/?collections\//, '').trim();
+  return /^[a-z0-9][a-z0-9-]*$/i.test(handle) ? handle : null;
+}
+
+function normalizeCrumbLabel(value: string | null) {
+  if (!value) return null;
+  const label = value.trim().slice(0, 80);
+  return label || null;
 }
 
 function buildProductJsonLd({

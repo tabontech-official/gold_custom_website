@@ -67,11 +67,40 @@ export function ProductGallery({
   }
 
   const activeItem = items.find((item) => item.key === activeKey) ?? items[0];
+  const activeIndex = Math.max(
+    0,
+    items.findIndex((item) => item.key === activeItem.key),
+  );
   const thumbs = items.slice(0, 5);
+  const showSliderButtons = items.length > 1;
+  const goToItem = (direction: -1 | 1) => {
+    const nextIndex = (activeIndex + direction + items.length) % items.length;
+    setActiveKey(items[nextIndex].key);
+  };
 
   return (
     <div className="product-grid-gallery">
       <GalleryTile media={activeItem} title={title} featured />
+      {showSliderButtons && (
+        <div className="pgg-slider-controls" aria-label="Product gallery controls">
+          <button
+            type="button"
+            className="pgg-slider-btn"
+            aria-label="Previous product media"
+            onClick={() => goToItem(-1)}
+          >
+            {'<'}
+          </button>
+          <button
+            type="button"
+            className="pgg-slider-btn"
+            aria-label="Next product media"
+            onClick={() => goToItem(1)}
+          >
+            {'>'}
+          </button>
+        </div>
+      )}
       {thumbs.length > 1 && (
         <div className="pgg-thumbs" aria-label="Product media">
           {thumbs.map((m) => {
