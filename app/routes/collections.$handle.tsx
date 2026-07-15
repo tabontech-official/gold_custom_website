@@ -17,23 +17,37 @@ import {
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 
+type CollectionCoverPhoto = {
+  image: string;
+  alt?: string | null;
+  align: 'left' | 'right';
+};
+
+type CoverPhotoField = {
+  key?: string | null;
+  value?: string | null;
+  reference?: {
+    url?: string | null;
+    image?: {
+      url?: string | null;
+      altText?: string | null;
+    } | null;
+  } | null;
+  references?: {
+    nodes?: Array<{
+      url?: string | null;
+      image?: {
+        url?: string | null;
+        altText?: string | null;
+      } | null;
+    }>;
+  } | null;
+};
+
 function displayTitle(collection?: {handle: string; title: string} | null) {
   if (!collection) return '';
   return collection.handle === 'all' ? 'All Products' : collection.title;
 }
-
-const COLLECTION_PRODUCT_BREAKS = [
-  {
-    image: '/cover3.webp',
-    variant: 'cover3',
-    align: 'left',
-  },
-  {
-    image: '/cover4.webp',
-    variant: 'cover4',
-    align: 'right',
-  },
-] as const;
 
 function getCollectionParentCrumb({
   handle,
@@ -69,14 +83,15 @@ function getCollectionParentCrumb({
 function CollectionProductBreak({
   item,
 }: {
-  item: (typeof COLLECTION_PRODUCT_BREAKS)[number];
+  item: CollectionCoverPhoto;
 }) {
   return (
     <div
-      className={`collection-product-break is-${item.align} is-${item.variant}`}
+      className={`collection-product-break is-${item.align}`}
       style={{backgroundImage: `url("${item.image}")`}}
-    >
-    </div>
+      role="img"
+      aria-label={item.alt || 'Collection cover photo'}
+    />
   );
 }
 
@@ -112,7 +127,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw redirect('/collections');
   }
 
-  const [{collection}] = await Promise.all([
+  const [{collection}, coverPhotosResponse] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
@@ -123,6 +138,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       },
       // Add other queries here, so that they are loaded in parallel
     }),
+    storefront
+      .query(COLLECTION_COVER_PHOTOS_QUERY, {
+        cache: storefront.CacheLong(),
+      })
+      .catch(() => null),
   ]);
 
   if (!collection) {
@@ -134,7 +154,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  return {collection};
+  return {
+    collection,
+    coverPhotos: getCoverPhotos(coverPhotosResponse),
+  };
 }
 
 /**
@@ -146,8 +169,64 @@ function loadDeferredData({context}: Route.LoaderArgs) {
   return {};
 }
 
+function getCoverPhotos(response: any): CollectionCoverPhoto[] {
+  const nodes = response?.metaobjects?.nodes as any[] | undefined;
+  if (!Array.isArray(nodes)) return [];
+  const seenImages = new Set<string>();
+  const photos: CollectionCoverPhoto[] = [];
+
+  nodes.forEach((node) => {
+    const metaobject = node as {fields?: CoverPhotoField[]};
+    const fields: CoverPhotoField[] = Array.isArray(metaobject.fields)
+      ? metaobject.fields
+      : [];
+    const altField = fields.find((field) => {
+      const key = String(field?.key ?? '').toLowerCase();
+      return key === 'alt' || key === 'alt_text' || key === 'title';
+    });
+
+    fields.forEach((field) => {
+        const key = String(field?.key ?? '').toLowerCase();
+      const isPhotoField =
+        key.includes('image') || key.includes('photo') || key.includes('cover');
+      const candidates = [
+        {
+          image: field.reference?.image?.url ?? field.reference?.url ?? null,
+          alt: field.reference?.image?.altText ?? altField?.value ?? null,
+        },
+        ...(field.references?.nodes ?? []).map((reference) => ({
+          image: reference.image?.url ?? reference.url ?? null,
+          alt: reference.image?.altText ?? altField?.value ?? null,
+        })),
+        {
+          image:
+            field.value &&
+            (isPhotoField ||
+              /\.(avif|gif|jpe?g|png|webp)(?:\?|$)/i.test(field.value)) &&
+            /^https?:\/\//i.test(field.value)
+              ? field.value
+              : null,
+          alt: altField?.value ?? null,
+        },
+      ];
+
+      candidates.forEach((candidate) => {
+        if (!candidate.image || seenImages.has(candidate.image)) return;
+        seenImages.add(candidate.image);
+        photos.push({
+          image: candidate.image,
+          alt: candidate.alt,
+          align: photos.length % 2 === 0 ? 'left' : 'right',
+        });
+      });
+    });
+  });
+
+  return photos;
+}
+
 export default function Collection() {
-  const {collection} = useLoaderData<typeof loader>();
+  const {collection, coverPhotos} = useLoaderData<typeof loader>();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const parentCrumb = getCollectionParentCrumb({
     handle: collection.handle,
@@ -253,11 +332,9 @@ export default function Collection() {
                           </div>
 
                           {rowIndex < productRows.length - 1 &&
-                            rowIndex < COLLECTION_PRODUCT_BREAKS.length && (
+                            rowIndex < coverPhotos.length && (
                             <CollectionProductBreak
-                              item={
-                                COLLECTION_PRODUCT_BREAKS[rowIndex]
-                              }
+                              item={coverPhotos[rowIndex]}
                             />
                           )}
                         </div>
@@ -389,6 +466,44 @@ const COLLECTION_QUERY = `#graphql
       bestSelling: products(first: 8, sortKey: BEST_SELLING) {
         nodes {
           ...ProductItem
+        }
+      }
+    }
+  }
+` as const;
+
+const COLLECTION_COVER_PHOTOS_QUERY = `#graphql
+  query CollectionCoverPhotos($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    metaobjects(type: "cover_photos", first: 20) {
+      nodes {
+        fields {
+          key
+          value
+          reference {
+            ... on MediaImage {
+              image {
+                url
+                altText
+              }
+            }
+            ... on GenericFile {
+              url
+            }
+          }
+          references(first: 20) {
+            nodes {
+              ... on MediaImage {
+                image {
+                  url
+                  altText
+                }
+              }
+              ... on GenericFile {
+                url
+              }
+            }
+          }
         }
       }
     }
