@@ -17,6 +17,7 @@ import {getWishlist} from '~/lib/wishlist';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
+import {WishlistToast} from './components/WishlistToast';
 
 export type RootLoader = typeof loader;
 
@@ -179,6 +180,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
       </head>
       <body>
         {children}
+        <WishlistToast />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
       </body>

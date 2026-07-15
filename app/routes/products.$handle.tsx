@@ -5,7 +5,6 @@ import {
   useNavigate,
   Await,
   Link,
-  useFetcher,
   useLocation,
   useRouteLoaderData,
 } from 'react-router';
@@ -26,9 +25,9 @@ import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {CATEGORIES} from '~/lib/categories';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import type {RootLoader} from '~/root';
 
 export const meta: Route.MetaFunction = ({data}) => {
   const title = data?.product.title || '';
@@ -364,10 +363,7 @@ export default function Product() {
 }
 
 function ProductWishlistButton({handle}: {handle: string}) {
-  const root = useRouteLoaderData<RootLoader>('root');
-  const fetcher = useFetcher();
-  const wished = (root?.wishlist ?? []).includes(handle);
-  const active = fetcher.state === 'idle' ? wished : !wished;
+  const {fetcher, active} = useWishlistToggle(handle);
 
   return (
     <fetcher.Form method="post" action="/wishlist">

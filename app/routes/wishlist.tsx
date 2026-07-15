@@ -9,29 +9,33 @@ export async function action({request, context}: Route.ActionArgs) {
   const form = await request.formData();
   const handle = String(form.get('handle') ?? '');
   if (!handle) {
-    return Response.json({wishlist: getWishlist(context.session)});
+    return Response.json({wishlist: getWishlist(context.session), added: false});
   }
+  const wasWished = getWishlist(context.session).includes(handle);
   const wishlist = toggleWishlist(context.session, handle);
   return Response.json(
-    {wishlist},
+    {wishlist, added: !wasWished},
     {headers: {'Set-Cookie': await context.session.commit()}},
   );
 }
 
-// GET /wishlist renders the saved products. One storefront query resolves all
-// saved handles at once (no per-item waterfall).
+// GET /wishlist renders the saved products. Resolve by handle directly instead
+// of using storefront search syntax, so saved handles cannot disappear because
+// a search query parsed differently than expected.
 export async function loader({context}: Route.LoaderArgs) {
   const handles = getWishlist(context.session);
   if (!handles.length) return {products: []};
 
-  const query = handles.map((h) => `handle:${JSON.stringify(h)}`).join(' OR ');
-  const {products} = await context.storefront.query(WISHLIST_PRODUCTS_QUERY, {
-    variables: {query, first: handles.length},
-  });
+  const products = await Promise.all(
+    handles.map(async (handle) => {
+      const data = await context.storefront.query(WISHLIST_PRODUCT_QUERY, {
+        variables: {handle},
+      });
+      return data.product;
+    }),
+  );
 
-  // Preserve the order the shopper saved them in.
-  const byHandle = new Map(products.nodes.map((p: any) => [p.handle, p]));
-  return {products: handles.map((h) => byHandle.get(h)).filter(Boolean)};
+  return {products: products.filter(Boolean)};
 }
 
 export default function WishlistPage() {
@@ -66,7 +70,7 @@ export default function WishlistPage() {
   );
 }
 
-const WISHLIST_PRODUCTS_QUERY = `#graphql
+const WISHLIST_PRODUCT_QUERY = `#graphql
   fragment WishlistProduct on Product {
     id
     title
@@ -89,16 +93,13 @@ const WISHLIST_PRODUCTS_QUERY = `#graphql
       availableForSale
     }
   }
-  query WishlistProducts(
-    $query: String!
-    $first: Int!
+  query WishlistProduct(
+    $handle: String!
     $country: CountryCode
     $language: LanguageCode
   ) @inContext(country: $country, language: $language) {
-    products(first: $first, query: $query) {
-      nodes {
-        ...WishlistProduct
-      }
+    product(handle: $handle) {
+      ...WishlistProduct
     }
   }
 ` as const;

@@ -3570,6 +3570,13 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
+@media (min-width: 48.01em) {
+  .wishlist-page .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 270px));
+    justify-content: start;
+  }
+}
+
 /* Load More */
 .load-more-bar {
   display: flex;
@@ -3696,7 +3703,7 @@ button.reset:hover:not(:has(> *)) {
 
 /* Denser cards next to the sidebar — the global 355px min leaves 3 giant columns */
 .collection-layout .products-grid {
-  grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
 }
 
 /* Sidebar heading — "Filter" with the iOS sliders icon */
@@ -4035,15 +4042,23 @@ button.reset:hover:not(:has(> *)) {
   overflow: hidden;
   background: transparent;
   border: 0;
-  border-radius: 0;
-  padding: 0;
+  border-radius: 8px;
+  padding: 0.45rem;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+  will-change: transform;
 }
 
-/* Thin outline on hover marks the card without shifting layout */
 .product-item:hover,
 .product-item:focus-within {
-  outline: 1px solid rgba(0, 0, 0, 0.14);
-  outline-offset: 4px;
+  background: rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82) inset,
+    0 18px 34px rgba(17, 17, 17, 0.12);
+  transform: translateY(-3px) scale(1.012);
+  backdrop-filter: blur(10px);
 }
 
 .product-image-wrap {
@@ -4065,6 +4080,13 @@ button.reset:hover:not(:has(> *)) {
   display: block;
   position: relative;
   z-index: 1;
+  transition: transform 220ms ease;
+  will-change: transform;
+}
+
+.product-item:hover .product-image,
+.product-item:focus-within .product-image {
+  transform: scale(1.025);
 }
 
 .product-image-skeleton {
@@ -4211,49 +4233,7 @@ button.reset:hover:not(:has(> *)) {
 }
 
 /* Edgy black bar under the price, revealed on hover */
-.product-card-body form {
-  margin: 0;
-  max-width: none;
-}
-
-.product-card-atc {
-  width: 100%;
-  border-radius: 0;
-  background: var(--color-ink);
-  border-color: var(--color-ink);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  opacity: 0;
-  transition: opacity 180ms ease, background-color 180ms ease;
-}
-
-.product-item:hover .product-card-atc,
-.product-item:focus-within .product-card-atc {
-  opacity: 1;
-}
-
-.product-card-atc:hover:not(:disabled) {
-  background: #262626;
-  border-color: #262626;
-  color: #fff;
-}
-
-.product-card-atc:disabled {
-  background: #b9b9b9;
-  border-color: #b9b9b9;
-  cursor: not-allowed;
-}
-
 /* No hover on touch devices — keep the bar visible so it's reachable. */
-@media (hover: none) {
-  .product-card-atc {
-    opacity: 1;
-  }
-}
-
 /*
 * --------------------------------------------------
 * routes/products.$handle.tsx
@@ -4712,6 +4692,50 @@ button.reset:hover:not(:has(> *)) {
   border-color: var(--color-gold);
   background: var(--color-gold-soft);
   color: var(--color-gold-dark);
+}
+
+.wishlist-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  max-width: min(92vw, 24rem);
+  padding: 0.8rem 0.9rem 0.8rem 1rem;
+  border-radius: 6px;
+  background: #17663a;
+  color: #fff;
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.35;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.2);
+  transform: translateX(-50%);
+}
+
+.wishlist-toast-info {
+  background: var(--color-ink);
+}
+
+.wishlist-toast button {
+  display: inline-grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: currentColor;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.wishlist-toast button:hover {
+  background: rgba(255, 255, 255, 0.26);
 }
 
 .product-options {

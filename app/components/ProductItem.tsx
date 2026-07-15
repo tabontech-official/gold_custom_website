@@ -1,12 +1,10 @@
-import {Link, useFetcher, useRouteLoaderData} from 'react-router';
+import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
-import type {RootLoader} from '~/root';
 import type {
   ProductItemFragment,
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
-import {AddToCartButton} from './AddToCartButton';
-import {useAside} from './Aside';
+import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 
 function HeartIcon() {
   return (
@@ -40,14 +38,8 @@ export function ProductItem({
     subcategoryHandle?: string;
   };
 }) {
-  const {open} = useAside();
   const productUrl = buildProductUrl(product.handle, collectionContext);
-  const wished = useIsWishlisted(product.handle);
   const image = product.featuredImage;
-  const firstVariant =
-    product.selectedOrFirstAvailableVariant ?? product.variants?.nodes?.[0];
-  const variantId = firstVariant?.id;
-  const availableForSale = firstVariant?.availableForSale ?? true;
 
   return (
     <article
@@ -68,7 +60,7 @@ export function ProductItem({
         </Link>
 
         {/* Heart sits top-right over the image, always visible. */}
-        <WishlistButton handle={product.handle} wished={wished} />
+        <WishlistButton handle={product.handle} />
       </div>
 
       <div className="product-card-body">
@@ -78,21 +70,6 @@ export function ProductItem({
         <div className="product-card-price">
           <Money data={product.priceRange.minVariantPrice} />
         </div>
-        {/* Edgy black bar, revealed on hover (always visible on touch). */}
-        {variantId ? (
-          <AddToCartButton
-            className="btn product-card-atc"
-            disabled={!availableForSale}
-            onClick={() => open('cart')}
-            lines={[{merchandiseId: variantId, quantity: 1}]}
-          >
-            {availableForSale ? 'Add to bag' : 'Sold out'}
-          </AddToCartButton>
-        ) : (
-          <Link to={productUrl} className="btn product-card-atc">
-            View product
-          </Link>
-        )}
       </div>
     </article>
   );
@@ -114,18 +91,11 @@ function buildProductUrl(
   return `/${segments.map(encodeURIComponent).join('/')}`;
 }
 
-/** Is this handle saved? Reads the wishlist from the root loader. */
-function useIsWishlisted(handle: string): boolean {
-  const root = useRouteLoaderData<RootLoader>('root');
-  return (root?.wishlist ?? []).includes(handle);
-}
-
 // Heart toggle. Posts to /wishlist and flips optimistically while the request
 // is in flight so the shopper never waits on the server. Root revalidates on
 // the POST, so the header count and every other card stay in sync.
-function WishlistButton({handle, wished}: {handle: string; wished: boolean}) {
-  const fetcher = useFetcher();
-  const active = fetcher.state === 'idle' ? wished : !wished;
+function WishlistButton({handle}: {handle: string}) {
+  const {fetcher, active} = useWishlistToggle(handle);
 
   return (
     <fetcher.Form method="post" action="/wishlist">
