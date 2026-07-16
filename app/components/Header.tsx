@@ -265,6 +265,42 @@ export function HeaderMenu({
   const relativeUrl = (url: string) =>
     toRelativeUrl(url, primaryDomainUrl, publicStoreDomain);
 
+  // Single source of truth for which department's panel is open — one panel
+  // can ever render, so a close-delay on one item can't overlap the next.
+  const [openId, setOpenId] = useState<string | null>(null);
+  const closeTimer = useRef<number | null>(null);
+
+  function openMenu(id: string) {
+    if (closeTimer.current) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpenId(id);
+  }
+
+  function closeMenu() {
+    if (closeTimer.current) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpenId(null);
+  }
+
+  // Grace period so the pointer can travel from the nav item into the panel
+  function scheduleCloseMenu() {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => {
+      setOpenId(null);
+      closeTimer.current = null;
+    }, 320);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   if (viewport === 'desktop') {
     return (
       <nav className="header-menu-desktop mega-menu" role="navigation">
@@ -272,7 +308,11 @@ export function HeaderMenu({
           <MegaMenuItem
             department={department}
             header={header}
+            isOpen={openId === department.id}
             key={department.id}
+            onClose={closeMenu}
+            onOpen={() => openMenu(department.id)}
+            onScheduleClose={scheduleCloseMenu}
             relativeUrl={relativeUrl}
           />
         ))}
@@ -306,16 +346,21 @@ type FeaturedProduct = {
 function MegaMenuItem({
   department,
   header,
+  isOpen,
+  onClose,
+  onOpen,
+  onScheduleClose,
   relativeUrl,
 }: {
   department: (typeof MEGA_MENU)[number];
   header: HeaderProps['header'];
+  isOpen: boolean;
+  onClose: () => void;
+  onOpen: () => void;
+  onScheduleClose: () => void;
   relativeUrl: (url: string) => string;
 }) {
   const fetcher = useFetcher<{products: FeaturedProduct[]}>();
-  const [isClosing, setIsClosing] = useState(false);
-  const [isOpen, setIsOpen] = useState(false);
-  const closeTimer = useRef<number | null>(null);
   const handle = department.to.replace('/collections/', '');
 
   // Load this department's real products (and their images) once, so hovering
@@ -360,47 +405,24 @@ function MegaMenuItem({
   const featuredProducts = products.slice(0, 2);
 
   function closeMegaMenu() {
-    setIsClosing(true);
-    setIsOpen(false);
+    onClose();
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
   }
 
   function openMegaMenu() {
-    if (closeTimer.current) {
-      window.clearTimeout(closeTimer.current);
-      closeTimer.current = null;
-    }
-    setIsClosing(false);
-    setIsOpen(true);
+    onOpen();
     loadProducts();
   }
 
-  function scheduleCloseMegaMenu() {
-    if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    closeTimer.current = window.setTimeout(() => {
-      setIsOpen(false);
-      setIsClosing(false);
-      closeTimer.current = null;
-    }, 320);
-  }
-
-  useEffect(() => {
-    return () => {
-      if (closeTimer.current) window.clearTimeout(closeTimer.current);
-    };
-  }, []);
-
   return (
     <div
-      className={`mega-menu-item${isOpen ? ' is-open' : ''}${
-        isClosing ? ' is-closing' : ''
-      }`}
-      onBlur={scheduleCloseMegaMenu}
+      className={`mega-menu-item${isOpen ? ' is-open' : ''}`}
+      onBlur={onScheduleClose}
       onFocus={openMegaMenu}
       onMouseEnter={openMegaMenu}
-      onMouseLeave={scheduleCloseMegaMenu}
+      onMouseLeave={onScheduleClose}
     >
       <NavLink
         className="header-menu-item"

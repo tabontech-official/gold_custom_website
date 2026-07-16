@@ -61,8 +61,10 @@ function dedupeValues(values: FilterValue[]): GroupedValue[] {
   return [...byLabel.values()];
 }
 
-/** Plain fixed filter rail on the left of the category page. */
+/** Filter rail: fixed left column on desktop, slide-in drawer on mobile. */
 export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
+  // Mobile drawer: 'sort' shows only sorting, 'filters' shows everything else
+  const [drawer, setDrawer] = useState<null | 'filters' | 'sort'>(null);
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
@@ -112,7 +114,40 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
   }
 
   return (
-    <aside className="collection-sidebar" aria-label="Sort and filter products">
+    <>
+      {/* Mobile-only toolbar */}
+      <div className="collection-toolbar">
+        <button type="button" onClick={() => setDrawer('filters')}>
+          <FilterIcon />
+          <span>Filters</span>
+        </button>
+        <button type="button" onClick={() => setDrawer('sort')}>
+          <span>Sort</span>
+          <span aria-hidden="true">▾</span>
+        </button>
+      </div>
+
+      {drawer && (
+        <button
+          type="button"
+          className="collection-drawer-backdrop"
+          aria-label="Close filters"
+          onClick={() => setDrawer(null)}
+        />
+      )}
+
+    <aside
+      className={`collection-sidebar${drawer ? ` is-open mode-${drawer}` : ''}`}
+      aria-label="Sort and filter products"
+    >
+      <button
+        type="button"
+        className="sidebar-close"
+        aria-label="Close filters"
+        onClick={() => setDrawer(null)}
+      >
+        ×
+      </button>
       <div className="sidebar-head">
         <FilterIcon />
         <span>Filter</span>
@@ -124,7 +159,7 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
         </Link>
       )}
 
-      <details className="sidebar-group" open>
+      <details className="sidebar-group sidebar-group-sort" open>
         <summary>Sort by</summary>
         <ul className="sidebar-options">
           {SORT_OPTIONS.map((option) => (
@@ -177,6 +212,7 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
         </details>
       ))}
     </aside>
+    </>
   );
 }
 
