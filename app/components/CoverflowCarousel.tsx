@@ -23,9 +23,36 @@ const WHEEL_SPEED = 0.0016; // scroll units per wheel delta
 const DRAG_SPEED = 0.006; // scroll units per px dragged
 const SETTLE_EPS = 0.0005; // stop the rAF loop when current ~= target
 const VISIBLE_SLOTS = 2; // cards each side kept fully opaque
+const CARD_SPACING = 98; // % of card width; leaves room for neighbouring shadows
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
+}
+
+// Match the first client-side paint during SSR. Without these values every
+// card starts stacked at the centre until useEffect runs after hydration,
+// causing a visible broken-frame flash on hard refresh.
+function getInitialCardStyle(index: number, total: number): CSSProperties {
+  let offset = index % total;
+  if (offset > total / 2) offset -= total;
+  if (offset < -total / 2) offset += total;
+
+  const distance = Math.abs(offset);
+  const fadeEdge = Math.min(VISIBLE_SLOTS + 1.5, total / 2 - 0.01);
+  const solid = Math.min(VISIBLE_SLOTS, fadeEdge - 0.5);
+  const opacity =
+    distance <= solid
+      ? 1
+      : Math.max(0, 1 - (distance - solid) / (fadeEdge - solid));
+
+  return {
+    filter: `brightness(${1 - Math.min(distance, 2) * 0.05})`,
+    opacity,
+    pointerEvents: distance <= 1.5 ? 'auto' : 'none',
+    transform: `translate(-50%, -50%) translateX(${offset * CARD_SPACING}%) rotateY(${offset * -12}deg) scale(${Math.max(0.4, 1 - distance * 0.12)})`,
+    visibility: opacity > 0 ? 'visible' : 'hidden',
+    zIndex: 1000 - Math.round(distance * 100),
+  };
 }
 
 /**
@@ -85,7 +112,7 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
       el.style.zIndex = String(1000 - Math.round(abs * 100));
       el.style.visibility = opacity > 0 ? 'visible' : 'hidden';
       // Same transform shape as the old CSS, now fed a continuous float.
-      const tx = off * 86; // % of card width
+      const tx = off * CARD_SPACING; // % of card width
       const sc = Math.max(0.4, 1 - abs * 0.12);
       const ry = off * -12;
       el.style.transform = `translate(-50%, -50%) translateX(${tx}%) rotateY(${ry}deg) scale(${sc})`;
@@ -223,6 +250,7 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
               cardRefs.current[index] = el;
             }}
             className="coverflow-card"
+            style={getInitialCardStyle(index, n)}
             onClick={() => index !== active && scrollTo(index)}
           >
             <div className="coverflow-card-media">

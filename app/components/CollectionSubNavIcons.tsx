@@ -1,7 +1,7 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import {useDragScroll} from '~/lib/dragScroll';
+import {DragScroller} from '~/components/DragScroller';
 import {
   getColumnItems,
   getMegaMenuDepartmentForHandle,
@@ -71,17 +71,14 @@ export function CollectionSubNavIcons({
     : [];
 
   const images = useSubCategoryImages(items.map((item) => item.handle));
-  const trackRef = useRef<HTMLDivElement>(null);
-  useDragScroll(trackRef);
-
   if (!items.length) return null;
 
   return (
-    <div
-      ref={trackRef}
+    <DragScroller
       className="subnav-icons"
-      role="navigation"
+      trackClassName="subnav-icons-track"
       aria-label={`${department?.label} subcategories`}
+      showScrollbar
     >
       {items.map((item) => (
         <NavLink
@@ -102,7 +99,7 @@ export function CollectionSubNavIcons({
           <span className="subnav-icon-label">{item.title}</span>
         </NavLink>
       ))}
-    </div>
+    </DragScroller>
   );
 }
 

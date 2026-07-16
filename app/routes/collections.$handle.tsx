@@ -7,7 +7,6 @@ import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
-import {AutoLoadMore} from '~/components/AutoLoadMore';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   MEGA_MENU,
@@ -347,10 +346,6 @@ export default function Collection() {
                     <span className="load-more-count">
                       {nodes.length} pieces shown
                     </span>
-                    <AutoLoadMore
-                      hasNextPage={hasNextPage}
-                      isLoading={isLoading}
-                    />
                     {hasNextPage ? (
                       <NextLink className="load-more-btn">
                         {isLoading ? 'Loading…' : 'Load More'}

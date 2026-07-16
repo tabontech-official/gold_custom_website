@@ -379,21 +379,21 @@ function MegaMenuItem({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const products = (fetcher.data?.products ?? []).slice(0, 3);
+  const products = fetcher.data?.products ?? [];
   const isLoading = fetcher.state === 'loading' || !fetcher.data;
 
   // Warm the actual image bytes into the browser cache as soon as the product
   // data lands, so the shown images render instantly on hover — no wait. Match
-  // the sizing the <Image> below requests (width 150, height 188) so it's an
+  // the sizing the <Image> below requests (width 170, height 213) so it's an
   // exact cache hit; Shopify's CDN honours these query params.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    for (const product of products.slice(0, 2)) {
+    for (const product of products.slice(0, 3)) {
       const url = product.featuredImage?.url;
       if (!url) continue;
       const sized = new URL(url);
-      sized.searchParams.set('width', '150');
-      sized.searchParams.set('height', '188');
+      sized.searchParams.set('width', '170');
+      sized.searchParams.set('height', '213');
       sized.searchParams.set('crop', 'center');
       new window.Image().src = sized.toString();
     }
@@ -402,7 +402,19 @@ function MegaMenuItem({
   const menuItems = department.columns
     .flatMap((column) => getColumnItems(header, column))
     .filter((item) => item.url);
-  const featuredProducts = products.slice(0, 2);
+  // Short menus read best as one deliberate list. Rings and Chains retain two
+  // columns even when their current item count is small, as those departments
+  // have enough breadth to warrant the denser scanning pattern.
+  const linkColumnCount =
+    department.id === 'rings' || department.id === 'chains' || menuItems.length > 6
+      ? 2
+      : 1;
+  // The featured pane has room for three consistently sized cards. Products
+  // always come from the active department's collection, including Chains and
+  // Necklaces, so every panel feels balanced without unrelated recommendations.
+  const featuredProductCount = 3;
+  const featuredProducts = products.slice(0, featuredProductCount);
+  const productGridCount = featuredProducts.length || featuredProductCount;
 
   function closeMegaMenu() {
     onClose();
@@ -435,7 +447,10 @@ function MegaMenuItem({
       <div className="mega-menu-panel">
         <div className="mega-menu-inner">
           <div className="mega-menu-links-panel">
-            <ul className="mega-menu-link-list">
+            <ul
+              className="mega-menu-link-list"
+              style={{'--mega-link-columns': linkColumnCount} as React.CSSProperties}
+            >
               {menuItems.map((item) => (
                 <li key={item.id}>
                   <NavLink
@@ -460,7 +475,14 @@ function MegaMenuItem({
 
           <div className="mega-menu-featured">
             <h3>Best Sellers</h3>
-            <div className="mega-menu-product-grid">
+            <div
+              className="mega-menu-product-grid"
+              style={
+                {
+                  '--mega-product-columns': productGridCount,
+                } as React.CSSProperties
+              }
+            >
               {featuredProducts.length > 0
                 ? featuredProducts.map((product) => (
                   <Link
@@ -474,9 +496,9 @@ function MegaMenuItem({
                       <Image
                         className="mega-menu-card-img"
                         data={product.featuredImage}
-                        width={150}
-                        height={188}
-                        sizes="150px"
+                        width={170}
+                        height={213}
+                        sizes="170px"
                       />
                     ) : (
                       <span className="mega-menu-card-img" />
@@ -490,7 +512,7 @@ function MegaMenuItem({
                   </Link>
                 ))
                 : isLoading &&
-                Array.from({length: 2}).map((_, index) => (
+                Array.from({length: featuredProductCount}).map((_, index) => (
                   <span className="mega-menu-card" key={index}>
                     <span className="mega-menu-card-img is-loading" />
                   </span>

@@ -63,14 +63,17 @@ function dedupeValues(values: FilterValue[]): GroupedValue[] {
 
 /** Filter rail: fixed left column on desktop, slide-in drawer on mobile. */
 export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
-  // Mobile drawer: 'sort' shows only sorting, 'filters' shows everything else
-  const [drawer, setDrawer] = useState<null | 'filters' | 'sort'>(null);
+  const [drawer, setDrawer] = useState<null | 'filters'>(null);
+  const [sortOpen, setSortOpen] = useState(false);
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
   const activeSort = getSortFromParam(searchParams.get('sort'));
   const filterGroups = filters.filter(
-    (filter) => filter.type !== 'PRICE_RANGE' && filter.values.length > 0,
+    (filter) =>
+      filter.type !== 'PRICE_RANGE' &&
+      filter.values.length > 0 &&
+      !/availability/i.test(filter.label),
   );
   const priceBounds = getPriceBounds(
     filters.find((filter) => filter.type === 'PRICE_RANGE'),
@@ -119,9 +122,47 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
       <div className="collection-toolbar">
         <button type="button" onClick={() => setDrawer('filters')}>
           <FilterIcon />
-          <span>Filters</span>
+          <span>Filter</span>
         </button>
-        <button type="button" onClick={() => setDrawer('sort')}>
+        {activeFilterParams.length > 0 && (
+          <Link
+            className="collection-toolbar-clear"
+            preventScrollReset
+            to={clearHref()}
+          >
+            Clear all
+          </Link>
+        )}
+        <div className="collection-sort-select">
+          <button
+            aria-expanded={sortOpen}
+            aria-haspopup="listbox"
+            className="collection-sort-trigger"
+            onClick={() => setSortOpen((open) => !open)}
+            type="button"
+          >
+            <span>Sort: {activeSort.label}</span>
+            <span aria-hidden="true">⌄</span>
+          </button>
+          {sortOpen && (
+            <div className="collection-sort-popover" role="listbox">
+              {SORT_OPTIONS.map((option) => (
+                <Link
+                  aria-selected={activeSort.value === option.value}
+                  className={activeSort.value === option.value ? 'is-active' : ''}
+                  key={option.value}
+                  onClick={() => setSortOpen(false)}
+                  preventScrollReset
+                  role="option"
+                  to={sortHref(option.value)}
+                >
+                  {option.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+        <button type="button" onClick={() => setDrawer('filters')}>
           <span>Sort</span>
           <span aria-hidden="true">▾</span>
         </button>
@@ -159,26 +200,6 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
         </Link>
       )}
 
-      <details className="sidebar-group sidebar-group-sort" open>
-        <summary>Sort by</summary>
-        <ul className="sidebar-options">
-          {SORT_OPTIONS.map((option) => (
-            <li key={option.value}>
-              <Link
-                to={sortHref(option.value)}
-                preventScrollReset
-                className={`sidebar-option${
-                  activeSort.value === option.value ? ' is-checked' : ''
-                }`}
-              >
-                <span className="sidebar-check" aria-hidden="true" />
-                <span>{option.label}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </details>
-
       {priceBounds && (
         <details className="sidebar-group" open>
           <summary>Price</summary>
@@ -187,7 +208,11 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
       )}
 
       {filterGroups.map((filter) => (
-        <details className="sidebar-group" open key={filter.id}>
+        <details
+          className="sidebar-group"
+          key={filter.id}
+          open={!/tag/i.test(filter.label)}
+        >
           <summary>{filter.label}</summary>
           <ul className="sidebar-options">
             {dedupeValues(filter.values).map((value) => {
