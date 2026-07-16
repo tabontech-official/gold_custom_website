@@ -120,7 +120,8 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     pageBy: 24,
   });
   const url = new URL(request.url);
-  const filters = getFiltersFromParam(url.searchParams);
+  // Only show in-stock products in category listings
+  const filters = [{available: true}, ...getFiltersFromParam(url.searchParams)];
   const sort = getSortFromParam(url.searchParams.get('sort'));
 
   if (!handle) {

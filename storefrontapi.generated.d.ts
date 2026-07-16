@@ -1281,6 +1281,40 @@ export type CollectionQuery = {
   >;
 };
 
+export type CollectionCoverPhotosQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type CollectionCoverPhotosQuery = {
+  metaobjects: {
+    nodes: Array<{
+      fields: Array<
+        Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+          reference?: StorefrontAPI.Maybe<
+            | Pick<StorefrontAPI.GenericFile, 'url'>
+            | {
+                image?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                >;
+              }
+          >;
+          references?: StorefrontAPI.Maybe<{
+            nodes: Array<
+              | Pick<StorefrontAPI.GenericFile, 'url'>
+              | {
+                  image?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                  >;
+                }
+            >;
+          }>;
+        }
+      >;
+    }>;
+  };
+};
+
 export type CollectionFragment = Pick<
   StorefrontAPI.Collection,
   'id' | 'title' | 'handle'
@@ -2027,35 +2061,26 @@ export type WishlistProductFragment = Pick<
   >;
 };
 
-export type WishlistProductsQueryVariables = StorefrontAPI.Exact<{
-  query: StorefrontAPI.Scalars['String']['input'];
-  first: StorefrontAPI.Scalars['Int']['input'];
+export type WishlistProductQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
 }>;
 
-export type WishlistProductsQuery = {
-  products: {
-    nodes: Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
-        priceRange: {
-          minVariantPrice: Pick<
-            StorefrontAPI.MoneyV2,
-            'amount' | 'currencyCode'
-          >;
-        };
-        featuredImage?: StorefrontAPI.Maybe<
-          Pick<
-            StorefrontAPI.Image,
-            'id' | 'url' | 'altText' | 'width' | 'height'
-          >
-        >;
-        selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
-        >;
-      }
-    >;
-  };
+export type WishlistProductQuery = {
+  product?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
+      priceRange: {
+        minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      };
+      featuredImage?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
+      selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+      >;
+    }
+  >;
 };
 
 interface GeneratedQueryTypes {
@@ -2127,6 +2152,10 @@ interface GeneratedQueryTypes {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };
+  '#graphql\n  query CollectionCoverPhotos($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    metaobjects(type: "cover_photos", first: 20) {\n      nodes {\n        fields {\n          key\n          value\n          reference {\n            ... on MediaImage {\n              image {\n                url\n                altText\n              }\n            }\n            ... on GenericFile {\n              url\n            }\n          }\n          references(first: 20) {\n            nodes {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+    return: CollectionCoverPhotosQuery;
+    variables: CollectionCoverPhotosQueryVariables;
+  };
   '#graphql\n  fragment Collection on Collection {\n    id\n    title\n    handle\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    products(first: 1) {\n      nodes {\n        id\n      }\n    }\n  }\n  query StoreCollections(\n    $country: CountryCode\n    $endCursor: String\n    $first: Int\n    $language: LanguageCode\n    $last: Int\n    $startCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collections(\n      first: $first,\n      last: $last,\n      before: $startCursor,\n      after: $endCursor\n    ) {\n      nodes {\n        ...Collection\n      }\n      pageInfo {\n        hasNextPage\n        hasPreviousPage\n        startCursor\n        endCursor\n      }\n    }\n  }\n': {
     return: StoreCollectionsQuery;
     variables: StoreCollectionsQueryVariables;
@@ -2163,9 +2192,9 @@ interface GeneratedQueryTypes {
     return: PredictiveSearchQuery;
     variables: PredictiveSearchQueryVariables;
   };
-  '#graphql\n  fragment WishlistProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query WishlistProducts(\n    $query: String!\n    $first: Int!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    products(first: $first, query: $query) {\n      nodes {\n        ...WishlistProduct\n      }\n    }\n  }\n': {
-    return: WishlistProductsQuery;
-    variables: WishlistProductsQueryVariables;
+  '#graphql\n  fragment WishlistProduct on Product {\n    id\n    title\n    handle\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query WishlistProduct(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...WishlistProduct\n    }\n  }\n': {
+    return: WishlistProductQuery;
+    variables: WishlistProductQueryVariables;
   };
 }
 

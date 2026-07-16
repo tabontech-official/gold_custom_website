@@ -12,7 +12,7 @@ export async function loader({request, context}: any) {
 
     // If a tag is provided, use top-level products(query:) to combine collection+tag.
     if (tagRaw) {
-      const q = `collection:${handle} tag:\"${tagRaw}\"`;
+      const q = `collection:${handle} tag:\"${tagRaw}\" available_for_sale:true`;
       const queryWithTag = `#graphql
         fragment ProductNode on Product {
           id
@@ -97,7 +97,7 @@ export async function loader({request, context}: any) {
 
       query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {
         collection(handle: $handle) {
-          products(first: 48) {
+          products(first: 48, filters: {available: true}) {
             nodes {
               ...ProductNode
             }

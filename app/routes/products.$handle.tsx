@@ -415,8 +415,8 @@ function ProductAccordions({
 
   return (
     <div className="product-accordions">
-      <section className="product-details product-details-display">
-        <h2>Product Details</h2>
+      <details className="product-details" open>
+        <summary>Product Details</summary>
         <div className="product-details-body">
           {descriptionHtml ? (
             <div dangerouslySetInnerHTML={{__html: descriptionHtml}} />
@@ -424,7 +424,7 @@ function ProductAccordions({
             <p>Details for this piece will be updated soon.</p>
           )}
         </div>
-      </section>
+      </details>
 
       <details className="product-details">
         <summary>Specifications</summary>

@@ -507,9 +507,6 @@ function DiamondValueSection() {
             src="/cover%202.webp"
             alt="Diamond jewelry craftsmanship and value assurance"
           />
-          <h2 className="diamond-value-heading is-left">
-            <span>Certified</span> Diamonds. Lasting <span>Value</span>.
-          </h2>
         </div>
       </div>
     </section>

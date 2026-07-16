@@ -2110,9 +2110,9 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .home-section {
-  padding: 1.1rem 0;
+  padding: 2.2rem 0;
   @media (min-width: 48em) {
-    padding: 1.8rem 0;
+    padding: 3.6rem 0;
   }
 }
 
@@ -4517,20 +4517,6 @@ button.reset:hover:not(:has(> *)) {
   border-bottom: 1px solid var(--color-border);
 }
 
-.product-details-display {
-  padding: 1.05rem 0 0.25rem;
-}
-
-.product-details-display h2 {
-  margin: 0 0 0.8rem;
-  font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 700;
-  line-height: 1.35;
-  letter-spacing: 0;
-  color: var(--color-ink);
-}
-
 .product-details > summary {
   display: flex;
   align-items: center;
@@ -6332,7 +6318,6 @@ button.reset:hover:not(:has(> *)) {
 .trust-promise-section {
   position: relative;
   overflow: hidden;
-  padding: 1.75rem 0 3rem;
 }
 
 .trust-promise-section::before {
@@ -6586,10 +6571,6 @@ button.reset:hover:not(:has(> *)) {
 }
 
 @media (min-width: 72em) {
-  .trust-promise-section {
-    padding: 4rem 0;
-  }
-
   /* Staircase: 4 across, each card stepped progressively lower. */
   .trust-promise-grid {
     align-items: start;
@@ -6627,13 +6608,9 @@ button.reset:hover:not(:has(> *)) {
 * Diamond value section
 * --------------------------------------------------
 */
-.diamond-value-section {
-  padding-top: 1.5rem;
-}
-
 .diamond-value-visual {
   position: relative;
-  min-height: clamp(20rem, 34vw, 30rem);
+  min-height: clamp(15rem, 25vw, 22.5rem);
   overflow: hidden;
   border: 1px solid var(--color-border);
   background: #000;
@@ -6653,42 +6630,10 @@ button.reset:hover:not(:has(> *)) {
 .diamond-value-visual img {
   display: block;
   width: 100%;
-  height: clamp(20rem, 34vw, 30rem);
+  height: clamp(15rem, 25vw, 22.5rem);
   object-fit: cover;
-  object-position: center;
+  object-position: 50% 80%;
   border-radius: 0;
-}
-
-.diamond-value-heading {
-  position: absolute;
-  z-index: 1;
-  max-width: min(34rem, 46%);
-  color: #000;
-  font-family: var(--font-display);
-  font-size: clamp(3rem, 6vw, 7.5rem);
-  font-weight: 600;
-  line-height: 0.8;
-  margin: 0;
-  text-shadow: 0 0 22px rgba(255, 255, 255, 0.44);
-}
-
-.diamond-value-heading span {
-  color: var(--color-gold);
-  font-style: italic;
-}
-
-.diamond-value-heading.is-right {
-  right: clamp(1.25rem, 4vw, 4rem);
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: right;
-}
-
-.diamond-value-heading.is-left {
-  left: clamp(1.25rem, 4vw, 4rem);
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: left;
 }
 
 @media (max-width: 54em) {
@@ -6704,27 +6649,7 @@ button.reset:hover:not(:has(> *)) {
   }
 
   .diamond-value-visual img {
-    height: 17rem;
-  }
-
-  .diamond-value-heading,
-  .diamond-value-heading.is-left,
-  .diamond-value-heading.is-right {
-    max-width: 82%;
-    font-size: clamp(2.1rem, 10vw, 3.4rem);
-  }
-
-  .diamond-value-heading.is-left,
-  .diamond-value-heading.is-right {
-    bottom: 1.25rem;
-    top: auto;
-    transform: none;
-  }
-}
-
-@media (min-width: 72em) {
-  .trust-promise-section {
-    padding: 4rem 0;
+    height: 12.75rem;
   }
 }
 
