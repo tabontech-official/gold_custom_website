@@ -64,6 +64,13 @@ export default function Orders() {
 
   return (
     <div className="orders">
+      <div className="orders-intro">
+        <div>
+          <p className="account-kicker">Purchase history</p>
+          <h2>Orders</h2>
+        </div>
+        <p>Find an order using its number or confirmation code.</p>
+      </div>
       <OrderSearchForm currentFilters={filters} />
       <OrdersTable orders={orders} filters={filters} />
     </div>
@@ -94,7 +101,7 @@ function OrdersTable({
 
 function EmptyOrders({hasFilters = false}: {hasFilters?: boolean}) {
   return (
-    <div>
+    <div className="orders-empty">
       {hasFilters ? (
         <>
           <p>No orders found matching your search.</p>
@@ -156,7 +163,7 @@ function OrderSearchForm({
       aria-label="Search orders"
     >
       <fieldset className="order-search-fieldset">
-        <legend className="order-search-legend">Filter Orders</legend>
+        <legend className="order-search-legend">Find an order</legend>
 
         <div className="order-search-inputs">
           <input
@@ -178,12 +185,17 @@ function OrderSearchForm({
         </div>
 
         <div className="order-search-buttons">
-          <button type="submit" disabled={isSearching}>
+          <button
+            className="account-search-button"
+            type="submit"
+            disabled={isSearching}
+          >
             {isSearching ? 'Searching' : 'Search'}
           </button>
           {hasFilters && (
             <button
               type="button"
+              className="account-clear-button"
               disabled={isSearching}
               onClick={() => {
                 setSearchParams(new URLSearchParams());
