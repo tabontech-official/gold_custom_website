@@ -527,9 +527,9 @@ function ProductTrustBadges() {
 type Faq = {question: string; answer: string};
 
 /**
- * FAQs come from the product's `custom.faqs` metafield when it holds a JSON
- * array of {question, answer}; otherwise the classic store-wide set renders
- * so the section never looks empty.
+ * FAQs come from the product's `custom.ai_faq` metafield (AI-generated,
+ * saved as schema.org FAQPage JSON-LD) when present; otherwise a generated
+ * set renders so the section never looks empty.
  */
 function buildFaqs(
   product: any,
@@ -566,13 +566,14 @@ function buildFaqs(
 function parseFaqMetafield(value?: string | null): Faq[] | null {
   if (!value) return null;
   try {
-    const parsed: unknown = JSON.parse(value);
-    const list = Array.isArray(parsed) ? parsed : (parsed as any)?.faqs;
+    const parsed: any = JSON.parse(value);
+    // AI FAQ metafield is saved as schema.org FAQPage JSON-LD.
+    const list = parsed?.mainEntity ?? (Array.isArray(parsed) ? parsed : parsed?.faqs);
     if (!Array.isArray(list)) return null;
     const faqs = list
       .map((f: any) => ({
-        question: String(f?.question ?? f?.q ?? ''),
-        answer: String(f?.answer ?? f?.a ?? ''),
+        question: String(f?.name ?? f?.question ?? f?.q ?? ''),
+        answer: String(f?.acceptedAnswer?.text ?? f?.answer ?? f?.a ?? ''),
       }))
       .filter((f) => f.question && f.answer);
     return faqs.length ? faqs : null;
@@ -905,7 +906,7 @@ const PRODUCT_FRAGMENT = `#graphql
     category {
       name
     }
-    faqs: metafield(namespace: "custom", key: "faqs") {
+    faqs: metafield(namespace: "custom", key: "ai_faq") {
       value
     }
     media(first: 25) {
