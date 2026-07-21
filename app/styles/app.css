@@ -812,7 +812,7 @@ button.reset:hover:not(:has(> *)) {
   cursor: pointer;
   display: inline-block;
   font-size: var(--navigation-font-size);
-  font-weight: var(--navigation-font-weight);
+  font-weight: 700;
   letter-spacing: var(--navigation-letter-spacing);
   padding-bottom: 0.4rem;
   position: relative;
@@ -950,7 +950,7 @@ button.reset:hover:not(:has(> *)) {
   padding-bottom: 0.25rem;
   position: relative;
   text-overflow: ellipsis;
-  text-transform: uppercase;
+  text-transform: capitalize;
   white-space: nowrap;
   width: fit-content;
 }
@@ -1006,12 +1006,14 @@ button.reset:hover:not(:has(> *)) {
   min-width: 0;
 }
 
-.mega-menu-card {
+.mega-menu-card,
+.mega-menu-card:hover {
   display: flex;
   flex-direction: column;
   gap: 0.45rem;
   min-width: 0;
   overflow: hidden;
+  text-decoration: none !important;
   width: 170px;
 }
 
@@ -1045,12 +1047,12 @@ button.reset:hover:not(:has(> *)) {
 
 .mega-menu-card:hover .mega-menu-card-img {
   transform: translateY(-3px);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.11);
 }
 
 .mega-menu-card-title {
-  color: var(--color-ink);
-  display: -webkit-box;
+  color: var(--color-ink) !important;
+  display: -webkit-box !important;
+  width: 100%;
   font-size: 0.88rem;
   font-weight: 600;
   -webkit-box-orient: vertical;
@@ -1058,21 +1060,37 @@ button.reset:hover:not(:has(> *)) {
   letter-spacing: 0;
   line-height: 1.25;
   max-width: 100%;
-  min-height: 2.2em;
+  max-height: 2.2em;
   overflow: hidden;
   overflow-wrap: anywhere;
+  white-space: normal !important;
+  word-break: break-word;
   text-align: left;
+  text-decoration: none !important;
 }
 
-.mega-menu-card:hover .mega-menu-card-title {
-  color: var(--cg-champagne-dark);
+.mega-menu-card:hover .mega-menu-card-title,
+.mega-menu-card-title:hover,
+.mega-menu-card-title:visited,
+.mega-menu-card-title:focus {
+  color: var(--cg-champagne-dark) !important;
+  text-decoration: none !important;
 }
 
 .mega-menu-card-price {
-  color: #000;
+  color: #000 !important;
   font-size: 0.86rem;
   font-weight: 500;
+  text-decoration: none !important;
   white-space: nowrap;
+}
+
+.mega-menu-card:hover .mega-menu-card-price,
+.mega-menu-card-price:hover,
+.mega-menu-card-price:visited,
+.mega-menu-card-price:focus {
+  text-decoration: none !important;
+  color: #000 !important;
 }
 
 .mega-menu-viewall {
@@ -1582,7 +1600,7 @@ button.reset:hover:not(:has(> *)) {
   font-size: var(--navigation-font-size);
   font-weight: var(--navigation-font-weight);
   letter-spacing: var(--navigation-letter-spacing);
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
 
 .footer-col a:hover {
@@ -5019,7 +5037,10 @@ button.reset:hover:not(:has(> *)) {
   gap: 0.7rem;
 }
 
-.product-item-copy {
+.product-item-copy,
+.product-item-copy:hover,
+.product-item-copy:visited,
+.product-item-copy:focus {
   text-decoration: none;
   color: inherit;
 }
@@ -5032,6 +5053,9 @@ button.reset:hover:not(:has(> *)) {
   text-transform: uppercase;
   text-align: center;
   line-height: 1.35;
+  white-space: normal;
+  word-break: break-word;
+  text-decoration: none;
   /* reserve two lines so prices and buttons align across a row */
   min-height: 2.7em;
   display: -webkit-box;
@@ -5045,12 +5069,16 @@ button.reset:hover:not(:has(> *)) {
   color: var(--color-ink-soft);
 }
 
-.product-card-price {
+.product-card-price,
+.product-card-price:hover,
+.product-card-price:visited,
+.product-card-price:focus {
   text-align: center;
   font-weight: 500;
   font-size: 0.95rem;
   color: var(--color-ink);
   white-space: nowrap;
+  text-decoration: none;
 }
 
 /* Heart — plain icon, always visible top-right of the image */
@@ -5434,9 +5462,9 @@ button.reset:hover:not(:has(> *)) {
   background: var(--color-bg-soft);
 }
 
-/* Style code line under the heading */
+/* Style code line above the heading */
 .product-sku {
-  margin: -0.5rem 0 0;
+  margin: 0;
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -5531,9 +5559,19 @@ button.reset:hover:not(:has(> *)) {
   padding-left: 1.1rem;
 }
 
+.product-price {
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .product-price-on-sale {
   display: flex;
+  align-items: center;
   grid-gap: 0.5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-decoration: none;
 }
 
 .product-price-on-sale s {

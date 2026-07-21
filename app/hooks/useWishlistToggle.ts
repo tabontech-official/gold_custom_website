@@ -1,5 +1,5 @@
 import {useEffect, useMemo, useRef} from 'react';
-import {useFetcher, useRevalidator, useRouteLoaderData} from 'react-router';
+import {useFetcher, useRouteLoaderData} from 'react-router';
 import type {RootLoader} from '~/root';
 import {showWishlistToast} from '~/components/WishlistToast';
 
@@ -8,10 +8,12 @@ type WishlistActionData = {
   added?: boolean;
 };
 
+// ponytail: no manual revalidator.revalidate() here — the fetcher's own POST
+// already triggers root revalidation (root.tsx shouldRevalidate: formMethod
+// !== 'GET'), so calling it again just doubles the root-loader roundtrip.
 export function useWishlistToggle(handle: string) {
   const root = useRouteLoaderData<RootLoader>('root');
   const fetcher = useFetcher<WishlistActionData>();
-  const revalidator = useRevalidator();
   const lastDataRef = useRef<WishlistActionData | null>(null);
 
   const serverWished = (root?.wishlist ?? []).includes(handle);
@@ -28,8 +30,7 @@ export function useWishlistToggle(handle: string) {
       message: added ? 'Added to wishlist' : 'Removed from wishlist',
       severity: added ? 'success' : 'info',
     });
-    revalidator.revalidate();
-  }, [fetcher.data, handle, revalidator]);
+  }, [fetcher.data, handle]);
 
   return useMemo(
     () => ({

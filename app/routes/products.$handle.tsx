@@ -290,8 +290,8 @@ export default function Product() {
         />
 
         <div className="product-main">
-          <h1>{title}</h1>
           {sku && <p className="product-sku">SKU / Style Code: {sku}</p>}
+          <h1>{title}</h1>
           <div className="product-price-row">
             <ProductPrice
               price={selectedVariant?.price}
