@@ -1479,7 +1479,10 @@ button.reset:hover:not(:has(> *)) {
   justify-content: center;
   padding: 1rem;
   position: fixed;
-  z-index: 100;
+  /* Above the sticky header (900) and mega-menu (1200/1201) — matches the
+     cart/search overlay's z-index: 2000 so the whole page, header included,
+     dims behind any modal popup. */
+  z-index: 2000;
 }
 
 .welcome-popup {
