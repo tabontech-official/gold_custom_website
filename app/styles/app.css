@@ -5804,7 +5804,7 @@ button.reset:hover:not(:has(> *)) {
   text-decoration: line-through;
 }
 
-/* Buy row — edgy black bar with the wishlist square at its right */
+/* Buy row — quantity stepper, edgy black Add to Bag bar, wishlist square */
 .product-buy-row {
   display: flex;
   align-items: stretch;
@@ -5813,11 +5813,18 @@ button.reset:hover:not(:has(> *)) {
 
 .product-buy-row form {
   display: flex;
+  flex: 1;
   max-width: none;
 }
 
-.product-buy-row form:first-child {
-  flex: 1;
+.product-buy-row .product-quantity-stepper {
+  flex: 0 0 auto;
+  height: auto;
+}
+
+.product-buy-row .product-quantity-btn,
+.product-buy-row .product-quantity-value {
+  height: 100%;
 }
 
 .product-atc {
@@ -5889,14 +5896,14 @@ button.reset:hover:not(:has(> *)) {
   text-transform: uppercase;
 }
 
-/* iOS-style segmented stepper — soft fill, inset hairline dividers */
+/* Square-edged stepper, matching the wishlist button beside it. */
 .product-quantity-stepper {
   display: inline-flex;
   align-items: center;
-  border: 0;
-  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
   overflow: hidden;
-  background: var(--color-bg-soft);
+  background: #fff;
 }
 
 .product-quantity-btn,
