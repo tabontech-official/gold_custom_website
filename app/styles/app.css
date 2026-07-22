@@ -5291,6 +5291,14 @@ button.reset:hover:not(:has(> *)) {
   color: var(--color-border);
 }
 
+/* Mobile has an easy native back gesture/button — the trail is just clutter
+   above the page title here. */
+@media (max-width: 48em) {
+  .breadcrumb {
+    display: none;
+  }
+}
+
 /* Page-level breadcrumb spacing for routes without their own container */
 .page-breadcrumb {
   margin: 0 auto;

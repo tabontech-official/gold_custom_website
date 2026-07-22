@@ -138,6 +138,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
+
   const genderNewArrivals = context.storefront
     .query(NEW_ARRIVALS_BY_GENDER_QUERY)
     .catch((error: Error) => {
@@ -159,6 +160,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
+
   return {
     recommendedProducts,
     bestSellingProducts,
@@ -167,7 +169,6 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     tiktokVideos,
   };
 }
-
 // The "Tiktok videos" metaobject holds three reference fields pointing at
 // individual "tiktok video detail" metaobjects: video_1 is a list (for
 // historical reasons), video_2/video_3 are single references. Collect
