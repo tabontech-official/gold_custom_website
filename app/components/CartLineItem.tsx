@@ -2,7 +2,7 @@ import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
 import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
 import {useVariantUrl} from '~/lib/variants';
-import {Link} from 'react-router';
+import {Link, useFetcher} from 'react-router';
 import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
 import type {
@@ -113,37 +113,62 @@ export function CartLineItem({
  * hasn't yet responded that it was successfully added to the cart.
  */
 function CartLineQuantity({line}: {line: CartLine}) {
+  // Hooks must run before any early return, so read the stock signal up top.
+  const hitStockCeiling = useAtStockMax(line?.id ?? '');
+
   if (!line || typeof line?.quantity === 'undefined') return null;
   const {id: lineId, quantity, isOptimistic} = line;
-  const prevQuantity = Number(Math.max(0, quantity - 1).toFixed(0));
   const nextQuantity = Number((quantity + 1).toFixed(0));
+
+  // Stock ceiling. The Storefront token here lacks the
+  // `unauthenticated_read_product_inventory` scope, so numeric
+  // `quantityAvailable` isn't readable. We rely on two scope-free signals:
+  //   1. `availableForSale === false` → sold out, block "+".
+  //   2. a prior LinesUpdate on this line came back with a not-enough-stock
+  //      warning → we're at the real ceiling, so "+" turns solid.
+  // Shopify still enforces the true cap server-side regardless.
+  // ponytail: enable the inventory scope on the token to get an exact numeric
+  // max instead of inferring it from the clamp warning.
+  const soldOut =
+    'availableForSale' in line.merchandise &&
+    line.merchandise.availableForSale === false;
+  const atStockMax = soldOut || hitStockCeiling;
 
   return (
     <div className="cart-line-quantity">
       <div className="cart-qty-stepper">
-        <CartLineUpdateButton lines={[{id: lineId, quantity: prevQuantity}]}>
-          <button
-            aria-label="Decrease quantity"
-            disabled={quantity <= 1 || !!isOptimistic}
-            name="decrease-quantity"
-            value={prevQuantity}
-          >
-            <span>&#8722;</span>
-          </button>
-        </CartLineUpdateButton>
+        {quantity <= 1 ? (
+          // At 1, the decrease slot becomes a remove control instead of going to 0.
+          <CartLineRemoveButton
+            lineIds={[lineId]}
+            disabled={!!isOptimistic}
+            variant="stepper"
+          />
+        ) : (
+          <CartLineUpdateButton lines={[{id: lineId, quantity: quantity - 1}]}>
+            <button
+              aria-label="Decrease quantity"
+              disabled={!!isOptimistic}
+              name="decrease-quantity"
+              value={quantity - 1}
+            >
+              <span>&#8722;</span>
+            </button>
+          </CartLineUpdateButton>
+        )}
         <span className="cart-qty-value">{quantity}</span>
         <CartLineUpdateButton lines={[{id: lineId, quantity: nextQuantity}]}>
           <button
             aria-label="Increase quantity"
             name="increase-quantity"
             value={nextQuantity}
-            disabled={!!isOptimistic}
+            disabled={!!isOptimistic || atStockMax}
+            className={atStockMax ? 'is-stock-max' : undefined}
           >
             <span>&#43;</span>
           </button>
         </CartLineUpdateButton>
       </div>
-      <CartLineRemoveButton lineIds={[lineId]} disabled={!!isOptimistic} />
     </div>
   );
 }
@@ -156,9 +181,11 @@ function CartLineQuantity({line}: {line: CartLine}) {
 function CartLineRemoveButton({
   lineIds,
   disabled,
+  variant = 'text',
 }: {
   lineIds: string[];
   disabled: boolean;
+  variant?: 'text' | 'stepper';
 }) {
   return (
     <CartForm
@@ -167,10 +194,34 @@ function CartLineRemoveButton({
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{lineIds}}
     >
-      <button className="cart-remove-btn" disabled={disabled} type="submit">
-        Remove
+      <button
+        className={variant === 'stepper' ? 'cart-remove-icon' : 'cart-remove-btn'}
+        disabled={disabled}
+        type="submit"
+        aria-label="Remove item"
+      >
+        {variant === 'stepper' ? <TrashIcon /> : 'Remove'}
       </button>
     </CartForm>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
   );
 }
 
@@ -204,4 +255,18 @@ function CartLineUpdateButton({
  */
 function getUpdateKey(lineIds: string[]) {
   return [CartForm.ACTIONS.LinesUpdate, ...lineIds].join('-');
+}
+
+/**
+ * True once Shopify has told us (via a LinesUpdate warning) that this line hit
+ * its inventory ceiling. The update button submits under `getUpdateKey`, so we
+ * read that exact fetcher's last response.
+ */
+function useAtStockMax(lineId: string) {
+  const fetcher = useFetcher({key: getUpdateKey([lineId])});
+  const warnings = (fetcher.data as {warnings?: Array<{code?: string}>})
+    ?.warnings;
+  return Boolean(
+    warnings?.some((w) => w.code === 'MERCHANDISE_NOT_ENOUGH_STOCK'),
+  );
 }

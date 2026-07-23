@@ -23,10 +23,10 @@ function getLineItemChildrenMap(lines: CartLine[]): LineItemChildrenMap {
       children[parentId].push(line);
     }
     if ('lineComponents' in line) {
-      const children = getLineItemChildrenMap(line.lineComponents);
-      for (const [parentId, childIds] of Object.entries(children)) {
+      const nested = getLineItemChildrenMap(line.lineComponents);
+      for (const [parentId, childLines] of Object.entries(nested)) {
         if (!children[parentId]) children[parentId] = [];
-        children[parentId].push(...childIds);
+        children[parentId].push(...childLines);
       }
     }
   }

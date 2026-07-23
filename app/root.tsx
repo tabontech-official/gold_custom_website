@@ -26,24 +26,10 @@ export type RootLoader = typeof loader;
  */
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
-  formAction,
   currentUrl,
   nextUrl,
 }) => {
-  // Cart and wishlist mutations only change `cart`/`wishlist` on root data,
-  // never the header/footer menus, so skip root's loader entirely for them
-  // (its own components already reflect the fetcher's response optimistically).
-  // ponytail: route-string check, add to the list if another mutation-only
-  // action route shows up needing the same treatment.
-  if (
-    formMethod &&
-    formMethod !== 'GET' &&
-    (formAction === '/cart' || formAction === '/wishlist')
-  ) {
-    return false;
-  }
-
-  // revalidate when a mutation is performed e.g login...
+  // revalidate when a mutation is performed e.g login, cart update...
   if (formMethod && formMethod !== 'GET') return true;
 
   // revalidate when manually revalidating via useRevalidator

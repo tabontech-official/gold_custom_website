@@ -1,12 +1,9 @@
 import type {CSSProperties, ReactNode} from 'react';
-import {useEffect, useState} from 'react';
 import {useLocation, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import type {ProductFragment} from 'storefrontapi.generated';
-
-const MAX_QUANTITY = 10; // ponytail: fixed ceiling, no per-product stock-aware max yet
 
 export function ProductForm({
   productOptions,
@@ -19,11 +16,6 @@ export function ProductForm({
 }) {
   const {pathname} = useLocation();
   const {open} = useAside();
-  const [quantity, setQuantity] = useState(1);
-
-  // Reset to 1 whenever the shopper switches variant, so a leftover quantity
-  // from a sold-out/different variant never silently carries over.
-  useEffect(() => setQuantity(1), [selectedVariant?.id]);
 
   return (
     <div className="product-form">
@@ -101,35 +93,6 @@ export function ProductForm({
 
       <div className="product-purchase-grid">
         <div className="product-buy-row">
-          {selectedVariant?.availableForSale && (
-            <div
-              className="product-quantity-stepper"
-              role="group"
-              aria-label="Quantity"
-            >
-              <button
-                type="button"
-                className="product-quantity-btn"
-                aria-label="Decrease quantity"
-                disabled={quantity <= 1}
-                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-              >
-                &minus;
-              </button>
-              <span className="product-quantity-value">{quantity}</span>
-              <button
-                type="button"
-                className="product-quantity-btn"
-                aria-label="Increase quantity"
-                disabled={quantity >= MAX_QUANTITY}
-                onClick={() =>
-                  setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))
-                }
-              >
-                +
-              </button>
-            </div>
-          )}
           <AddToCartButton
             className="btn product-atc product-purchase-action"
             disabled={!selectedVariant || !selectedVariant.availableForSale}
@@ -141,7 +104,7 @@ export function ProductForm({
                 ? [
                     {
                       merchandiseId: selectedVariant.id,
-                      quantity,
+                      quantity: 1,
                       selectedVariant,
                     },
                   ]

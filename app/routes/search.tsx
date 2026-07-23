@@ -50,7 +50,7 @@ export default function SearchPage() {
           {term && (
             <p className="search-page-summary">
               {result?.total
-                ? `${result.total} result${result.total === 1 ? '' : 's'} for "${term}"`
+                ? `Results for "${term}"`
                 : `No results for "${term}"`}
             </p>
           )}
