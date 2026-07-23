@@ -6333,28 +6333,40 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
+/* Centered, matching the front-page section headings (underline accent). */
 .pdp-faq-title {
   margin: 0 0 1.5rem;
   text-align: center;
 }
 
+.pdp-faq-title span {
+  display: inline-block;
+  border-bottom: 2px solid var(--color-ink);
+  padding-bottom: 0.6rem;
+}
+
 .pdp-faq-list {
-  max-width: 46rem;
-  margin: 0 auto;
+  margin: 0;
   display: grid;
   gap: 0.8rem;
   text-align: left;
-  /* Cap the list so long FAQ sets scroll instead of dominating the page. */
-  max-height: 30rem;
-  overflow-y: auto;
-  padding-right: 0.5rem;
+  /* Inset the questions/answers from the section edges. */
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+
+.pdp-faq summary {
+  font-size: 1.05rem;
+}
+
+.pdp-faq p {
+  font-size: 1rem;
 }
 
 .pdp-faq {
   border: 1px solid transparent;
   border-radius: 12px;
   background: var(--color-bg-soft);
-  padding: 0 1.4rem;
+  padding: 0;
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
@@ -6374,7 +6386,7 @@ button.reset:hover:not(:has(> *)) {
   gap: 1rem;
   cursor: pointer;
   list-style: none;
-  padding: 1.1rem 0;
+  padding: 1.1rem 1.4rem;
   font-weight: 600;
   color: var(--color-ink);
 }
@@ -6399,7 +6411,7 @@ button.reset:hover:not(:has(> *)) {
 
 .pdp-faq p {
   margin: 0;
-  padding: 0 0 1.25rem;
+  padding: 0 1.4rem 1.25rem;
   max-width: 38rem;
   color: var(--color-ink-soft);
   line-height: 1.65;

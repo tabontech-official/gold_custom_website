@@ -310,10 +310,7 @@ export default function Product() {
             wishlistButton={<ProductWishlistButton handle={product.handle} />}
           />
 
-          <ProductAccordions
-            descriptionHtml={descriptionHtml}
-            selectedVariant={selectedVariant}
-          />
+          <ProductAccordions descriptionHtml={descriptionHtml} />
           <ProductTrustBadges />
 
           <div className="product-note">
@@ -383,15 +380,6 @@ function ProductWishlistButton({handle}: {handle: string}) {
   );
 }
 
-// Weight unit comes back as a shouty enum (GRAMS, KILOGRAMS, OUNCES, POUNDS)
-// — shorten to the abbreviation shoppers actually expect.
-const WEIGHT_UNIT_LABEL: Record<string, string> = {
-  GRAMS: 'g',
-  KILOGRAMS: 'kg',
-  OUNCES: 'oz',
-  POUNDS: 'lb',
-};
-
 /**
  * Split the description HTML on `<h5>` headings. The first chunk (the intro
  * paragraph, before any heading) renders visible under the product; every
@@ -409,21 +397,9 @@ function splitDescriptionByH5(html: string) {
 
 function ProductAccordions({
   descriptionHtml,
-  selectedVariant,
 }: {
   descriptionHtml?: string | null;
-  selectedVariant: any;
 }) {
-  // The variant's Shipping-panel weight, straight from the Storefront API.
-  const materialWeight =
-    typeof selectedVariant?.weight === 'number' && selectedVariant.weight > 0
-      ? `${selectedVariant.weight} ${
-          WEIGHT_UNIT_LABEL[selectedVariant.weightUnit] ??
-          selectedVariant.weightUnit ??
-          ''
-        }`.trim()
-      : null;
-
   const {intro, sections} = splitDescriptionByH5(descriptionHtml || '');
 
   return (
@@ -444,25 +420,6 @@ function ProductAccordions({
           />
         </details>
       ))}
-
-      {materialWeight && (
-        <details className="product-details">
-          <summary>Material Weight</summary>
-          <div className="product-details-body">
-            <p>Approximate weight: {materialWeight}</p>
-          </div>
-        </details>
-      )}
-      <details className="product-details">
-        <summary>Exchanges/Returns</summary>
-        <div className="product-details-body">
-          <p>
-            Eligible ready-to-ship pieces can be exchanged or returned according
-            to our store policy. Custom, resized, or engraved pieces may be
-            final sale.
-          </p>
-        </div>
-      </details>
     </div>
   );
 }
@@ -590,7 +547,9 @@ function ProductFaqSection({faqs}: {faqs: Faq[]}) {
   return (
     <section className="pdp-faq-section">
       <div className="section-inner">
-        <h2 className="pdp-faq-title">FAQs</h2>
+        <h2 className="pdp-faq-title">
+          <span>FAQs</span>
+        </h2>
         <div className="pdp-faq-list">
           {faqs.map((faq) => (
             <details className="pdp-faq" key={faq.question}>
