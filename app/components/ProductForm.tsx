@@ -109,13 +109,21 @@ export function ProductForm({
                 : []
             }
           >
-            {selectedVariant?.availableForSale
-              ? `Add to bag${
-                  selectedVariant.price
-                    ? ` - ${formatMoney(selectedVariant.price)}`
-                    : ''
-                }`
-              : 'Sold out'}
+            {selectedVariant?.availableForSale ? (
+              <>
+                Add to bag
+                {selectedVariant.price && (
+                  <>
+                    {' - '}
+                    <span className="product-atc-price">
+                      {formatMoney(selectedVariant.price)}
+                    </span>
+                  </>
+                )}
+              </>
+            ) : (
+              'Sold out'
+            )}
           </AddToCartButton>
           {wishlistButton}
         </div>
