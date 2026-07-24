@@ -3243,6 +3243,12 @@ button.reset:hover:not(:has(> *)) {
   transform: scale(1.001);
 }
 
+/* Portrait mobile hero image — hidden on desktop; the mobile media query below
+   reveals it and lets it drive the hero height at its natural aspect ratio. */
+.hero-mobile-image {
+  display: none;
+}
+
 .hero-dots {
   position: absolute;
   left: 0;
@@ -3442,6 +3448,27 @@ button.reset:hover:not(:has(> *)) {
     padding-top: 1rem;
     padding-bottom: 1rem;
     max-width: 100%;
+  }
+
+  /* When a mobile hero image is present: show the full portrait at its natural
+     height (it sets the hero's height), hide the rotating banners + dots, and
+     float the heading over the bottom of the picture. Without it, the hero
+     keeps the default banner behavior above (desktop-banner fallback). */
+  .hero[data-has-mobile] .hero-mobile-image {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .hero[data-has-mobile] .hero-track,
+  .hero[data-has-mobile] .hero-dots {
+    display: none;
+  }
+
+  .hero[data-has-mobile] .hero-inner {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
   }
 
   /* Small hero copy overlaid on the left of the picture */
@@ -9397,4 +9424,266 @@ button.reset:hover:not(:has(> *)) {
   line-height: 1.4;
   overflow-y: auto;
   max-height: 20vh;
+}
+
+/* ===== Book Private Consultation — button + modal ===== */
+.product-book-consult {
+  width: 100%;
+  min-height: 3.25rem;
+  margin: 0;
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-gold);
+  border-radius: 0;
+  font-size: 0.92rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+
+.product-book-consult:hover:not(:disabled) {
+  background: var(--color-gold);
+  border-color: var(--color-gold);
+  color: #fff;
+}
+
+.product-book-consult:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.appt-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  animation: apptFade 200ms ease;
+}
+
+.appt-overlay-scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: rgba(20, 16, 10, 0.55);
+  backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.appt-modal {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 440px;
+  max-height: calc(100vh - 2.5rem);
+  overflow-y: auto;
+  background: #fffdf8;
+  border: 1px solid var(--color-gold-soft);
+  box-shadow: 0 24px 60px rgba(40, 30, 10, 0.28);
+  padding: 2.25rem 2rem 2rem;
+  animation: apptRise 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.appt-close {
+  position: absolute;
+  top: 0.85rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  background: none;
+  border: 0;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.appt-close:hover {
+  color: var(--color-ink);
+}
+
+.appt-head {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.appt-eyebrow {
+  display: inline-block;
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-gold-dark);
+  margin-bottom: 0.55rem;
+}
+
+.appt-head h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.appt-piece {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+  font-style: italic;
+}
+
+.appt-field {
+  display: block;
+  margin-bottom: 1.1rem;
+}
+
+.appt-field > span {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin-bottom: 0.4rem;
+}
+
+.appt-field input {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  font-size: 1rem;
+  color: var(--color-ink);
+  transition: border-color 140ms ease;
+}
+
+.appt-field input:focus {
+  outline: none;
+  border-color: var(--color-gold);
+}
+
+.appt-field input[aria-invalid='true'] {
+  border-color: var(--color-sale);
+}
+
+.appt-error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-style: normal;
+  color: var(--color-sale);
+}
+
+.appt-form-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(178, 58, 72, 0.08);
+  border-left: 2px solid var(--color-sale);
+  font-size: 0.85rem;
+  color: var(--color-sale);
+}
+
+.appt-submit {
+  margin-top: 0.3rem;
+}
+
+.appt-fineprint {
+  margin: 0.85rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
+/* Success state */
+.appt-success {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+.appt-success h2 {
+  margin: 1rem 0 0.6rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.appt-success p {
+  margin: 0 auto 1.5rem;
+  max-width: 30ch;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--color-ink-soft);
+}
+
+.appt-success-mark {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto;
+}
+
+.appt-success-mark svg {
+  width: 100%;
+  height: 100%;
+}
+
+.appt-success-mark circle {
+  stroke: var(--color-gold);
+  stroke-width: 2;
+  stroke-dasharray: 151;
+  stroke-dashoffset: 151;
+  animation: apptDraw 500ms ease forwards;
+}
+
+.appt-success-mark path {
+  stroke: var(--color-gold-dark);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: apptDraw 400ms 380ms ease forwards;
+}
+
+@keyframes apptFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes apptRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes apptDraw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .appt-overlay,
+  .appt-modal,
+  .appt-success-mark circle,
+  .appt-success-mark path {
+    animation: none;
+  }
+  .appt-success-mark circle,
+  .appt-success-mark path {
+    stroke-dashoffset: 0;
+  }
 }

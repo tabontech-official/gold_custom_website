@@ -2,6 +2,7 @@ import type {ReactNode} from 'react';
 import {useLocation, useNavigate, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton} from './AddToCartButton';
+import {AppointmentModal} from './AppointmentModal';
 import {useAside} from './Aside';
 import {PremiumSelect, type PremiumSelectOption} from './PremiumSelect';
 import type {ProductFragment} from 'storefrontapi.generated';
@@ -21,11 +22,13 @@ export function ProductForm({
   selectedVariant,
   wishlistButton,
   variantGroup,
+  product,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
   wishlistButton?: ReactNode;
   variantGroup?: VariantGroupSelect | null;
+  product: {id: string; title: string; handle: string};
 }) {
   const {pathname} = useLocation();
   const navigate = useNavigate();
@@ -149,6 +152,18 @@ export function ProductForm({
             </AddToCartButton>
           </div>
         )}
+
+        <AppointmentModal
+          product={{
+            id: product.id,
+            title: product.title,
+            handle: product.handle,
+            variantInfo:
+              selectedVariant?.sku?.trim() ||
+              selectedVariant?.title?.trim() ||
+              '',
+          }}
+        />
       </div>
 
       <p className="product-finance-note">

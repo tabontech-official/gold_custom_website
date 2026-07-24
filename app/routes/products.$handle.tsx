@@ -306,6 +306,11 @@ export default function Product() {
             selectedVariant={selectedVariant}
             wishlistButton={<ProductWishlistButton handle={product.handle} />}
             variantGroup={buildVariantGroup(product)}
+            product={{
+              id: product.id,
+              title: product.title,
+              handle: product.handle,
+            }}
           />
 
           <ProductAccordions descriptionHtml={descriptionHtml} />

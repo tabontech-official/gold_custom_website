@@ -25,6 +25,8 @@ type HeroContent = {
   heading: string | null;
   images: string[];
   coverImage: string | null;
+  // Single portrait image for the mobile hero; null falls back to `images`.
+  mobileImage: string | null;
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -86,12 +88,14 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   };
 }
 
-// Pulls the homepage hero content from the first hero_content metaobject.
-// Images are ordered by their `hero image<N>` key suffix: the first four form
-// the rotating banner; the fifth is the visual immediately below New Arrivals.
-function parseHeroContent(response: any): HeroContent | null {
-  const fields = response?.metaobjects?.nodes?.[0]?.fields;
-  if (!Array.isArray(fields)) return null;
+// Pull ordered image URLs + heading out of one hero_content entry's fields.
+// Images sort by the numeric suffix in their key (image1, image2, …) so they
+// stay in author-defined order regardless of API field order.
+function extractHeroFields(fields: any): {
+  images: string[];
+  heading: string | null;
+} {
+  if (!Array.isArray(fields)) return {images: [], heading: null};
 
   const imageFields: {order: number; url: string}[] = [];
   let heading: string | null = null;
@@ -100,8 +104,6 @@ function parseHeroContent(response: any): HeroContent | null {
     const rawKey = String(field?.key ?? '');
     const key = rawKey.replace(/[-_\s]+/g, '').toLowerCase();
     if (url) {
-      // Sort by the numeric suffix so images stay in author-defined sequence
-      // regardless of the order the API returns fields in.
       const order = Number(rawKey.match(/(\d+)/)?.[1] ?? imageFields.length + 1);
       imageFields.push({order, url});
     }
@@ -114,14 +116,27 @@ function parseHeroContent(response: any): HeroContent | null {
     }
   }
 
-  const mediaImages = imageFields
-    .sort((a, b) => a.order - b.order)
-    .map((f) => f.url);
+  return {
+    images: imageFields.sort((a, b) => a.order - b.order).map((f) => f.url),
+    heading,
+  };
+}
+
+// Desktop entry drives the rotating banner + heading; the mobile entry's first
+// image is the single portrait shown on small screens (null → falls back to the
+// desktop banners). See HERO_CONTENT_QUERY.
+function parseHeroContent(response: any): HeroContent | null {
+  const desktop = extractHeroFields(response?.desktop?.fields);
+  const mobile = extractHeroFields(response?.mobile?.fields);
+  if (!desktop.images.length && !desktop.heading && !mobile.images.length) {
+    return null;
+  }
 
   return {
-    heading,
-    images: mediaImages.slice(0, 4),
-    coverImage: mediaImages[4] ?? null,
+    heading: desktop.heading,
+    images: desktop.images.slice(0, 4),
+    coverImage: desktop.images[4] ?? null,
+    mobileImage: mobile.images[0] ?? null,
   };
 }
 
@@ -242,6 +257,7 @@ export default function Homepage() {
 
 function Hero({content}: {content: HeroContent | null}) {
   const images = content?.images ?? [];
+  const mobileImage = content?.mobileImage ?? null;
   const [active, setActive] = useState(0);
   // Live finger drag: distance dragged (px) while touching, null when idle.
   const [drag, setDrag] = useState(0);
@@ -291,10 +307,23 @@ function Hero({content}: {content: HeroContent | null}) {
     <>
       <section
         className="hero"
+        data-has-mobile={mobileImage ? 'true' : undefined}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
+        {/* Single portrait image on mobile; CSS hides it (and shows the
+            rotating track) on desktop. Only rendered when the mobile
+            hero_content entry has an image — otherwise mobile falls back to
+            the desktop banners below. */}
+        {mobileImage && (
+          <img
+            className="hero-mobile-image"
+            src={mobileImage}
+            alt=""
+            aria-hidden="true"
+          />
+        )}
         {count > 0 && (
           <div
             className="hero-track"
@@ -918,27 +947,41 @@ export const TRUST_BADGES_QUERY = `#graphql
   }
 ` as const;
 
-// First (and only) hero_content metaobject entry: 3 rotating images + heading.
-const HERO_CONTENT_QUERY = `#graphql
-  query HeroContent($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    metaobjects(type: "hero_content", first: 1) {
-      nodes {
-        fields {
-          key
-          value
-          reference {
-            ... on MediaImage {
-              image {
-                url
-                altText
-              }
-            }
+// Two hero_content entries by handle: `desktop` has the rotating banners +
+// heading; `mobile` holds a single portrait image shown on small screens.
+// Fetched by handle (not `first: 1`) so the two never get confused.
+const HERO_FIELDS_FRAGMENT = `#graphql
+  fragment HeroFields on Metaobject {
+    fields {
+      key
+      value
+      reference {
+        ... on MediaImage {
+          image {
+            url
+            altText
           }
         }
       }
     }
   }
+`;
+
+const HERO_CONTENT_QUERY = `#graphql
+  query HeroContent($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    desktop: metaobject(
+      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}
+    ) {
+      ...HeroFields
+    }
+    mobile: metaobject(
+      handle: {type: "hero_content", handle: "mobile_cover_imagess"}
+    ) {
+      ...HeroFields
+    }
+  }
+  ${HERO_FIELDS_FRAGMENT}
 ` as const;
 
 const RECOMMENDED_PRODUCTS_QUERY = `#graphql
