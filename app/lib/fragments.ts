@@ -249,7 +249,7 @@ export const HEADER_QUERY = `#graphql
     chainsGroup3: menu(handle: "chains-copy") {
       ...Menu
     }
-    braceletsMenu: menu(handle: "bracelets") {
+    braceletsMenu: menu(handle: "bracelets-1") {
       ...Menu
     }
     earringsMenu: menu(handle: "earrings") {

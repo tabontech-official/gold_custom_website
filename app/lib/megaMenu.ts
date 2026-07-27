@@ -47,13 +47,14 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
       {menuKeys: ['chainsGroup1']},
       {menuKeys: ['chainsGroup2']},
       {menuKeys: ['chainsGroup3']},
+      {menuKeys: ['necklacesMenu']},
     ],
   },
   {
     id: 'necklaces',
     label: 'Necklaces',
     to: '/collections/necklaces',
-    columns: [{menuKeys: ['chainWithPendantMenu', 'necklacesMenu']}],
+    columns: [{menuKeys: ['chainWithPendantMenu']}],
   },
   {
     id: 'earrings',

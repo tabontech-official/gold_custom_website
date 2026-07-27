@@ -25,6 +25,7 @@ export async function loader({context}: Route.LoaderArgs) {
   return {};
 }
 
+
 export async function action({request, context}: Route.ActionArgs) {
   const {customerAccount} = context;
 
