@@ -4285,10 +4285,13 @@ button.reset:hover:not(:has(> *)) {
   .coverflow {
     padding-left: 2.25rem;
     padding-right: 2.25rem;
+    padding-bottom: 0.75rem;
   }
 
   .coverflow-stage {
-    height: clamp(340px, 82vw, 430px);
+    /* Just a hair taller than the card so it never overflows onto the dots,
+       without leaving a big dead gap below. */
+    height: clamp(340px, 91vw, 435px);
   }
 
   .coverflow-card {
@@ -4310,6 +4313,11 @@ button.reset:hover:not(:has(> *)) {
     min-height: 2.25rem;
     min-width: 4.6rem;
     padding: 0.46rem 0.72rem;
+  }
+
+  /* Small, even gap below the cards. */
+  .coverflow-dots {
+    margin-top: 1.25rem;
   }
 }
 
