@@ -12,7 +12,7 @@ import {
 } from 'react-router';
 import type {Route} from './+types/root';
 import favicon from '~/assets/favicon.svg';
-import {CATEGORY_MENU_HANDLES, FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
+import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
@@ -129,7 +129,6 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
       cache: storefront.CacheLong(),
       variables: {
         headerMenuHandle: 'main-menu', // Adjust to your header menu handle
-        ...CATEGORY_MENU_HANDLES,
       },
     }),
     // Add other queries here, so that they are loaded in parallel
