@@ -2241,6 +2241,12 @@ button.reset:hover:not(:has(> *)) {
   padding: 3rem 1rem;
 }
 
+/* Wishlist empty state sits too high — drop it well down the page. */
+.wishlist-empty {
+  padding-top: 6rem;
+  padding-bottom: 8rem;
+}
+
 .cart-empty-title {
   font-family: var(--font-display);
   font-size: 1.75rem;

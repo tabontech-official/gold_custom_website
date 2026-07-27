@@ -58,7 +58,7 @@ export default function WishlistPage() {
             ))}
           </div>
         ) : (
-          <div className="cart-empty">
+          <div className="cart-empty wishlist-empty">
             <p className="cart-empty-title">Your wishlist is empty</p>
             <p className="cart-empty-text">
               Tap the heart on any piece to save it here for later.
