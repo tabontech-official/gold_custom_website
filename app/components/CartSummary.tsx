@@ -16,6 +16,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
 
   return (
     <div aria-labelledby="cart-summary" className={className}>
+      {layout === 'page' && <h4>Order Summary</h4>}
       {layout === 'aside' && <CartNote note={cart?.note} />}
 
       <dl className="cart-subtotal">

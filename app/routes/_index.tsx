@@ -110,7 +110,7 @@ function extractHeroFields(fields: any): {
     if (
       !heading &&
       field?.value &&
-      /^(headline|heading|imageheading)$/.test(key)
+      /^(headline|heading|imageheading|herotext)$/.test(key)
     ) {
       heading = field.value;
     }
@@ -266,18 +266,63 @@ function useSwipeSlider<T extends HTMLElement>(
   count: number,
   ref: React.RefObject<T | null>,
 ) {
-  const [active, setActive] = useState(0);
+  // Seamless infinite loop via a clone at each end. Slides render as
+  // [cloneOfLast, ...real, cloneOfFirst]; `pos` is the index into THAT array,
+  // so real slide 0 sits at pos 1. Stepping off either edge (pos 0 or
+  // count+1) animates into the clone, then — on transitionend — snaps
+  // (transition off) to the matching real slide so the motion never reverses.
+  const [pos, setPos] = useState(1);
   const [drag, setDrag] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [snapping, setSnapping] = useState(false); // transition off during snap
   const start = useRef<{x: number; y: number} | null>(null);
   const axis = useRef<'h' | 'v' | null>(null);
   const dragRef = useRef(0);
 
+  // Real slide index for the dots (pos 1..count → 0..count-1; clones map back).
+  const active = ((pos - 1) % count + count) % count;
+  // Never let pos escape [0, count+1] — stepping past an edge lands on the
+  // clone there; the effect below then snaps back to the matching real slide.
+  const step = (dir: number) =>
+    setPos((p) => Math.max(0, Math.min(count + 1, p + dir)));
+  const goReal = (realIndex: number) => setPos(realIndex + 1);
+
   useEffect(() => {
-    if (count <= 1 || dragging) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % count), 5000);
+    if (count <= 1 || dragging || snapping) return;
+    const id = setInterval(() => step(1), 5000);
     return () => clearInterval(id);
-  }, [count, active, dragging]);
+  }, [count, pos, dragging, snapping]);
+
+  // Whenever pos lands on a clone (0 or count+1), let the 750ms slide finish,
+  // then jump (transition off) to the matching real slide. Timer-driven — NOT
+  // transitionend, which fires unreliably when the auto-advance interrupts the
+  // animation and was leaving the track parked blank on a clone.
+  const SLIDE_MS = 750;
+  useEffect(() => {
+    if (count <= 1) return;
+    if (pos !== 0 && pos !== count + 1) return;
+    const real = pos === 0 ? count : 1;
+    const id = setTimeout(() => {
+      setSnapping(true); // transition off for the instant jump
+      setPos(real);
+    }, SLIDE_MS);
+    return () => clearTimeout(id);
+  }, [pos, count]);
+
+  // After a snap has painted, re-enable the transition (double rAF so the
+  // browser commits the jumped position with transition:none first, and never
+  // animates the snap itself).
+  useEffect(() => {
+    if (!snapping) return;
+    let raf2 = 0;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setSnapping(false));
+    });
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+    };
+  }, [snapping]);
 
   useEffect(() => {
     const el = ref.current;
@@ -308,8 +353,7 @@ function useSwipeSlider<T extends HTMLElement>(
       if (axis.current === 'h') {
         const width = window.innerWidth || 1;
         if (Math.abs(dragRef.current) > width * 0.12) {
-          const dir = dragRef.current < 0 ? 1 : -1;
-          setActive((i) => (((i + dir) % count) + count) % count);
+          step(dragRef.current < 0 ? 1 : -1);
         }
       }
       start.current = null;
@@ -357,7 +401,14 @@ function useSwipeSlider<T extends HTMLElement>(
     };
   }, [count, ref]);
 
-  return {active, setActive, drag, dragging};
+  // Track transform: base position (incl. the leading clone via `pos`) plus the
+  // live finger/mouse drag as a % of viewport width.
+  const dragPct = dragging ? (drag / (window.innerWidth || 1)) * 100 : 0;
+  const offset = -pos * 100 + dragPct;
+  // Never animate while dragging or during an edge snap.
+  const animate = !dragging && !snapping;
+
+  return {active, goReal, offset, animate};
 }
 
 function Hero({content}: {content: HeroContent | null}) {
@@ -365,18 +416,26 @@ function Hero({content}: {content: HeroContent | null}) {
   const mobileImages = content?.mobileImages ?? [];
   const count = images.length;
   const sectionRef = useRef<HTMLElement>(null);
-  const {active, setActive, drag, dragging} = useSwipeSlider(count, sectionRef);
+  const {active, goReal, offset, animate} = useSwipeSlider(count, sectionRef);
 
-  const go = (next: number) => setActive(((next % count) + count) % count);
+  // Clone the last slide before + first slide after for a seamless loop.
+  const loopImages =
+    count > 1 ? [images[count - 1], ...images, images[0]] : images;
 
-  // Track offset: base slide position plus the live finger drag (as a %).
-  const dragPct = dragging ? (drag / (window.innerWidth || 1)) * 100 : 0;
-  const offset = -active * 100 + dragPct;
-
-  // First line of the heading renders plain, remaining lines in gold italic.
-  const [firstLine, ...restLines] = (content?.heading ?? '')
-    .trim()
-    .split('\n')
+  // Heading: first line plain, the rest in gold italic. Authors can force the
+  // break with a newline; otherwise a single comma'd line (e.g. "Crafted for
+  // Generations, Designed for You.") splits at the first comma so the second
+  // half gets the accent treatment automatically.
+  const rawHeading = (content?.heading ?? '').trim();
+  const headingLines = rawHeading.includes('\n')
+    ? rawHeading.split('\n')
+    : rawHeading.includes(',')
+      ? [
+          rawHeading.slice(0, rawHeading.indexOf(',') + 1),
+          rawHeading.slice(rawHeading.indexOf(',') + 1),
+        ]
+      : [rawHeading];
+  const [firstLine, ...restLines] = headingLines
     .map((line) => line.trim())
     .filter(Boolean);
 
@@ -397,14 +456,14 @@ function Hero({content}: {content: HeroContent | null}) {
           <div
             className="hero-track"
             style={{
-              transform: `translate3d(${offset}%, 0, 0)`,
-              transition: dragging
-                ? 'none'
-                : 'transform 750ms cubic-bezier(0.22, 1, 0.36, 1)',
+              transform: `translate3d(${count > 1 ? offset : 0}%, 0, 0)`,
+              transition: animate
+                ? 'transform 750ms cubic-bezier(0.22, 1, 0.36, 1)'
+                : 'none',
             }}
             aria-hidden="true"
           >
-            {images.map((url, index) => (
+            {loopImages.map((url, index) => (
               <div
                 key={index}
                 className="hero-slide"
@@ -423,7 +482,7 @@ function Hero({content}: {content: HeroContent | null}) {
                 aria-label={`Go to slide ${index + 1}`}
                 aria-selected={index === active}
                 role="tab"
-                onClick={() => go(index)}
+                onClick={() => goReal(index)}
               />
             ))}
           </div>
@@ -458,23 +517,24 @@ function Hero({content}: {content: HeroContent | null}) {
 function MobileHeroSlider({images}: {images: string[]}) {
   const count = images.length;
   const rootRef = useRef<HTMLDivElement>(null);
-  const {active, setActive, drag, dragging} = useSwipeSlider(count, rootRef);
+  const {active, goReal, offset, animate} = useSwipeSlider(count, rootRef);
 
-  const dragPct = dragging ? (drag / (window.innerWidth || 1)) * 100 : 0;
-  const offset = -active * 100 + dragPct;
+  // Clone last before + first after for a seamless loop.
+  const loopImages =
+    count > 1 ? [images[count - 1], ...images, images[0]] : images;
 
   return (
     <div className="hero-mobile-slider" ref={rootRef}>
       <div
         className="hero-mobile-track"
         style={{
-          transform: `translate3d(${offset}%, 0, 0)`,
-          transition: dragging
-            ? 'none'
-            : 'transform 750ms cubic-bezier(0.22, 1, 0.36, 1)',
+          transform: `translate3d(${count > 1 ? offset : 0}%, 0, 0)`,
+          transition: animate
+            ? 'transform 750ms cubic-bezier(0.22, 1, 0.36, 1)'
+            : 'none',
         }}
       >
-        {images.map((url, index) => (
+        {loopImages.map((url, index) => (
           <img
             key={index}
             className="hero-mobile-image"
@@ -495,7 +555,7 @@ function MobileHeroSlider({images}: {images: string[]}) {
               aria-label={`Go to slide ${index + 1}`}
               aria-selected={index === active}
               role="tab"
-              onClick={() => setActive(index)}
+              onClick={() => goReal(index)}
             />
           ))}
         </div>

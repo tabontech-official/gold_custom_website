@@ -729,6 +729,22 @@ button.reset:hover:not(:has(> *)) {
   text-decoration: none;
 }
 
+/* Mobile: tighter icon spacing and a smaller logo to reclaim header room. */
+@media (max-width: 60em) {
+  .header-ctas {
+    gap: 0.15rem;
+  }
+
+  .header-cta-icon {
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .header-logo-img {
+    height: 2.2rem;
+  }
+}
+
 /* Region / currency label (single US / USD market) */
 .region-pill {
   align-items: center;
@@ -752,7 +768,6 @@ button.reset:hover:not(:has(> *)) {
 .header {
   align-items: center;
   background: var(--cg-white);
-  border-bottom: 1px solid rgba(36, 29, 19, 0.1);
   backdrop-filter: blur(20px) saturate(1.3);
   -webkit-backdrop-filter: blur(20px) saturate(1.3);
   box-sizing: border-box;
@@ -2001,9 +2016,9 @@ button.reset:hover:not(:has(> *)) {
 
 /* --- Cart page (layout="page") --- */
 .cart {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 5rem;
+  padding: 2.5rem 2rem 5rem;
 }
 
 .cart-page-head {
@@ -2026,7 +2041,7 @@ button.reset:hover:not(:has(> *)) {
 .cart-details--page {
   display: grid;
   grid-template-columns: 1fr 380px;
-  gap: 3rem;
+  gap: 2rem;
   align-items: start;
 }
 
@@ -2036,10 +2051,53 @@ button.reset:hover:not(:has(> *)) {
   padding: 0;
 }
 
+/* Line list sits in a bordered, sharp-cornered panel to match the summary. */
+.cart-main--page .cart-lines-list {
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  padding: 1.5rem 1.75rem;
+  background: var(--color-bg);
+}
+
+/* Column headers above the rows (desktop table look). */
+.cart-lines-header {
+  display: grid;
+  grid-template-columns: 1fr 11rem 9rem 5rem;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.cart-lines-header > span:nth-child(2) {
+  text-align: center;
+}
+
+.cart-lines-header > span:nth-child(3) {
+  text-align: left;
+}
+
+.cart-lines-header > span:nth-child(4) {
+  text-align: right;
+}
+
 @media (max-width: 60em) {
   .cart-details--page {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
+  }
+
+  .cart-lines-header {
+    display: none;
+  }
+
+  .cart-main--page .cart-lines-list {
+    padding: 1rem 1.1rem;
   }
 }
 
@@ -2049,8 +2107,13 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .cart-main--page .cart-line {
-  padding: 1.5rem 0;
+  padding: 1.25rem 0;
   border-bottom: 1px solid var(--color-border);
+}
+
+.cart-main--page .cart-line:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
 }
 
 .cart-main--page .cart-lines-list > ul > .cart-line:first-child {
@@ -2063,6 +2126,69 @@ button.reset:hover:not(:has(> *)) {
   align-items: flex-start;
 }
 
+/* Page rows: 4-column grid aligned to the header. */
+.cart-main--page .cart-line-inner {
+  display: grid;
+  grid-template-columns: 1fr 11rem 9rem 5rem;
+  gap: 1rem;
+  align-items: center;
+}
+
+.cart-line-product {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.cart-line-col {
+  display: flex;
+  align-items: center;
+}
+
+.cart-line-col--qty {
+  justify-content: center;
+}
+
+.cart-line-col--total {
+  justify-content: flex-start;
+}
+
+.cart-line-col--action {
+  justify-content: flex-end;
+}
+
+/* Mobile: rows become a compact two-row stack (image+info, then controls). */
+@media (max-width: 60em) {
+  .cart-main--page .cart-line-inner {
+    grid-template-columns: 1fr auto auto;
+    grid-template-areas:
+      'product product product'
+      'qty total action';
+    gap: 0.85rem 1rem;
+    align-items: center;
+  }
+
+  .cart-line-product {
+    grid-area: product;
+  }
+
+  .cart-line-col--qty {
+    grid-area: qty;
+    justify-content: flex-start;
+  }
+
+  .cart-line-col--total {
+    grid-area: total;
+    justify-content: flex-end;
+    margin-left: auto;
+  }
+
+  .cart-line-col--action {
+    grid-area: action;
+  }
+}
+
 .cart-line img {
   height: 100%;
   display: block;
@@ -2070,10 +2196,10 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .cart-main--page .cart-line img {
-  width: 110px;
-  height: 110px;
+  width: 84px;
+  height: 84px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 0;
   border: 1px solid var(--color-border);
   margin: 0;
   flex-shrink: 0;
@@ -2094,7 +2220,7 @@ button.reset:hover:not(:has(> *)) {
 
 .cart-line-title strong {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
 }
@@ -2104,9 +2230,10 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .cart-line-price {
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.05rem;
   color: var(--color-ink);
+  font-family: var(--font-display);
 }
 
 .cart-line-options {
@@ -2130,7 +2257,7 @@ button.reset:hover:not(:has(> *)) {
   display: inline-flex;
   align-items: stretch;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -2263,18 +2390,17 @@ button.reset:hover:not(:has(> *)) {
 .cart-summary-page {
   position: sticky;
   top: calc(var(--header-height) + 1rem);
-  background: var(--color-bg-soft);
+  background: var(--color-bg);
   border: 1px solid var(--color-border);
-  border-top: 2px solid var(--color-gold);
-  border-radius: 8px;
+  border-radius: 0;
   padding: 1.75rem;
 }
 
 .cart-summary-page h4 {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
-  margin: 0 0 1.25rem;
+  margin: 0 0 1.5rem;
 }
 
 .cart-summary-aside {
@@ -2287,20 +2413,25 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .cart-subtotal {
-  align-items: center;
+  align-items: baseline;
   display: flex;
   justify-content: space-between;
   margin: 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
 }
 
 .cart-subtotal dt {
-  color: var(--color-ink-soft);
+  color: var(--color-ink);
+  font-weight: 600;
+  font-size: 1.05rem;
 }
 
 .cart-subtotal dd {
   margin: 0;
-  font-weight: 600;
-  font-size: 1.15rem;
+  font-weight: 700;
+  font-size: 1.35rem;
+  font-family: var(--font-display);
 }
 
 .cart-summary-page > div {
@@ -2321,7 +2452,7 @@ button.reset:hover:not(:has(> *)) {
   min-width: 0;
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--color-border);
-  border-radius: 4px;
+  border-radius: 0;
   font-family: var(--font-body);
   font-size: 0.85rem;
   background: var(--color-bg);
@@ -2337,7 +2468,7 @@ button.reset:hover:not(:has(> *)) {
   border: 1px solid var(--color-gold);
   background: transparent;
   color: var(--color-gold-deep);
-  border-radius: 4px;
+  border-radius: 0;
   font-family: var(--font-body);
   font-size: 0.72rem;
   font-weight: 600;
@@ -2507,7 +2638,7 @@ button.reset:hover:not(:has(> *)) {
   letter-spacing: 0.08em;
   font-weight: 600;
   font-size: 0.78rem;
-  border-radius: 2px;
+  border-radius: 0;
 }
 
 .cart-view-btn:hover {
@@ -2521,8 +2652,8 @@ button.reset:hover:not(:has(> *)) {
   text-align: center;
   background: var(--color-dark);
   color: #fff;
-  border-radius: 2px;
-  padding: 0.95rem;
+  border-radius: 0;
+  padding: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 600;
@@ -3358,19 +3489,27 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .hero h1 {
-  color: #000;
+  color: #1a1712;
   font-size: clamp(3.1rem, 7vw, 6.4rem);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 0.98;
   margin: 0 0 1.1rem;
   max-width: 11ch;
+  /* Soft, subtle white halo so the heading stays legible over the hero image
+     without washing the letters out. */
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.5),
+    0 2px 14px rgba(255, 255, 255, 0.4);
 }
 
+/* Accent line: the deeper gold reads on the light hero scrim (bright #d4af37
+   on near-white was the low-contrast, hard-to-read combination). The same
+   white halo keeps it crisp. */
 .hero h1 span {
-  color: var(--color-gold);
+  color: var(--color-gold-deep);
   display: block;
   font-style: italic;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .hero p {
@@ -3517,12 +3656,32 @@ button.reset:hover:not(:has(> *)) {
     z-index: 2;
     /* Heading overlay is decorative — let swipes reach the slider beneath it. */
     pointer-events: none;
+    /* Heading sits a bit below the vertical middle; a soft centered scrim keeps
+       it legible over any portrait image. */
+    background: radial-gradient(
+      120% 60% at 40% 60%,
+      rgba(0, 0, 0, 0.5) 0%,
+      rgba(0, 0, 0, 0.2) 45%,
+      rgba(0, 0, 0, 0) 75%
+    );
+    padding-top: 35%;
+    justify-content: flex-start;
+  }
+
+  /* Heading over the image: both lines white (the italic accent included) so
+     it reads as one uniform colour. Size + wrap width differ from desktop. */
+  .hero[data-has-mobile] .hero h1,
+  .hero[data-has-mobile] h1,
+  .hero[data-has-mobile] h1 span {
+    color: #fff;
   }
 
   /* Small hero copy overlaid on the left of the picture */
   .hero h1 {
-    font-size: clamp(1.7rem, 8vw, 2.6rem);
+    font-size: clamp(2.1rem, 9.5vw, 3.1rem);
+    line-height: 0.98;
     margin-bottom: 0.55rem;
+    max-width: 15ch;
   }
 
   .hero p {
@@ -6466,6 +6625,35 @@ button.reset:hover:not(:has(> *)) {
   letter-spacing: 0.04em;
 }
 
+/* Mobile: smaller text on the Add to bag + Book consultation buttons. */
+@media (max-width: 48em) {
+  /* Both purchase buttons: identical label font, letter-spacing and height.
+     The two buttons inherit min-height from DIFFERENT places (.product-atc via
+     .product-purchase-action = 2.9rem, .product-book-consult = 3.5rem), so pin
+     every source to the same fixed box here. */
+  .product-purchase-grid .product-atc,
+  .product-purchase-grid .product-book-consult {
+    font-size: 0.72rem;
+    min-height: 2.8rem;
+    height: 2.8rem;
+    letter-spacing: 0.08em;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .product-atc-price {
+    font-size: 0.82rem;
+  }
+
+  .product-book-consult {
+    white-space: nowrap; /* keep "Book Private Consultation" on one line */
+  }
+
+  .product-book-consult--cta {
+    gap: 0.4rem;
+  }
+}
+
 .product-atc:hover:not(:disabled) {
   background: #262626;
   border-color: #262626;
@@ -6772,48 +6960,43 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .pdp-faq-list {
-  margin: 0;
+  margin: 0 auto;
+  max-width: 64rem;
   display: grid;
   gap: 0.8rem;
   text-align: left;
   /* Inset the questions/answers from the section edges. */
-  padding: 0 clamp(1rem, 4vw, 3rem);
+  padding: 0 clamp(0.5rem, 2vw, 1.5rem);
 }
 
-.pdp-faq summary {
-  font-size: 1.05rem;
-}
-
-.pdp-faq p {
-  font-size: 1rem;
-}
-
+/* Matches the homepage FAQ accordion: sharp gold-bordered cards, same fonts
+   and +/− marker. Keep both in sync if either changes. */
 .pdp-faq {
-  border: 1px solid transparent;
-  border-radius: 12px;
-  background: var(--color-bg-soft);
-  padding: 0;
+  background: rgba(255, 255, 255, 0.76);
+  border: 1px solid rgba(160, 126, 55, 0.2);
+  border-radius: 2px;
+  box-shadow: 0 6px 20px rgba(47, 37, 18, 0.035);
+  padding: 0 1.25rem;
   transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+    background-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
 .pdp-faq[open] {
-  background: var(--color-bg);
-  border-color: var(--color-border);
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.06);
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(47, 37, 18, 0.09);
 }
 
 .pdp-faq summary {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   cursor: pointer;
+  display: flex;
+  font-size: 0.98rem;
+  font-weight: 500;
+  gap: 1rem;
+  justify-content: space-between;
   list-style: none;
-  padding: 1.1rem 1.4rem;
-  font-weight: 600;
+  padding: 1.2rem 0;
   color: var(--color-ink);
 }
 
@@ -6824,23 +7007,48 @@ button.reset:hover:not(:has(> *)) {
 .pdp-faq summary::after {
   content: '+';
   flex-shrink: 0;
-  font-size: 1.4rem;
+  font-size: 1.45rem;
   font-weight: 300;
   line-height: 1;
-  color: var(--color-ink-soft);
+  color: var(--color-gold-dark);
 }
 
 .pdp-faq[open] summary::after {
-  content: '✕';
-  font-size: 1rem;
+  content: '−';
 }
 
 .pdp-faq p {
-  margin: 0;
-  padding: 0 1.4rem 1.25rem;
-  max-width: 38rem;
   color: var(--color-ink-soft);
-  line-height: 1.65;
+  line-height: 1.7;
+  margin: 0;
+  max-width: 42rem;
+  padding: 0 2rem 1.3rem 0;
+}
+
+/* Mobile: smaller PDP FAQ text and less side inset so it uses more width. */
+@media (max-width: 48em) {
+  .pdp-faq-list {
+    padding: 0 0.4rem;
+  }
+
+  .pdp-faq {
+    padding: 0 0.9rem;
+  }
+
+  .pdp-faq summary {
+    font-size: 0.85rem;
+    gap: 0.6rem;
+    padding: 1rem 0;
+  }
+
+  .pdp-faq summary::after {
+    font-size: 1.25rem;
+  }
+
+  .pdp-faq p {
+    font-size: 0.82rem;
+    padding-right: 0.9rem;
+  }
 }
 
 /* "You May Also Like" — view-all top-left, paging arrows top-right.
@@ -7722,16 +7930,9 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .homepage-faq-panel {
-  background:
-    radial-gradient(
-      circle at 50% 0,
-      rgba(209, 174, 97, 0.2),
-      transparent 36rem
-    ),
-    #fbfaf7;
-  border-top: 1px solid rgba(160, 126, 55, 0.15);
-  border-bottom: 1px solid rgba(160, 126, 55, 0.15);
-  padding: clamp(1.5rem, 3vw, 2.5rem);
+  background: none;
+  border: 0;
+  padding: 0;
 }
 
 .homepage-faq-heading {
@@ -7761,7 +7962,7 @@ button.reset:hover:not(:has(> *)) {
   display: grid;
   gap: 0.7rem;
   margin: 0 auto;
-  max-width: 48rem;
+  max-width: 64rem;
 }
 
 .homepage-faq-item {
@@ -7814,6 +8015,34 @@ button.reset:hover:not(:has(> *)) {
   margin: 0;
   max-width: 42rem;
   padding: 0 2rem 1.3rem 0;
+}
+
+/* Mobile: smaller FAQ text and less side inset so the accordion uses the free
+   horizontal space (shared across homepage, category, and product pages). */
+@media (max-width: 48em) {
+  .homepage-faq-section .section-inner {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .homepage-faq-item {
+    padding: 0 0.9rem;
+  }
+
+  .homepage-faq-item summary {
+    font-size: 0.85rem;
+    gap: 0.6rem;
+    padding: 1rem 0;
+  }
+
+  .homepage-faq-item summary::after {
+    font-size: 1.25rem;
+  }
+
+  .homepage-faq-item p {
+    font-size: 0.82rem;
+    padding-right: 0.9rem;
+  }
 }
 
 .collection-load-more-skeleton {
@@ -8671,6 +8900,20 @@ button.reset:hover:not(:has(> *)) {
   color: #fff;
 }
 
+/* Mobile: smaller tab pills in New Arrivals / Complete the Look. */
+@media (max-width: 48em) {
+  .tab-switch {
+    gap: 0.15rem;
+    padding: 0.16rem;
+  }
+
+  .tab-switch-btn {
+    padding: 0.3rem 0.65rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.04em;
+  }
+}
+
 /*
 * --------------------------------------------------
 * Editorial section title
@@ -9491,7 +9734,7 @@ button.reset:hover:not(:has(> *)) {
   border-radius: 0; /* sharp, edgy corners like Add to bag */
   font-size: 0.92rem;
   letter-spacing: 0.14em;
-  text-transform: uppercase;
+  text-transform: none;
   cursor: pointer;
   transition:
     background 200ms ease,

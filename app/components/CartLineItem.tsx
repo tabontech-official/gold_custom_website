@@ -39,52 +39,91 @@ export function CartLineItem({
   const lineItemChildren = childrenMap[id];
   const childrenLabelId = `cart-line-children-${id}`;
 
-  return (
-    <li key={id} className="cart-line">
-      <div className="cart-line-inner">
-        {image && (
-          <Image
-            alt={title}
-            aspectRatio="1/1"
-            data={image}
-            height={100}
-            loading="lazy"
-            width={100}
-          />
-        )}
+  const titleLink = (
+    <Link
+      className="cart-line-title"
+      prefetch="intent"
+      to={lineItemUrl}
+      onClick={() => {
+        if (layout === 'aside') {
+          close();
+        }
+      }}
+    >
+      <p>
+        <strong>{product.title}</strong>
+      </p>
+    </Link>
+  );
 
-        <div className="cart-line-info">
-          <Link
-            className="cart-line-title"
-            prefetch="intent"
-            to={lineItemUrl}
-            onClick={() => {
-              if (layout === 'aside') {
-                close();
-              }
-            }}
-          >
-            <p>
-              <strong>{product.title}</strong>
-            </p>
-          </Link>
+  const optionsList = selectedOptions.length > 0 && (
+    <ul className="cart-line-options">
+      {selectedOptions.map((option) => (
+        <li key={option.name}>
+          <small>
+            {option.name}: {option.value}
+          </small>
+        </li>
+      ))}
+    </ul>
+  );
+
+  const thumb = image && (
+    <Image
+      alt={title}
+      aspectRatio="1/1"
+      data={image}
+      height={100}
+      loading="lazy"
+      width={100}
+    />
+  );
+
+  // Page layout mirrors the columned cart table: product | quantity | total |
+  // remove. Aside keeps the compact stacked layout.
+  const inner =
+    layout === 'page' ? (
+      <div className="cart-line-inner">
+        <div className="cart-line-product">
+          {thumb}
+          <div className="cart-line-info">
+            {titleLink}
+            {optionsList}
+          </div>
+        </div>
+        <div className="cart-line-col cart-line-col--qty">
+          <CartLineQuantity line={line} layout="page" />
+        </div>
+        <div className="cart-line-col cart-line-col--total">
           <div className="cart-line-price">
             <ProductPrice price={line?.cost?.totalAmount} />
           </div>
-          {selectedOptions.length > 0 && (
-            <ul className="cart-line-options">
-              {selectedOptions.map((option) => (
-                <li key={option.name}>
-                  <small>
-                    {option.name}: {option.value}
-                  </small>
-                </li>
-              ))}
-            </ul>
-          )}
+        </div>
+        <div className="cart-line-col cart-line-col--action">
+          <CartLineRemoveButton
+            lineIds={[id]}
+            disabled={!!line.isOptimistic}
+            variant="stepper"
+          />
+        </div>
+      </div>
+    ) : (
+      <div className="cart-line-inner">
+        {thumb}
+        <div className="cart-line-info">
+          {titleLink}
+          <div className="cart-line-price">
+            <ProductPrice price={line?.cost?.totalAmount} />
+          </div>
+          {optionsList}
           <CartLineQuantity line={line} />
         </div>
       </div>
+    );
+
+  return (
+    <li key={id} className="cart-line">
+      {inner}
 
       {lineItemChildren ? (
         <div>
@@ -112,7 +151,13 @@ export function CartLineItem({
  * These controls are disabled when the line item is new, and the server
  * hasn't yet responded that it was successfully added to the cart.
  */
-function CartLineQuantity({line}: {line: CartLine}) {
+function CartLineQuantity({
+  line,
+  layout = 'aside',
+}: {
+  line: CartLine;
+  layout?: CartLayout;
+}) {
   // Hooks must run before any early return, so read the stock signal up top.
   const hitStockCeiling = useAtStockMax(line?.id ?? '');
 
@@ -138,12 +183,20 @@ function CartLineQuantity({line}: {line: CartLine}) {
     <div className="cart-line-quantity">
       <div className="cart-qty-stepper">
         {quantity <= 1 ? (
-          // At 1, the decrease slot becomes a remove control instead of going to 0.
-          <CartLineRemoveButton
-            lineIds={[lineId]}
-            disabled={!!isOptimistic}
-            variant="stepper"
-          />
+          layout === 'page' ? (
+            // Page layout has a dedicated Action-column trash, so the stepper
+            // just shows a disabled "−" at quantity 1 (can't go below 1 here).
+            <button aria-label="Decrease quantity" disabled>
+              <span>&#8722;</span>
+            </button>
+          ) : (
+            // Aside: at 1, the decrease slot becomes the remove control.
+            <CartLineRemoveButton
+              lineIds={[lineId]}
+              disabled={!!isOptimistic}
+              variant="stepper"
+            />
+          )
         ) : (
           <CartLineUpdateButton lines={[{id: lineId, quantity: quantity - 1}]}>
             <button
