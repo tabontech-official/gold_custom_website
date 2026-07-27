@@ -3193,6 +3193,9 @@ button.reset:hover:not(:has(> *)) {
   /* Swipe anywhere in the hero changes the slide; vertical page scroll stays
      with the browser. */
   touch-action: pan-y;
+  /* Mouse-drag slides on desktop — don't select the heading text mid-drag. */
+  user-select: none;
+  cursor: grab;
   @media (min-width: 48em) {
     padding: 7rem 0 7.5rem;
   }
@@ -3507,6 +3510,8 @@ button.reset:hover:not(:has(> *)) {
     inset: 0;
     aspect-ratio: auto;
     z-index: 2;
+    /* Heading overlay is decorative — let swipes reach the slider beneath it. */
+    pointer-events: none;
   }
 
   /* Small hero copy overlaid on the left of the picture */
@@ -9709,6 +9714,66 @@ button.reset:hover:not(:has(> *)) {
   text-align: center;
   font-size: 0.78rem;
   color: var(--color-ink-soft);
+}
+
+/* Compact the modal on phones — full-desktop padding/spacing/height overflows
+   small screens. Matches the site's 48em mobile breakpoint. Tighter chrome,
+   shorter fields, smaller type. */
+@media (max-width: 48em) {
+  .appt-overlay {
+    padding: 0.75rem;
+  }
+
+  .appt-modal {
+    max-width: 100%;
+    max-height: calc(100dvh - 1.5rem);
+    padding: 1.3rem 1.1rem 1.2rem;
+  }
+
+  .appt-close {
+    top: 0.5rem;
+    right: 0.6rem;
+  }
+
+  .appt-head {
+    margin-bottom: 0.9rem;
+  }
+
+  .appt-head h2 {
+    font-size: 1.15rem;
+  }
+
+  .appt-eyebrow {
+    margin-bottom: 0.35rem;
+  }
+
+  .appt-piece {
+    font-size: 0.82rem;
+  }
+
+  .appt-field {
+    margin-bottom: 0.7rem;
+  }
+
+  .appt-field > span {
+    font-size: 0.68rem;
+    margin-bottom: 0.22rem;
+  }
+
+  .appt-field input,
+  .appt-field textarea {
+    min-height: 2.5rem;
+    font-size: 0.95rem;
+  }
+
+  .appt-field textarea {
+    min-height: 0;
+  }
+
+  .appt-fineprint {
+    margin-top: 0.55rem;
+    font-size: 0.72rem;
+  }
 }
 
 /* Success state */

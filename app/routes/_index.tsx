@@ -257,42 +257,117 @@ export default function Homepage() {
   );
 }
 
-function Hero({content}: {content: HeroContent | null}) {
-  const images = content?.images ?? [];
-  const mobileImages = content?.mobileImages ?? [];
+// Shared touch-slider behavior for both hero variants: axis-locked horizontal
+// swipe on a NON-passive listener so preventDefault stops vertical page scroll
+// only once the gesture reads as horizontal, plus 5s auto-advance that pauses
+// while dragging. Handlers are bound once per count and read live state via
+// refs, so the gesture never tears from a mid-swipe rebind.
+function useSwipeSlider<T extends HTMLElement>(
+  count: number,
+  ref: React.RefObject<T | null>,
+) {
   const [active, setActive] = useState(0);
-  // Live finger drag: distance dragged (px) while touching, null when idle.
   const [drag, setDrag] = useState(0);
-  const startX = useRef<number | null>(null);
-  const dragging = startX.current !== null;
-  const count = images.length;
+  const [dragging, setDragging] = useState(false);
+  const start = useRef<{x: number; y: number} | null>(null);
+  const axis = useRef<'h' | 'v' | null>(null);
+  const dragRef = useRef(0);
 
-  const go = (next: number) => setActive(((next % count) + count) % count);
-
-  // Auto-advance every 5s; the interval resets on each slide change and pauses
-  // while the shopper is actively dragging.
   useEffect(() => {
     if (count <= 1 || dragging) return;
     const id = setInterval(() => setActive((i) => (i + 1) % count), 5000);
     return () => clearInterval(id);
   }, [count, active, dragging]);
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (count <= 1) return;
-    startX.current = e.touches[0].clientX;
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (startX.current === null) return;
-    setDrag(e.touches[0].clientX - startX.current);
-  };
-  const onTouchEnd = () => {
-    if (startX.current === null) return;
-    const width = window.innerWidth || 1;
-    // Commit to the next/prev slide once the finger passes ~12% of the width.
-    if (Math.abs(drag) > width * 0.12) go(active + (drag < 0 ? 1 : -1));
-    startX.current = null;
-    setDrag(0);
-  };
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || count <= 1) return;
+
+    const setD = (v: number) => {
+      dragRef.current = v;
+      setDrag(v);
+    };
+    const onStart = (e: TouchEvent) => {
+      start.current = {x: e.touches[0].clientX, y: e.touches[0].clientY};
+      axis.current = null;
+    };
+    const onMove = (e: TouchEvent) => {
+      if (!start.current) return;
+      const dx = e.touches[0].clientX - start.current.x;
+      const dy = e.touches[0].clientY - start.current.y;
+      if (!axis.current && Math.abs(dx) + Math.abs(dy) > 8) {
+        axis.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+        if (axis.current === 'h') setDragging(true);
+      }
+      if (axis.current === 'h') {
+        e.preventDefault();
+        setD(dx);
+      }
+    };
+    const onEnd = () => {
+      if (axis.current === 'h') {
+        const width = window.innerWidth || 1;
+        if (Math.abs(dragRef.current) > width * 0.12) {
+          const dir = dragRef.current < 0 ? 1 : -1;
+          setActive((i) => (((i + dir) % count) + count) % count);
+        }
+      }
+      start.current = null;
+      axis.current = null;
+      setDragging(false);
+      setD(0);
+    };
+
+    // Mouse/pen drag for desktop (touch keeps its own handlers below so the
+    // axis-lock + preventDefault logic stays intact). Pointer events fire for
+    // touch too, so ignore pointerType 'touch' here to avoid double-driving.
+    const onPtrDown = (e: PointerEvent) => {
+      if (e.pointerType === 'touch') return;
+      start.current = {x: e.clientX, y: e.clientY};
+      axis.current = 'h'; // mouse has no scroll conflict — treat as horizontal
+      setDragging(true);
+      el.setPointerCapture?.(e.pointerId);
+    };
+    const onPtrMove = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' || !start.current) return;
+      setD(e.clientX - start.current.x);
+    };
+    const onPtrUp = (e: PointerEvent) => {
+      if (e.pointerType === 'touch' || !start.current) return;
+      onEnd();
+    };
+
+    el.addEventListener('touchstart', onStart, {passive: true});
+    el.addEventListener('touchmove', onMove, {passive: false});
+    el.addEventListener('touchend', onEnd, {passive: true});
+    el.addEventListener('touchcancel', onEnd, {passive: true});
+    el.addEventListener('pointerdown', onPtrDown);
+    el.addEventListener('pointermove', onPtrMove);
+    el.addEventListener('pointerup', onPtrUp);
+    el.addEventListener('pointercancel', onPtrUp);
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onEnd);
+      el.removeEventListener('pointerdown', onPtrDown);
+      el.removeEventListener('pointermove', onPtrMove);
+      el.removeEventListener('pointerup', onPtrUp);
+      el.removeEventListener('pointercancel', onPtrUp);
+    };
+  }, [count, ref]);
+
+  return {active, setActive, drag, dragging};
+}
+
+function Hero({content}: {content: HeroContent | null}) {
+  const images = content?.images ?? [];
+  const mobileImages = content?.mobileImages ?? [];
+  const count = images.length;
+  const sectionRef = useRef<HTMLElement>(null);
+  const {active, setActive, drag, dragging} = useSwipeSlider(count, sectionRef);
+
+  const go = (next: number) => setActive(((next % count) + count) % count);
 
   // Track offset: base slide position plus the live finger drag (as a %).
   const dragPct = dragging ? (drag / (window.innerWidth || 1)) * 100 : 0;
@@ -308,11 +383,9 @@ function Hero({content}: {content: HeroContent | null}) {
   return (
     <>
       <section
+        ref={sectionRef}
         className="hero"
         data-has-mobile={mobileImages.length ? 'true' : undefined}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
         {/* Portrait slider on mobile; CSS hides it (and shows the desktop
             rotating track) on desktop. Only rendered when the mobile
@@ -383,75 +456,9 @@ function Hero({content}: {content: HeroContent | null}) {
 // once it reads as horizontal, so vertical page scroll still works, and we
 // stopPropagation so the parent .hero swipe handler never double-fires.
 function MobileHeroSlider({images}: {images: string[]}) {
-  const [active, setActive] = useState(0);
-  const [drag, setDrag] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const start = useRef<{x: number; y: number} | null>(null);
-  const axis = useRef<'h' | 'v' | null>(null); // locked gesture direction
-  const dragRef = useRef(0); // fresh drag distance for the once-bound listener
   const count = images.length;
-
-  // Auto-advance; pauses while dragging.
-  useEffect(() => {
-    if (count <= 1 || dragging) return;
-    const id = setInterval(() => setActive((i) => (i + 1) % count), 5000);
-    return () => clearInterval(id);
-  }, [count, active, dragging]);
-
-  // Native, non-passive touch handling so preventDefault works on horizontal
-  // drags. Bound ONCE per image set — handlers read live state via refs, so we
-  // never rebind mid-gesture (which was tearing the swipe apart).
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el || count <= 1) return;
-
-    const setD = (v: number) => {
-      dragRef.current = v;
-      setDrag(v);
-    };
-    const onStart = (e: TouchEvent) => {
-      start.current = {x: e.touches[0].clientX, y: e.touches[0].clientY};
-      axis.current = null;
-    };
-    const onMove = (e: TouchEvent) => {
-      if (!start.current) return;
-      const dx = e.touches[0].clientX - start.current.x;
-      const dy = e.touches[0].clientY - start.current.y;
-      if (!axis.current && Math.abs(dx) + Math.abs(dy) > 8) {
-        axis.current = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
-        if (axis.current === 'h') setDragging(true);
-      }
-      if (axis.current === 'h') {
-        e.preventDefault(); // stop the page scrolling during a horizontal swipe
-        setD(dx);
-      }
-    };
-    const onEnd = () => {
-      if (axis.current === 'h') {
-        const width = window.innerWidth || 1;
-        if (Math.abs(dragRef.current) > width * 0.12) {
-          const dir = dragRef.current < 0 ? 1 : -1;
-          setActive((i) => ((i + dir) % count + count) % count);
-        }
-      }
-      start.current = null;
-      axis.current = null;
-      setDragging(false);
-      setD(0);
-    };
-
-    el.addEventListener('touchstart', onStart, {passive: true});
-    el.addEventListener('touchmove', onMove, {passive: false});
-    el.addEventListener('touchend', onEnd, {passive: true});
-    el.addEventListener('touchcancel', onEnd, {passive: true});
-    return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
-      el.removeEventListener('touchcancel', onEnd);
-    };
-  }, [count]);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const {active, setActive, drag, dragging} = useSwipeSlider(count, rootRef);
 
   const dragPct = dragging ? (drag / (window.innerWidth || 1)) * 100 : 0;
   const offset = -active * 100 + dragPct;
