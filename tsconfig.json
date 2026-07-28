@@ -14,6 +14,9 @@
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,
+    // `node --test app/lib/*.test.ts` runs the checks with no test framework,
+    // and Node's ESM resolver requires the explicit .ts extension.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "jsx": "react-jsx",
     "moduleResolution": "Bundler",

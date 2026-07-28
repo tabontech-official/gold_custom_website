@@ -56,12 +56,24 @@ export function CartLineItem({
     </Link>
   );
 
-  const optionsList = selectedOptions.length > 0 && (
+  // Line attributes carry choices Shopify has no variant for — ring size, for
+  // one — so they render alongside the variant options.
+  const lineProperties = [
+    ...selectedOptions.map((option) => ({
+      name: option.name,
+      value: option.value,
+    })),
+    ...(line.attributes ?? []).flatMap((attribute) =>
+      attribute.value ? [{name: attribute.key, value: attribute.value}] : [],
+    ),
+  ];
+
+  const optionsList = lineProperties.length > 0 && (
     <ul className="cart-line-options">
-      {selectedOptions.map((option) => (
-        <li key={option.name}>
+      {lineProperties.map((property) => (
+        <li key={property.name}>
           <small>
-            {option.name}: {option.value}
+            {property.name}: {property.value}
           </small>
         </li>
       ))}

@@ -1,4 +1,4 @@
-import {Suspense} from 'react';
+import {Suspense, useState} from 'react';
 import {
   redirect,
   useLoaderData,
@@ -26,6 +26,11 @@ import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {CATEGORIES} from '~/lib/categories';
+import {
+  DEFAULT_RING_SIZE,
+  RING_SIZE_ATTRIBUTE_KEY,
+  isRingProduct,
+} from '~/lib/ringSizes';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 
 export const meta: Route.MetaFunction = ({data}) => {
@@ -188,6 +193,11 @@ export default function Product() {
     useLoaderData<typeof loader>();
   const root = useRouteLoaderData<any>('root');
 
+  // Rings are sized at add-to-cart, not by variant. Held here rather than in
+  // ProductForm because the financing express-add below buys the same line.
+  const isRing = isRingProduct(product);
+  const [ringSize, setRingSize] = useState(DEFAULT_RING_SIZE);
+
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
@@ -294,6 +304,7 @@ export default function Product() {
           <MonthlyEstimate
             price={selectedVariant?.price}
             variant={selectedVariant}
+            ringSize={isRing ? ringSize : undefined}
           />
           <ProductSpecIcons
             keyword={`${selectedVariant?.title ?? ''} ${title}`}
@@ -311,6 +322,8 @@ export default function Product() {
               title: product.title,
               handle: product.handle,
             }}
+            ringSize={isRing ? ringSize : undefined}
+            onRingSizeChange={setRingSize}
           />
 
           <ProductAccordions descriptionHtml={descriptionHtml} />
@@ -690,9 +703,11 @@ function SpecIcon({name, className}: {name: SpecIconName; className?: string}) {
 function MonthlyEstimate({
   price,
   variant,
+  ringSize,
 }: {
   price?: {amount: string; currencyCode: string};
   variant?: {id: string; availableForSale?: boolean} | null;
+  ringSize?: string;
 }) {
   const amount = Number(price?.amount);
   if (!price || !Number.isFinite(amount) || amount <= 0) return null;
@@ -713,7 +728,15 @@ function MonthlyEstimate({
         <AddToCartButton
           className="product-monthly-link"
           redirectTo="@checkout"
-          lines={[{merchandiseId: variant!.id, quantity: 1}]}
+          lines={[
+            {
+              merchandiseId: variant!.id,
+              quantity: 1,
+              ...(ringSize && {
+                attributes: [{key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize}],
+              }),
+            },
+          ]}
         >
           View sample plans
         </AddToCartButton>

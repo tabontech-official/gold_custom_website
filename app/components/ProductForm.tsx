@@ -5,6 +5,11 @@ import {AddToCartButton} from './AddToCartButton';
 import {AppointmentModal} from './AppointmentModal';
 import {useAside} from './Aside';
 import {PremiumSelect, type PremiumSelectOption} from './PremiumSelect';
+import {
+  RING_SIZES,
+  RING_SIZE_ATTRIBUTE_KEY,
+  RING_SIZE_GUIDE_URL,
+} from '~/lib/ringSizes';
 import type {ProductFragment} from 'storefrontapi.generated';
 
 export type VariantGroupSelect = {
@@ -23,12 +28,17 @@ export function ProductForm({
   wishlistButton,
   variantGroup,
   product,
+  ringSize,
+  onRingSizeChange,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
   wishlistButton?: ReactNode;
   variantGroup?: VariantGroupSelect | null;
   product: {id: string; title: string; handle: string};
+  /** Set only for rings — omitted, no size selector and no size on the line. */
+  ringSize?: string;
+  onRingSizeChange?: (size: string) => void;
 }) {
   const {pathname} = useLocation();
   const navigate = useNavigate();
@@ -90,6 +100,30 @@ export function ProductForm({
             }}
           />
         )}
+
+        {ringSize && (
+          <PremiumSelect
+            label="Size"
+            hint={
+              <a
+                className="ring-size-guide-link"
+                href={RING_SIZE_GUIDE_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <RulerIcon />
+                Find my ring size
+              </a>
+            }
+            options={RING_SIZES.map((size) => ({
+              key: size,
+              name: size,
+              selected: size === ringSize,
+              available: true,
+            }))}
+            onSelect={(picked) => onRingSizeChange?.(picked.key)}
+          />
+        )}
       </div>
 
       <div className="product-purchase-grid">
@@ -107,6 +141,11 @@ export function ProductForm({
                       merchandiseId: selectedVariant.id,
                       quantity: 1,
                       selectedVariant,
+                      ...(ringSize && {
+                        attributes: [
+                          {key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize},
+                        ],
+                      }),
                     },
                   ]
                 : []
@@ -149,6 +188,25 @@ export function ProductForm({
         installment options are available before checkout.
       </p>
     </div>
+  );
+}
+
+function RulerIcon() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M15.5 2.5 21.5 8.5 8.5 21.5 2.5 15.5z" />
+      <path d="M7 12.5l1.8 1.8M10 9.5l1.8 1.8M13 6.5l1.8 1.8" />
+    </svg>
   );
 }
 

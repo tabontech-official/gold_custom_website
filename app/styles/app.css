@@ -6369,6 +6369,22 @@ button.reset:hover:not(:has(> *)) {
   color: var(--color-ink);
 }
 
+/* Sizing-chart link under the ring SIZE label — opens the printable PDF. */
+.ring-size-guide-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: -0.6rem 0 0.85rem;
+  font-size: 0.82rem;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.ring-size-guide-link:hover {
+  color: var(--color-gold-dark);
+}
+
 /* Variant button tags — selected is solid ink, unselected a faint frame */
 .variant-tags {
   display: flex;

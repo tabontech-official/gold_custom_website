@@ -17,10 +17,13 @@ export function PremiumSelect({
   label,
   options,
   onSelect,
+  hint,
 }: {
   label: string;
   options: PremiumSelectOption[];
   onSelect: (option: PremiumSelectOption) => void;
+  /** Optional aside under the label, e.g. a sizing-guide link. */
+  hint?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -52,6 +55,7 @@ export function PremiumSelect({
       <span className="product-options-label" id={labelId}>
         {label}
       </span>
+      {hint}
       <div className="variant-select">
         <button
           type="button"
