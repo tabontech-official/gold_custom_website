@@ -36,10 +36,12 @@ export function PremiumSelect({
 
   return (
     <div className="product-options variant-select-field" ref={wrapRef}>
-      <span className="product-options-label" id={labelId}>
-        {label}
-      </span>
-      {hint}
+      <div className="product-options-header">
+        <span className="product-options-label" id={labelId}>
+          {label}
+        </span>
+        {hint}
+      </div>
       <div className="variant-select">
         <button
           type="button"
@@ -66,6 +68,18 @@ export function PremiumSelect({
           </svg>
         </button>
 
+        {/* Transparent shield under the open list. Without it the buttons the
+            dropdown covers (Add to bag, Book Private Consultation) still take
+            the click, so picking a size also fired whatever sat behind it. */}
+        {open && (
+          <button
+            type="button"
+            className="variant-select-shield"
+            aria-hidden="true"
+            tabIndex={-1}
+            onClick={() => setOpen(false)}
+          />
+        )}
         {open && (
           <ul
             className="variant-select-list"

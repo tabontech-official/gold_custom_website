@@ -6393,9 +6393,20 @@ button.reset:hover:not(:has(> *)) {
   margin-top: 1rem;
 }
 
+/* Label row. Fixed height so a field carrying a hint link (Size) keeps its
+   dropdown level with the plain fields beside it (Metal, Gold Purity). */
+.product-options-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 1.2rem;
+  margin: 0 0 1rem;
+}
+
 .product-options-label {
   display: block;
-  margin: 0 0 1rem;
+  margin: 0;
   font-size: 0.76rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -6403,16 +6414,19 @@ button.reset:hover:not(:has(> *)) {
   color: var(--color-ink);
 }
 
-/* Sizing-chart link under the ring SIZE label — opens the printable PDF. */
+/* Sizing-chart link opposite the SIZE label — opens the printable PDF. */
 .ring-size-guide-link {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  margin: -0.6rem 0 0.85rem;
-  font-size: 0.82rem;
-  color: var(--color-ink);
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1;
+  white-space: nowrap;
+  color: var(--color-ink-soft);
   text-decoration: underline;
-  text-underline-offset: 0.2em;
+  text-underline-offset: 0.22em;
+  transition: color 160ms ease;
 }
 
 .ring-size-guide-link:hover {
@@ -6574,6 +6588,21 @@ button.reset:hover:not(:has(> *)) {
   }
 }
 
+/* Invisible full-page shield beneath the open list (list is z-index 20). It
+   swallows every pointer event that isn't on an option, so the buy buttons the
+   dropdown overlaps can't be triggered through it, and a click anywhere else
+   just closes the dropdown. */
+.variant-select-shield {
+  position: fixed;
+  inset: 0;
+  z-index: 19;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
 .variant-select-option {
   display: flex;
   align-items: center;
@@ -6589,6 +6618,9 @@ button.reset:hover:not(:has(> *)) {
   font-size: 0.92rem;
   text-align: left;
   cursor: pointer;
+  /* Opts out of the 300ms tap delay, so touch can't emit a late "ghost" click
+     at these coordinates after the list has closed. */
+  touch-action: manipulation;
   transition: background-color 120ms ease;
 }
 
