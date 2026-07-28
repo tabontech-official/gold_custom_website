@@ -1,6 +1,7 @@
 import {useEffect, useState, type CSSProperties} from 'react';
 import {Link, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS, getSortFromParam} from '~/lib/collectionFilter';
+import {useDismissable} from '~/hooks/useDismissable';
 
 type FilterValue = {
   id: string;
@@ -70,6 +71,9 @@ function dedupeValues(values: FilterValue[]): GroupedValue[] {
 export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
+  const sortRef = useDismissable<HTMLDivElement>(sortOpen, () =>
+    setSortOpen(false),
+  );
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
@@ -217,7 +221,7 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
             <span>Clear all</span>
           </Link>
         )}
-        <div className="collection-sort-select">
+        <div className="collection-sort-select" ref={sortRef}>
           <button
             aria-expanded={sortOpen}
             aria-haspopup="listbox"
@@ -230,7 +234,7 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
               <span>Sort</span>
             </span>
             <span className="collection-sort-value">{activeSort.label}</span>
-            <span aria-hidden="true">▾</span>
+            <ChevronIcon />
           </button>
           {sortOpen && (
             <div className="collection-sort-popover" role="listbox">
@@ -246,7 +250,8 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
                   role="option"
                   to={sortHref(option.value)}
                 >
-                  {option.label}
+                  <span>{option.label}</span>
+                  <CheckIcon />
                 </Link>
               ))}
             </div>
@@ -494,6 +499,36 @@ function SortIcon() {
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function ChevronIcon() {
+  return (
+    <svg className="collection-sort-caret" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="m6 9 6 6 6-6"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+      />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg className="collection-sort-check" viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M5 12.5 9.5 17 19 7"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
       />
     </svg>
   );

@@ -1,4 +1,5 @@
-import {useEffect, useRef, useState} from 'react';
+import {useState} from 'react';
+import {useDismissable} from '~/hooks/useDismissable';
 
 export type PremiumSelectOption = {
   /** Stable key + the value shown in the row. */
@@ -26,24 +27,7 @@ export function PremiumSelect({
   hint?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  // Close on outside click / Escape.
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
+  const wrapRef = useDismissable<HTMLDivElement>(open, () => setOpen(false));
 
   if (options.length === 0) return null;
 
