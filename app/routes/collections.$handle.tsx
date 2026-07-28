@@ -15,6 +15,8 @@ import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   MEGA_MENU,
+  MERGED_CUBAN_HANDLES,
+  MIAMI_CUBAN_HANDLE,
   getColumnItems,
   getMegaMenuDepartmentForHandle,
   toRelativeUrl,
@@ -128,6 +130,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   if (!handle) {
     throw redirect('/collections');
+  }
+
+  // Folded into the single Miami Cuban Chains category — see megaMenu.
+  if (MERGED_CUBAN_HANDLES.includes(handle)) {
+    throw redirect(`/collections/${MIAMI_CUBAN_HANDLE}`, 301);
   }
 
   const [{collection}] = await Promise.all([

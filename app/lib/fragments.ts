@@ -234,12 +234,6 @@ export const HEADER_QUERY = `#graphql
     menu(handle: $headerMenuHandle) {
       ...Menu
     }
-    ringsPrimary: menu(handle: "rings-1") {
-      ...Menu
-    }
-    ringsSecondary: menu(handle: "rings-2") {
-      ...Menu
-    }
     chainsGroup1: menu(handle: "chains-copy-copy-1") {
       ...Menu
     }

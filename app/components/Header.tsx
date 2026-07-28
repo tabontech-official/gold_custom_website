@@ -388,15 +388,11 @@ function MegaMenuItem({
   const menuItems = department.columns
     .flatMap((column) => getColumnItems(header, column))
     .filter((item) => item.url);
-  // Short menus read best as one deliberate list. Rings and Chains retain two
-  // columns even when their current item count is small, as those departments
-  // have enough breadth to warrant the denser scanning pattern.
+  // Short menus read best as one deliberate list. Chains retains two columns
+  // regardless, as that department has enough breadth to warrant the denser
+  // scanning pattern.
   const linkColumnCount =
-    department.id === 'rings' ||
-    department.id === 'chains' ||
-    menuItems.length > 6
-      ? 2
-      : 1;
+    department.id === 'chains' || menuItems.length > 6 ? 2 : 1;
   // The featured pane has room for three consistently sized cards. Products
   // always come from the active department's collection, including Chains and
   // Necklaces, so every panel feels balanced without unrelated recommendations.

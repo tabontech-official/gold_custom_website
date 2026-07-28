@@ -1,8 +1,6 @@
 import type {HeaderQuery} from 'storefrontapi.generated';
 
 type CategoryMenuKey =
-  | 'ringsPrimary'
-  | 'ringsSecondary'
   | 'chainsGroup1'
   | 'chainsGroup2'
   | 'chainsGroup3'
@@ -16,8 +14,22 @@ type CategoryMenuKey =
 
 export type MegaMenuColumn = {
   title?: string;
-  menuKeys: CategoryMenuKey[];
+  menuKeys?: CategoryMenuKey[];
+  /** Curated links, used instead of a Shopify menu for this column. */
+  items?: Array<{title: string; handle: string}>;
 };
+
+/**
+ * Shopify splits Miami Cuban across three menu links. `cuban-chains` is a
+ * superset of the other two, so it backs the single "Miami Cuban Chains" link
+ * on the Chains department below; the subsets are hidden from every menu and
+ * their collection pages redirect here (see collections.$handle).
+ */
+export const MIAMI_CUBAN_HANDLE = 'cuban-chains';
+export const MERGED_CUBAN_HANDLES = [
+  'miami-cuban-links',
+  'miami-cuban-chains',
+];
 
 export type MegaMenuDepartment = {
   id: string;
@@ -44,6 +56,7 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     label: 'Chains',
     to: '/collections/chains',
     columns: [
+      {items: [{title: 'Miami Cuban Chains', handle: MIAMI_CUBAN_HANDLE}]},
       {menuKeys: ['chainsGroup1']},
       {menuKeys: ['chainsGroup2']},
       {menuKeys: ['chainsGroup3']},
@@ -72,7 +85,17 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     id: 'rings',
     label: 'Rings',
     to: '/collections/rings',
-    columns: [{menuKeys: ['ringsPrimary']}, {menuKeys: ['ringsSecondary']}],
+    // Engagement rings are their own department, so they stay out of here.
+    columns: [
+      {
+        items: [
+          {title: "Men's Gold Rings", handle: 'men-rings'},
+          {title: "Women's Gold Rings", handle: 'womens-rings'},
+          {title: "Men's Diamond Rings", handle: 'mens-diamond-rings'},
+          {title: "Women's Diamond Rings", handle: 'womens-diamond-ring'},
+        ],
+      },
+    ],
   },
   {
     id: 'engagement-rings',
@@ -88,13 +111,29 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
   },
 ];
 
+type MenuItems = NonNullable<HeaderQuery['braceletsMenu']>['items'];
+
 export function getColumnItems(
   header: HeaderQuery,
   column: MegaMenuColumn,
-): NonNullable<HeaderQuery['ringsPrimary']>['items'] {
-  return column.menuKeys
+): MenuItems {
+  if (column.items) {
+    return column.items.map((item) => ({
+      id: item.handle,
+      title: item.title,
+      url: `/collections/${item.handle}`,
+    })) as unknown as MenuItems;
+  }
+
+  return (column.menuKeys ?? [])
     .flatMap((key) => header[key]?.items ?? [])
     .filter((item) => {
+      if (
+        [MIAMI_CUBAN_HANDLE, ...MERGED_CUBAN_HANDLES].some((handle) =>
+          item.url?.endsWith(`/collections/${handle}`),
+        )
+      )
+        return false;
       // Keep non-collection links (such as informational pages), but omit a
       // collection whenever Shopify reports that it has no products.
       if (item.resource?.__typename !== 'Collection') return true;
