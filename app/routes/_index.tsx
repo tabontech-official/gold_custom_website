@@ -332,7 +332,15 @@ function useSwipeSlider<T extends HTMLElement>(
       dragRef.current = v;
       setDrag(v);
     };
+    // A press that begins on a control (the dots) is a click, not a swipe.
+    // Critically, `setPointerCapture` below would otherwise retarget pointerup
+    // to the slider, so the browser fires `click` there instead of on the dot
+    // and the dot's onClick never runs.
+    const isControl = (target: EventTarget | null) =>
+      target instanceof Element && target.closest('button') !== null;
+
     const onStart = (e: TouchEvent) => {
+      if (isControl(e.target)) return;
       start.current = {x: e.touches[0].clientX, y: e.touches[0].clientY};
       axis.current = null;
     };
@@ -366,7 +374,7 @@ function useSwipeSlider<T extends HTMLElement>(
     // axis-lock + preventDefault logic stays intact). Pointer events fire for
     // touch too, so ignore pointerType 'touch' here to avoid double-driving.
     const onPtrDown = (e: PointerEvent) => {
-      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'touch' || isControl(e.target)) return;
       start.current = {x: e.clientX, y: e.clientY};
       axis.current = 'h'; // mouse has no scroll conflict — treat as horizontal
       setDragging(true);
@@ -439,6 +447,18 @@ function Hero({content}: {content: HeroContent | null}) {
     .map((line) => line.trim())
     .filter(Boolean);
 
+  // One copy per slide so the words travel with their photo instead of hanging
+  // still over a moving background. The tracks are aria-hidden, so these are
+  // presentational — the single sr-only <h1> below carries the semantics.
+  const heading = firstLine ? (
+    <div className="hero-inner">
+      <div className="hero-heading">
+        {firstLine}
+        {restLines.length > 0 && <span>{restLines.join(' ')}</span>}
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       <section
@@ -451,7 +471,10 @@ function Hero({content}: {content: HeroContent | null}) {
             hero_content entry has images — otherwise mobile falls back to the
             desktop banners below. Its own swipe state, independent of the
             desktop track above. */}
-        {mobileImages.length > 0 && <MobileHeroSlider images={mobileImages} />}
+        {rawHeading && <h1 className="sr-only">{rawHeading}</h1>}
+        {mobileImages.length > 0 && (
+          <MobileHeroSlider images={mobileImages} heading={heading} />
+        )}
         {count > 0 && (
           <div
             className="hero-track"
@@ -468,7 +491,9 @@ function Hero({content}: {content: HeroContent | null}) {
                 key={index}
                 className="hero-slide"
                 style={{backgroundImage: `url(${url})`}}
-              />
+              >
+                {heading}
+              </div>
             ))}
           </div>
         )}
@@ -487,18 +512,6 @@ function Hero({content}: {content: HeroContent | null}) {
             ))}
           </div>
         )}
-        <div className="hero-inner">
-          {firstLine ? (
-            <h1>
-              {firstLine}
-              {restLines.length > 0 && <span>{restLines.join(' ')}</span>}
-            </h1>
-          ) : (
-            <h1>
-             
-            </h1>
-          )}
-        </div>
       </section>
       <MarketBar />
     </>
@@ -514,7 +527,13 @@ function Hero({content}: {content: HeroContent | null}) {
 // passive, so preventDefault there is ignored). We only hijack the gesture
 // once it reads as horizontal, so vertical page scroll still works, and we
 // stopPropagation so the parent .hero swipe handler never double-fires.
-function MobileHeroSlider({images}: {images: string[]}) {
+function MobileHeroSlider({
+  images,
+  heading,
+}: {
+  images: string[];
+  heading: React.ReactNode;
+}) {
   const count = images.length;
   const rootRef = useRef<HTMLDivElement>(null);
   const {active, goReal, offset, animate} = useSwipeSlider(count, rootRef);
@@ -533,16 +552,18 @@ function MobileHeroSlider({images}: {images: string[]}) {
             ? 'transform 750ms cubic-bezier(0.22, 1, 0.36, 1)'
             : 'none',
         }}
+        aria-hidden="true"
       >
         {loopImages.map((url, index) => (
-          <img
-            key={index}
-            className="hero-mobile-image"
-            src={url}
-            alt=""
-            aria-hidden="true"
-            draggable={false}
-          />
+          <div key={index} className="hero-mobile-slide">
+            <img
+              className="hero-mobile-image"
+              src={url}
+              alt=""
+              draggable={false}
+            />
+            {heading}
+          </div>
         ))}
       </div>
       {count > 1 && (

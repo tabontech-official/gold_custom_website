@@ -3322,7 +3322,11 @@ button.reset:hover:not(:has(> *)) {
 .hero {
   background: #fff;
   color: #000;
-  min-height: clamp(32rem, 78vh, 46rem);
+  /* The heading now rides inside each slide (so it slides with its photo), and
+     the slide track is absolute — nothing in flow sizes the hero any more.
+     This reproduces what the in-flow heading used to contribute: its own
+     min-height plus this element's vertical padding (border-box). */
+  min-height: calc(clamp(24rem, 58vh, 36rem) + 11rem);
   padding: 4.5rem 0 6.5rem;
   position: relative;
   isolation: isolate;
@@ -3334,6 +3338,7 @@ button.reset:hover:not(:has(> *)) {
   cursor: grab;
   @media (min-width: 48em) {
     padding: 7rem 0 7.5rem;
+    min-height: calc(clamp(24rem, 58vh, 36rem) + 14.5rem);
   }
 }
 
@@ -3380,6 +3385,17 @@ button.reset:hover:not(:has(> *)) {
   filter: contrast(1.08) saturate(1.04);
   /* A hair of scale so the image breathes as it settles — subtle motion. */
   transform: scale(1.001);
+  /* Holds this slide's heading. The track is inset:0 over the hero's padding
+     box, so mirror that padding here to keep the words where they used to sit. */
+  display: flex;
+  align-items: stretch;
+  padding: 4.5rem 0 6.5rem;
+}
+
+@media (min-width: 48em) {
+  .hero-slide {
+    padding: 7rem 0 7.5rem;
+  }
 }
 
 /* Portrait mobile hero slider — hidden on desktop; the mobile media query
@@ -3428,6 +3444,10 @@ button.reset:hover:not(:has(> *)) {
   flex-direction: column;
   justify-content: flex-end;
   margin: 0;
+  /* Fills its slide up to the max-width below, the way it filled the hero when
+     it sat in normal flow. */
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: min(54rem, 92vw);
   min-height: clamp(24rem, 58vh, 36rem);
   padding: 0 clamp(1.5rem, 5vw, 4rem);
@@ -3488,7 +3508,7 @@ button.reset:hover:not(:has(> *)) {
   font-weight: 600;
 }
 
-.hero h1 {
+.hero-heading {
   color: #1a1712;
   font-size: clamp(3.1rem, 7vw, 6.4rem);
   font-weight: 700;
@@ -3505,7 +3525,7 @@ button.reset:hover:not(:has(> *)) {
 /* Accent line: the deeper gold reads on the light hero scrim (bright #d4af37
    on near-white was the low-contrast, hard-to-read combination). The same
    white halo keeps it crisp. */
-.hero h1 span {
+.hero-heading span {
   color: var(--color-gold-deep);
   display: block;
   font-style: italic;
@@ -3584,8 +3604,16 @@ button.reset:hover:not(:has(> *)) {
     padding: 0;
   }
 
+  /* Without the portrait slider, the desktop banner track still runs here and
+     is absolutely positioned, so the 16/9 heading box inside it can no longer
+     size the hero — state that ratio directly. */
+  .hero:not([data-has-mobile]) {
+    min-height: 56.25vw;
+  }
+
   .hero-slide {
     background-position: center;
+    padding: 0;
   }
 
   /* Mobile slider dots: lower on the image and 36% smaller than desktop. */
@@ -3635,9 +3663,16 @@ button.reset:hover:not(:has(> *)) {
     will-change: transform;
   }
 
+  /* Each slide is image + its own heading overlay, so the slide (not the image)
+     is the flex item and the overlay anchors to it. */
+  .hero-mobile-slide {
+    position: relative;
+    flex: 0 0 100%;
+    width: 100%;
+  }
+
   .hero[data-has-mobile] .hero-mobile-image {
     display: block;
-    flex: 0 0 100%;
     width: 100%;
     height: auto;
   }
@@ -3670,14 +3705,13 @@ button.reset:hover:not(:has(> *)) {
 
   /* Heading over the image: both lines white (the italic accent included) so
      it reads as one uniform colour. Size + wrap width differ from desktop. */
-  .hero[data-has-mobile] .hero h1,
-  .hero[data-has-mobile] h1,
-  .hero[data-has-mobile] h1 span {
+  .hero[data-has-mobile] .hero-heading,
+  .hero[data-has-mobile] .hero-heading span {
     color: #fff;
   }
 
   /* Small hero copy overlaid on the left of the picture */
-  .hero h1 {
+  .hero-heading {
     font-size: clamp(2.1rem, 9.5vw, 3.1rem);
     line-height: 0.98;
     margin-bottom: 0.55rem;
