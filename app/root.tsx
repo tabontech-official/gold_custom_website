@@ -1,4 +1,9 @@
-import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
+import {
+  Analytics,
+  getShopAnalytics,
+  getSeoMeta,
+  useNonce,
+} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -18,8 +23,34 @@ import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
 import {WishlistToast} from './components/WishlistToast';
+import {
+  SITE,
+  organizationJsonLd,
+  rootDataFrom,
+  siteOrigin,
+  websiteJsonLd,
+} from '~/lib/seo';
 
 export type RootLoader = typeof loader;
+
+/**
+ * Sitewide SEO defaults. Child routes call `getSeoMeta` with their own config,
+ * which overrides these per-key — so this supplies the title template,
+ * og:site_name and the Organization/WebSite graph on every page without each
+ * route repeating it.
+ */
+export const meta: Route.MetaFunction = ({matches}) => {
+  const origin = siteOrigin(rootDataFrom(matches));
+
+  return (
+    getSeoMeta({
+      title: SITE.name,
+      titleTemplate: `%s | ${SITE.name}`,
+      description: SITE.description,
+      url: origin,
+    }) ?? []
+  );
+};
 
 /**
  * This is important to avoid re-fetching root queries on sub-navigations
@@ -167,6 +198,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
+  const rootData = useRouteLoaderData<RootLoader>('root');
+  const origin = siteOrigin(rootData);
 
   return (
     <html lang="en">
@@ -177,6 +210,27 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />
+        {/*
+          Organization + WebSite must appear on every page, but a child route's
+          `meta` export REPLACES the root's rather than merging with it — so
+          putting this in root `meta` would only reach the handful of routes
+          that don't define their own. Rendering it in the shell instead makes
+          it genuinely sitewide.
+        */}
+        {/*
+          No `nonce` here: React round-trips it inconsistently between server
+          and client and triggers a hydration mismatch, and CSP `script-src`
+          doesn't govern non-executable `ld+json` data blocks anyway.
+        */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              organizationJsonLd(origin),
+              websiteJsonLd(origin),
+            ]),
+          }}
+        />
       </head>
       <body>
         {children}

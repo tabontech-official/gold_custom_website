@@ -4,10 +4,17 @@ import {
 import type {Route} from './+types/pages.$handle';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {absoluteUrl, metaDescription, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.page.title ?? ''}`}];
-};
+export const meta: Route.MetaFunction = ({data, matches}) =>
+  pageSeo({
+    title: data?.page.seo?.title || data?.page.title || '',
+    description: metaDescription(data?.page.seo?.description),
+    url: absoluteUrl(
+      siteOrigin(rootDataFrom(matches)),
+      `/pages/${data?.page.handle ?? ''}`,
+    ),
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte

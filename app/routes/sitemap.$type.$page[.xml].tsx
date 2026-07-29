@@ -10,11 +10,11 @@ export async function loader({
     storefront,
     request,
     params,
-    locales: ['EN-US', 'EN-CA', 'FR-CA'],
-    getLink: ({type, baseUrl, handle, locale}) => {
-      if (!locale) return `${baseUrl}/${type}/${handle}`;
-      return `${baseUrl}/${locale}/${type}/${handle}`;
-    },
+    // The skeleton template ships EN-US/EN-CA/FR-CA here, but this storefront
+    // has no locale routing — those URLs 404, and hreflang pointing at 404s is
+    // a hard error in Search Console. Single locale: emit no alternates.
+    locales: [],
+    getLink: ({type, baseUrl, handle}) => `${baseUrl}/${type}/${handle}`,
   });
 
   response.headers.set('Cache-Control', `max-age=${60 * 60 * 24}`);

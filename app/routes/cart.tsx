@@ -10,10 +10,11 @@ import type {CartQueryDataReturn} from '@shopify/hydrogen';
 import {CartForm} from '@shopify/hydrogen';
 import {CartMain} from '~/components/CartMain';
 import type {RootLoader} from '~/root';
+import {pageSeo} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Cart`}];
-};
+// User-specific and has no search value — keep it out of the index.
+export const meta: Route.MetaFunction = () =>
+  pageSeo({title: 'Your Cart', noIndex: true});
 
 export const headers: HeadersFunction = ({actionHeaders}) => actionHeaders;
 

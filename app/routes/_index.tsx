@@ -10,6 +10,7 @@ import {MarketBar} from '~/components/MarketBar';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
 import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
+import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
 import {
@@ -17,8 +18,14 @@ import {
   type VideoCarouselItem,
 } from '~/components/VideoCarousel';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: 'Fine Jewelry & Watches | Gold Jewelry Co.'}];
+export const meta: Route.MetaFunction = ({matches}) => {
+  const origin = siteOrigin(rootDataFrom(matches));
+
+  return pageSeo({
+    title: 'Fine Gold Jewelry, Chains & Rings',
+    description: SITE.description,
+    url: origin,
+  });
 };
 
 type HeroContent = {

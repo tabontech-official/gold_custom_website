@@ -2,15 +2,25 @@ import {useLoaderData} from 'react-router';
 import type {Route} from './+types/policies.$handle';
 import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 import {PolicyDocument} from '~/components/PolicyDocument';
+import {SITE, absoluteUrl, metaDescription, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 type SelectedPolicies = keyof Pick<
   Shop,
   'privacyPolicy' | 'shippingPolicy' | 'termsOfService' | 'refundPolicy'
 >;
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `Hydrogen | ${data?.policy.title ?? ''}`}];
-};
+export const meta: Route.MetaFunction = ({data, matches}) =>
+  pageSeo({
+    title: data?.policy.title ?? 'Policy',
+    description: metaDescription(
+      data?.policy.body?.replace(/<[^>]*>/g, ' '),
+      `Read the ${data?.policy.title ?? 'store'} policy for ${SITE.name}.`,
+    ),
+    url: absoluteUrl(
+      siteOrigin(rootDataFrom(matches)),
+      `/policies/${data?.policy.handle ?? ''}`,
+    ),
+  });
 
 export async function loader({params, context}: Route.LoaderArgs) {
   if (!params.handle) {

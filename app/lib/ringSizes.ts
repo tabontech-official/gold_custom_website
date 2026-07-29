@@ -23,18 +23,48 @@ export const RING_SIZES: string[] = Array.from(
   (_, index) => String(4 + index * 0.25),
 );
 
+/** Item nouns that mean "not sized like a ring" when they head the title. */
+const NON_RING_NOUN = /\b(pendant|necklace|bracelet|earring|charm|anklet|chain)s?\b/i;
+
 /**
- * Whether a product is sized as a ring. Matches Shopify's taxonomy category so
- * new ring products are covered automatically, and compares it exactly — the
- * category for earrings also ends in "rings".
+ * "Band" counts as a ring word: wedding bands and styles like "Chain-Link
+ * Band" are rings. `\b` keeps "Earrings" from matching "ring".
+ */
+const RING_NOUN = /\b(ring|band)s?\b/i;
+
+/**
+ * Whether a product is sized as a ring.
+ *
+ * The catalog's taxonomy is unreliable in BOTH directions — there are pendants
+ * filed under the "Rings" category with an empty productType, and at least one
+ * engagement ring filed under "Charms & Pendants". Trusting `category` alone
+ * put a ring-size dropdown on ~17 pendants.
+ *
+ * So an unambiguous title wins: it's merchandiser-written and describes the
+ * physical object, whereas the category is a bulk-assigned field nobody
+ * re-checks. Taxonomy is still the fallback when the title says nothing
+ * either way, or says both (e.g. "Chain-Link Band" — a ring that names a
+ * chain, which is exactly why the two signals have to disagree before the
+ * category gets a vote).
  */
 export function isRingProduct(product: {
+  title?: string | null;
   category?: {name?: string | null} | null;
   productType?: string | null;
 }): boolean {
+  const title = product.title ?? '';
+  const saysRing = RING_NOUN.test(title);
+  const saysOther = NON_RING_NOUN.test(title);
+
+  if (saysOther && !saysRing) return false;
+  if (saysRing && !saysOther) return true;
+
+  // Title is silent or self-contradictory — defer to the taxonomy category,
+  // compared exactly because the category for earrings also ends in "rings".
   const category = product.category?.name?.trim().toLowerCase();
   if (category) return category === 'rings';
-  // No taxonomy category assigned yet: fall back to the free-text type, where
+
+  // No category assigned: fall back to the free-text type, where
   // "Engagement Rings" counts but "Stud Earrings" must not.
   return /\brings?\b/i.test(product.productType ?? '');
 }

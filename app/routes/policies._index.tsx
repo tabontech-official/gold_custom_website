@@ -2,6 +2,15 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/policies._index';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
+import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+
+export const meta: Route.MetaFunction = ({matches}) =>
+  pageSeo({
+    title: 'Store Policies',
+    description: `Shipping, returns, refunds, warranty and privacy policies for ${SITE.name}.`,
+    url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/policies'),
+  });
+
 
 export async function loader({context}: Route.LoaderArgs) {
   const data: PoliciesQuery = await context.storefront.query(POLICIES_QUERY);

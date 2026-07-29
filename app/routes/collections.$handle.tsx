@@ -6,8 +6,21 @@ import {
 } from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
+import {
+  getPaginationVariables,
+  Analytics,
+  Pagination,
+  getSeoMeta,
+} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {
+  SITE,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  metaDescription,
+  rootDataFrom,
+  siteOrigin,
+} from '~/lib/seo';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
@@ -100,8 +113,32 @@ function CollectionProductBreak({item}: {item: CollectionCoverPhoto}) {
   );
 }
 
-export const meta: Route.MetaFunction = ({data}) => {
-  return [{title: `${displayTitle(data?.collection)} | Gold Jewelry Co.`}];
+export const meta: Route.MetaFunction = ({data, matches}) => {
+  const collection = data?.collection;
+  const origin = siteOrigin(rootDataFrom(matches));
+  const title = displayTitle(collection);
+
+  if (!collection) {
+    return getSeoMeta({title, titleTemplate: `%s | ${SITE.name}`}) ?? [];
+  }
+
+  return (
+    getSeoMeta({
+      title: collection.seo?.title || title,
+      titleTemplate: `%s | ${SITE.name}`,
+      description: metaDescription(
+        collection.seo?.description || collection.description,
+      ),
+      url: absoluteUrl(origin, `/collections/${collection.handle}`),
+      media: collection.image?.url
+        ? {type: 'image', url: collection.image.url}
+        : undefined,
+      jsonLd: breadcrumbJsonLd(origin, [
+        {name: 'Home', path: '/'},
+        {name: title, path: `/collections/${collection.handle}`},
+      ]),
+    }) ?? []
+  );
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -551,6 +588,16 @@ const COLLECTION_QUERY = `#graphql
       handle
       title
       description
+      # Merchant-authored SEO overrides from the Shopify admin; these win over
+      # the raw title/description in the page's meta tags.
+      seo {
+        title
+        description
+      }
+      image {
+        url
+        altText
+      }
       collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {
         reference {
           ... on Metaobject {

@@ -7,6 +7,12 @@ import {
 } from 'react-router';
 import type {Route} from './+types/account';
 import {CUSTOMER_DETAILS_QUERY} from '~/graphql/customer-account/CustomerDetailsQuery';
+import {pageSeo} from '~/lib/seo';
+
+// Authenticated area — never index, and don't follow into it either.
+export const meta: Route.MetaFunction = () =>
+  pageSeo({title: 'Account', noIndex: true});
+
 
 export function shouldRevalidate() {
   return true;

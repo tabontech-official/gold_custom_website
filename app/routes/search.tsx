@@ -11,10 +11,17 @@ import {
   getEmptyPredictiveSearchResult,
 } from '~/lib/search';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
+import {SITE, pageSeo} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Search`}];
-};
+// Result pages are thin/duplicative and would burn crawl budget across every
+// query permutation, so the route is noindex — but still followable so
+// crawlers can reach the products it links to.
+export const meta: Route.MetaFunction = () =>
+  pageSeo({
+    title: 'Search',
+    description: `Search ${SITE.name} for gold chains, rings, bracelets, pendants and charms.`,
+    noIndex: true,
+  });
 
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);

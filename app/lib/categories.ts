@@ -55,3 +55,70 @@ export const CATEGORIES: StorefrontCategory[] = [
   {label: 'Diamond', handle: 'diamond'},
   {label: 'Engagement', handle: 'engagement-rings'},
 ];
+
+type CategorizableProduct = {
+  category?: {name?: string | null} | null;
+  productType?: string | null;
+};
+
+/**
+ * Resolve a product's Shopify category/productType to one of the CATEGORIES
+ * tiles above, so it can be linked as a shoppable collection.
+ */
+export function getProductCategoryMatch(product: CategorizableProduct) {
+  const rawCategory = product.category?.name || product.productType || '';
+  const categoryName =
+    rawCategory && rawCategory.toLowerCase() !== 'uncategorized'
+      ? rawCategory
+      : '';
+  if (!categoryName) return undefined;
+
+  return CATEGORIES.find((c) => {
+    const name = categoryName.toLowerCase();
+    const label = c.label.toLowerCase();
+    return (
+      name === label ||
+      name === c.handle ||
+      name.includes(label) ||
+      name.includes(c.handle)
+    );
+  });
+}
+
+export function buildHierarchicalProductPath({
+  handle,
+  categoryHandle,
+  subcategoryHandle,
+}: {
+  handle: string;
+  categoryHandle: string;
+  subcategoryHandle?: string | null;
+}) {
+  const segments = ['products', categoryHandle];
+  if (subcategoryHandle) segments.push(subcategoryHandle);
+  segments.push(handle);
+  return `/${segments.map(encodeURIComponent).join('/')}`;
+}
+
+/**
+ * The single indexable path for a product.
+ *
+ * `/products/{handle}` 302-redirects to the category path, so the canonical
+ * URL must be that destination or we point search engines at a redirect.
+ * Subcategory paths are reachable via breadcrumb links but deliberately
+ * collapse to the 2-segment category path — one product, one indexed URL.
+ *
+ * The loader, the `<link rel="canonical">` and the sitemap all call this, so
+ * the three can never drift apart.
+ */
+export function productCanonicalPath(
+  product: CategorizableProduct & {handle: string},
+) {
+  const category = getProductCategoryMatch(product);
+  if (!category) return `/products/${encodeURIComponent(product.handle)}`;
+
+  return buildHierarchicalProductPath({
+    handle: product.handle,
+    categoryHandle: category.handle,
+  });
+}

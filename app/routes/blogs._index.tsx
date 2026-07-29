@@ -7,12 +7,16 @@ import type {Route} from './+types/blogs._index';
 import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {BlogsQuery} from 'storefrontapi.generated';
+import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
-export const meta: Route.MetaFunction = () => {
-  return [{title: `Hydrogen | Blogs`}];
-};
+export const meta: Route.MetaFunction = ({matches}) =>
+  pageSeo({
+    title: 'Jewelry Guides & Buying Advice',
+    description: `Gold buying guides, care tips and jewelry advice from ${SITE.name}.`,
+    url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/blogs'),
+  });
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte

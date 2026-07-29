@@ -14,6 +14,7 @@ import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
+  getSeoMeta,
 } from '@shopify/hydrogen';
 import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -25,30 +26,57 @@ import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
-import {CATEGORIES} from '~/lib/categories';
+import {
+  buildHierarchicalProductPath,
+  getProductCategoryMatch,
+  productCanonicalPath,
+} from '~/lib/categories';
 import {
   DEFAULT_RING_SIZE,
   RING_SIZE_ATTRIBUTE_KEY,
   isRingProduct,
 } from '~/lib/ringSizes';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {
+  SITE,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  metaDescription,
+  rootDataFrom,
+  siteOrigin,
+} from '~/lib/seo';
 
-export const meta: Route.MetaFunction = ({data}) => {
-  const title = data?.product.title || '';
-  const description =
-    data?.product.seo?.description || data?.product.description || '';
+export const meta: Route.MetaFunction = ({data, matches}) => {
+  const product = data?.product;
+  if (!product) return getSeoMeta({title: SITE.name}) ?? [];
 
-  return [
-    {title: title ? `${title} | Gold Custom` : 'Gold Custom'},
-    {
-      name: 'description',
-      content: description,
-    },
-    {
-      rel: 'canonical',
-      href: `/products/${data?.product.handle}`,
-    },
+  const origin = siteOrigin(rootDataFrom(matches));
+  const canonical = absoluteUrl(origin, productCanonicalPath(product));
+  const image = product.selectedOrFirstAvailableVariant?.image?.url;
+
+  const category = getProductCategoryMatch(product);
+  const crumbs = [
+    {name: 'Home', path: '/'},
+    ...(category
+      ? [{name: category.label, path: `/collections/${category.handle}`}]
+      : []),
+    {name: product.title, path: productCanonicalPath(product)},
   ];
+
+  return (
+    getSeoMeta({
+      title: product.seo?.title || product.title,
+      titleTemplate: `%s | ${SITE.name}`,
+      description: metaDescription(
+        product.seo?.description || product.description,
+      ),
+      url: canonical,
+      media: image ? {type: 'image', url: image} : undefined,
+      // Product schema is emitted at render time (buildProductJsonLd) where the
+      // resolved variant and gallery are available — don't duplicate it here.
+      jsonLd: breadcrumbJsonLd(origin, crumbs),
+    }) ?? []
+  );
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -306,6 +334,7 @@ export default function Product() {
             variant={selectedVariant}
             ringSize={isRing ? ringSize : undefined}
           />
+          <FinancingPartners />
           <ProductSpecIcons
             keyword={`${selectedVariant?.title ?? ''} ${title}`}
             weight={selectedVariant?.weight}
@@ -747,6 +776,72 @@ function MonthlyEstimate({
   );
 }
 
+/**
+ * Financing partners. The logos are Shopify Files, addressed on
+ * `cdn.shopify.com` rather than the storefront's own `/cdn/shop/files/` path:
+ * both serve the same bytes, but the CSP `img-src` allowlist covers
+ * cdn.shopify.com only, so the storefront path is blocked in local dev.
+ *
+ * `width=` is a Shopify CDN transform, asked for at 2x the rendered height so
+ * the logos stay crisp on retina.
+ */
+const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
+
+const FINANCING_PARTNERS = [
+  {
+    name: 'Acima Leasing',
+    href: 'https://www.acima.com',
+    src: `${SHOPIFY_FILES}/acima.avif?v=1783667298&width=240`,
+  },
+  {
+    name: 'American First Finance',
+    href: 'https://www.americanfirstfinance.com',
+    src: `${SHOPIFY_FILES}/american.avif?v=1783667298&width=240`,
+  },
+  {
+    name: 'Progressive Leasing',
+    href: 'https://progleasing.com',
+    src: `${SHOPIFY_FILES}/progressive_leasing.avif?v=1783667298&width=240`,
+  },
+  {
+    name: 'Synchrony',
+    href: 'https://www.synchrony.com',
+    src: `${SHOPIFY_FILES}/synchrony.avif?v=1783667298&width=240`,
+  },
+];
+
+function FinancingPartners() {
+  return (
+    <section className="product-financing" aria-labelledby="product-financing-label">
+      <h3 className="product-financing-label" id="product-financing-label">
+        Financing Available:
+      </h3>
+      <ul className="product-financing-list">
+        {FINANCING_PARTNERS.map((partner) => (
+          <li key={partner.name}>
+            <a
+              href={partner.href}
+              target="_blank"
+              // Third-party lenders: `noopener` because of target=_blank, and
+              // `nofollow` so a commercial partner link can't be read as a
+              // link scheme or bleed ranking signal off the store.
+              rel="noopener noreferrer nofollow"
+              className="product-financing-link"
+            >
+              <img
+                src={partner.src}
+                alt={partner.name}
+                loading="lazy"
+                decoding="async"
+              />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function RelatedProducts({
   products,
   viewAllTo,
@@ -816,44 +911,6 @@ function normalizeMedia(nodes: any[], title: string): GalleryMedia[] {
       }
     })
     .filter((item): item is GalleryMedia => item !== null);
-}
-
-function buildHierarchicalProductPath({
-  handle,
-  categoryHandle,
-  subcategoryHandle,
-}: {
-  handle: string;
-  categoryHandle: string;
-  subcategoryHandle?: string | null;
-}) {
-  const segments = ['products', categoryHandle];
-  if (subcategoryHandle) segments.push(subcategoryHandle);
-  segments.push(handle);
-  return `/${segments.map(encodeURIComponent).join('/')}`;
-}
-
-function getProductCategoryMatch(product: {
-  category?: {name?: string | null} | null;
-  productType?: string | null;
-}) {
-  const rawCategory = product.category?.name || product.productType || '';
-  const categoryName =
-    rawCategory && rawCategory.toLowerCase() !== 'uncategorized'
-      ? rawCategory
-      : '';
-  if (!categoryName) return undefined;
-
-  return CATEGORIES.find((c) => {
-    const name = categoryName.toLowerCase();
-    const label = c.label.toLowerCase();
-    return (
-      name === label ||
-      name === c.handle ||
-      name.includes(label) ||
-      name.includes(c.handle)
-    );
-  });
 }
 
 function getBreadcrumbContext(

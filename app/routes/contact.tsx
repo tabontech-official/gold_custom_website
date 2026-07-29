@@ -1,4 +1,13 @@
 import {Link} from 'react-router';
+import type {Route} from './+types/contact';
+import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+
+export const meta: Route.MetaFunction = ({matches}) =>
+  pageSeo({
+    title: 'Contact Us',
+    description: `Get in touch with the ${SITE.name} concierge about orders, custom pieces, sizing and repairs.`,
+    url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/contact'),
+  });
 
 export default function Contact() {
   return (

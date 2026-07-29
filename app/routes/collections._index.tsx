@@ -4,6 +4,15 @@ import {getPaginationVariables, Image} from '@shopify/hydrogen';
 import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+
+export const meta: Route.MetaFunction = ({matches}) =>
+  pageSeo({
+    title: 'Shop All Collections',
+    description: `Browse every ${SITE.name} collection — gold chains, rings, bracelets, pendants, earrings and charms in 10K and 14K gold.`,
+    url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/collections'),
+  });
+
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte

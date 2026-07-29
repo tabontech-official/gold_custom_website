@@ -54,7 +54,57 @@ Crawl-Delay: 10
 
 User-agent: Pinterest
 Crawl-delay: 1
+
+${aiCrawlerRules({shopId})}
 `.trim();
+}
+
+/**
+ * AI crawlers are explicitly allowed so the catalog can surface in AI answers
+ * and agentic shopping. They're named individually because a bot with its own
+ * User-agent group ignores the wildcard `*` group entirely — so without these,
+ * "allowed" would depend on each vendor's default.
+ *
+ * Two kinds, grouped separately so blocking the training half later is a
+ * one-line change:
+ *   - answer/search bots fetch a page to cite it, and link back
+ *   - training bots ingest content for model training and send no traffic
+ *
+ * Google-Extended and Applebot-Extended are AI-training opt-out tokens only —
+ * they do not affect Googlebot/Applebot search crawling.
+ */
+function aiCrawlerRules({shopId}: {shopId?: string}) {
+  const answerBots = [
+    'OAI-SearchBot',
+    'ChatGPT-User',
+    'PerplexityBot',
+    'Perplexity-User',
+    'Claude-User',
+    'Claude-SearchBot',
+    'Amazonbot',
+  ];
+  const trainingBots = [
+    'GPTBot',
+    'ClaudeBot',
+    'anthropic-ai',
+    'Google-Extended',
+    'Applebot-Extended',
+    'CCBot',
+    'Meta-ExternalAgent',
+  ];
+
+  // No sitemapUrl here on purpose: `Sitemap:` is a non-group directive, so
+  // declaring it once in the `*` group covers every crawler. Repeating it per
+  // bot would add a dozen duplicate lines for no benefit.
+  const group = (agent: string) =>
+    `User-agent: ${agent}\n${generalDisallowRules({shopId})}`;
+
+  return [
+    '# ---- AI answer engines & shopping agents (allowed) ----',
+    ...answerBots.map(group),
+    '# ---- AI training crawlers (allowed) ----',
+    ...trainingBots.map(group),
+  ].join('\n\n');
 }
 
 /**

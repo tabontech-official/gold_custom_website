@@ -2,6 +2,12 @@ import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/wishlist';
 import {getWishlist, toggleWishlist} from '~/lib/wishlist';
 import {ProductItem} from '~/components/ProductItem';
+import {pageSeo} from '~/lib/seo';
+
+// Contents are per-visitor (session cookie), so there is nothing stable to index.
+export const meta: Route.MetaFunction = () =>
+  pageSeo({title: 'Your Wishlist', noIndex: true});
+
 
 // POST here (from the heart button) to toggle a handle. The signed session
 // cookie is the store, so we commit it back on the response.
