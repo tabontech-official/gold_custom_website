@@ -1705,6 +1705,21 @@ export type ProductItemFragment = Pick<
   };
 };
 
+export type SidebarCollectionsQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type SidebarCollectionsQuery = {
+  collections: {
+    nodes: Array<
+      Pick<StorefrontAPI.Collection, 'handle' | 'title'> & {
+        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
+      }
+    >;
+  };
+};
+
 export type CollectionQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -2719,6 +2734,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Blogs(\n    $country: CountryCode\n    $endCursor: String\n    $first: Int\n    $language: LanguageCode\n    $last: Int\n    $startCursor: String\n  ) @inContext(country: $country, language: $language) {\n    blogs(\n      first: $first,\n      last: $last,\n      before: $startCursor,\n      after: $endCursor\n    ) {\n      pageInfo {\n        hasNextPage\n        hasPreviousPage\n        startCursor\n        endCursor\n      }\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n        articles(first: 1) {\n          nodes {\n            title\n            handle\n            excerpt\n            publishedAt\n            image {\n              id\n              altText\n              url\n              width\n              height\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: BlogsQuery;
     variables: BlogsQueryVariables;
+  };
+  '#graphql\n  query SidebarCollections($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collections(first: 250, sortKey: TITLE) {\n      nodes {\n        handle\n        title\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
+    return: SidebarCollectionsQuery;
+    variables: SidebarCollectionsQueryVariables;
   };
   '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n        reference {\n          ... on Metaobject {\n            handle\n            fields {\n              key\n              value\n            }\n          }\n        }\n      }\n      collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n        reference {\n          ... on Metaobject {\n            handle\n            fields {\n              key\n              value\n              reference {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n              references(first: 20) {\n                nodes {\n                  ... on MediaImage {\n                    image {\n                      url\n                      altText\n                    }\n                  }\n                  ... on GenericFile {\n                    url\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;

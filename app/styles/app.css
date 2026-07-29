@@ -5250,6 +5250,99 @@ button.reset:hover:not(:has(> *)) {
   color: var(--color-ink-soft);
 }
 
+/* Category browse list — links, not filters, so it sits below the facets
+   behind its own rule and drops the checkboxes. */
+.sidebar-group-categories {
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.4rem;
+  padding-top: 1.6rem;
+}
+
+.sidebar-category-search {
+  width: 100%;
+  margin: 0 0 0.9rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0;
+  background: #fff;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-category-search::placeholder {
+  color: var(--color-ink-soft);
+}
+
+.sidebar-category-search:focus-visible {
+  outline: none;
+  border-color: var(--color-gold-dark);
+}
+
+.sidebar-categories {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  /* Long catalogs scroll in place instead of pushing the rail off-screen. */
+  max-height: 17rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(0, 0, 0, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.sidebar-categories::-webkit-scrollbar {
+  width: 3px;
+}
+
+.sidebar-categories::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.28);
+  border-radius: 999px;
+}
+
+.sidebar-category {
+  display: block;
+  padding: 0.42rem 0.5rem 0.42rem 0.7rem;
+  border-left: 1px solid transparent;
+  color: var(--color-ink-soft);
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.sidebar-category:hover {
+  background: rgba(0, 0, 0, 0.02);
+  border-left-color: var(--color-gold);
+  color: var(--color-ink);
+  text-decoration: none;
+}
+
+.sidebar-category.is-active {
+  border-left-color: var(--color-ink);
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.sidebar-category-empty {
+  padding: 0.42rem 0 0 0.7rem;
+  color: var(--color-ink-soft);
+  font-size: 0.8rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebar-category {
+    transition: none;
+  }
+}
+
 /* Price range — dual-handle slider with min/max boxes */
 .price-slider {
   position: relative;
@@ -9585,7 +9678,7 @@ button.reset:hover:not(:has(> *)) {
 /* Professional collection catalogue controls. */
 .collection-view-switcher {
   align-items: center;
-  display: none;
+  display: inline-flex;
   gap: 0.2rem;
 }
 
@@ -9616,26 +9709,36 @@ button.reset:hover:not(:has(> *)) {
   width: 1.05rem;
 }
 
+/* Two rows side by side where there's room; one when the column narrows —
+   the minmax does it natively, no breakpoint needed. */
 .collection-main.is-list-view .products-grid {
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
 }
 
+/* List rows: image pinned to the left edge, title and price to the right. */
 .collection-main.is-list-view .product-item {
   align-items: center;
-  display: grid;
+  display: flex;
+  flex-direction: row;
   gap: 1.5rem;
-  grid-template-columns: 11rem minmax(0, 1fr);
+  justify-content: space-between;
   padding: 0.7rem;
 }
 
+.collection-main.is-list-view .product-image-wrap {
+  flex: 0 0 11rem;
+}
+
 .collection-main.is-list-view .product-card-body {
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 0.65rem;
+  /* shrink before the image does, so long titles wrap instead of squeezing it */
+  min-width: 0;
 }
 
 .collection-main.is-list-view .product-item-copy h4,
 .collection-main.is-list-view .product-card-price {
-  text-align: left;
+  text-align: right;
 }
 
 .collection-main.is-list-view .product-item-copy h4 {
@@ -9651,10 +9754,6 @@ button.reset:hover:not(:has(> *)) {
     border-radius: 0;
     margin: 1.75rem 0 1.1rem;
     padding: 0.65rem 1rem;
-  }
-
-  .collection-view-switcher {
-    display: inline-flex;
   }
 }
 

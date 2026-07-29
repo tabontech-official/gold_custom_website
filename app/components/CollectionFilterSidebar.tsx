@@ -1,5 +1,5 @@
 import {useEffect, useState, type CSSProperties} from 'react';
-import {Link, useNavigate, useSearchParams} from 'react-router';
+import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS, getSortFromParam} from '~/lib/collectionFilter';
 import {useDismissable} from '~/hooks/useDismissable';
 
@@ -67,8 +67,16 @@ function dedupeValues(values: FilterValue[]): GroupedValue[] {
   return [...byLabel.values()];
 }
 
+export type SidebarCategory = {handle: string; title: string};
+
 /** Filter rail: fixed left column on desktop, slide-in drawer on mobile. */
-export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
+export function CollectionFilterSidebar({
+  categories = [],
+  filters,
+}: {
+  categories?: SidebarCategory[];
+  filters: Filter[];
+}) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useDismissable<HTMLDivElement>(sortOpen, () =>
@@ -341,8 +349,64 @@ export function CollectionFilterSidebar({filters}: {filters: Filter[]}) {
             </ul>
           </details>
         ))}
+
+        <CategoryNav categories={categories} />
       </aside>
     </>
+  );
+}
+
+/**
+ * Browse rail for the collections the header nav doesn't carry — the nav only
+ * has room for the departments, this lists the rest of the catalog.
+ */
+function CategoryNav({categories}: {categories: SidebarCategory[]}) {
+  const [query, setQuery] = useState('');
+  const {pathname} = useLocation();
+  const term = query.trim().toLowerCase();
+  const shown = term
+    ? categories.filter((category) =>
+        category.title.toLowerCase().includes(term),
+      )
+    : categories;
+
+  if (categories.length === 0) return null;
+
+  return (
+    <details className="sidebar-group sidebar-group-categories" open>
+      <summary>Categories</summary>
+      {categories.length > 15 && (
+        <input
+          aria-label="Search categories"
+          className="sidebar-category-search"
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search categories"
+          type="search"
+          value={query}
+        />
+      )}
+      <ul className="sidebar-categories">
+        {shown.map((category) => {
+          const to = `/collections/${category.handle}`;
+          const isActive = pathname === to;
+          return (
+            <li key={category.handle}>
+              <Link
+                aria-current={isActive ? 'page' : undefined}
+                className={`sidebar-category${isActive ? ' is-active' : ''}`}
+                prefetch="intent"
+                to={to}
+              >
+                {category.title}
+              </Link>
+            </li>
+          );
+        })}
+        {shown.length === 0 && (
+          <li className="sidebar-category-empty">No categories match.</li>
+        )}
+      </ul>
+    </details>
   );
 }
 

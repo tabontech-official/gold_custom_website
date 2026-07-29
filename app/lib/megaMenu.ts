@@ -149,6 +149,34 @@ export function hasDepartmentItems(
   return department.columns.some((column) => getColumnItems(header, column).length > 0);
 }
 
+/**
+ * Every collection handle already reachable from the header nav (departments
+ * plus their submenu links). Used to show only the *rest* of the catalog's
+ * collections in the collection-page sidebar.
+ */
+export function getNavCollectionHandles(
+  header: HeaderQuery,
+  publicStoreDomain: string,
+): Set<string> {
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+  const handles = new Set<string>(MERGED_CUBAN_HANDLES);
+
+  for (const department of MEGA_MENU) {
+    handles.add(department.to.replace('/collections/', ''));
+    for (const column of department.columns) {
+      for (const item of getColumnItems(header, column)) {
+        const path = item.url
+          ? toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain)
+          : '';
+        const match = path.match(/\/collections\/([^/?#]+)/);
+        if (match) handles.add(match[1]);
+      }
+    }
+  }
+
+  return handles;
+}
+
 /** Finds the mega-menu department whose `to` matches a given collection path. */
 export function getMegaMenuDepartmentForHandle(
   handle: string,

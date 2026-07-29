@@ -22,6 +22,7 @@ export function ProductPrice({
       ) : (
         <span>&nbsp;</span>
       )}
-    </div>
+    </div> 
   );
 }
+   

@@ -19,6 +19,7 @@ import {
   MIAMI_CUBAN_HANDLE,
   getColumnItems,
   getMegaMenuDepartmentForHandle,
+  getNavCollectionHandles,
   toRelativeUrl,
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
@@ -137,7 +138,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw redirect(`/collections/${MIAMI_CUBAN_HANDLE}`, 301);
   }
 
-  const [{collection}] = await Promise.all([
+  const [{collection}, allCollections] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {
         handle,
@@ -148,6 +149,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       },
       // Add other queries here, so that they are loaded in parallel
     }),
+    // Backs the sidebar's category list. Cached and non-fatal: the page still
+    // renders if it fails.
+    storefront
+      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: storefront.CacheLong()})
+      .then((data) => data.collections.nodes)
+      .catch(() => []),
   ]);
 
   if (!collection) {
@@ -161,6 +168,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   return {
     collection,
+    allCollections,
     // These metaobjects are assigned in Shopify on each individual collection.
     // Never search or fall back to general site-wide FAQ/cover data here.
     coverPhotos: getCoverPhotos(
@@ -275,7 +283,8 @@ function getCoverPhotos(
 }
 
 export default function Collection() {
-  const {collection, coverPhotos, faqs} = useLoaderData<typeof loader>();
+  const {collection, allCollections, coverPhotos, faqs} =
+    useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
   const rootData = useRouteLoaderData<RootLoader>('root');
@@ -291,6 +300,22 @@ export default function Collection() {
     subcategoryLabel: parentCrumb ? collection.title : undefined,
     subcategoryHandle: parentCrumb ? collection.handle : undefined,
   };
+
+  // Only the collections the header nav doesn't already link to — the nav
+  // holds the departments, the sidebar holds the rest of the catalog.
+  const navHandles =
+    rootData?.header && rootData.publicStoreDomain
+      ? getNavCollectionHandles(rootData.header, rootData.publicStoreDomain)
+      : new Set<string>();
+  const categories = allCollections
+    .filter(
+      (node) =>
+        node.products.nodes.length > 0 &&
+        !navHandles.has(node.handle) &&
+        // Shopify's default "Home page" collection — not a real category.
+        node.handle !== 'frontpage',
+    )
+    .map((node) => ({handle: node.handle, title: node.title}));
 
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
   const filters = (collection.products.filters ?? []).map((filter) => ({
@@ -333,7 +358,7 @@ export default function Collection() {
 
       <section className="home-section">
         <div className="section-inner collection-layout">
-          <CollectionFilterSidebar filters={filters} />
+          <CollectionFilterSidebar categories={categories} filters={filters} />
           <div
             className={`collection-main${isListView ? ' is-list-view' : ''}`}
           >
@@ -486,6 +511,26 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     }
   }
 ` as const;
+// Sidebar category list: every published collection, alphabetical. `products`
+// is only there to drop the empty tag-collections (same check as
+// collections._index) so the sidebar never links to a blank page.
+const SIDEBAR_COLLECTIONS_QUERY = `#graphql
+  query SidebarCollections($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collections(first: 250, sortKey: TITLE) {
+      nodes {
+        handle
+        title
+        products(first: 1) {
+          nodes {
+            id
+          }
+        }
+      }
+    }
+  }
+` as const;
+
 // NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
