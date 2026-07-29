@@ -2,10 +2,7 @@ import * as React from 'react';
 import {Pagination} from '@shopify/hydrogen';
 import {AutoLoadMore} from './AutoLoadMore';
 
-/**
- * Append-style "Load More" grid. Hydrogen's <Pagination> accumulates the nodes
- * across pages, so tapping "Load More" grows the grid instead of replacing it.
- */
+
 export function PaginatedResourceSection<NodesType>({
   connection,
   children,
