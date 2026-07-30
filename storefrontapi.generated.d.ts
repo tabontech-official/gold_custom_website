@@ -1168,6 +1168,18 @@ export type HeroFieldsFragment = {
   >;
 };
 
+export type HeroSlideFragment = Pick<StorefrontAPI.Metaobject, 'handle'> & {
+  fields: Array<
+    Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+      reference?: StorefrontAPI.Maybe<{
+        image?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Image, 'url' | 'altText'>
+        >;
+      }>;
+    }
+  >;
+};
+
 export type HeroContentQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -1175,6 +1187,40 @@ export type HeroContentQueryVariables = StorefrontAPI.Exact<{
 
 export type HeroContentQuery = {
   desktop?: StorefrontAPI.Maybe<{
+    fields: Array<
+      Pick<StorefrontAPI.MetaobjectField, 'key'> & {
+        references?: StorefrontAPI.Maybe<{
+          nodes: Array<
+            Pick<StorefrontAPI.Metaobject, 'handle'> & {
+              fields: Array<
+                Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+                  reference?: StorefrontAPI.Maybe<{
+                    image?: StorefrontAPI.Maybe<
+                      Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                    >;
+                  }>;
+                }
+              >;
+            }
+          >;
+        }>;
+        reference?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metaobject, 'handle'> & {
+            fields: Array<
+              Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+                reference?: StorefrontAPI.Maybe<{
+                  image?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                  >;
+                }>;
+              }
+            >;
+          }
+        >;
+      }
+    >;
+  }>;
+  mobile?: StorefrontAPI.Maybe<{
     fields: Array<
       Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
         reference?: StorefrontAPI.Maybe<{
@@ -1185,7 +1231,7 @@ export type HeroContentQuery = {
       }
     >;
   }>;
-  mobile?: StorefrontAPI.Maybe<{
+  cover?: StorefrontAPI.Maybe<{
     fields: Array<
       Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
         reference?: StorefrontAPI.Maybe<{
@@ -2665,7 +2711,7 @@ interface GeneratedQueryTypes {
     return: TrustBadgesQuery;
     variables: TrustBadgesQueryVariables;
   };
-  '#graphql\n  query HeroContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    desktop: metaobject(\n      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}\n    ) {\n      ...HeroFields\n    }\n    mobile: metaobject(\n      handle: {type: "hero_content", handle: "mobile_cover_imagess"}\n    ) {\n      ...HeroFields\n    }\n  }\n  #graphql\n  fragment HeroFields on Metaobject {\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n': {
+  '#graphql\n  query HeroContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    desktop: metaobject(\n      handle: {type: "web_hero_section", handle: "web-hero-section-ogaqzqnu"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    mobile: metaobject(\n      handle: {type: "hero_content", handle: "mobile_cover_imagess"}\n    ) {\n      ...HeroFields\n    }\n    # The banners moved to web_hero_section, but this older entry still supplies\n    # the standalone image DiamondValueSection renders further down the page.\n    cover: metaobject(\n      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}\n    ) {\n      ...HeroFields\n    }\n  }\n  #graphql\n  fragment HeroSlide on Metaobject {\n    handle\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n  #graphql\n  fragment HeroFields on Metaobject {\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n': {
     return: HeroContentQuery;
     variables: HeroContentQueryVariables;
   };

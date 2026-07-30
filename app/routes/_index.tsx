@@ -28,11 +28,18 @@ export const meta: Route.MetaFunction = ({matches}) => {
   });
 };
 
+type HeroSlide = {
+  image: string;
+  /** Words that sit on this banner. Authored per slide in Shopify. */
+  text: string | null;
+  /** Which side of the banner the words sit on — authored per slide. */
+  position: 'left' | 'right';
+};
+
 type HeroContent = {
-  heading: string | null;
-  images: string[];
+  slides: HeroSlide[];
   coverImage: string | null;
-  // Portrait images for the mobile hero slider; empty falls back to `images`.
+  // Portrait images for the mobile hero slider; empty falls back to `slides`.
   mobileImages: string[];
 };
 
@@ -129,22 +136,69 @@ function extractHeroFields(fields: any): {
   };
 }
 
-// Desktop entry drives the rotating banner + heading; the mobile entry's
-// populated images become the mobile slider (empty → falls back to the desktop
-// banners). Duplicate URLs are collapsed so the same file isn't slid twice.
-// See HERO_CONTENT_QUERY.
-function parseHeroContent(response: any): HeroContent | null {
-  const desktop = extractHeroFields(response?.desktop?.fields);
-  const mobile = extractHeroFields(response?.mobile?.fields);
-  const mobileImages = [...new Set(mobile.images)];
-  if (!desktop.images.length && !desktop.heading && !mobileImages.length) {
-    return null;
+// Flatten one `hero_section` entry into a slide. Field keys come straight from
+// the metaobject definition: image / image_text / text_position.
+function toHeroSlide(entry: any): HeroSlide | null {
+  if (!Array.isArray(entry?.fields)) return null;
+
+  let image: string | null = null;
+  let text: string | null = null;
+  let position: 'left' | 'right' = 'left';
+
+  for (const field of entry.fields as any[]) {
+    const key = String(field?.key ?? '')
+      .replace(/[-_\s]+/g, '')
+      .toLowerCase();
+    const url = field?.reference?.image?.url;
+    if (url && !image) image = url;
+    if (key === 'imagetext' && field?.value) text = String(field.value).trim();
+    // The authored dropdown. Anything other than an explicit "right" keeps the
+    // default left placement rather than rendering the raw value.
+    if (key === 'textposition' && String(field?.value).toLowerCase() === 'right') {
+      position = 'right';
+    }
   }
 
+  return image ? {image, text, position} : null;
+}
+
+// `web_hero_section` holds image1..imageN pointing at hero_section entries.
+// Slides sort by the numeric suffix in the key so they keep the author's order
+// regardless of the order the API returns fields in.
+function parseHeroSlides(container: any): HeroSlide[] {
+  if (!Array.isArray(container?.fields)) return [];
+
+  const ordered: {order: number; slide: HeroSlide}[] = [];
+  for (const field of container.fields as any[]) {
+    const order = Number(String(field?.key ?? '').match(/(\d+)/)?.[1] ?? 999);
+    // image1 is a list reference, image2+ are single references.
+    const entries = [
+      ...(field?.references?.nodes ?? []),
+      ...(field?.reference ? [field.reference] : []),
+    ];
+    for (const entry of entries) {
+      const slide = toHeroSlide(entry);
+      if (slide) ordered.push({order, slide});
+    }
+  }
+
+  return ordered.sort((a, b) => a.order - b.order).map((o) => o.slide);
+}
+
+// Desktop slides drive the rotating banner and its per-slide words; the mobile
+// entry's populated images become the mobile slider (empty → falls back to the
+// desktop banners). Duplicate URLs are collapsed so the same file isn't slid
+// twice. See HERO_CONTENT_QUERY.
+function parseHeroContent(response: any): HeroContent | null {
+  const slides = parseHeroSlides(response?.desktop);
+  const mobile = extractHeroFields(response?.mobile?.fields);
+  const cover = extractHeroFields(response?.cover?.fields);
+  const mobileImages = [...new Set(mobile.images)];
+  if (!slides.length && !mobileImages.length) return null;
+
   return {
-    heading: desktop.heading,
-    images: desktop.images.slice(0, 4),
-    coverImage: desktop.images[4] ?? null,
+    slides,
+    coverImage: cover.images[4] ?? null,
     mobileImages,
   };
 }
@@ -426,45 +480,37 @@ function useSwipeSlider<T extends HTMLElement>(
   return {active, goReal, offset, animate};
 }
 
+// One slide's words. Rendered inside each slide so the type travels with its
+// photo instead of hanging still over a moving background. The tracks are
+// aria-hidden, so these are presentational — the sr-only <h1> carries the
+// semantics.
+function HeroCaption({slide}: {slide: HeroSlide}) {
+  if (!slide.text) return null;
+
+  return (
+    <div className="hero-inner" data-position={slide.position}>
+      <div className="hero-heading">
+        <span className="hero-rule" aria-hidden="true" />
+        {slide.text}
+      </div>
+    </div>
+  );
+}
+
 function Hero({content}: {content: HeroContent | null}) {
-  const images = content?.images ?? [];
+  const slides = content?.slides ?? [];
   const mobileImages = content?.mobileImages ?? [];
-  const count = images.length;
+  const count = slides.length;
   const sectionRef = useRef<HTMLElement>(null);
   const {active, goReal, offset, animate} = useSwipeSlider(count, sectionRef);
 
   // Clone the last slide before + first slide after for a seamless loop.
-  const loopImages =
-    count > 1 ? [images[count - 1], ...images, images[0]] : images;
+  const loopSlides =
+    count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
 
-  // Heading: first line plain, the rest in gold italic. Authors can force the
-  // break with a newline; otherwise a single comma'd line (e.g. "Crafted for
-  // Generations, Designed for You.") splits at the first comma so the second
-  // half gets the accent treatment automatically.
-  const rawHeading = (content?.heading ?? '').trim();
-  const headingLines = rawHeading.includes('\n')
-    ? rawHeading.split('\n')
-    : rawHeading.includes(',')
-      ? [
-          rawHeading.slice(0, rawHeading.indexOf(',') + 1),
-          rawHeading.slice(rawHeading.indexOf(',') + 1),
-        ]
-      : [rawHeading];
-  const [firstLine, ...restLines] = headingLines
-    .map((line) => line.trim())
-    .filter(Boolean);
-
-  // One copy per slide so the words travel with their photo instead of hanging
-  // still over a moving background. The tracks are aria-hidden, so these are
-  // presentational — the single sr-only <h1> below carries the semantics.
-  const heading = firstLine ? (
-    <div className="hero-inner">
-      <div className="hero-heading">
-        {firstLine}
-        {restLines.length > 0 && <span>{restLines.join(' ')}</span>}
-      </div>
-    </div>
-  ) : null;
+  // The visible slide's words are the page's h1. It changes as the carousel
+  // rotates, so screen readers track what's actually on screen.
+  const activeText = slides[active]?.text?.trim() ?? '';
 
   return (
     <>
@@ -478,9 +524,9 @@ function Hero({content}: {content: HeroContent | null}) {
             hero_content entry has images — otherwise mobile falls back to the
             desktop banners below. Its own swipe state, independent of the
             desktop track above. */}
-        {rawHeading && <h1 className="sr-only">{rawHeading}</h1>}
+        {activeText && <h1 className="sr-only">{activeText}</h1>}
         {mobileImages.length > 0 && (
-          <MobileHeroSlider images={mobileImages} heading={heading} />
+          <MobileHeroSlider images={mobileImages} slides={slides} />
         )}
         {count > 0 && (
           <div
@@ -493,20 +539,21 @@ function Hero({content}: {content: HeroContent | null}) {
             }}
             aria-hidden="true"
           >
-            {loopImages.map((url, index) => (
+            {loopSlides.map((slide, index) => (
               <div
                 key={index}
                 className="hero-slide"
-                style={{backgroundImage: `url(${url})`}}
+                data-position={slide.position}
+                style={{backgroundImage: `url(${slide.image})`}}
               >
-                {heading}
+                <HeroCaption slide={slide} />
               </div>
             ))}
           </div>
         )}
         {count > 1 && (
           <div className="hero-dots" role="tablist" aria-label="Hero slides">
-            {images.map((_, index) => (
+            {slides.map((_, index) => (
               <button
                 key={index}
                 type="button"
@@ -536,10 +583,12 @@ function Hero({content}: {content: HeroContent | null}) {
 // stopPropagation so the parent .hero swipe handler never double-fires.
 function MobileHeroSlider({
   images,
-  heading,
+  slides,
 }: {
   images: string[];
-  heading: React.ReactNode;
+  // The mobile portraits are a separate, possibly shorter set than the desktop
+  // banners, so captions are matched by index and fall back to the first.
+  slides: HeroSlide[];
 }) {
   const count = images.length;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -561,17 +610,23 @@ function MobileHeroSlider({
         }}
         aria-hidden="true"
       >
-        {loopImages.map((url, index) => (
-          <div key={index} className="hero-mobile-slide">
-            <img
-              className="hero-mobile-image"
-              src={url}
-              alt=""
-              draggable={false}
-            />
-            {heading}
-          </div>
-        ))}
+        {loopImages.map((url, index) => {
+          // loopImages is padded with a clone at each end, so shift back to the
+          // real index before matching a caption to this portrait.
+          const realIndex = count > 1 ? (index - 1 + count) % count : index;
+          const slide = slides[realIndex] ?? slides[0];
+          return (
+            <div key={index} className="hero-mobile-slide">
+              <img
+                className="hero-mobile-image"
+                src={url}
+                alt=""
+                draggable={false}
+              />
+              {slide && <HeroCaption slide={slide} />}
+            </div>
+          );
+        })}
       </div>
       {count > 1 && (
         <div className="hero-dots" role="tablist" aria-label="Hero slides">
@@ -1182,20 +1237,62 @@ const HERO_FIELDS_FRAGMENT = `#graphql
   }
 `;
 
+// One `hero_section` entry per slide: the banner image, the words that sit on
+// it, and which side they sit on.
+const HERO_SLIDE_FRAGMENT = `#graphql
+  fragment HeroSlide on Metaobject {
+    handle
+    fields {
+      key
+      value
+      reference {
+        ... on MediaImage {
+          image {
+            url
+            altText
+          }
+        }
+      }
+    }
+  }
+`;
+
+// `web_hero_section` is the ordered container: image1..imageN each point at a
+// `hero_section` entry. image1 is authored as a *list* reference and the rest
+// as single references, so both `references` and `reference` are selected —
+// parseHeroSlides reads whichever is populated.
 const HERO_CONTENT_QUERY = `#graphql
   query HeroContent($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
     desktop: metaobject(
-      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}
+      handle: {type: "web_hero_section", handle: "web-hero-section-ogaqzqnu"}
     ) {
-      ...HeroFields
+      fields {
+        key
+        references(first: 10) {
+          nodes {
+            ...HeroSlide
+          }
+        }
+        reference {
+          ...HeroSlide
+        }
+      }
     }
     mobile: metaobject(
       handle: {type: "hero_content", handle: "mobile_cover_imagess"}
     ) {
       ...HeroFields
     }
+    # The banners moved to web_hero_section, but this older entry still supplies
+    # the standalone image DiamondValueSection renders further down the page.
+    cover: metaobject(
+      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}
+    ) {
+      ...HeroFields
+    }
   }
+  ${HERO_SLIDE_FRAGMENT}
   ${HERO_FIELDS_FRAGMENT}
 ` as const;
 

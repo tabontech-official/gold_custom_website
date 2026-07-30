@@ -3390,6 +3390,8 @@ button.reset:hover:not(:has(> *)) {
   display: flex;
   align-items: stretch;
   padding: 4.5rem 0 6.5rem;
+  /* Containing block for the ::before legibility scrim. */
+  position: relative;
 }
 
 @media (min-width: 48em) {
@@ -3442,7 +3444,10 @@ button.reset:hover:not(:has(> *)) {
   align-items: flex-start;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  /* Centred in the slide's padded box. Since the slide carries more bottom
+     padding than top, centring lifts the words above the midline rather than
+     leaving them sitting on the floor of the frame. */
+  justify-content: center;
   margin: 0;
   /* Fills its slide up to the max-width below, the way it filled the hero when
      it sat in normal flow. */
@@ -3454,6 +3459,40 @@ button.reset:hover:not(:has(> *)) {
   text-align: left;
   position: relative;
   z-index: 1;
+}
+
+/* `text_position: right` in Shopify moves the words to the banner's other
+   empty side. The slide is a flex row, so pushing this block to the end is the
+   whole change — the type stays left-aligned within it, which keeps the
+   ragged edge readable. */
+.hero-slide[data-position='right'] {
+  justify-content: flex-end;
+}
+
+/* Legibility scrim, angled from whichever side the words were placed on. This
+   is what replaced the white text-shadow halo: it darkens the empty half of
+   the photograph the author already left for the type, and leaves the subject
+   untouched. */
+.hero-slide::before {
+  background: linear-gradient(
+    90deg,
+    rgba(10, 9, 7, 0.66) 0%,
+    rgba(10, 9, 7, 0.34) 38%,
+    rgba(10, 9, 7, 0) 66%
+  );
+  content: '';
+  inset: 0;
+  position: absolute;
+  z-index: 0;
+}
+
+.hero-slide[data-position='right']::before {
+  background: linear-gradient(
+    270deg,
+    rgba(10, 9, 7, 0.66) 0%,
+    rgba(10, 9, 7, 0.34) 38%,
+    rgba(10, 9, 7, 0) 66%
+  );
 }
 
 /* Announcement ticker inside hero */
@@ -3508,28 +3547,43 @@ button.reset:hover:not(:has(> *)) {
   font-weight: 600;
 }
 
+/* Hero wordmark.
+   The banners are shot with a deliberately empty side (deep navy on one, warm
+   grey on another) and the metaobject's `text_position` says which side that
+   is. So the type is light on every slide and legibility comes from the
+   directional scrim below — not from a halo painted around the letters.
+
+   Restraint is the point: fine jewellery sets its name small, wide and light,
+   and lets the photograph carry the volume. Large + heavy read as a sale
+   banner, which is what the old 6.4rem/700 treatment had become. */
 .hero-heading {
-  color: #1a1712;
-  font-size: clamp(3.1rem, 7vw, 6.4rem);
-  font-weight: 700;
-  line-height: 0.98;
+  color: #f7f3ec;
+  font-size: clamp(1.9rem, 3.4vw, 3.35rem);
+  font-weight: 300;
+  letter-spacing: 0.16em;
+  line-height: 1.5;
   margin: 0 0 1.1rem;
-  max-width: 11ch;
-  /* Soft, subtle white halo so the heading stays legible over the hero image
-     without washing the letters out. */
-  text-shadow:
-    0 1px 2px rgba(255, 255, 255, 0.5),
-    0 2px 14px rgba(255, 255, 255, 0.4);
+  /* Wide enough that the four authored lines break into two balanced ones
+     rather than four short stubs. `balance` evens the rag where supported. */
+  max-width: 24ch;
+  text-wrap: balance;
+  text-transform: uppercase;
+  /* One soft drop for depth against a busy photo. Not a glow. */
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
 }
 
-/* Accent line: the deeper gold reads on the light hero scrim (bright #d4af37
-   on near-white was the low-contrast, hard-to-read combination). The same
-   white halo keeps it crisp. */
-.hero-heading span {
-  color: var(--color-gold-deep);
+/* Hairline above the words — a drawn gold line, the thinnest chain in the
+   catalogue. The single accent; everything else stays quiet. */
+.hero-rule {
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) 0%,
+    rgba(212, 175, 55, 0.15) 100%
+  );
   display: block;
-  font-style: italic;
-  font-weight: 700;
+  height: 1px;
+  margin: 0 0 1.4rem;
+  width: 4.5rem;
 }
 
 .hero p {
@@ -3703,19 +3757,35 @@ button.reset:hover:not(:has(> *)) {
     justify-content: flex-start;
   }
 
-  /* Heading over the image: both lines white (the italic accent included) so
-     it reads as one uniform colour. Size + wrap width differ from desktop. */
-  .hero[data-has-mobile] .hero-heading,
-  .hero[data-has-mobile] .hero-heading span {
+  .hero[data-has-mobile] .hero-heading {
     color: #fff;
   }
 
-  /* Small hero copy overlaid on the left of the picture */
+  /* Same restrained treatment as desktop, scaled down. Uppercase at this
+     tracking needs its line-height back — the old 0.98 was set for a large
+     bold face and collapses tracked capitals into each other. */
   .hero-heading {
-    font-size: clamp(2.1rem, 9.5vw, 3.1rem);
-    line-height: 0.98;
-    margin-bottom: 0.55rem;
-    max-width: 15ch;
+    font-size: clamp(1.35rem, 5.6vw, 2rem);
+    letter-spacing: 0.13em;
+    line-height: 1.55;
+    margin-bottom: 0.75rem;
+    max-width: 20ch;
+  }
+
+  .hero-rule {
+    margin-bottom: 1rem;
+    width: 3.25rem;
+  }
+
+  /* Phones show the landscape banner short, so the scrim has to work across
+     the full frame rather than fading out two-thirds in. */
+  .hero-slide::before,
+  .hero-slide[data-position='right']::before {
+    background: linear-gradient(
+      180deg,
+      rgba(10, 9, 7, 0.15) 0%,
+      rgba(10, 9, 7, 0.62) 100%
+    );
   }
 
   .hero p {
