@@ -33,7 +33,8 @@ import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
 
 const HEADER_UTILITY_MESSAGES = [
   'Complimentary shipping and returns',
-  'Lifetime warranty on every piece',
+  // Not "Lifetime warranty" — the policy is 1 year on production defects.
+  '1-year warranty on production defects',
   'Private Los Angeles appointments',
 ];
 

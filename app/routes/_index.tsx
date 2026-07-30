@@ -655,10 +655,14 @@ function TikTokVideosSection({
   );
 }
 
+// Each item must match the policy pages. "Lifetime Warranty" and "Lifetime
+// Upgrade" contradicted the product page's "1 Year Free Warranty" and the
+// 14-day refund policy; a promise the policy won't honour is a chargeback,
+// not a conversion.
 const PROMISE_TICKER_ITEMS = [
-  'Lifetime Warranty',
-  'Lifetime Upgrade',
-  'Free Shipping & Returns',
+  'Made in Our Own U.S.A. Factory',
+  '1-Year Warranty on Production Defects',
+  'Free U.S. Shipping Over $99',
   // Not "0% APR Financing" — rates and approval are set by the lender per
   // applicant, so promising 0% to everyone is a claim we can't honour.
   'Financing Available — Subject to Approval',
@@ -692,34 +696,46 @@ type CategoryTile = any;
 // `icon` is a 3D sticker in /public tilted on the right of the card; `signal`
 // is the sticker's main hue, mapped to the card's bg tint in app.css. `pill` is
 // the status label.
+// Every claim here has to be traceable to something the store already states
+// elsewhere — the product-page trust badges, the refund policy, or the contact
+// page. Generic luxury phrasing ("Master Craft", "Lifetime Care") was replaced
+// because it named no fact a competitor couldn't copy verbatim.
 export const TRUST_PROMISES = [
   {
-    title: 'Certified Purity',
-    pill: 'Assured',
-    copy: 'Hallmarked, quality-checked, and documented.',
-    icon: '/care.png',
-    signal: 'brown',
-  },
-  {
-    title: 'Master Craft',
-    pill: 'Handmade',
-    copy: 'Refined finishing and secure, comfortable settings.',
+    title: 'Made in Our Own Factory',
+    pill: 'U.S.A.',
+    // Source: product-page trust badge "Made in U.S.A — From our factory to you".
+    copy: 'No middleman markup between our bench and your order.',
     icon: '/handmade.png',
     signal: 'gold',
+    keys: ['craft', 'mastercraft', 'craftsmanship'],
   },
   {
-    title: 'Lifetime Care',
-    pill: 'Complimentary',
-    copy: 'Free cleaning, inspection, and lasting support.',
+    title: 'Solid 10K & 14K Gold',
+    pill: 'Never plated',
+    // Source: the catalogue — every piece is 10K/14K, no plated or filled stock.
+    copy: 'Real gold throughout, with the karat stated on every piece.',
     icon: '/purity.png',
     signal: 'amber',
+    keys: ['purity', 'certifiedpurity'],
   },
   {
-    title: 'Secure Delivery',
-    pill: 'Insured',
-    copy: 'Fully insured, gift-ready, tracked to your door.',
+    title: 'Built to Your Spec',
+    pill: 'Custom',
+    // Source: homepage FAQ — design, gold type, gemstones and engraving.
+    copy: 'Choose the design, karat, stones and engraving on a custom order.',
+    icon: '/care.png',
+    signal: 'brown',
+    keys: ['care', 'lifetimecare'],
+  },
+  {
+    title: 'Downtown L.A. Showroom',
+    pill: 'By appointment',
+    // Source: contact page — 550 S Hill St #660, the Jewelry District.
+    copy: 'See a piece in person at 550 S Hill St, in the Jewelry District.',
     icon: '/secure%20delivery.jpg',
     signal: 'green',
+    keys: ['delivery', 'securedelivery'],
   },
 ];
 
@@ -737,16 +753,10 @@ export function parseTrustBadges(response: any) {
     {},
   );
 
-  const fieldKeys = {
-    'Certified Purity': ['purity', 'certifiedpurity'],
-    'Master Craft': ['craft', 'mastercraft', 'craftsmanship'],
-    'Lifetime Care': ['care', 'lifetimecare'],
-    'Secure Delivery': ['delivery', 'securedelivery'],
-  };
-
+  // Override keys live on each badge, not in a title-keyed map — retitling a
+  // card used to silently detach it from its Shopify override.
   return TRUST_PROMISES.map((badge) => {
-    const keys = fieldKeys[badge.title as keyof typeof fieldKeys] ?? [];
-    const copy = keys.map((key) => valueByKey[key]).find(Boolean);
+    const copy = badge.keys.map((key) => valueByKey[key]).find(Boolean);
     return copy ? {...badge, copy} : badge;
   });
 }

@@ -498,8 +498,10 @@ function ProductTrustBadges() {
       ),
     },
     {
-      title: '30 Day Returns',
-      sub: 'No questions asked',
+      // Matches the refund policy: 14 days, exchange or store credit. It said
+      // "30 Day Returns / No questions asked", which the policy does not honour.
+      title: '14 Day Returns',
+      sub: 'Exchange or store credit',
       icon: (
         <svg viewBox="0 0 64 64" aria-hidden="true">
           <path d="M18 45h28l-5-16H23l-5 16Z" />
