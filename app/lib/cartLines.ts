@@ -11,6 +11,32 @@ type RequestedLine = {
 };
 
 /**
+ * The value of `key` on the first cart line for `merchandiseId`. Lets the
+ * product page show the ring size that is actually in the bag rather than the
+ * default, so the size picker and the "Added to bag" lock agree.
+ */
+export function cartLineAttribute(
+  cart:
+    | {lines?: {nodes?: Array<CartLineLike> | null} | null}
+    | null
+    | undefined,
+  merchandiseId: string | undefined | null,
+  key: string,
+): string | undefined {
+  if (!merchandiseId) return undefined;
+
+  for (const cartLine of cart?.lines?.nodes ?? []) {
+    if (cartLine.merchandise?.id !== merchandiseId) continue;
+    const value = cartLine.attributes?.find(
+      (attribute) => attribute.key === key,
+    )?.value;
+    if (value) return value;
+  }
+
+  return undefined;
+}
+
+/**
  * True when the cart already holds a line for every requested line. Drives the
  * locked "Added to bag" state on the product page, which unlocks again as soon
  * as the line leaves the cart.

@@ -1,4 +1,4 @@
-import {Suspense, useState} from 'react';
+import {Suspense, useEffect, useState} from 'react';
 import {
   redirect,
   useLoaderData,
@@ -14,6 +14,7 @@ import {
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
+  useAnalytics,
   getSeoMeta,
 } from '@shopify/hydrogen';
 import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
@@ -36,6 +37,7 @@ import {
   RING_SIZE_ATTRIBUTE_KEY,
   isRingProduct,
 } from '~/lib/ringSizes';
+import {cartLineAttribute} from '~/lib/cartLines';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {
   SITE,
@@ -235,6 +237,19 @@ export default function Product() {
   // Sets the search param to the selected variant without navigation
   // only when no search params are set in the url
   useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
+
+  // This ring already in the bag? Show the size that's in there rather than the
+  // default, so the picker matches the cart line and the button reads "Added to
+  // bag". Picking another size afterwards leaves this alone — that's a
+  // different line, and it should be addable.
+  const bagRingSize = cartLineAttribute(
+    useAnalytics().cart,
+    selectedVariant?.id,
+    RING_SIZE_ATTRIBUTE_KEY,
+  );
+  useEffect(() => {
+    if (bagRingSize) setRingSize(bagRingSize);
+  }, [bagRingSize]);
 
   // Get the product options array
   const productOptions = getProductOptions({

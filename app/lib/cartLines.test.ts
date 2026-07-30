@@ -1,7 +1,7 @@
 // Run with: node --test app/lib/cartLines.test.ts
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {isInCart} from './cartLines.ts';
+import {cartLineAttribute, isInCart} from './cartLines.ts';
 
 const line = (id: string, attributes?: Array<{key: string; value: string}>) => ({
   merchandise: {id},
@@ -35,6 +35,25 @@ test('the same ring in another size is a different line', () => {
       {merchandiseId: 'gid://Variant/1', attributes: [{key: 'Ring size', value: '8'}]},
     ]),
   );
+});
+
+test('reads back the size a variant sits in the bag with', () => {
+  const cart = {
+    lines: {
+      nodes: [
+        line('gid://Variant/9'),
+        line('gid://Variant/1', [{key: 'Ring size', value: '8.5'}]),
+      ],
+    },
+  };
+  assert.equal(
+    cartLineAttribute(cart, 'gid://Variant/1', 'Ring size'),
+    '8.5',
+  );
+  // Variant not in the bag, no such attribute, or nothing selected yet.
+  assert.equal(cartLineAttribute(cart, 'gid://Variant/2', 'Ring size'), undefined);
+  assert.equal(cartLineAttribute(cart, 'gid://Variant/9', 'Ring size'), undefined);
+  assert.equal(cartLineAttribute(cart, undefined, 'Ring size'), undefined);
 });
 
 test('extra attributes on the cart line are ignored', () => {
