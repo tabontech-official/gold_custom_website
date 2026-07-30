@@ -596,6 +596,18 @@ button.reset:hover:not(:has(> *)) {
   white-space: nowrap;
 }
 
+/* "Book Now" is a <button> (it opens the appointment modal) but has to read as
+   the anchor beside it. Deliberately no font-size here — that would outrank
+   the mobile override on `.announcement-link` and freeze the desktop size. */
+button.announcement-link {
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: inherit;
+  padding: 0;
+}
+
 .announcement-link:first-child {
   justify-self: start;
 }
@@ -6506,6 +6518,19 @@ button.reset:hover:not(:has(> *)) {
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--color-ink);
+}
+
+/* The compliance qualifier rides with the claim but doesn't shout. */
+.product-financing-label span {
+  color: var(--color-ink-soft);
+  font-weight: 400;
+}
+
+.product-monthly-note {
+  color: var(--color-ink-soft);
+  display: block;
+  font-size: 0.78rem;
+  margin-top: 0.2rem;
 }
 
 /* Four equal columns rather than a flex row: the logos then span the full

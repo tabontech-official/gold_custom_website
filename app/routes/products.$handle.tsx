@@ -787,6 +787,11 @@ function MonthlyEstimate({
       ) : (
         <Link to="/policies/finance">View sample plans</Link>
       )}
+      {/* An estimated monthly figure is an offer, so it carries the
+          qualifier — the rate and the approval are the lender's call. */}
+      <span className="product-monthly-note">
+        Financing available, subject to approval.
+      </span>
     </div>
   );
 }
@@ -829,7 +834,7 @@ function FinancingPartners() {
   return (
     <section className="product-financing" aria-labelledby="product-financing-label">
       <h3 className="product-financing-label" id="product-financing-label">
-        Financing Available:
+        Financing available, <span>subject to approval.</span>
       </h3>
       <ul className="product-financing-list">
         {FINANCING_PARTNERS.map((partner) => (

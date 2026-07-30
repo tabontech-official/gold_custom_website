@@ -14,11 +14,22 @@ type ActionResult =
   | {ok: false; error?: string; errors?: Record<string, string>};
 
 /**
- * "Book Private Consultation" button + modal for the product page. Captures
- * product context automatically; posts to /api/appointment. Booking success,
- * field errors, and server errors are all driven off the fetcher.
+ * "Book Private Consultation" button + modal. Posts to /api/appointment;
+ * booking success, field errors and server errors all come off the fetcher.
+ *
+ * `product` is optional so the same modal backs the header's "Book Now", where
+ * there's no product in context — /api/appointment only requires name, email
+ * and date, and treats the product fields as extra context.
  */
-export function AppointmentModal({product}: {product: ProductInfo}) {
+export function AppointmentModal({
+  product,
+  triggerLabel = 'Book Private Consultation',
+  triggerClassName = 'btn product-book-consult product-book-consult--cta',
+}: {
+  product?: ProductInfo;
+  triggerLabel?: string;
+  triggerClassName?: string;
+}) {
   const [open, setOpen] = useState(false);
   // Portal target only exists client-side; gate on mount so SSR skips it.
   const [mounted, setMounted] = useState(false);
@@ -58,10 +69,10 @@ export function AppointmentModal({product}: {product: ProductInfo}) {
     <>
       <button
         type="button"
-        className="btn product-book-consult product-book-consult--cta"
+        className={triggerClassName}
         onClick={() => setOpen(true)}
       >
-        Book Private Consultation
+        {triggerLabel}
       </button>
 
       {open &&
@@ -117,18 +128,30 @@ export function AppointmentModal({product}: {product: ProductInfo}) {
                 <header className="appt-head">
                   <span className="appt-eyebrow">By Appointment</span>
                   <h2>Book a Private Consultation</h2>
-                  <p className="appt-piece">{product.title}</p>
+                  {product && <p className="appt-piece">{product.title}</p>}
                 </header>
 
                 <fetcher.Form method="post" action="/api/appointment" noValidate>
-                  <input type="hidden" name="productTitle" value={product.title} />
-                  <input type="hidden" name="productHandle" value={product.handle} />
-                  <input type="hidden" name="productId" value={product.id} />
-                  <input
-                    type="hidden"
-                    name="variantInfo"
-                    value={product.variantInfo}
-                  />
+                  {product && (
+                    <>
+                      <input
+                        type="hidden"
+                        name="productTitle"
+                        value={product.title}
+                      />
+                      <input
+                        type="hidden"
+                        name="productHandle"
+                        value={product.handle}
+                      />
+                      <input type="hidden" name="productId" value={product.id} />
+                      <input
+                        type="hidden"
+                        name="variantInfo"
+                        value={product.variantInfo}
+                      />
+                    </>
+                  )}
 
                   <label className="appt-field">
                     <span>Full Name</span>

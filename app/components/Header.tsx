@@ -18,6 +18,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {AppointmentModal} from '~/components/AppointmentModal';
 import {
   MEGA_MENU,
   getColumnItems,
@@ -68,9 +69,11 @@ export function Header({
     <>
       {/* Tier 1 — announcement micro-banner with golden shimmer */}
       <div className="announcement-bar" aria-live="polite">
-        <Link className="announcement-link" to="/contact">
-          Book Now
-        </Link>
+        {/* Same booking modal the product page uses, minus product context. */}
+        <AppointmentModal
+          triggerLabel="Book Now"
+          triggerClassName="announcement-link"
+        />
         <span key={utilityMessageIndex} className="announcement-text">
           {HEADER_UTILITY_MESSAGES[utilityMessageIndex]}
         </span>

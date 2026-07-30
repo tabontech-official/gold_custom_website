@@ -655,28 +655,32 @@ function TikTokVideosSection({
   );
 }
 
+const PROMISE_TICKER_ITEMS = [
+  'Lifetime Warranty',
+  'Lifetime Upgrade',
+  'Free Shipping & Returns',
+  // Not "0% APR Financing" — rates and approval are set by the lender per
+  // applicant, so promising 0% to everyone is a claim we can't honour.
+  'Financing Available — Subject to Approval',
+];
+
+// Three identical groups so the marquee can loop seamlessly; only the first is
+// exposed to screen readers.
 function PromiseTicker() {
   return (
     <div className="hero-ticker" aria-hidden="false">
       <div className="ticker-track">
-        <div className="ticker-group">
-          <span>Lifetime Warranty</span>
-          <span>Lifetime Upgrade</span>
-          <span>Free Shipping &amp; Returns</span>
-          <span>0% APR Financing</span>
-        </div>
-        <div className="ticker-group" aria-hidden="true">
-          <span>Lifetime Warranty</span>
-          <span>Lifetime Upgrade</span>
-          <span>Free Shipping &amp; Returns</span>
-          <span>0% APR Financing</span>
-        </div>
-        <div className="ticker-group" aria-hidden="true">
-          <span>Lifetime Warranty</span>
-          <span>Lifetime Upgrade</span>
-          <span>Free Shipping &amp; Returns</span>
-          <span>0% APR Financing</span>
-        </div>
+        {[0, 1, 2].map((group) => (
+          <div
+            className="ticker-group"
+            key={group}
+            aria-hidden={group > 0 || undefined}
+          >
+            {PROMISE_TICKER_ITEMS.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -905,7 +909,7 @@ function FeaturedProducts({
       <div className="section-inner">
         <div className="editorial-heading-row">
           <div className="editorial-heading">
-            <h2 className="editorial-title">Complete the Look</h2>
+            <h2 className="editorial-title">Loved Pieces</h2>
           </div>
         </div>
         <div className="split-showcase">
