@@ -247,6 +247,11 @@ try {
   }
   bad = report();
 } finally {
+  // ponytail: close over CDP before killing. SIGKILL mid-request resets the
+  // socket, and mini-oxygen's vite middleware answers an aborted request by
+  // writing headers twice — which takes the whole dev server down.
+  await send('Browser.close').catch(() => {});
+  await new Promise((r) => setTimeout(r, 250));
   chrome.kill();
 }
 process.exit(bad ? 1 : 0);
