@@ -1379,7 +1379,7 @@ function JournalCard({
   article: JournalArticle;
   eager?: boolean;
 }) {
-  const to = `/blogs/${article.blog.handle}/${article.handle}`;
+  const to = `/blogs/${article.handle}`;
   const publishedAt = article.publishedAt
     ? new Intl.DateTimeFormat('en-US', {
         year: 'numeric',

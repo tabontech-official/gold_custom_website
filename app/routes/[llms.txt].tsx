@@ -37,7 +37,7 @@ ${CATEGORIES.map((c) => `- [${c.label}](${origin}/collections/${c.handle})`).joi
 - [All products](${origin}/collections/all)
 - [Search](${origin}/search?q=) — append a query string
 - [Contact](${origin}/contact)
-- [Blog](${origin}/blogs/news)
+- [Blog](${origin}/blogs)
 - [Policies](${origin}/policies) — shipping, returns, warranty
 
 ## Machine-readable endpoints

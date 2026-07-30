@@ -1,15 +1,10 @@
-import {
-  Link,
-  redirect,
-  useLoaderData,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
 import {Image, getPaginationVariables} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
-import type {BlogsQuery} from 'storefrontapi.generated';
+import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
+import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
-
-type BlogNode = BlogsQuery['blogs']['nodes'][0];
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -34,11 +29,14 @@ export async function loader(args: Route.LoaderArgs) {
  */
 async function loadCriticalData({context, request}: Route.LoaderArgs) {
   const paginationVariables = getPaginationVariables(request, {
-    pageBy: 10,
+    pageBy: 12,
   });
 
+  // ponytail: the store runs a single blog, so /blogs IS that blog's post grid
+  // and /blogs/<handle> redirects here — one page, one URL, no "News" level.
+  // Add a second blog and this has to merge both feeds (or list blogs again).
   const [{blogs}] = await Promise.all([
-    context.storefront.query(BLOGS_QUERY, {
+    context.storefront.query(BLOG_ARTICLES_QUERY, {
       variables: {
         ...paginationVariables,
       },
@@ -46,13 +44,13 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  // Most stores have a single blog. Listing one lone blog card is pointless —
-  // send visitors straight to its articles so /blogs = the post grid.
-  if (blogs.nodes.length === 1) {
-    throw redirect(`/blogs/${blogs.nodes[0].handle}`);
+  const blog = blogs.nodes[0];
+
+  if (!blog?.articles) {
+    throw new Response('Not found', {status: 404});
   }
 
-  return {blogs};
+  return {blog};
 }
 
 /**
@@ -65,77 +63,70 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Blogs() {
-  const {blogs} = useLoaderData<typeof loader>();
+  const {blog} = useLoaderData<typeof loader>();
+  const {articles} = blog;
 
   return (
-    <div className="blogs">
-      <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Journal'}]} />
+    <div className="blog">
+      {/* Inside the content inset so the trail lines up on the left with every
+          other route's breadcrumb instead of hugging the viewport edge. */}
       <div className="section-inner">
-        <div className="editorial-heading">
-          <h1 className="editorial-title">Our Journal</h1>
-          <p>Stories, care guides, and behind-the-craft notes.</p>
-        </div>
-        <div className="blog-index-grid">
-          {blogs.nodes.map((blog, index) => (
-            <BlogCard
-              key={blog.handle}
-              blog={blog}
+        <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Blog'}]} />
+        <PaginatedResourceSection<ArticleItemFragment>
+          connection={articles}
+          resourcesClassName="products-grid"
+        >
+          {({node: article, index}) => (
+            <ArticleItem
+              article={article}
+              key={article.id}
               loading={index < 3 ? 'eager' : 'lazy'}
             />
-          ))}
-        </div>
+          )}
+        </PaginatedResourceSection>
       </div>
     </div>
   );
 }
 
-// One card per blog, fronted by its latest article's cover + excerpt so the
-// listing looks editorial instead of a wall of bare titles. Read More jumps to
-// the article when there is one, else the blog's own page.
-function BlogCard({
-  blog,
+function ArticleItem({
+  article,
   loading,
 }: {
-  blog: BlogNode;
+  article: ArticleItemFragment;
   loading?: HTMLImageElement['loading'];
 }) {
-  const latest = blog.articles?.nodes?.[0];
-  const to = latest
-    ? `/blogs/${blog.handle}/${latest.handle}`
-    : `/blogs/${blog.handle}`;
-  const excerpt = latest?.excerpt?.trim();
-  const publishedAt = latest?.publishedAt
-    ? new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      }).format(new Date(latest.publishedAt))
-    : null;
+  const publishedAt = new Intl.DateTimeFormat('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }).format(new Date(article.publishedAt!));
+  const to = `/blogs/${article.handle}`;
+  const detail = articleExcerpt(article);
 
   return (
-    <article className="blog-card">
+    <article className="blog-card" key={article.id}>
       <Link className="blog-card-media" to={to} prefetch="intent" tabIndex={-1}>
-        {latest?.image && (
+        {article.image && (
           <Image
-            alt={latest.image.altText || latest.title}
+            alt={article.image.altText || article.title}
             aspectRatio="3/2"
-            data={latest.image}
+            data={article.image}
             loading={loading}
             sizes="(min-width: 768px) 33vw, 100vw"
           />
         )}
       </Link>
       <div className="blog-card-body">
-        <span className="eyebrow">{blog.title}</span>
-        {publishedAt && (
-          <time className="blog-card-date">{publishedAt}</time>
-        )}
+        <time className="blog-card-date" dateTime={article.publishedAt!}>
+          {publishedAt}
+        </time>
         <h3 className="blog-card-title">
           <Link to={to} prefetch="intent">
-            {latest?.title ?? blog.title}
+            {article.title}
           </Link>
         </h3>
-        {excerpt && <p className="blog-card-excerpt">{excerpt}</p>}
+        {detail && <p className="blog-card-excerpt">{detail}</p>}
         <Link className="blog-card-more" to={to} prefetch="intent">
           Read More &rarr;
         </Link>
@@ -144,28 +135,28 @@ function BlogCard({
   );
 }
 
+// Prefer Shopify's stripped excerpt; fall back to the first ~160 chars of the
+// article body with tags removed so a card is never left blank.
+function articleExcerpt(article: ArticleItemFragment): string {
+  if (article.excerpt?.trim()) return article.excerpt.trim();
+  const text = (article.contentHtml ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return text.length > 160 ? `${text.slice(0, 160).trimEnd()}…` : text;
+}
+
 // NOTE: https://shopify.dev/docs/api/storefront/latest/objects/blog
-const BLOGS_QUERY = `#graphql
-  query Blogs(
+const BLOG_ARTICLES_QUERY = `#graphql
+  query BlogArticles(
     $country: CountryCode
-    $endCursor: String
-    $first: Int
     $language: LanguageCode
+    $first: Int
     $last: Int
     $startCursor: String
+    $endCursor: String
   ) @inContext(country: $country, language: $language) {
-    blogs(
-      first: $first,
-      last: $last,
-      before: $startCursor,
-      after: $endCursor
-    ) {
-      pageInfo {
-        hasNextPage
-        hasPreviousPage
-        startCursor
-        endCursor
-      }
+    blogs(first: 1) {
       nodes {
         title
         handle
@@ -173,22 +164,41 @@ const BLOGS_QUERY = `#graphql
           title
           description
         }
-        articles(first: 1) {
+        articles(
+          first: $first,
+          last: $last,
+          before: $startCursor,
+          after: $endCursor
+        ) {
           nodes {
-            title
-            handle
-            excerpt
-            publishedAt
-            image {
-              id
-              altText
-              url
-              width
-              height
-            }
+            ...ArticleItem
+          }
+          pageInfo {
+            hasPreviousPage
+            hasNextPage
+            endCursor
+            startCursor
           }
         }
       }
     }
+  }
+  fragment ArticleItem on Article {
+    author: authorV2 {
+      name
+    }
+    contentHtml
+    excerpt
+    handle
+    id
+    image {
+      id
+      altText
+      url
+      width
+      height
+    }
+    publishedAt
+    title
   }
 ` as const;

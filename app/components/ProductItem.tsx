@@ -5,7 +5,10 @@ import type {
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
-import {AddToCartButton} from '~/components/AddToCartButton';
+import {
+  AddToCartButton,
+  AddedToBagLabel,
+} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 
 function HeartIcon() {
@@ -98,6 +101,7 @@ function WishlistQuickAdd({product}: {product: any}) {
         },
       ]}
       onClick={() => open('cart')}
+      addedChildren={<AddedToBagLabel />}
     >
       {variant.availableForSale ? 'Add to bag →' : 'Sold out'}
     </AddToCartButton>

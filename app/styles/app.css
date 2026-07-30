@@ -5798,6 +5798,26 @@ button.reset:hover:not(:has(> *)) {
   opacity: 0.72;
 }
 
+/* Locked once the card's variant is in the cart — unlocks again when the line
+   is removed. Overrides the sold-out :disabled dimming above. */
+.wishlist-quick-add.is-added,
+.wishlist-quick-add.is-added:disabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-color: var(--color-gold-deep);
+  background: #101010;
+  color: #fff;
+  cursor: default;
+  opacity: 1;
+}
+
+.wishlist-quick-add .atc-check {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
 /* Edgy black bar under the price, revealed on hover */
 /* No hover on touch devices — keep the bar visible so it's reachable. */
 /*
@@ -6898,6 +6918,41 @@ button.reset:hover:not(:has(> *)) {
 .product-atc:hover:not(:disabled) {
   background: #262626;
   border-color: #262626;
+}
+
+/* Added-to-bag confirmation. The button stays locked on the done state until
+   the shopper picks a different variant or size; quantity changes happen in
+   the cart drawer that opens on add. */
+.product-atc.is-added,
+.product-atc.is-added:disabled {
+  background: #101010;
+  border-color: var(--color-gold-deep);
+  color: #fff;
+  cursor: default;
+  opacity: 1;
+  letter-spacing: 0.12em;
+}
+
+.atc-check {
+  color: var(--color-gold);
+  animation: atc-check-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1.4) both;
+}
+
+@keyframes atc-check-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atc-check {
+    animation: none;
+  }
 }
 
 .product-finance-note {

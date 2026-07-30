@@ -1,7 +1,7 @@
 import type {ReactNode} from 'react';
 import {useLocation, useNavigate, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
-import {AddToCartButton} from './AddToCartButton';
+import {AddToCartButton, AddedToBagLabel} from './AddToCartButton';
 import {AppointmentModal} from './AppointmentModal';
 import {useAside} from './Aside';
 import {PremiumSelect, type PremiumSelectOption} from './PremiumSelect';
@@ -150,6 +150,7 @@ export function ProductForm({
                   ]
                 : []
             }
+            addedChildren={<AddedToBagLabel />}
           >
             {selectedVariant?.availableForSale ? (
               <>
