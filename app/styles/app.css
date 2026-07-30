@@ -5561,26 +5561,37 @@ button.announcement-link {
 
 .collection-product-break {
   position: relative;
-  min-height: clamp(13rem, 28vw, 22rem);
+  /* 16:9 frame to match how the cover photos are shot, but capped: at full
+     content width a true 16:9 runs ~530px tall and swamps the product rows it
+     sits between. Past the cap the frame just goes wider than 16:9 and
+     `background-size: cover` trims the top and bottom. */
+  aspect-ratio: 16 / 9;
+  max-height: clamp(14rem, 31vw, 27rem);
+  /* Explicit, because `aspect-ratio` + `max-height` otherwise lets the box
+     derive its width from the capped height and it collapses to ~58%. */
+  width: 100%;
   margin: 1.8rem 0;
   overflow: hidden;
   background-color: #f5f6f7;
-  background-position: center;
+  /* Vertical anchor at 80%, not centre: the extra height added by the taller
+     cap is revealed at the BOTTOM of the photo while the existing top crop
+     stays put. Centre would have opened the frame up equally both ways. */
+  background-position: center 80%;
   background-size: cover;
   border: 1px solid rgba(212, 175, 55, 0.24);
 }
 
 .collection-product-break.is-left {
-  background-position: 58% center;
+  background-position: 58% 80%;
 }
 
 .collection-product-break.is-right {
-  background-position: 38% center;
+  background-position: 38% 80%;
 }
 
+/* Shares the 16:9 frame — only its crop anchor differs. */
 .collection-product-break.is-cover4 {
-  min-height: clamp(16rem, 33vw, 26rem);
-  background-position: 40% center;
+  background-position: 40% 80%;
 }
 
 .collection-empty {
@@ -9747,10 +9758,12 @@ button.announcement-link {
   display: block;
   width: 100%;
   height: auto;
-  /* Fixed 16:7 letterbox. `cover` crops to fill it — with `contain` the frame
-     would keep the ratio while the artwork pillarboxed inside it. The ratio
-     also reserves the height before the image loads, so nothing shifts. */
-  aspect-ratio: 16 / 7;
+  /* The source is 1717x916 (1.87:1). Forcing 16:7 (2.29:1) made the frame
+     wider than the artwork, so `cover` sliced the top and bottom off — the
+     band looked squashed. Matching the file's own ratio shows all of it at
+     full height, and still reserves the space before load so nothing shifts.
+     Swap these numbers if the artwork is ever re-exported. */
+  aspect-ratio: 1717 / 916;
   object-fit: cover;
   border-radius: 0;
 }
