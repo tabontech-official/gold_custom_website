@@ -4370,7 +4370,7 @@ button.announcement-link {
 
 .coverflow-stage {
   position: relative;
-  height: clamp(400px, 48vw, 560px);
+  height: clamp(445px, 53vw, 625px);
   perspective: 2200px;
   touch-action: pan-y;
 }
@@ -4379,9 +4379,12 @@ button.announcement-link {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: clamp(300px, 32vw, 440px);
-  height: clamp(380px, 43vw, 520px);
-  border-radius: 26px;
+  width: clamp(340px, 36vw, 495px);
+  height: clamp(425px, 48vw, 582px);
+  /* Softened corners — enough to take the hard edge off without going back to
+     the old 26px pill. `::before` and `-card-media` use `border-radius:
+     inherit`, so this one value shapes the whole card including its image. */
+  border-radius: 10px;
   overflow: hidden;
   background: var(--cg-white, #fff);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
@@ -4597,12 +4600,12 @@ button.announcement-link {
   .coverflow-stage {
     /* Just a hair taller than the card so it never overflows onto the dots,
        without leaving a big dead gap below. */
-    height: clamp(340px, 91vw, 435px);
+    height: clamp(375px, 98vw, 480px);
   }
 
   .coverflow-card {
-    width: clamp(250px, 72vw, 340px);
-    height: clamp(330px, 90vw, 430px);
+    width: clamp(275px, 78vw, 375px);
+    height: clamp(365px, 97vw, 475px);
   }
 
   .coverflow-card-body {

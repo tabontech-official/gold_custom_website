@@ -18,12 +18,18 @@ export type CoverflowItem = {
 // position is nudged by drag/wheel/keys, and current eases toward it every
 // frame (lerp). Card transforms are derived from the *float* offset, so motion
 // flows instead of snapping card-to-card. Snaps to the nearest card on release.
-const EASE = 0.1; // lerp factor per frame (higher = snappier)
+// Glide factor expressed per 60Hz frame; `tick` rescales it by real elapsed
+// time so a 120Hz display doesn't settle twice as fast as a 60Hz one. Lower =
+// longer, silkier travel.
+const EASE = 0.085;
+// Ignore gaps longer than this (tab was backgrounded, GC pause) — without the
+// clamp the first frame back would jump most of the way to the target.
+const MAX_FRAME_MS = 50;
 const WHEEL_SPEED = 0.0016; // scroll units per wheel delta
 const DRAG_SPEED = 0.006; // scroll units per px dragged
 const SETTLE_EPS = 0.0005; // stop the rAF loop when current ~= target
 const VISIBLE_SLOTS = 2; // cards each side kept fully opaque
-const CARD_SPACING = 98; // % of card width; leaves room for neighbouring shadows
+const CARD_SPACING = 91; // % of card width — a small gap between neighbours
 
 function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
@@ -68,6 +74,8 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
   // re-render trigger). `current` is what we render from.
   const scroll = useRef({current: 0, target: 0});
   const rafRef = useRef<number | null>(null);
+  // Timestamp of the previous frame; null while the loop is parked.
+  const lastFrame = useRef<number | null>(null);
   const drag = useRef<{startX: number; startTarget: number} | null>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
 
@@ -119,9 +127,17 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
 
   // The animation loop: ease current → target, repaint, update `active`, and
   // stop once settled (no idle rAF burning battery).
-  const tick = useCallback(() => {
+  const tick = useCallback((now: number) => {
     const s = scroll.current;
-    s.current = lerp(s.current, s.target, EASE);
+    // Frame-rate independent easing. A flat per-frame lerp glides at whatever
+    // speed the display runs at; converting it to a time constant makes the
+    // travel identical on 60Hz, 120Hz and a throttled tab.
+    const last = lastFrame.current;
+    lastFrame.current = now;
+    const dt = last === null ? 16.667 : Math.min(now - last, MAX_FRAME_MS);
+    const t = 1 - Math.pow(1 - EASE, dt / 16.667);
+
+    s.current = lerp(s.current, s.target, t);
     if (Math.abs(s.target - s.current) < SETTLE_EPS) s.current = s.target;
     paint();
 
@@ -132,6 +148,9 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
       rafRef.current = requestAnimationFrame(tick);
     } else {
       rafRef.current = null;
+      // Park the clock too — the next kick may be minutes later, and a stale
+      // timestamp would make its first frame a single huge jump.
+      lastFrame.current = null;
     }
   }, [n, paint]);
 
