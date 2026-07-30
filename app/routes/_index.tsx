@@ -28,19 +28,22 @@ export const meta: Route.MetaFunction = ({matches}) => {
   });
 };
 
+/** The `text_position` dropdown in Shopify: left | right | up. */
+type HeroPosition = 'left' | 'right' | 'up';
+
 type HeroSlide = {
   image: string;
   /** Words that sit on this banner. Authored per slide in Shopify. */
   text: string | null;
-  /** Which side of the banner the words sit on — authored per slide. */
-  position: 'left' | 'right';
+  /** Where on the banner the words sit — authored per slide. */
+  position: HeroPosition;
 };
 
 type HeroContent = {
   slides: HeroSlide[];
   coverImage: string | null;
-  // Portrait images for the mobile hero slider; empty falls back to `slides`.
-  mobileImages: string[];
+  /** Portrait slides for phones; empty falls back to the desktop `slides`. */
+  mobileSlides: HeroSlide[];
 };
 
 export async function loader(args: Route.LoaderArgs) {
@@ -143,7 +146,7 @@ function toHeroSlide(entry: any): HeroSlide | null {
 
   let image: string | null = null;
   let text: string | null = null;
-  let position: 'left' | 'right' = 'left';
+  let position: HeroPosition = 'left';
 
   for (const field of entry.fields as any[]) {
     const key = String(field?.key ?? '')
@@ -152,10 +155,13 @@ function toHeroSlide(entry: any): HeroSlide | null {
     const url = field?.reference?.image?.url;
     if (url && !image) image = url;
     if (key === 'imagetext' && field?.value) text = String(field.value).trim();
-    // The authored dropdown. Anything other than an explicit "right" keeps the
-    // default left placement rather than rendering the raw value.
-    if (key === 'textposition' && String(field?.value).toLowerCase() === 'right') {
-      position = 'right';
+    // The authored dropdown. An unrecognised value falls back to `left` rather
+    // than leaking the raw string into a data attribute.
+    if (key === 'textposition') {
+      const value = String(field?.value ?? '').trim().toLowerCase();
+      if (value === 'right' || value === 'up' || value === 'left') {
+        position = value;
+      }
     }
   }
 
@@ -191,15 +197,14 @@ function parseHeroSlides(container: any): HeroSlide[] {
 // twice. See HERO_CONTENT_QUERY.
 function parseHeroContent(response: any): HeroContent | null {
   const slides = parseHeroSlides(response?.desktop);
-  const mobile = extractHeroFields(response?.mobile?.fields);
+  const mobileSlides = parseHeroSlides(response?.mobile);
   const cover = extractHeroFields(response?.cover?.fields);
-  const mobileImages = [...new Set(mobile.images)];
-  if (!slides.length && !mobileImages.length) return null;
+  if (!slides.length && !mobileSlides.length) return null;
 
   return {
     slides,
     coverImage: cover.images[4] ?? null,
-    mobileImages,
+    mobileSlides,
   };
 }
 
@@ -499,7 +504,7 @@ function HeroCaption({slide}: {slide: HeroSlide}) {
 
 function Hero({content}: {content: HeroContent | null}) {
   const slides = content?.slides ?? [];
-  const mobileImages = content?.mobileImages ?? [];
+  const mobileSlides = content?.mobileSlides ?? [];
   const count = slides.length;
   const sectionRef = useRef<HTMLElement>(null);
   const {active, goReal, offset, animate} = useSwipeSlider(count, sectionRef);
@@ -517,17 +522,15 @@ function Hero({content}: {content: HeroContent | null}) {
       <section
         ref={sectionRef}
         className="hero"
-        data-has-mobile={mobileImages.length ? 'true' : undefined}
+        data-has-mobile={mobileSlides.length ? 'true' : undefined}
       >
         {/* Portrait slider on mobile; CSS hides it (and shows the desktop
             rotating track) on desktop. Only rendered when the mobile
-            hero_content entry has images — otherwise mobile falls back to the
-            desktop banners below. Its own swipe state, independent of the
-            desktop track above. */}
+            container has slides — otherwise phones fall back to the landscape
+            banners below. Its own swipe state, independent of the desktop
+            track above. */}
         {activeText && <h1 className="sr-only">{activeText}</h1>}
-        {mobileImages.length > 0 && (
-          <MobileHeroSlider images={mobileImages} slides={slides} />
-        )}
+        {mobileSlides.length > 0 && <MobileHeroSlider slides={mobileSlides} />}
         {count > 0 && (
           <div
             className="hero-track"
@@ -581,22 +584,14 @@ function Hero({content}: {content: HeroContent | null}) {
 // passive, so preventDefault there is ignored). We only hijack the gesture
 // once it reads as horizontal, so vertical page scroll still works, and we
 // stopPropagation so the parent .hero swipe handler never double-fires.
-function MobileHeroSlider({
-  images,
-  slides,
-}: {
-  images: string[];
-  // The mobile portraits are a separate, possibly shorter set than the desktop
-  // banners, so captions are matched by index and fall back to the first.
-  slides: HeroSlide[];
-}) {
-  const count = images.length;
+function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
+  const count = slides.length;
   const rootRef = useRef<HTMLDivElement>(null);
   const {active, goReal, offset, animate} = useSwipeSlider(count, rootRef);
 
   // Clone last before + first after for a seamless loop.
-  const loopImages =
-    count > 1 ? [images[count - 1], ...images, images[0]] : images;
+  const loopSlides =
+    count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
 
   return (
     <div className="hero-mobile-slider" ref={rootRef}>
@@ -610,27 +605,21 @@ function MobileHeroSlider({
         }}
         aria-hidden="true"
       >
-        {loopImages.map((url, index) => {
-          // loopImages is padded with a clone at each end, so shift back to the
-          // real index before matching a caption to this portrait.
-          const realIndex = count > 1 ? (index - 1 + count) % count : index;
-          const slide = slides[realIndex] ?? slides[0];
-          return (
-            <div key={index} className="hero-mobile-slide">
-              <img
-                className="hero-mobile-image"
-                src={url}
-                alt=""
-                draggable={false}
-              />
-              {slide && <HeroCaption slide={slide} />}
-            </div>
-          );
-        })}
+        {loopSlides.map((slide, index) => (
+          <div key={index} className="hero-mobile-slide">
+            <img
+              className="hero-mobile-image"
+              src={slide.image}
+              alt=""
+              draggable={false}
+            />
+            <HeroCaption slide={slide} />
+          </div>
+        ))}
       </div>
       {count > 1 && (
         <div className="hero-dots" role="tablist" aria-label="Hero slides">
-          {images.map((_, index) => (
+          {slides.map((_, index) => (
             <button
               key={index}
               type="button"
@@ -976,18 +965,31 @@ function FeaturedProducts({
   );
 }
 
+/**
+ * Cover banner that sits between New Arrivals and Complete the Look.
+ *
+ * Served from cdn.shopify.com rather than the storefront's own
+ * /cdn/shop/files/ path — the CSP `img-src` allowlist covers cdn.shopify.com
+ * only, so the storefront path is blocked in local dev.
+ */
+const HOME_COVER_IMAGE =
+  'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/cover1.2.0.png?v=1783666437&width=1600';
+
 function DiamondValueSection({image}: {image: string | null}) {
-  // This is the fourth image from the homepage hero_content metaobject.
-  // Do not fall back to a gallery/public asset when it is absent.
-  if (!image) return null;
+  // The hero metaobject can override the banner; otherwise the pinned asset
+  // above renders. Never falls back to a public/ placeholder.
+  const src = image ?? HOME_COVER_IMAGE;
+  if (!src) return null;
 
   return (
     <section className="home-section diamond-value-section">
       <div className="section-inner">
         <div className="diamond-value-visual">
           <img
-            src={image}
+            src={src}
             alt="Diamond jewelry craftsmanship and value assurance"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </div>
@@ -1279,10 +1281,22 @@ const HERO_CONTENT_QUERY = `#graphql
         }
       }
     }
+    # Same container shape as desktop, pointing at the portrait (1400x2000)
+    # variants of the same four slides.
     mobile: metaobject(
-      handle: {type: "hero_content", handle: "mobile_cover_imagess"}
+      handle: {type: "web_hero_section", handle: "mobile_hero_section"}
     ) {
-      ...HeroFields
+      fields {
+        key
+        references(first: 10) {
+          nodes {
+            ...HeroSlide
+          }
+        }
+        reference {
+          ...HeroSlide
+        }
+      }
     }
     # The banners moved to web_hero_section, but this older entry still supplies
     # the standalone image DiamondValueSection renders further down the page.

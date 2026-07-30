@@ -3738,6 +3738,9 @@ button.reset:hover:not(:has(> *)) {
     display: none;
   }
 
+  /* Portrait slides carry their own `text_position`, so the overlay anchors
+     per slide instead of using one fixed spot. Default (`left`) drops the
+     words to the foot of the picture, where portrait crops leave room. */
   .hero[data-has-mobile] .hero-inner {
     position: absolute;
     inset: 0;
@@ -3745,16 +3748,36 @@ button.reset:hover:not(:has(> *)) {
     z-index: 2;
     /* Heading overlay is decorative — let swipes reach the slider beneath it. */
     pointer-events: none;
-    /* Heading sits a bit below the vertical middle; a soft centered scrim keeps
-       it legible over any portrait image. */
-    background: radial-gradient(
-      120% 60% at 40% 60%,
-      rgba(0, 0, 0, 0.5) 0%,
-      rgba(0, 0, 0, 0.2) 45%,
-      rgba(0, 0, 0, 0) 75%
+    max-width: none;
+    min-height: 0;
+    padding: 1.75rem clamp(1.25rem, 6vw, 2rem);
+    justify-content: flex-end;
+    background: linear-gradient(
+      180deg,
+      rgba(10, 9, 7, 0) 40%,
+      rgba(10, 9, 7, 0.78) 100%
     );
-    padding-top: 35%;
+  }
+
+  /* `up`: words at the top, so the scrim flips to match. */
+  .hero[data-has-mobile] .hero-inner[data-position='up'] {
     justify-content: flex-start;
+    background: linear-gradient(
+      180deg,
+      rgba(10, 9, 7, 0.78) 0%,
+      rgba(10, 9, 7, 0) 55%
+    );
+  }
+
+  /* `right`: a phone is too narrow to push a block sideways, so honour the
+     intent by ranging the type right instead of moving the column. */
+  .hero[data-has-mobile] .hero-inner[data-position='right'] {
+    align-items: flex-end;
+    text-align: right;
+  }
+
+  .hero[data-has-mobile] .hero-inner[data-position='right'] .hero-rule {
+    align-self: flex-end;
   }
 
   .hero[data-has-mobile] .hero-heading {
@@ -3764,16 +3787,19 @@ button.reset:hover:not(:has(> *)) {
   /* Same restrained treatment as desktop, scaled down. Uppercase at this
      tracking needs its line-height back — the old 0.98 was set for a large
      bold face and collapses tracked capitals into each other. */
+  /* The mobile hero is a fixed 16/9 strip (~200px at phone widths), so the
+     larger type only fits with the leading and the rule's gap pulled in.
+     This is the ceiling for this size — going bigger needs a taller hero. */
   .hero-heading {
     font-size: clamp(1.35rem, 5.6vw, 2rem);
     letter-spacing: 0.13em;
-    line-height: 1.55;
-    margin-bottom: 0.75rem;
+    line-height: 1.38;
+    margin-bottom: 0.4rem;
     max-width: 20ch;
   }
 
   .hero-rule {
-    margin-bottom: 1rem;
+    margin-bottom: 0.7rem;
     width: 3.25rem;
   }
 
@@ -9696,7 +9722,11 @@ button.reset:hover:not(:has(> *)) {
   display: block;
   width: 100%;
   height: auto;
-  object-fit: contain;
+  /* Fixed 16:7 letterbox. `cover` crops to fill it — with `contain` the frame
+     would keep the ratio while the artwork pillarboxed inside it. The ratio
+     also reserves the height before the image loads, so nothing shifts. */
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
   border-radius: 0;
 }
 
