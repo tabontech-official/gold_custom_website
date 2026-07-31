@@ -6,6 +6,7 @@ import {
   type CSSProperties,
 } from 'react';
 import {Link} from 'react-router';
+import {cdnWidth} from '~/lib/cdnImage';
 
 export type CoverflowItem = {
   id: string;
@@ -35,18 +36,6 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-/**
- * Ask the Shopify CDN for a resized copy. Local /public files can't be
- * transformed, so they pass through untouched.
- *
- * The card is at most 495 CSS px wide, but the collection images arrive as
- * full-resolution originals — nine multi-megapixel bitmaps being decoded and
- * then 3D-transformed every frame is what made this stutter on phones.
- */
-export function cdnWidth(url: string, width: number): string {
-  if (!url.includes('cdn.shopify.com')) return url;
-  return `${url}${url.includes('?') ? '&' : '?'}width=${width}`;
-}
 
 // Match the first client-side paint during SSR. Without these values every
 // card starts stacked at the centre until useEffect runs after hydration,
