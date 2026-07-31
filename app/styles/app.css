@@ -4704,7 +4704,8 @@ button.announcement-link {
   overflow-x: auto;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
+  /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
+  touch-action: pan-x pan-y pinch-zoom;
   overscroll-behavior-x: contain;
   scroll-snap-type: x proximity;
 }
@@ -8288,7 +8289,8 @@ button.announcement-link {
   scroll-snap-type: x proximity;
   scrollbar-color: rgba(212, 175, 55, 0.85) rgba(0, 0, 0, 0.08);
   scrollbar-width: thin;
-  touch-action: pan-x;
+  /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
+  touch-action: pan-x pan-y pinch-zoom;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -8848,7 +8850,8 @@ button.announcement-link {
 
 .subnav-icons .dragscroll-viewport {
   cursor: grab;
-  touch-action: pan-x;
+  /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .subnav-icons .dragscroll-track {
@@ -9150,7 +9153,8 @@ button.announcement-link {
   scroll-behavior: smooth;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-x;
+  /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
+  touch-action: pan-x pan-y pinch-zoom;
   cursor: grab;
   @media (min-width: 48em) {
     padding: 0 3rem 0.5rem;
@@ -9320,7 +9324,12 @@ button.announcement-link {
   scrollbar-width: none;
   cursor: grab;
   scroll-behavior: smooth;
-  touch-action: pan-x;
+  /* NOT pan-x: that permits horizontal panning ONLY, so a vertical swipe
+     starting on a product rail scrolled nothing and the page felt frozen.
+     `pan-x pan-y` lets the browser arbitrate by gesture direction — horizontal
+     scrolls the rail, vertical scrolls the page. pinch-zoom stays allowed for
+     accessibility. */
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 .dragscroll-viewport::-webkit-scrollbar {

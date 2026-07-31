@@ -35,6 +35,19 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
+/**
+ * Ask the Shopify CDN for a resized copy. Local /public files can't be
+ * transformed, so they pass through untouched.
+ *
+ * The card is at most 495 CSS px wide, but the collection images arrive as
+ * full-resolution originals — nine multi-megapixel bitmaps being decoded and
+ * then 3D-transformed every frame is what made this stutter on phones.
+ */
+export function cdnWidth(url: string, width: number): string {
+  if (!url.includes('cdn.shopify.com')) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}width=${width}`;
+}
+
 // Match the first client-side paint during SSR. Without these values every
 // card starts stacked at the centre until useEffect runs after hydration,
 // causing a visible broken-frame flash on hard refresh.
@@ -112,6 +125,10 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
       // invisible — so the ±n jump happens off-screen and is never seen.
       const opacity =
         abs <= solid ? 1 : Math.max(0, 1 - (abs - solid) / (fadeEdge - solid));
+      // A card already parked invisible past the wrap seam needs no style writes
+      // at all — skipping them drops five mutations per card per frame, which on
+      // a phone is the difference between compositing and re-styling.
+      if (opacity <= 0 && el.style.visibility === 'hidden') continue;
       el.style.opacity = opacity.toFixed(3);
       el.style.pointerEvents = abs <= 1.5 ? 'auto' : 'none';
       el.style.zIndex = String(1000 - Math.round(abs * 100));
@@ -270,7 +287,15 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
           >
             <div className="coverflow-card-media">
               {item.image ? (
-                <img src={item.image} alt={item.title} draggable={false} />
+                <img
+                  src={cdnWidth(item.image, 700)}
+                  srcSet={`${cdnWidth(item.image, 420)} 420w, ${cdnWidth(item.image, 700)} 700w, ${cdnWidth(item.image, 1000)} 1000w`}
+                  sizes="(max-width: 48em) 350px, 500px"
+                  alt={item.title}
+                  /* Off the main thread, so a decode can't land mid-drag. */
+                  decoding="async"
+                  draggable={false}
+                />
               ) : (
                 <span className="coverflow-card-fallback" aria-hidden="true">
                   {item.title.charAt(0)}
