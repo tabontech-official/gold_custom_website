@@ -4024,16 +4024,16 @@ button.announcement-link {
 }
 
 .market-rate {
-  align-items: center;
+  align-items: baseline;
   flex-direction: row;
-  gap: 1rem;
+  gap: 0.28rem;
   min-width: 0;
   white-space: nowrap;
 }
 
 .market-rate-name {
   color: var(--color-gold);
-  font-size: clamp(1rem, 0.9vw, 0.9rem);
+  font-size: clamp(0.6rem, 0.72vw, 0.7rem);
   letter-spacing: 0.18em;
 }
 
@@ -4041,36 +4041,52 @@ button.announcement-link {
   color: rgba(255, 255, 255, 0.48);
 }
 
-.market-rate-figures {
-  gap: 0.3rem;
-  justify-content: flex-start;
-}
-
 .market-rate-price {
   color: rgba(255, 255, 255, 0.92);
   font-family: var(--font-display);
-  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  font-size: clamp(0.74rem, 0.95vw, 0.9rem);
 }
 
+.market-rate-unit {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: clamp(0.54rem, 0.66vw, 0.64rem);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* Direction of the last move — tints the prices, states it once per cycle. */
 .market-rate-change {
-  background: transparent;
-  border-radius: 0;
-  font-size: clamp(0.8rem, 0.8vw, 0.8rem);
-  padding: 0;
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: clamp(0.54rem, 0.66vw, 0.64rem);
+  font-weight: 700;
+  gap: 0.18rem;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 0.16rem 0.34rem;
 }
 
 .market-rate-change span {
-  font-size: 0.42rem;
+  font-size: 0.5em;
 }
 
 .market-rate-change.is-up {
-  background: transparent;
-  color: #38c66d;
+  background: rgba(56, 198, 109, 0.16);
+  color: #4fd882;
 }
 
 .market-rate-change.is-down {
-  background: transparent;
-  color: #ff7979;
+  background: rgba(255, 121, 121, 0.16);
+  color: #ff8f8f;
+}
+
+.market-group.is-up .market-rate-price {
+  color: #b9f0cd;
+}
+
+.market-group.is-down .market-rate-price {
+  color: #ffcbcb;
 }
 
 .market-live {
@@ -4123,7 +4139,7 @@ button.announcement-link {
 .market-bar {
   display: block;
   overflow: hidden;
-  padding: 0.35rem 0;
+  padding: 0.2rem 0;
 }
 
 .market-track {
@@ -4139,11 +4155,14 @@ button.announcement-link {
 }
 
 .market-group {
-  align-items: center;
+  align-items: baseline;
   display: flex;
   flex: 0 0 auto;
-  gap: clamp(1rem, 2.6vw, 2.2rem);
-  padding-right: clamp(1rem, 2.6vw, 2.2rem);
+  gap: clamp(0.8rem, 2vw, 1.6rem);
+  /* Floor so the 5 trailing copies outrun the viewport (5 x 25vw = 125%),
+     however wide the screen gets. Natural width wins on normal displays. */
+  min-width: 25vw;
+  padding-right: clamp(0.8rem, 2vw, 1.6rem);
   white-space: nowrap;
 }
 
@@ -4151,12 +4170,13 @@ button.announcement-link {
   margin-left: 0;
 }
 
+/* One group's worth of travel — 1 / COPIES in MarketBar.tsx. */
 @keyframes marketScroll {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-33.3333%);
+    transform: translateX(-16.6667%);
   }
 }
 

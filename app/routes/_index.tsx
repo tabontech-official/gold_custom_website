@@ -13,6 +13,7 @@ import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
 import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
+import {getGoldRates} from '~/lib/goldRates';
 import {
   VideoCarousel,
   type VideoCarouselItem,
@@ -67,6 +68,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     trustBadgesResponse,
     heroResponse,
     faqsResponse,
+    goldRates,
   ] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
     context.storefront.query(SHOP_BY_CATEGORIES_QUERY),
@@ -82,6 +84,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
       console.error(error);
       return null;
     }),
+    getGoldRates(context.withCache, context.env),
   ]);
 
   return {
@@ -102,6 +105,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     // pages_faqs is the dedicated homepage FAQ source. Collection pages read
     // their own linked metafields instead, so no collection FAQ can leak here.
     faqs: parseFaqs(faqsResponse),
+    goldRates,
   };
 }
 
@@ -304,6 +308,7 @@ export default function Homepage() {
   return (
     <div className="home">
       <Hero content={data.hero} />
+      <MarketBar rates={data.goldRates} />
       <ShopByCategory categories={data.categories} />
       <TrustPromise badges={data.trustBadges} />
       <RecommendedProducts
@@ -570,7 +575,6 @@ function Hero({content}: {content: HeroContent | null}) {
           </div>
         )}
       </section>
-      <MarketBar />
     </>
   );
 }

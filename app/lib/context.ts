@@ -1,4 +1,8 @@
-import {createHydrogenContext} from '@shopify/hydrogen';
+import {
+  createHydrogenContext,
+  createWithCache,
+  type WithCache,
+} from '@shopify/hydrogen';
 import {AppSession} from '~/lib/session';
 import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
 
@@ -11,8 +15,10 @@ const additionalContext = {
   // reviews: await createReviewsClient(env),
 } as const;
 
-// Automatically augment HydrogenAdditionalContext with the additional context type
-type AdditionalContextType = typeof additionalContext;
+// Automatically augment HydrogenAdditionalContext with the additional context type.
+// `withCache` is per-request (it needs the request's cache + waitUntil), so it is
+// merged in below rather than living in the static object above.
+type AdditionalContextType = typeof additionalContext & {withCache: WithCache};
 
 declare global {
   interface HydrogenAdditionalContext extends AdditionalContextType {}
@@ -53,7 +59,10 @@ export async function createHydrogenRouterContext(
         queryFragment: CART_QUERY_FRAGMENT,
       },
     },
-    additionalContext,
+    {
+      ...additionalContext,
+      withCache: createWithCache({cache, waitUntil, request}),
+    },
   );
 
   return hydrogenContext;
