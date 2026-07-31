@@ -789,11 +789,6 @@ function MonthlyEstimate({
       ) : (
         <Link to="/policies/finance">View sample plans</Link>
       )}
-      {/* An estimated monthly figure is an offer, so it carries the
-          qualifier — the rate and the approval are the lender's call. */}
-      <span className="product-monthly-note">
-        Financing available, subject to approval.
-      </span>
     </div>
   );
 }
@@ -809,58 +804,109 @@ function MonthlyEstimate({
  */
 const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
 
+/**
+ * Every file is 200x102, but the mark inside is letterboxed vertically by a
+ * different amount. Measured ink bounding boxes:
+ *
+ *   acima 200x90 · american 193x94 · progressive 200x75 · synchrony 200x44
+ *
+ * That letterboxing is the whole problem. Left uncropped in a row of equal
+ * cells, each logo fills the cell width and its height falls out of its own
+ * aspect ratio — so synchrony's 4.5:1 mark renders about 19px tall next to
+ * acima's 39px, and the row looks broken rather than set.
+ *
+ * So each file is cropped to its own mark, and the row is then sized by height
+ * instead of width (see .product-financing-list): equal height, natural
+ * widths, which is how a partner strip is normally set. The marks sit centred
+ * in their canvases, so a centre crop is safe; `LOGO_INK_PAD` keeps it clear
+ * of the ink.
+ *
+ * The requested height must stay within the source's own 102px — Shopify's CDN
+ * will not upscale, and silently returns the original uncropped frame if asked
+ * for more. For the same reason there is no 2x retina variant to request:
+ * 200x102 is all these files have.
+ *
+ * Note there is no horizontal margin to reclaim either — three of the four run
+ * edge to edge — so scaling a logo past its box only collides its neighbour.
+ */
+const LOGO_INK_PAD = 4;
+
+function financingLogo(file: string, ink: number) {
+  const height = ink + LOGO_INK_PAD;
+  return {
+    src: `${SHOPIFY_FILES}/${file}.avif?v=1783667298&width=200&height=${height}&crop=center`,
+    /**
+     * Share of the row this mark takes, proportional to its aspect ratio.
+     * Because each image then fills its own share, every logo resolves to the
+     * SAME height — row width divided by the sum of these weights — at any
+     * container width. That is what lets the strip grow with the column
+     * instead of sitting at a fixed size with the slack dumped between logos.
+     */
+    weight: 200 / height,
+  };
+}
+
 const FINANCING_PARTNERS = [
   {
     name: 'Acima Leasing',
     href: 'https://www.acima.com',
-    src: `${SHOPIFY_FILES}/acima.avif?v=1783667298&width=240`,
+    ...financingLogo('acima', 90),
   },
   {
     name: 'American First Finance',
     href: 'https://www.americanfirstfinance.com',
-    src: `${SHOPIFY_FILES}/american.avif?v=1783667298&width=240`,
+    ...financingLogo('american', 94),
   },
   {
     name: 'Progressive Leasing',
     href: 'https://progleasing.com',
-    src: `${SHOPIFY_FILES}/progressive_leasing.avif?v=1783667298&width=240`,
+    ...financingLogo('progressive_leasing', 75),
   },
   {
     name: 'Synchrony',
     href: 'https://www.synchrony.com',
-    src: `${SHOPIFY_FILES}/synchrony.avif?v=1783667298&width=240`,
+    ...financingLogo('synchrony', 44),
   },
 ];
 
 function FinancingPartners() {
   return (
-    <section className="product-financing" aria-labelledby="product-financing-label">
+    <>
+      {/* Heading sits outside the bordered box; `aria-labelledby` resolves by
+          id across the document, so the section stays named regardless. */}
       <h3 className="product-financing-label" id="product-financing-label">
-        Financing available, <span>subject to approval.</span>
+        Financing available
       </h3>
-      <ul className="product-financing-list">
-        {FINANCING_PARTNERS.map((partner) => (
-          <li key={partner.name}>
-            <a
-              href={partner.href}
-              target="_blank"
-              // Third-party lenders: `noopener` because of target=_blank, and
-              // `nofollow` so a commercial partner link can't be read as a
-              // link scheme or bleed ranking signal off the store.
-              rel="noopener noreferrer nofollow"
-              className="product-financing-link"
-            >
-              <img
-                src={partner.src}
-                alt={partner.name}
-                loading="lazy"
-                decoding="async"
-              />
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
+      <section
+        className="product-financing"
+        aria-labelledby="product-financing-label"
+      >
+        <ul className="product-financing-list">
+          {FINANCING_PARTNERS.map((partner) => (
+            // flex-basis 0 + this grow factor makes the ratios describe the
+            // final widths outright, rather than only sharing out leftovers.
+            <li key={partner.name} style={{flexGrow: partner.weight}}>
+              <a
+                href={partner.href}
+                target="_blank"
+                // Third-party lenders: `noopener` because of target=_blank, and
+                // `nofollow` so a commercial partner link can't be read as a
+                // link scheme or bleed ranking signal off the store.
+                rel="noopener noreferrer nofollow"
+                className="product-financing-link"
+              >
+                <img
+                  src={partner.src}
+                  alt={partner.name}
+                  loading="lazy"
+                  decoding="async"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </>
   );
 }
 

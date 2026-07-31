@@ -6453,9 +6453,33 @@ button.announcement-link {
   margin: 0 0 0.85rem;
 }
 
-.product-details-body ul,
-.product-description-intro ul {
-  padding-left: 1.1rem;
+/* Points are marked with a thin gold rule instead of a disc. Product copy is
+   all <ul> today; `ol` is covered so a merchant writing points as a numbered
+   list gets the same mark. If a description ever needs real numbering, drop
+   `ol` from these three selectors. */
+.product-details-body :where(ul, ol),
+.product-description-intro :where(ul, ol) {
+  list-style: none;
+  padding-left: 0;
+}
+
+.product-details-body :where(ul, ol) li,
+.product-description-intro :where(ul, ol) li {
+  padding-left: 1.4rem;
+  position: relative;
+}
+
+.product-details-body :where(ul, ol) li::before,
+.product-description-intro :where(ul, ol) li::before {
+  background: var(--color-gold-dark);
+  content: '';
+  height: 1px;
+  left: 0;
+  position: absolute;
+  /* Half of the 1.7 line-height, nudged up a hair — a rule reads low when
+     it sits on the true optical centre. */
+  top: 0.8em;
+  width: 0.75rem;
 }
 
 /* Keep every nested element in the description at the same size/face. */
@@ -6464,6 +6488,29 @@ button.announcement-link {
   font-size: inherit;
   line-height: inherit;
   font-family: inherit;
+}
+
+/* Merchant copy carries h2/h3/h4. Without this they render at browser default
+   sizes inside a 0.92rem body and tower over the text around them. */
+.product-details-body :where(h1, h2, h3, h4, h5, h6),
+.product-description-intro :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  margin: 1.75rem 0 0.6rem;
+}
+
+.product-details-body :where(h3, h4, h5, h6),
+.product-description-intro :where(h3, h4, h5, h6) {
+  font-size: 0.95rem;
+}
+
+.product-details-body > :where(h1, h2, h3, h4, h5, h6):first-child,
+.product-description-intro > :where(h1, h2, h3, h4, h5, h6):first-child {
+  margin-top: 0;
 }
 
 .product-price {
@@ -6538,78 +6585,71 @@ button.announcement-link {
   opacity: 0.7;
 }
 
-/* Financing partner logos, under the price/monthly estimate. */
+/* Financing partner logos, under the price/monthly estimate. The heading sits
+   outside this box, so it carries the margin the box used to. */
 .product-financing {
-  margin: 0.9rem 0 0;
-  padding: 0.85rem 0.9rem;
+  margin: 0;
+  padding: 0.8rem 0.5rem;
   border: 1px solid var(--color-border);
   /* Square, matching .product-note and the buttons in this column. */
   border-radius: 0;
 }
 
 .product-financing-label {
-  margin: 0 0 0.5rem;
+  /* Tight to both neighbours: a small breath off the monthly line above, and
+     sitting directly on the box below. */
+  margin: 0.5rem 0 0.3rem;
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--color-ink);
 }
 
-/* The compliance qualifier rides with the claim but doesn't shout. */
-.product-financing-label span {
-  color: var(--color-ink-soft);
-  font-weight: 400;
-}
-
-.product-monthly-note {
-  color: var(--color-ink-soft);
-  display: block;
-  font-size: 0.78rem;
-  margin-top: 0.2rem;
-}
-
-/* Four equal columns rather than a flex row: the logos then span the full
-   width instead of bunching left and leaving dead space at the end. */
+/**
+ * Every mark ends at the same height, and the row fills its container at any
+ * width. Each item grows by its mark's aspect ratio (see FINANCING_PARTNERS),
+ * so width-over-aspect — the rendered height — comes out identical for all
+ * four, and scales with the column instead of being pinned.
+ *
+ * Not `justify-content: space-between` with fixed-size logos: in a wide
+ * container that leaves the marks small and pushes every spare pixel into the
+ * gaps. Not equal columns either — a 4.5:1 mark like synchrony would render
+ * half the height of a squarer one like acima.
+ *
+ * `max-width` is the only ceiling, so a very wide product column gives a
+ * centred strip rather than absurdly large logos.
+ */
 .product-financing-list {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin: 0;
-  padding: 0;
+  gap: clamp(0.5rem, 1.8vw, 1.25rem);
   list-style: none;
+  margin: 0 auto;
+  max-width: 42rem;
+  padding: 0;
+}
+
+.product-financing-list li {
+  flex-basis: 0;
+  min-width: 0;
 }
 
 .product-financing-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* All four sources are 200x102 with transparent padding baked in, so the mark
-   reads smaller than its box. Scaling to the column width (capped, or the
-   short logos get comically tall) recovers most of that. */
-.product-financing-link img {
-  width: 100%;
-  height: auto;
-  max-height: 52px;
-  object-fit: contain;
+  display: block;
   transition: opacity 0.2s ease;
 }
 
-/* Stay four-across on a phone: trim the box padding and column gap so the
-   logos keep as much width as possible, and cap the height so the row stays
-   compact rather than growing to fit. */
+/* The image fills the width its weight won it; the cropped file's own aspect
+   then decides the height. No fixed height and no max-height — either would
+   break the equal-height result the weights produce. */
+.product-financing-link img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 @media (max-width: 48em) {
   .product-financing {
-    padding: 0.7rem 0.55rem;
-  }
-
-  .product-financing-list {
-    gap: 0.3rem;
-  }
-
-  .product-financing-link img {
-    max-height: 32px;
+    padding: 0.65rem 0.5rem;
   }
 }
 
