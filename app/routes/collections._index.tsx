@@ -69,9 +69,12 @@ export default function Collections() {
             From solid-gold chains to certified-diamond rings — explore every
             corner of the house.
           </p>
-        </div>
+          <p>
+           
+          </p>
+                  </div>
       </section>
-
+      
       <section className="home-section is-soft">
         <div className="section-inner">
           <PaginatedResourceSection<CollectionFragment>
@@ -84,6 +87,7 @@ export default function Collections() {
                 collection={collection}
                 index={index}
               />
+
             )}
           </PaginatedResourceSection>
         </div>

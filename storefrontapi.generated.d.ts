@@ -1757,33 +1757,95 @@ export type SidebarCollectionsQuery = {
   };
 };
 
-export type CollectionQueryVariables = StorefrontAPI.Exact<{
+export type CollectionContentFragment = {
+  collectionFaqs?: StorefrontAPI.Maybe<{
+    reference?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Metaobject, 'handle'> & {
+        fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+      }
+    >;
+  }>;
+  collectionCenterImages?: StorefrontAPI.Maybe<{
+    reference?: StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.Metaobject, 'handle'> & {
+        fields: Array<
+          Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+            reference?: StorefrontAPI.Maybe<
+              | Pick<StorefrontAPI.GenericFile, 'url'>
+              | {
+                  image?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                  >;
+                }
+            >;
+            references?: StorefrontAPI.Maybe<{
+              nodes: Array<
+                | Pick<StorefrontAPI.GenericFile, 'url'>
+                | {
+                    image?: StorefrontAPI.Maybe<
+                      Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                    >;
+                  }
+              >;
+            }>;
+          }
+        >;
+      }
+    >;
+  }>;
+};
+
+export type MenuHandlesFragment = {
+  items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+};
+
+export type CategoryMenusQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type CategoryMenusQuery = {
+  chainsGroup1?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  chainsGroup2?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  chainsGroup3?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  braceletsMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  earringsMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  pendantsMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  chainWithPendantMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  necklacesMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  diamondMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+  engagementRingsMenu?: StorefrontAPI.Maybe<{
+    items: Array<Pick<StorefrontAPI.MenuItem, 'url'>>;
+  }>;
+};
+
+export type ParentCollectionContentQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  filters?: StorefrontAPI.InputMaybe<
-    Array<StorefrontAPI.ProductFilter> | StorefrontAPI.ProductFilter
-  >;
-  sortKey?: StorefrontAPI.InputMaybe<StorefrontAPI.ProductCollectionSortKeys>;
-  reverse?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Boolean']['input']>;
-  first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  startCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
-  endCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
 }>;
 
-export type CollectionQuery = {
+export type ParentCollectionContentQuery = {
   collection?: StorefrontAPI.Maybe<
-    Pick<
-      StorefrontAPI.Collection,
-      'id' | 'handle' | 'title' | 'description'
-    > & {
-      seo: Pick<StorefrontAPI.Seo, 'title' | 'description'>;
-      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
+    Pick<StorefrontAPI.Collection, 'handle'> & {
       collectionFaqs?: StorefrontAPI.Maybe<{
         reference?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.Metaobject, 'handle'> & {
@@ -1819,6 +1881,37 @@ export type CollectionQuery = {
           }
         >;
       }>;
+    }
+  >;
+};
+
+export type CollectionQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  filters?: StorefrontAPI.InputMaybe<
+    Array<StorefrontAPI.ProductFilter> | StorefrontAPI.ProductFilter
+  >;
+  sortKey?: StorefrontAPI.InputMaybe<StorefrontAPI.ProductCollectionSortKeys>;
+  reverse?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Boolean']['input']>;
+  first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  startCursor?: StorefrontAPI.InputMaybe<
+    StorefrontAPI.Scalars['String']['input']
+  >;
+  endCursor?: StorefrontAPI.InputMaybe<
+    StorefrontAPI.Scalars['String']['input']
+  >;
+}>;
+
+export type CollectionQuery = {
+  collection?: StorefrontAPI.Maybe<
+    Pick<
+      StorefrontAPI.Collection,
+      'id' | 'handle' | 'title' | 'description'
+    > & {
+      seo: Pick<StorefrontAPI.Seo, 'title' | 'description'>;
+      image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
       products: {
         filters: Array<
           Pick<StorefrontAPI.Filter, 'id' | 'label' | 'type'> & {
@@ -1883,6 +1976,41 @@ export type CollectionQuery = {
           }
         >;
       };
+      collectionFaqs?: StorefrontAPI.Maybe<{
+        reference?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metaobject, 'handle'> & {
+            fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+          }
+        >;
+      }>;
+      collectionCenterImages?: StorefrontAPI.Maybe<{
+        reference?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.Metaobject, 'handle'> & {
+            fields: Array<
+              Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
+                reference?: StorefrontAPI.Maybe<
+                  | Pick<StorefrontAPI.GenericFile, 'url'>
+                  | {
+                      image?: StorefrontAPI.Maybe<
+                        Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                      >;
+                    }
+                >;
+                references?: StorefrontAPI.Maybe<{
+                  nodes: Array<
+                    | Pick<StorefrontAPI.GenericFile, 'url'>
+                    | {
+                        image?: StorefrontAPI.Maybe<
+                          Pick<StorefrontAPI.Image, 'url' | 'altText'>
+                        >;
+                      }
+                  >;
+                }>;
+              }
+            >;
+          }
+        >;
+      }>;
     }
   >;
 };
@@ -2778,7 +2906,15 @@ interface GeneratedQueryTypes {
     return: SidebarCollectionsQuery;
     variables: SidebarCollectionsQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n      }\n      collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n        reference {\n          ... on Metaobject {\n            handle\n            fields {\n              key\n              value\n            }\n          }\n        }\n      }\n      collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n        reference {\n          ... on Metaobject {\n            handle\n            fields {\n              key\n              value\n              reference {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n              references(first: 20) {\n                nodes {\n                  ... on MediaImage {\n                    image {\n                      url\n                      altText\n                    }\n                  }\n                  ... on GenericFile {\n                    url\n                  }\n                }\n              }\n            }\n          }\n        }\n      }\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment MenuHandles on Menu {\n    items {\n      url\n    }\n  }\n  query CategoryMenus($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    chainsGroup1: menu(handle: "chains-copy-copy-1") { ...MenuHandles }\n    chainsGroup2: menu(handle: "chains-copy-copy") { ...MenuHandles }\n    chainsGroup3: menu(handle: "chains-copy") { ...MenuHandles }\n    braceletsMenu: menu(handle: "bracelets-1") { ...MenuHandles }\n    earringsMenu: menu(handle: "earrings") { ...MenuHandles }\n    pendantsMenu: menu(handle: "pendants") { ...MenuHandles }\n    chainWithPendantMenu: menu(handle: "chain-with-pendant") { ...MenuHandles }\n    necklacesMenu: menu(handle: "necklaces") { ...MenuHandles }\n    diamondMenu: menu(handle: "diamond") { ...MenuHandles }\n    engagementRingsMenu: menu(handle: "engagement-rings") { ...MenuHandles }\n  }\n': {
+    return: CategoryMenusQuery;
+    variables: CategoryMenusQueryVariables;
+  };
+  '#graphql\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query ParentCollectionContent(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      handle\n      ...CollectionContent\n    }\n  }\n': {
+    return: ParentCollectionContentQuery;
+    variables: ParentCollectionContentQueryVariables;
+  };
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };

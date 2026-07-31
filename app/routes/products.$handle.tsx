@@ -922,9 +922,7 @@ function RelatedProducts({
       <div className="section-inner pdp-similar-header">
         <div>
           <h2 className="pdp-similar-title">You May Also Like</h2>
-          <Link className="slider-viewall" to={viewAllTo}>
-            View all similar products
-          </Link>
+          
         </div>
       </div>
       <Suspense fallback={null}>

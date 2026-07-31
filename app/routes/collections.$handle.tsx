@@ -27,11 +27,14 @@ import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
+  CATEGORY_MENU_HANDLES,
   MEGA_MENU,
   MERGED_CUBAN_HANDLES,
   MIAMI_CUBAN_HANDLE,
+  collectionHandlesFromMenu,
   getColumnItems,
   getMegaMenuDepartmentForHandle,
+  getMegaMenuParentHandle,
   getNavCollectionHandles,
   toRelativeUrl,
 } from '~/lib/megaMenu';
@@ -203,23 +206,57 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
+  // These metaobjects are assigned in Shopify on each individual collection.
+  // Never search or fall back to general site-wide FAQ/cover data here; the only
+  // permitted fallback is the collection's own parent department (below).
+  let coverSource = collection.collectionCenterImages?.reference ?? null;
+  let faqSource = collection.collectionFaqs?.reference ?? null;
+
+  // A child category with neither of its own inherits both from its parent, so
+  // merchants only fill these in once per department. Both lookups are cached
+  // and non-fatal: worst case the child page renders without FAQs/covers.
+  if (!coverSource && !faqSource) {
+    // Most departments list their children in a Shopify menu rather than in
+    // MEGA_MENU's curated items, so the menus are needed to find the parent.
+    const menus = await storefront
+      .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheLong()})
+      .catch(() => null);
+
+    const menuItemHandles = menus
+      ? Object.fromEntries(
+          Object.keys(CATEGORY_MENU_HANDLES).map((key) => [
+            key,
+            collectionHandlesFromMenu(
+              menus[key as keyof typeof CATEGORY_MENU_HANDLES],
+            ),
+          ]),
+        )
+      : undefined;
+
+    const parentHandle = getMegaMenuParentHandle(handle, menuItemHandles);
+    if (parentHandle) {
+      const parent = await storefront
+        .query(PARENT_COLLECTION_CONTENT_QUERY, {
+          variables: {handle: parentHandle},
+          cache: storefront.CacheLong(),
+        })
+        .then((data) => data.collection)
+        .catch(() => null);
+
+      coverSource = parent?.collectionCenterImages?.reference ?? null;
+      faqSource = parent?.collectionFaqs?.reference ?? null;
+    }
+  }
+
   return {
     collection,
     allCollections,
-    // These metaobjects are assigned in Shopify on each individual collection.
-    // Never search or fall back to general site-wide FAQ/cover data here.
     coverPhotos: getCoverPhotos(
-      {
-        metaobjects: {
-          nodes: collection.collectionCenterImages?.reference
-            ? [collection.collectionCenterImages.reference]
-            : [],
-        },
-      },
+      {metaobjects: {nodes: coverSource ? [coverSource] : []}},
       handle,
       false,
     ),
-    faqs: parseFaqMetaobject(collection.collectionFaqs?.reference),
+    faqs: parseFaqMetaobject(faqSource),
   };
 }
 
@@ -568,9 +605,104 @@ const SIDEBAR_COLLECTIONS_QUERY = `#graphql
   }
 ` as const;
 
+// The FAQ and cover-image metaobjects, shared by the collection query and the
+// parent-department lookup that child pages fall back to.
+const COLLECTION_CONTENT_FRAGMENT = `#graphql
+  fragment CollectionContent on Collection {
+    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {
+      reference {
+        ... on Metaobject {
+          handle
+          fields {
+            key
+            value
+          }
+        }
+      }
+    }
+    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {
+      reference {
+        ... on Metaobject {
+          handle
+          fields {
+            key
+            value
+            reference {
+              ... on MediaImage {
+                image {
+                  url
+                  altText
+                }
+              }
+              ... on GenericFile {
+                url
+              }
+            }
+            references(first: 20) {
+              nodes {
+                ... on MediaImage {
+                  image {
+                    url
+                    altText
+                  }
+                }
+                ... on GenericFile {
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+` as const;
+
+/**
+ * Just the item URLs of every category menu, to find which department a child
+ * collection belongs to. Deliberately leaner than HEADER_QUERY (no shop, no
+ * per-item resource/products), since only the handles are needed here.
+ */
+const CATEGORY_MENUS_QUERY = `#graphql
+  fragment MenuHandles on Menu {
+    items {
+      url
+    }
+  }
+  query CategoryMenus($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    chainsGroup1: menu(handle: "chains-copy-copy-1") { ...MenuHandles }
+    chainsGroup2: menu(handle: "chains-copy-copy") { ...MenuHandles }
+    chainsGroup3: menu(handle: "chains-copy") { ...MenuHandles }
+    braceletsMenu: menu(handle: "bracelets-1") { ...MenuHandles }
+    earringsMenu: menu(handle: "earrings") { ...MenuHandles }
+    pendantsMenu: menu(handle: "pendants") { ...MenuHandles }
+    chainWithPendantMenu: menu(handle: "chain-with-pendant") { ...MenuHandles }
+    necklacesMenu: menu(handle: "necklaces") { ...MenuHandles }
+    diamondMenu: menu(handle: "diamond") { ...MenuHandles }
+    engagementRingsMenu: menu(handle: "engagement-rings") { ...MenuHandles }
+  }
+` as const;
+
+/** Parent department's FAQ/cover content, for child pages that define neither. */
+const PARENT_COLLECTION_CONTENT_QUERY = `#graphql
+  ${COLLECTION_CONTENT_FRAGMENT}
+  query ParentCollectionContent(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      handle
+      ...CollectionContent
+    }
+  }
+` as const;
+
 // NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
+  ${COLLECTION_CONTENT_FRAGMENT}
   query Collection(
     $handle: String!
     $country: CountryCode
@@ -598,52 +730,7 @@ const COLLECTION_QUERY = `#graphql
         url
         altText
       }
-      collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {
-        reference {
-          ... on Metaobject {
-            handle
-            fields {
-              key
-              value
-            }
-          }
-        }
-      }
-      collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {
-        reference {
-          ... on Metaobject {
-            handle
-            fields {
-              key
-              value
-              reference {
-                ... on MediaImage {
-                  image {
-                    url
-                    altText
-                  }
-                }
-                ... on GenericFile {
-                  url
-                }
-              }
-              references(first: 20) {
-                nodes {
-                  ... on MediaImage {
-                    image {
-                      url
-                      altText
-                    }
-                  }
-                  ... on GenericFile {
-                    url
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      ...CollectionContent
       products(
         first: $first,
         last: $last,

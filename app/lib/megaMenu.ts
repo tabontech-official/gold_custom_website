@@ -111,6 +111,24 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
   },
 ];
 
+/**
+ * Shopify menu handle behind each `CategoryMenuKey`, mirroring the aliases in
+ * HEADER_QUERY. Lets the collection loader look up a child's parent department
+ * without pulling the whole header query.
+ */
+export const CATEGORY_MENU_HANDLES: Record<CategoryMenuKey, string> = {
+  chainsGroup1: 'chains-copy-copy-1',
+  chainsGroup2: 'chains-copy-copy',
+  chainsGroup3: 'chains-copy',
+  braceletsMenu: 'bracelets-1',
+  earringsMenu: 'earrings',
+  pendantsMenu: 'pendants',
+  chainWithPendantMenu: 'chain-with-pendant',
+  necklacesMenu: 'necklaces',
+  diamondMenu: 'diamond',
+  engagementRingsMenu: 'engagement-rings',
+};
+
 type MenuItems = NonNullable<HeaderQuery['braceletsMenu']>['items'];
 
 export function getColumnItems(
@@ -182,6 +200,50 @@ export function getMegaMenuDepartmentForHandle(
   handle: string,
 ): MegaMenuDepartment | undefined {
   return MEGA_MENU.find((department) => department.to === `/collections/${handle}`);
+}
+
+/**
+ * The department handle a child collection sits under, for inheriting the
+ * parent's FAQ/cover metaobjects on child category pages.
+ *
+ * Checks the statically-curated `columns[].items` first, then the Shopify menus
+ * behind `menuKeys` — most departments source their children from those, so the
+ * static table alone would miss them. Pass `menuItemHandles` (menu key -> the
+ * collection handles in that menu) to cover the latter; without it only curated
+ * children resolve.
+ */
+export function getMegaMenuParentHandle(
+  handle: string,
+  menuItemHandles?: Partial<Record<CategoryMenuKey, string[]>>,
+): string | undefined {
+  if (getMegaMenuDepartmentForHandle(handle)) return undefined;
+
+  const normalized = handle.toLowerCase();
+  const parent = MEGA_MENU.find((department) =>
+    department.columns.some(
+      (column) =>
+        (column.items ?? []).some(
+          (item) => item.handle.toLowerCase() === normalized,
+        ) ||
+        (column.menuKeys ?? []).some((key) =>
+          (menuItemHandles?.[key] ?? []).some(
+            (menuHandle) => menuHandle.toLowerCase() === normalized,
+          ),
+        ),
+    ),
+  );
+
+  return parent?.to.replace('/collections/', '');
+}
+
+/** Pulls `/collections/<handle>` out of each item URL in a fetched menu. */
+export function collectionHandlesFromMenu(
+  menu?: {items?: Array<{url?: string | null}> | null} | null,
+): string[] {
+  return (menu?.items ?? []).flatMap((item) => {
+    const match = item.url?.match(/\/collections\/([^/?#]+)/);
+    return match ? [match[1]] : [];
+  });
 }
 
 export function toRelativeUrl(
