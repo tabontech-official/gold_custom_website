@@ -6630,50 +6630,13 @@ button.announcement-link {
   gap: 1rem;
 }
 
-/* Monthly installment estimate under the price */
+/* Shop Pay Installments banner under the price. The banner and its "sample
+   plans" modal are rendered by Shopify's shopify-payment-terms element, which
+   carries its own styles — only the surrounding spacing is ours. */
 .product-monthly {
   margin: 0.35rem 0 0;
   font-size: 0.9rem;
   color: var(--color-ink-soft);
-}
-
-.product-monthly strong {
-  font-weight: 600;
-  color: var(--color-ink);
-}
-
-.product-monthly a {
-  color: var(--color-gold-dark);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-/* "View sample plans" is an add-to-cart form, but reads as an inline link. */
-.product-monthly form {
-  display: inline;
-  max-width: none;
-  margin: 0;
-}
-
-.product-monthly-link {
-  display: inline;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: var(--color-gold-dark);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-
-.product-monthly-link:hover:not(:disabled) {
-  color: var(--color-gold);
-}
-
-.product-monthly-link:disabled {
-  cursor: default;
-  opacity: 0.7;
 }
 
 /* Financing partner logos, under the price/monthly estimate. The heading sits
@@ -6689,9 +6652,9 @@ button.announcement-link {
 .product-financing-label {
   /* Tight to both neighbours: a small breath off the monthly line above, and
      sitting directly on the box below. */
-  margin: 0.5rem 0 0.3rem;
-  font-size: 0.9rem;
-  font-weight: 700;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: var(--color-ink);
 }
 

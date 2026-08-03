@@ -3,7 +3,6 @@ import {
   redirect,
   useLoaderData,
   Await,
-  Link,
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/products.$handle';
@@ -21,7 +20,6 @@ import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
-import {AddToCartButton} from '~/components/AddToCartButton';
 import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
@@ -39,6 +37,13 @@ import {
 } from '~/lib/ringSizes';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
+import {
+  buildShopPayMeta,
+  variantIdNumber,
+  FALLBACK_PRICING,
+  SHOP_PAY_INSTALLMENTS_QUERY,
+  type InstallmentsPricing,
+} from '~/lib/shopPayInstallments';
 import {
   buildFaqJsonLd,
   parseFaqMetafield,
@@ -170,10 +175,16 @@ async function loadCriticalData({
     throw new Error('Expected product handle to be defined');
   }
 
-  const [{product}] = await Promise.all([
+  const [{product}, installments] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
     }),
+    // Shop config, so cache it hard. Errors when the storefront token is
+    // missing the `unauthenticated_read_shop_pay_installments_pricing` scope —
+    // the banner falls back to FALLBACK_PRICING rather than taking the page down.
+    storefront
+      .query(SHOP_PAY_INSTALLMENTS_QUERY, {cache: storefront.CacheLong()})
+      .catch(() => null),
     // Add other queries here, so that they are loaded in parallel
   ]);
 
@@ -205,6 +216,8 @@ async function loadCriticalData({
   return {
     product,
     breadcrumbContext,
+    installmentsPricing:
+      installments?.shop?.shopPayInstallmentsPricing ?? FALLBACK_PRICING,
     /**
      * Computed here, not at render time. `buildProductJsonLd` runs during
      * hydration too, and a `new Date()` evaluated on both server and client
@@ -235,12 +248,17 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
 }
 
 export default function Product() {
-  const {product, recommendedProducts, breadcrumbContext, priceValidUntil} =
-    useLoaderData<typeof loader>();
+  const {
+    product,
+    recommendedProducts,
+    breadcrumbContext,
+    priceValidUntil,
+    installmentsPricing,
+  } = useLoaderData<typeof loader>();
   const root = useRouteLoaderData<any>('root');
 
-  // Rings are sized at add-to-cart, not by variant. Held here rather than in
-  // ProductForm because the financing express-add below buys the same line.
+  // Rings are sized at add-to-cart, not by variant, so the size lives here and
+  // is passed down to ProductForm's add-to-bag line.
   const isRing = isRingProduct(product);
   const [ringSize, setRingSize] = useState(DEFAULT_RING_SIZE);
 
@@ -371,10 +389,10 @@ export default function Product() {
               compareAtPrice={selectedVariant?.compareAtPrice}
             />
           </div>
-          <MonthlyEstimate
+          <ShopPayInstallments
             price={selectedVariant?.price}
             variant={selectedVariant}
-            ringSize={isRing ? ringSize : undefined}
+            pricing={installmentsPricing}
           />
           <FinancingPartners />
           <ProductSpecIcons
@@ -748,50 +766,55 @@ function SpecIcon({name, className}: {name: SpecIconName; className?: string}) {
   }
 }
 
-/** Estimated monthly installment (price / 12) with a sample-plans link. */
-function MonthlyEstimate({
+const SHOP_PAY_TERMS_SCRIPT_ID = 'shopify-payment-terms-script';
+const SHOP_PAY_TERMS_SCRIPT =
+  'https://cdn.shopify.com/shopifycloud/shop-js/modules/v2/loader.payment-terms.en.esm.js';
+
+/**
+ * Shop Pay Installments banner — the same `shopify-payment-terms` custom
+ * element the Liquid storefront renders from `{{ form | payment_terms }}`, so
+ * the "sample plans" modal here is Shopify's real one (Affirm's plans, APRs
+ * and prequalification) rather than a hand-rolled price/12 estimate.
+ *
+ * "Continue to checkout" in that modal navigates to `/cart/<id>:<qty>`, which
+ * routes/cart.$lines.tsx turns into a cart and forwards to Shopify checkout.
+ * Ring size can't ride along on that link, so the buyer picks it in the bag.
+ */
+function ShopPayInstallments({
   price,
   variant,
-  ringSize,
+  pricing,
 }: {
   price?: {amount: string; currencyCode: string};
   variant?: {id: string; availableForSale?: boolean} | null;
-  ringSize?: string;
+  pricing: InstallmentsPricing;
 }) {
-  const amount = Number(price?.amount);
-  if (!price || !Number.isFinite(amount) || amount <= 0) return null;
+  useEffect(() => {
+    if (document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) return;
+    const script = document.createElement('script');
+    script.id = SHOP_PAY_TERMS_SCRIPT_ID;
+    script.type = 'module';
+    script.src = SHOP_PAY_TERMS_SCRIPT;
+    document.body.appendChild(script);
+  }, []);
 
-  const perMonth = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: price.currencyCode || 'USD',
-  }).format(amount / 12);
+  const variantId = variantIdNumber(variant?.id);
+  if (!price || !variantId) return null;
 
-  // "View sample plans" adds the item and jumps straight to the Shopify
-  // checkout (payment) page, where the installment plans are shown.
-  const canCheckout = variant?.id && variant.availableForSale !== false;
+  const meta = buildShopPayMeta({
+    pricing,
+    variantId,
+    price,
+    available: variant?.availableForSale !== false,
+  });
+  if (!meta) return null;
 
   return (
     <div className="product-monthly">
-      From <strong>{perMonth}/mo</strong> with{' '}
-      {canCheckout ? (
-        <AddToCartButton
-          className="product-monthly-link"
-          redirectTo="@checkout"
-          lines={[
-            {
-              merchandiseId: variant!.id,
-              quantity: 1,
-              ...(ringSize && {
-                attributes: [{key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize}],
-              }),
-            },
-          ]}
-        >
-          View sample plans
-        </AddToCartButton>
-      ) : (
-        <Link to="/policies/finance">View sample plans</Link>
-      )}
+      <shopify-payment-terms
+        variant-id={String(variantId)}
+        shopify-meta={JSON.stringify(meta)}
+      />
     </div>
   );
 }
@@ -886,13 +909,14 @@ function FinancingPartners() {
     <>
       {/* Heading sits outside the bordered box; `aria-labelledby` resolves by
           id across the document, so the section stays named regardless. */}
-      <h3 className="product-financing-label" id="product-financing-label">
-        Financing available
-      </h3>
+      
       <section
         className="product-financing"
         aria-labelledby="product-financing-label"
       >
+        <h2 className="product-financing-label" id="product-financing-label">
+        Financing available
+      </h2>
         <ul className="product-financing-list">
           {FINANCING_PARTNERS.map((partner) => (
             // flex-basis 0 + this grow factor makes the ratios describe the

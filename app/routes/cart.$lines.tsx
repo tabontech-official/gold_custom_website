@@ -57,9 +57,13 @@ export async function loader({request, context, params}: Route.LoaderArgs) {
   // Update cart id in cookie
   const headers = cart.setCartId(cartResult.id);
 
-  // redirect to checkout
+  // redirect to checkout, keeping the payment method the link asked for
+  // (Shop Pay Installments' "Continue to checkout" sends payment=shop_pay_installments)
   if (cartResult.checkoutUrl) {
-    return redirect(cartResult.checkoutUrl, {headers});
+    const checkoutUrl = new URL(cartResult.checkoutUrl);
+    const payment = searchParams.get('payment');
+    if (payment) checkoutUrl.searchParams.set('payment', payment);
+    return redirect(checkoutUrl.href, {headers});
   } else {
     throw new Error('No checkout URL found');
   }

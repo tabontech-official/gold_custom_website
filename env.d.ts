@@ -5,3 +5,15 @@
 
 // Enhance TypeScript's built-in typings.
 import '@total-typescript/ts-reset';
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      /** Shop Pay Installments banner, upgraded by Shopify's shop-js loader. */
+      'shopify-payment-terms': {
+        'variant-id': string;
+        'shopify-meta': string;
+      };
+    }
+  }
+}

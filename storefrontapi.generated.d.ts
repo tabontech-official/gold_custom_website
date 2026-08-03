@@ -998,6 +998,34 @@ export type FooterQuery = {
   >;
 };
 
+export type ShopPayInstallmentsQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type ShopPayInstallmentsQuery = {
+  shop: {
+    shopPayInstallmentsPricing?: StorefrontAPI.Maybe<{
+      minPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      maxPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      financingPlans: Array<{
+        minPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+        maxPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+        terms: Array<
+          Pick<
+            StorefrontAPI.ShopPayInstallmentsFinancingPlanTerm,
+            'apr' | 'loanType'
+          > & {
+            installmentsCount?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Count, 'count'>
+            >;
+          }
+        >;
+      }>;
+    }>;
+  };
+};
+
 export type LlmsProductsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -2877,6 +2905,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Footer(\n    $country: CountryCode\n    $footerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    menu(handle: $footerMenuHandle) {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n    resource {\n      __typename\n      ... on Collection {\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: FooterQuery;
     variables: FooterQueryVariables;
+  };
+  '#graphql\n  query ShopPayInstallments($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    shop {\n      shopPayInstallmentsPricing {\n        minPrice { amount currencyCode }\n        maxPrice { amount currencyCode }\n        financingPlans {\n          minPrice { amount currencyCode }\n          maxPrice { amount currencyCode }\n          terms {\n            apr\n            loanType\n            installmentsCount { count }\n          }\n        }\n      }\n    }\n  }\n': {
+    return: ShopPayInstallmentsQuery;
+    variables: ShopPayInstallmentsQueryVariables;
   };
   '#graphql\n  query LlmsProducts($country: CountryCode, $language: LanguageCode)\n   @inContext(country: $country, language: $language) {\n    products(first: 20, sortKey: BEST_SELLING) {\n      nodes {\n        handle\n        title\n        productType\n        category {\n          name\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
     return: LlmsProductsQuery;
