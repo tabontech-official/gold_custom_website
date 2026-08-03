@@ -55,16 +55,25 @@ export function rootDataFrom(
 }
 
 /**
- * Trim to a sane meta-description length. Google truncates around 155-160
- * chars; we cut on a word boundary so it doesn't end mid-word.
+ * Trim to a sane meta-description length, cutting on a word boundary so it
+ * doesn't end mid-word.
+ *
+ * The limit is 155, not the 160 Google truncates at, because `getSeoMeta`
+ * rejects anything longer: its message reads "should not be longer than 160
+ * characters" but the check behind it is `value.length > 155`. Descriptions of
+ * 156-160 chars therefore pass every human reading of the rule and still log
+ * `Error in SEO input` on every render.
  */
+const MAX_DESCRIPTION = 155;
+
 export function metaDescription(
   input?: string | null,
   fallback: string = SITE.description,
 ): string {
   const text = (input ?? '').replace(/\s+/g, ' ').trim() || fallback;
-  if (text.length <= 160) return text;
-  return text.slice(0, 157).replace(/\s+\S*$/, '') + '…';
+  if (text.length <= MAX_DESCRIPTION) return text;
+  // -3 leaves room for the ellipsis; the word-boundary cut only shortens it.
+  return text.slice(0, MAX_DESCRIPTION - 3).replace(/\s+\S*$/, '') + '…';
 }
 
 /**

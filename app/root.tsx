@@ -22,6 +22,7 @@ import {getWishlist} from '~/lib/wishlist';
 import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
 import {PageLayout} from './components/PageLayout';
+import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
 import {
   SITE,
@@ -259,6 +260,7 @@ export default function App() {
       <PageLayout {...data}>
         <Outlet />
       </PageLayout>
+      <ChatWidget />
     </Analytics.Provider>
   );
 }

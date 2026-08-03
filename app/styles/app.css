@@ -1518,6 +1518,15 @@ button.announcement-link {
   min-width: 0;
 }
 
+/* Tidio's chat launcher sits bottom-right with an inline `z-index: 999999999`,
+   which is exactly where the cart drawer opens — so it floats over the bag.
+   Pin it just under the 2000 that the cart/search overlay and the welcome
+   popup share, keeping it above ordinary page content but beneath anything
+   modal. `!important` is required: the value is inline on Tidio's own node. */
+#tidio-chat {
+  z-index: 1999 !important;
+}
+
 /* Welcome offer popup */
 .welcome-popup-overlay {
   align-items: center;

@@ -23,6 +23,9 @@ export default async function handleRequest(
       "'self'",
       "'unsafe-inline'",
       'https://cdn.shopify.com',
+      // Tidio live chat. The widget renders into a JS-created about:blank
+      // iframe, which inherits this origin, so frameSrc needs nothing.
+      'https://code.tidio.co',
       'https://elfsightcdn.com',
       'https://*.elfsightcdn.com',
       'https://static.elfsight.com',
@@ -49,12 +52,18 @@ export default async function handleRequest(
       'https://*.shopifycdn.com',
       `https://${context.env.PUBLIC_STORE_DOMAIN}`,
       'https://goldcustom.com',
+      // Tidio's notification sounds.
+      'https://code.tidio.co',
       'blob:',
       'data:',
     ],
     imgSrc: [
       "'self'",
       'https://cdn.shopify.com',
+      // Agent avatars and images sent in chat. Tidio renders emoji as twemoji
+      // images served from cdnjs, not from its own domain.
+      'https://*.tidio.co',
+      'https://cdnjs.cloudflare.com',
       'https://i.ytimg.com',
       'https://i.vimeocdn.com',
       'https://elfsight.com',
@@ -74,11 +83,18 @@ export default async function handleRequest(
       "'self'",
       'https://cdn.shopify.com',
       'https://fonts.gstatic.com',
+      // Tidio bundles its own Inter/Mulish webfonts.
+      'https://code.tidio.co',
       'data:',
     ],
     connectSrc: [
       "'self'",
       'https://cdn.shopify.com',
+      // Chat transport. The message socket only opens once a visitor actually
+      // starts a conversation, so it isn't exercised by a plain page load —
+      // check DevTools during a real chat before trusting this line.
+      'https://*.tidio.co',
+      'wss://*.tidio.co',
       'https://fonts.googleapis.com',
       'https://fonts.gstatic.com',
       'https://elfsight.com',

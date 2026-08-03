@@ -771,6 +771,47 @@ const SHOP_PAY_TERMS_SCRIPT =
   'https://cdn.shopify.com/shopifycloud/shop-js/modules/v2/loader.payment-terms.en.esm.js';
 
 /**
+ * Squares off the "Get it now, pay later" modal, whose 28px corners are far
+ * rounder than anything else on the storefront.
+ *
+ * Shopify renders that modal into a portal — a bare `<div>` on `<body>` with
+ * its own shadow root — and exposes no `::part` and no custom property for the
+ * radius, so nothing in app.css can reach it. The shadow root is open, so a
+ * stylesheet can be appended to it instead. The portal is created when the
+ * widget boots, before the modal is ever opened, so this runs once rather than
+ * hooking the click.
+ *
+ * ponytail: cosmetic only, and it leans on Shopify's internal markup. If they
+ * restructure the modal the selectors stop matching and the corners go back to
+ * 28px — nothing breaks. Scoped via `:has` so injecting into an unrelated
+ * shadow root is inert.
+ */
+const TERMS_STYLE_ID = 'gc-payment-terms-radius';
+const TERMS_STYLE = `
+  [class*="rounded-xxl"],
+  section:has([data-testid="shopify-payment-terms-modal"]) {
+    border-radius: 4px !important;
+  }
+`;
+
+/** Returns true once the stylesheet is in place, so the caller can stop. */
+function injectTermsStyle() {
+  let injected = false;
+  for (const host of document.querySelectorAll('body > div')) {
+    const shadow = (host as HTMLElement).shadowRoot;
+    if (!shadow) continue;
+    if (!shadow.getElementById(TERMS_STYLE_ID)) {
+      const style = document.createElement('style');
+      style.id = TERMS_STYLE_ID;
+      style.textContent = TERMS_STYLE;
+      shadow.appendChild(style);
+    }
+    injected = true;
+  }
+  return injected;
+}
+
+/**
  * Shop Pay Installments banner — the same `shopify-payment-terms` custom
  * element the Liquid storefront renders from `{{ form | payment_terms }}`, so
  * the "sample plans" modal here is Shopify's real one (Affirm's plans, APRs
@@ -790,12 +831,27 @@ function ShopPayInstallments({
   pricing: InstallmentsPricing;
 }) {
   useEffect(() => {
-    if (document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) return;
-    const script = document.createElement('script');
-    script.id = SHOP_PAY_TERMS_SCRIPT_ID;
-    script.type = 'module';
-    script.src = SHOP_PAY_TERMS_SCRIPT;
-    document.body.appendChild(script);
+    if (!document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) {
+      const script = document.createElement('script');
+      script.id = SHOP_PAY_TERMS_SCRIPT_ID;
+      script.type = 'module';
+      script.src = SHOP_PAY_TERMS_SCRIPT;
+      document.body.appendChild(script);
+    }
+
+    // The portal only exists once the widget has booted, which is a network
+    // round trip away — poll briefly rather than racing it, and give up
+    // rather than watching the DOM for the rest of the session.
+    if (injectTermsStyle()) return;
+    const poll = setInterval(() => {
+      if (injectTermsStyle()) clearInterval(poll);
+    }, 250);
+    const stop = setTimeout(() => clearInterval(poll), 15000);
+
+    return () => {
+      clearInterval(poll);
+      clearTimeout(stop);
+    };
   }, []);
 
   const variantId = variantIdNumber(variant?.id);

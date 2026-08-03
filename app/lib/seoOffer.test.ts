@@ -15,9 +15,31 @@ import assert from 'node:assert/strict';
 import {
   FREE_SHIPPING_THRESHOLD_USD,
   MERCHANT_RETURN_POLICY,
+  metaDescription,
   offerShippingDetails,
   priceValidUntilDate,
 } from './seo.ts';
+
+// --- meta description: must clear getSeoMeta's real limit -------------------
+
+// getSeoMeta says "longer than 160 characters" but actually rejects > 155, so
+// anything in the 156-160 window logs `Error in SEO input` on every render.
+for (const length of [100, 155, 156, 160, 300]) {
+  const out = metaDescription('word '.repeat(400).slice(0, length).trim());
+  assert.ok(
+    out.length <= 155,
+    `metaDescription returned ${out.length} chars for a ${length}-char input`,
+  );
+}
+// Short input is passed through untouched — no gratuitous ellipsis.
+assert.equal(metaDescription('A short description.'), 'A short description.');
+// Empty input falls back rather than emitting an empty description tag.
+assert.ok(metaDescription('').length > 0);
+assert.ok(metaDescription(null).length > 0);
+// Truncation cuts on a word boundary, so it never ends mid-word.
+const truncated = metaDescription('supercalifragilistic '.repeat(20));
+assert.ok(truncated.endsWith('…'));
+assert.ok(!truncated.includes('supercalifragilistic…'.slice(0, 5) + '…'));
 
 // --- free shipping: only claimed where it is unconditionally true ----------
 
