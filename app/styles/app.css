@@ -2781,10 +2781,22 @@ button.announcement-link {
   /* clip, NOT hidden: hidden turns this wrapper into a scroll container,
      which silently kills every position: sticky inside it */
   overflow-x: clip;
+  /* Sticky footer. `body` is already a min-height:100vh flex column, but this
+     wrapper never claimed that height — so on any short page (above all a
+     route skeleton mid-navigation) the footer stopped wherever the content
+     did and left dead space under it, which reads as the footer riding up.
+     The wrapper takes the leftover height and hands it to .page-body, so the
+     footer sits at the bottom of the viewport at minimum and from there only
+     moves down as real content grows. */
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
 }
 
 .page-body {
   width: 100%;
+  /* absorbs the spare height; 0 shrink so tall content is never squashed */
+  flex: 1 0 auto;
 }
 
 .home {
