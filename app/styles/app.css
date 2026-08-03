@@ -5440,8 +5440,13 @@ button.announcement-link {
 }
 
 /* ---------------------------------------------------------------------------
-   iOS-style scrollbars for the filter rail
+   Thin iPhone-style scrollbars
    ---------------------------------------------------------------------------
+   One list of selectors for every in-page scroller that should get the thin
+   treatment — the filter rail and the two search panels. Add new ones here
+   rather than copying the block, which is how the rail ended up with two
+   competing definitions in the first place.
+
    THE TRAP, because this bit is genuinely counter-intuitive: in Chrome 121+ a
    non-auto `scrollbar-width` DISABLES `::-webkit-scrollbar` on that element.
    The rail already had both — `scrollbar-width: thin` on .collection-sidebar
@@ -5452,13 +5457,15 @@ button.announcement-link {
 
    So the standard properties are scoped to engines that have no
    ::-webkit-scrollbar at all (Firefox), and everything else is left to the
-   webkit rules, which is the only way to actually get 3px in Chromium/Safari.
+   webkit rules, which is the only way to actually get 4px in Chromium/Safari.
 
-   Shape is the iPhone overlay indicator: a 3px rounded translucent thumb, no
+   Shape is the iPhone indicator: a 4px rounded translucent thumb on a hairline
    track, no steppers.
 --------------------------------------------------------------------------- */
 .collection-sidebar::-webkit-scrollbar,
-.sidebar-categories::-webkit-scrollbar {
+.sidebar-categories::-webkit-scrollbar,
+.header-search-results::-webkit-scrollbar,
+.predictive-search::-webkit-scrollbar {
   height: 4px;
   width: 4px;
 }
@@ -5467,19 +5474,25 @@ button.announcement-link {
    is short, which a trackless overlay bar cannot. Kept very pale so it reads
    as a hairline guide rather than a chrome gutter. */
 .collection-sidebar::-webkit-scrollbar-track,
-.sidebar-categories::-webkit-scrollbar-track {
+.sidebar-categories::-webkit-scrollbar-track,
+.header-search-results::-webkit-scrollbar-track,
+.predictive-search::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 999px;
 }
 
 .collection-sidebar::-webkit-scrollbar-thumb,
-.sidebar-categories::-webkit-scrollbar-thumb {
+.sidebar-categories::-webkit-scrollbar-thumb,
+.header-search-results::-webkit-scrollbar-thumb,
+.predictive-search::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 999px;
 }
 
 .collection-sidebar::-webkit-scrollbar-thumb:hover,
-.sidebar-categories::-webkit-scrollbar-thumb:hover {
+.sidebar-categories::-webkit-scrollbar-thumb:hover,
+.header-search-results::-webkit-scrollbar-thumb:hover,
+.predictive-search::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.32);
 }
 
@@ -5495,7 +5508,9 @@ button.announcement-link {
 
 /* The stepper arrows at each end are the other half of what reads as chunky. */
 .collection-sidebar::-webkit-scrollbar-button,
-.sidebar-categories::-webkit-scrollbar-button {
+.sidebar-categories::-webkit-scrollbar-button,
+.header-search-results::-webkit-scrollbar-button,
+.predictive-search::-webkit-scrollbar-button {
   display: none;
   height: 0;
   width: 0;
@@ -5506,9 +5521,11 @@ button.announcement-link {
    back off. */
 @supports not selector(::-webkit-scrollbar) {
   .collection-sidebar,
-  .sidebar-categories {
-    /* thumb, then track — same two values as the webkit rules above, so the
-       rail looks the same in Firefox as it does in Chrome and Safari. */
+  .sidebar-categories,
+  .header-search-results,
+  .predictive-search {
+    /* thumb, then track — same two values as the webkit rules above, so these
+       look the same in Firefox as they do in Chrome and Safari. */
     scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
     scrollbar-width: thin;
   }
