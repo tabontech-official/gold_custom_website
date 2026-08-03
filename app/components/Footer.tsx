@@ -45,7 +45,7 @@ export function Footer({
                   />
                   <button disabled={newsletterBusy} type="submit">
                     {newsletterBusy ? 'Joining' : 'Subscribe'}
-                    <span aria-hidden="true">-&gt;</span>
+                    <ArrowRightIcon />
                   </button>
                 </newsletter.Form>
                 {newsletter.data?.success ? (
@@ -65,7 +65,7 @@ export function Footer({
                 ) : null}
                 <div className="footer-social">
                   <a
-                    href="https://instagram.com"
+                    href="https://www.instagram.com/goldcustom_la"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Instagram"
@@ -73,7 +73,7 @@ export function Footer({
                     <InstagramIcon />
                   </a>
                   <a
-                    href="https://facebook.com"
+                    href="https://www.facebook.com/people/Gold-Custom-Los-Angeles/100090201579473/"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="Facebook"
@@ -81,7 +81,7 @@ export function Footer({
                     <FacebookIcon />
                   </a>
                   <a
-                    href="https://youtube.com"
+                    href="https://www.youtube.com/@goldcustomla"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="YouTube"
@@ -89,7 +89,7 @@ export function Footer({
                     <YoutubeIcon />
                   </a>
                   <a
-                    href="https://tiktok.com"
+                    href="https://www.tiktok.com/@goldcustomla"
                     target="_blank"
                     rel="noreferrer"
                     aria-label="TikTok"
@@ -201,6 +201,44 @@ export function Footer({
         )}
       </Await>
     </Suspense>
+  );
+}
+
+/**
+ * Replaces the ASCII "->" the button used to render. That was two glyphs from
+ * the body face, so it inherited the font's own weight and baseline and sat
+ * slightly low next to the label; this is a real arrow that scales with the
+ * text and inherits its colour.
+ *
+ * 1.3rem, not em: rem is measured against the root, so the arrow keeps the
+ * same size regardless of the button's own 0.68rem label. That is the point
+ * here — the arrow is deliberately larger than the caps beside it, so it
+ * should not shrink along with them.
+ */
+function ArrowRightIcon() {
+  return (
+    <svg
+      width="1.3rem"
+      height="1.3rem"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path
+        d="M4 12h15"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="m13 6 6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

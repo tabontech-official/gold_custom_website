@@ -361,32 +361,17 @@ export function CollectionFilterSidebar({
  * has room for the departments, this lists the rest of the catalog.
  */
 function CategoryNav({categories}: {categories: SidebarCategory[]}) {
-  const [query, setQuery] = useState('');
   const {pathname} = useLocation();
-  const term = query.trim().toLowerCase();
-  const shown = term
-    ? categories.filter((category) =>
-        category.title.toLowerCase().includes(term),
-      )
-    : categories;
 
   if (categories.length === 0) return null;
 
   return (
     <details className="sidebar-group sidebar-group-categories" open>
       <summary>Categories</summary>
-      {categories.length > 15 && (
-        <input
-          aria-label="Search categories"
-          className="sidebar-category-search"
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Search categories"
-          type="search"
-          value={query}
-        />
-      )}
+      {/* The list is scrolled, not searched — the filter-a-filter box that
+          used to sit here was a control for finding a control. */}
       <ul className="sidebar-categories">
-        {shown.map((category) => {
+        {categories.map((category) => {
           const to = `/collections/${category.handle}`;
           const isActive = pathname === to;
           return (
@@ -402,9 +387,6 @@ function CategoryNav({categories}: {categories: SidebarCategory[]}) {
             </li>
           );
         })}
-        {shown.length === 0 && (
-          <li className="sidebar-category-empty">No categories match.</li>
-        )}
       </ul>
     </details>
   );
