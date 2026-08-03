@@ -88,7 +88,14 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   ]);
 
   return {
-    featuredCollection: collections.nodes[0],
+    // "Featured" is the most recently updated collection, so editing ANY
+    // collection in the admin re-points this rail. Empty collections exist
+    // (Baby Earrings, Chino Links…), and landing on one blanked the homepage
+    // showcase — hence scanning for the first one that actually has products
+    // instead of blindly taking nodes[0].
+    featuredCollection:
+      collections.nodes.find((node) => node.products?.nodes?.length) ??
+      collections.nodes[0],
     categories: [
       categoryResponse.rings,
       categoryResponse.chains,
@@ -519,8 +526,11 @@ function Hero({content}: {content: HeroContent | null}) {
     count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
 
   // The visible slide's words are the page's h1. It changes as the carousel
-  // rotates, so screen readers track what's actually on screen.
-  const activeText = slides[active]?.text?.trim() ?? '';
+  // rotates, so screen readers track what's actually on screen. Falls back to
+  // the store's own name when no slide has text — an unauthored banner used to
+  // leave the homepage with no h1 at all.
+  const activeText =
+    slides[active]?.text?.trim() || 'Fine Gold Jewelry, Chains & Rings';
 
   return (
     <>
@@ -596,6 +606,9 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
   // Clone last before + first after for a seamless loop.
   const loopSlides =
     count > 1 ? [slides[count - 1], ...slides, slides[0]] : slides;
+  // The clone at index 0 sits off-screen to the left, so the first slide the
+  // visitor actually sees is index 1 once the loop exists.
+  const firstVisibleIndex = count > 1 ? 1 : 0;
 
   return (
     <div className="hero-mobile-slider" ref={rootRef}>
@@ -616,6 +629,17 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
               src={slide.image}
               alt=""
               draggable={false}
+              /**
+               * Only the slide on screen at load is the LCP candidate. The
+               * loop puts a clone of the LAST slide at index 0, so that is
+               * index 1 whenever the carousel loops. Every slide used to load
+               * eagerly at equal priority, so the one the visitor could
+               * actually see queued behind clones of ones they could not.
+               */
+              loading={index === firstVisibleIndex ? 'eager' : 'lazy'}
+              {...(index === firstVisibleIndex
+                ? {fetchpriority: 'high'}
+                : null)}
             />
             <HeroCaption slide={slide} />
           </div>
@@ -706,7 +730,7 @@ type CategoryTile = any;
 // because it named no fact a competitor couldn't copy verbatim.
 export const TRUST_PROMISES = [
   {
-    title: 'Made in Our Own Factory',
+    title: 'Our Own Factory',
     pill: 'U.S.A.',
     // Source: product-page trust badge "Made in U.S.A — From our factory to you".
     copy: 'No middleman markup between our bench and your order.',
@@ -733,8 +757,8 @@ export const TRUST_PROMISES = [
     keys: ['care', 'lifetimecare'],
   },
   {
-    title: 'Downtown L.A. Showroom',
-    pill: 'By appointment',
+    title: 'Downtown L.A',
+    pill: 'Appointment',
     // Source: contact page — 550 S Hill St #660, the Jewelry District.
     copy: 'See a piece in person at 550 S Hill St, in the Jewelry District.',
     icon: '/secure%20delivery.jpg',
@@ -1170,7 +1194,7 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   }
   query FeaturedCollection($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collections(first: 1, sortKey: UPDATED_AT, reverse: true) {
+    collections(first: 10, sortKey: UPDATED_AT, reverse: true) {
       nodes {
         ...FeaturedCollection
       }

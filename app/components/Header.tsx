@@ -531,8 +531,19 @@ function MobileMenu({
   const [openDepartment, setOpenDepartment] = useState<string | null>(null);
 
   return (
+    /**
+     * `prefetch="viewport"` rather than "intent" throughout this menu.
+     *
+     * "intent" prefetches on hover/focus, which a touchscreen never produces
+     * before the tap — so on phones it did nothing and every tap paid the full
+     * loader round-trip. "viewport" prefetches once a link is actually on
+     * screen, and the closed drawer is `visibility: hidden` and translated
+     * fully off-viewport, so nothing prefetches until the menu is opened.
+     * Opening the menu warms exactly the links the visitor is looking at, and
+     * the tap that follows is usually already cached.
+     */
     <nav className="header-menu-mobile" role="navigation">
-      <NavLink end onClick={onNavigate} prefetch="intent" to="/">
+      <NavLink end onClick={onNavigate} prefetch="viewport" to="/">
         Home
       </NavLink>
       {MEGA_MENU.filter((department) =>
@@ -544,7 +555,7 @@ function MobileMenu({
             <div className="mobile-nav-department-header">
               <NavLink
                 onClick={onNavigate}
-                prefetch="intent"
+                prefetch="viewport"
                 to={department.to}
               >
                 {department.label}
@@ -572,7 +583,7 @@ function MobileMenu({
                           <NavLink
                             key={item.id}
                             onClick={onNavigate}
-                            prefetch="intent"
+                            prefetch="viewport"
                             to={relativeUrl(item.url)}
                           >
                             {item.title}

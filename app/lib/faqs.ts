@@ -68,6 +68,48 @@ export function parseFaqMetaobject(metaobject: any): Faq[] {
   return parseFaqs({metaobjects: {nodes: metaobject ? [metaobject] : []}});
 }
 
+/**
+ * Parses a product's `custom.ai_faq` metafield. It is authored as schema.org
+ * FAQPage JSON-LD, but tolerate the looser shapes too — the metafield is
+ * populated by tooling, not a validated form.
+ */
+export function parseFaqMetafield(value?: string | null): Faq[] | null {
+  if (!value) return null;
+  try {
+    const parsed: any = JSON.parse(value);
+    const list =
+      parsed?.mainEntity ?? (Array.isArray(parsed) ? parsed : parsed?.faqs);
+    if (!Array.isArray(list)) return null;
+    const faqs = list
+      .map((faq: any) => ({
+        question: String(faq?.name ?? faq?.question ?? faq?.q ?? '').trim(),
+        answer: String(
+          faq?.acceptedAnswer?.text ?? faq?.answer ?? faq?.a ?? '',
+        ).trim(),
+      }))
+      .filter((faq: Faq) => faq.question && faq.answer);
+    return faqs.length ? faqs : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * FAQPage JSON-LD. Only ever call this with authored FAQs — marking up
+ * generated filler as Q&A is what earns a manual action.
+ */
+export function buildFaqJsonLd(faqs: Faq[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {'@type': 'Answer', text: faq.answer},
+    })),
+  };
+}
+
 export const FAQS_QUERY = `#graphql
   query Faqs($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {

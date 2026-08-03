@@ -62,8 +62,28 @@ type CategorizableProduct = {
 };
 
 /**
+ * Whole-word containment.
+ *
+ * The loose `String.includes` this replaces filed every single earring under
+ * Rings, because "earrings".includes("rings") is true and Rings sits earlier
+ * in CATEGORIES — so earrings got /products/rings/… as their canonical URL
+ * and "Rings" in their breadcrumb. Requiring a word boundary keeps the
+ * containment check that Shopify taxonomy names like "Necklaces in Jewelry"
+ * depend on, while refusing to match a label buried inside a longer word.
+ */
+function containsWord(haystack: string, needle: string) {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(haystack);
+}
+
+/**
  * Resolve a product's Shopify category/productType to one of the CATEGORIES
  * tiles above, so it can be linked as a shoppable collection.
+ *
+ * First match in CATEGORIES order wins, deliberately: "Diamond Rings" and
+ * "Engagement Rings" both resolve to Rings, which is where their existing
+ * canonical URLs already point. Reordering or preferring the longer label
+ * would silently move live product URLs.
  */
 export function getProductCategoryMatch(product: CategorizableProduct) {
   const rawCategory = product.category?.name || product.productType || '';
@@ -73,14 +93,15 @@ export function getProductCategoryMatch(product: CategorizableProduct) {
       : '';
   if (!categoryName) return undefined;
 
+  const name = categoryName.toLowerCase();
+
   return CATEGORIES.find((c) => {
-    const name = categoryName.toLowerCase();
     const label = c.label.toLowerCase();
     return (
       name === label ||
       name === c.handle ||
-      name.includes(label) ||
-      name.includes(c.handle)
+      containsWord(name, label) ||
+      containsWord(name, c.handle)
     );
   });
 }

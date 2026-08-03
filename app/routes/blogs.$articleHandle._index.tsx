@@ -3,7 +3,9 @@ import type {Route} from './+types/blogs.$articleHandle._index';
 import {Image} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {
+  SITE,
   absoluteUrl,
+  breadcrumbJsonLd,
   metaDescription,
   pageSeo,
   rootDataFrom,
@@ -14,15 +16,44 @@ import {
  * Articles live one level under /blogs — the Shopify blog ("News") is not part
  * of the URL. Legacy /blogs/<blog>/<article> links redirect here.
  */
-export const meta: Route.MetaFunction = ({data, matches, params}) =>
-  pageSeo({
-    title: data?.article.seo?.title || data?.article.title || 'Blog',
-    description: metaDescription(data?.article.seo?.description),
-    url: absoluteUrl(
-      siteOrigin(rootDataFrom(matches)),
-      `/blogs/${params.articleHandle}`,
-    ),
+export const meta: Route.MetaFunction = ({data, matches, params}) => {
+  const article = data?.article;
+  const origin = siteOrigin(rootDataFrom(matches));
+  const url = absoluteUrl(origin, `/blogs/${params.articleHandle}`);
+
+  return pageSeo({
+    title: article?.seo?.title || article?.title || 'Blog',
+    description: metaDescription(article?.seo?.description),
+    url,
+    media: article?.image?.url
+      ? {type: 'image', url: article.image.url}
+      : undefined,
+    jsonLd: article
+      ? [
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BlogPosting',
+            '@id': `${url}#article`,
+            headline: article.title,
+            description: metaDescription(article.seo?.description),
+            url,
+            mainEntityOfPage: url,
+            datePublished: article.publishedAt,
+            image: article.image?.url ? [article.image.url] : undefined,
+            author: article.author?.name
+              ? {'@type': 'Person', name: article.author.name}
+              : {'@type': 'Organization', name: SITE.name},
+            publisher: {'@id': `${origin}/#organization`},
+          },
+          breadcrumbJsonLd(origin, [
+            {name: 'Home', path: '/'},
+            {name: 'Blog', path: '/blogs'},
+            {name: article.title, path: `/blogs/${params.articleHandle}`},
+          ]),
+        ]
+      : undefined,
   });
+};
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte

@@ -110,6 +110,11 @@ function aiCrawlerRules({shopId}: {shopId?: string}) {
 /**
  * This function generates disallow rules that generally follow what Shopify's
  * Online Store has as defaults for their robots.txt
+ *
+ * One deliberate departure: Shopify's default blocks `/policies/`. We allow it.
+ * Shipping, returns and warranty are exactly the pages an AI answer engine
+ * needs to cite when someone asks "what's their return policy" — blocking them
+ * means the answer gets guessed or sourced from a competitor.
  */
 function generalDisallowRules({
   shopId,
@@ -145,7 +150,6 @@ Disallow: /*/blogs/*%2b*
 Disallow: /*?*oseid=*
 Disallow: /*preview_theme_id*
 Disallow: /*preview_script_id*
-Disallow: /policies/
 Disallow: /*/*?*ls=*&ls=*
 Disallow: /*/*?*ls%3D*%3Fls%3D*
 Disallow: /*/*?*ls%3d*%3fls%3d*

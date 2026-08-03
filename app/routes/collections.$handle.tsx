@@ -13,6 +13,7 @@ import {
   getSeoMeta,
 } from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {productCanonicalPath} from '~/lib/categories';
 import {
   SITE,
   absoluteUrl,
@@ -136,13 +137,49 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       media: collection.image?.url
         ? {type: 'image', url: collection.image.url}
         : undefined,
-      jsonLd: breadcrumbJsonLd(origin, [
-        {name: 'Home', path: '/'},
-        {name: title, path: `/collections/${collection.handle}`},
-      ]),
+      jsonLd: [
+        breadcrumbJsonLd(origin, [
+          {name: 'Home', path: '/'},
+          {name: title, path: `/collections/${collection.handle}`},
+        ]),
+        collectionItemListJsonLd(origin, collection),
+      ],
     }) ?? []
   );
 };
+
+/**
+ * ItemList naming the products on this page, in the order they are rendered.
+ *
+ * Without it a category page is just prose to a crawler — the grid is the
+ * page's actual content, and nothing in the markup says these thirty links
+ * are one ranked set of products. `position` is what makes it a list rather
+ * than a bag of URLs.
+ *
+ * Only the first page of results is described. `Pagination` appends further
+ * pages client-side, so the server-rendered meta cannot see them, and
+ * inventing entries for products not present in the HTML would contradict the
+ * page. Deep pages are reached through the sitemap instead.
+ */
+function collectionItemListJsonLd(origin: string, collection: any) {
+  const nodes: any[] = collection.products?.nodes ?? [];
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    '@id': `${absoluteUrl(origin, `/collections/${collection.handle}`)}#products`,
+    name: collection.seo?.title || displayTitle(collection),
+    numberOfItems: nodes.length,
+    itemListElement: nodes.map((product, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      // Must be the canonical hierarchical path, not /products/<handle>,
+      // which 301s. See the productType/category fields on ProductItem.
+      url: absoluteUrl(origin, productCanonicalPath(product)),
+      name: product.title,
+    })),
+  };
+}
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -564,6 +601,14 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     id
     handle
     title
+    # Only used to resolve each product's canonical /products/<category>/<handle>
+    # path for the ItemList JSON-LD. Without them productCanonicalPath falls
+    # back to the flat /products/<handle>, which 301s — and a structured-data
+    # list of redirects is worth less than no list at all.
+    productType
+    category {
+      name
+    }
     featuredImage {
       id
       altText

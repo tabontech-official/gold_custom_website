@@ -10710,3 +10710,146 @@ button.announcement-link {
     stroke-dashoffset: 0;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Route transition: progress bar + skeletons
+   ---------------------------------------------------------------------------
+   React Router resolves the destination loader before rendering, so tapping a
+   nav item leaves the OLD page on screen for the duration. The mobile drawer
+   closes instantly on tap, which made that read as "it went back to the same
+   page" before jumping. These styles fill that window.
+
+   Reuses the existing `skeletonShimmer` keyframe and the product-card
+   placeholder palette so a route skeleton and a product skeleton look like the
+   same system.
+--------------------------------------------------------------------------- */
+
+.route-progress {
+  height: 2px;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.route-progress-bar {
+  animation: routeProgress 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  background: var(--color-dark, #1a1a1a);
+  display: block;
+  height: 100%;
+  transform-origin: left center;
+  width: 100%;
+}
+
+/* Eases toward 90% and stops. The real duration is unknowable, so it must
+   never reach 100% on its own — arriving early then waiting reads as a stall
+   worse than no bar at all. It vanishes when the route commits. */
+@keyframes routeProgress {
+  0% {
+    transform: scaleX(0.05);
+  }
+  60% {
+    transform: scaleX(0.65);
+  }
+  100% {
+    transform: scaleX(0.9);
+  }
+}
+
+.route-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 3rem;
+  padding-top: 1.25rem;
+}
+
+.route-bone {
+  animation: skeletonShimmer 1.35s ease-in-out infinite;
+  background: linear-gradient(
+    105deg,
+    #eee8dd 0%,
+    #f8f4ed 42%,
+    #e9dfd1 66%,
+    #eee8dd 100%
+  );
+  background-size: 220% 100%;
+  border-radius: 999px;
+  display: block;
+  flex: none;
+}
+
+.route-skeleton-title {
+  margin-bottom: 0.5rem;
+}
+
+/* Two across on phones, matching the real collection grid so the switch to
+   live content does not reflow the page. */
+.route-skeleton-grid {
+  display: grid;
+  gap: 1rem 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.route-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.route-skeleton-thumb {
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  width: 100%;
+}
+
+.route-skeleton-pdp {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+.route-skeleton-gallery {
+  aspect-ratio: 1 / 1;
+  border-radius: 0;
+  width: 100%;
+}
+
+.route-skeleton-buybox {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.route-skeleton-hero {
+  aspect-ratio: 16 / 9;
+  border-radius: 0;
+  width: 100%;
+}
+
+@media (min-width: 45em) {
+  .route-skeleton-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .route-skeleton-pdp {
+    grid-template-columns: 52fr 48fr;
+    gap: 2.5rem;
+  }
+}
+
+/* A shimmering full-page placeholder is exactly the kind of motion that
+   triggers vestibular discomfort. Hold the shape, drop the animation. */
+@media (prefers-reduced-motion: reduce) {
+  .route-bone {
+    animation: none;
+  }
+
+  .route-progress-bar {
+    animation: none;
+    transform: scaleX(0.4);
+  }
+}

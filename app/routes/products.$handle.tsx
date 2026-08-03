@@ -38,12 +38,21 @@ import {
   isRingProduct,
 } from '~/lib/ringSizes';
 import {cartLineAttribute} from '~/lib/cartLines';
+import {FINANCE_LINKS} from '~/lib/finance';
+import {
+  buildFaqJsonLd,
+  parseFaqMetafield,
+  type Faq,
+} from '~/lib/faqs';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {
+  MERCHANT_RETURN_POLICY,
   SITE,
   absoluteUrl,
   breadcrumbJsonLd,
   metaDescription,
+  offerShippingDetails,
+  priceValidUntilDate,
   rootDataFrom,
   siteOrigin,
 } from '~/lib/seo';
@@ -196,6 +205,13 @@ async function loadCriticalData({
   return {
     product,
     breadcrumbContext,
+    /**
+     * Computed here, not at render time. `buildProductJsonLd` runs during
+     * hydration too, and a `new Date()` evaluated on both server and client
+     * can straddle a UTC midnight — that produces two different strings for
+     * the same markup and React reports a hydration mismatch.
+     */
+    priceValidUntil: priceValidUntilDate(),
   };
 }
 
@@ -219,7 +235,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
 }
 
 export default function Product() {
-  const {product, recommendedProducts, breadcrumbContext} =
+  const {product, recommendedProducts, breadcrumbContext, priceValidUntil} =
     useLoaderData<typeof loader>();
   const root = useRouteLoaderData<any>('root');
 
@@ -263,7 +279,8 @@ export default function Product() {
     product,
     selectedVariant,
     mediaItems,
-    baseUrl: getStoreBaseUrl(root),
+    origin: siteOrigin(root),
+    priceValidUntil,
   });
   const rawCategory = product.category?.name || product.productType || '';
   const categoryName =
@@ -271,6 +288,10 @@ export default function Product() {
       ? rawCategory
       : '';
   const sku = selectedVariant?.sku?.trim();
+
+  const authoredFaqs = parseFaqMetafield(product.faqs?.value);
+  const faqs =
+    authoredFaqs ?? fallbackFaqs(product, selectedVariant, categoryName);
 
   // Resolve the category to a shoppable collection so the crumb is clickable.
   // Shopify taxonomy names look like "Necklaces in Jewelry", so we match on
@@ -320,7 +341,13 @@ export default function Product() {
     <div className="product">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            authoredFaqs
+              ? [productJsonLd, buildFaqJsonLd(authoredFaqs)]
+              : productJsonLd,
+          ),
+        }}
       />
 
       <Breadcrumb items={breadcrumbs} />
@@ -384,9 +411,7 @@ export default function Product() {
         </div>
       </div>
 
-      <ProductFaqSection
-        faqs={buildFaqs(product, selectedVariant, categoryName)}
-      />
+      <ProductFaqSection faqs={faqs} />
 
       <RelatedProducts
         products={recommendedProducts}
@@ -545,21 +570,18 @@ function ProductTrustBadges() {
   );
 }
 
-type Faq = {question: string; answer: string};
-
 /**
- * FAQs come from the product's `custom.ai_faq` metafield (AI-generated,
- * saved as schema.org FAQPage JSON-LD) when present; otherwise a generated
- * set renders so the section never looks empty.
+ * Rendered when the product has no authored `custom.ai_faq` metafield, so the
+ * section never looks empty. Deliberately NOT emitted as FAQPage JSON-LD —
+ * these answers are boilerplate derived from fields already in the Product
+ * schema, and marking up generated filler as Q&A is what earns a manual
+ * action. Only authored FAQs get structured data (see buildFaqJsonLd).
  */
-function buildFaqs(
+function fallbackFaqs(
   product: any,
   selectedVariant: any,
   categoryName: string,
 ): Faq[] {
-  const fromMetafield = parseFaqMetafield(product.faqs?.value);
-  if (fromMetafield) return fromMetafield;
-
   return [
     {
       question: `What is ${product.title}?`,
@@ -582,25 +604,6 @@ function buildFaqs(
         'We support shipping, returns, and warranty questions through our customer care team and the FAQ page.',
     },
   ];
-}
-
-function parseFaqMetafield(value?: string | null): Faq[] | null {
-  if (!value) return null;
-  try {
-    const parsed: any = JSON.parse(value);
-    // AI FAQ metafield is saved as schema.org FAQPage JSON-LD.
-    const list = parsed?.mainEntity ?? (Array.isArray(parsed) ? parsed : parsed?.faqs);
-    if (!Array.isArray(list)) return null;
-    const faqs = list
-      .map((f: any) => ({
-        question: String(f?.name ?? f?.question ?? f?.q ?? ''),
-        answer: String(f?.acceptedAnswer?.text ?? f?.answer ?? f?.a ?? ''),
-      }))
-      .filter((f) => f.question && f.answer);
-    return faqs.length ? faqs : null;
-  } catch {
-    return null;
-  }
 }
 
 function ProductFaqSection({faqs}: {faqs: Faq[]}) {
@@ -846,25 +849,34 @@ function financingLogo(file: string, ink: number) {
   };
 }
 
+/**
+ * These are Gold Custom's own merchant application links, not the lenders'
+ * marketing homepages — each carries a code that attributes the application to
+ * this store (Acima `location_guid`, Progressive's `GoldCustomLA` portal,
+ * Synchrony's `mmc` merchant code). Sending a customer to the bare homepage
+ * instead loses that attribution, so keep the query strings intact.
+ *
+ * Shared with the /policies/finance page via FINANCE_LINKS.
+ */
 const FINANCING_PARTNERS = [
   {
     name: 'Acima Leasing',
-    href: 'https://www.acima.com',
+    href: FINANCE_LINKS.acima,
     ...financingLogo('acima', 90),
   },
   {
     name: 'American First Finance',
-    href: 'https://www.americanfirstfinance.com',
+    href: FINANCE_LINKS.americanFirst,
     ...financingLogo('american', 94),
   },
   {
     name: 'Progressive Leasing',
-    href: 'https://progleasing.com',
+    href: FINANCE_LINKS.progressive,
     ...financingLogo('progressive_leasing', 75),
   },
   {
     name: 'Synchrony',
-    href: 'https://www.synchrony.com',
+    href: FINANCE_LINKS.synchrony,
     ...financingLogo('synchrony', 44),
   },
 ];
@@ -1027,26 +1039,37 @@ function buildProductJsonLd({
   product,
   selectedVariant,
   mediaItems,
-  baseUrl,
+  origin,
+  priceValidUntil,
 }: {
   product: any;
   selectedVariant: any;
   mediaItems: GalleryMedia[];
-  baseUrl: string;
+  origin: string;
+  priceValidUntil: string;
 }) {
   const images = mediaItems
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
     .filter((url): url is string => Boolean(url));
   const price = selectedVariant?.price;
+  // Must match the <link rel="canonical"> emitted by `meta` above — a product
+  // that advertises two different URLs splits its own ranking signals.
+  const url = absoluteUrl(origin, productCanonicalPath(product));
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
+    // Stable node id so the Offer and the sitewide Organization resolve into
+    // one graph rather than three unrelated fragments. Retrieval-based AI
+    // engines follow these references; without them the price, the seller and
+    // the product read as facts about three different things.
+    '@id': `${url}#product`,
     name: product.title,
-    url: `${baseUrl}/products/${product.handle}`,
+    url,
+    mainEntityOfPage: url,
     brand: {
       '@type': 'Brand',
-      name: 'Gold Custom',
+      name: SITE.name,
     },
     description: product.seo?.description || product.description || undefined,
     image: images.length ? images : undefined,
@@ -1055,28 +1078,20 @@ function buildProductJsonLd({
     offers: price
       ? {
           '@type': 'Offer',
-          url: `${baseUrl}/products/${product.handle}`,
+          url,
           price: price.amount,
           priceCurrency: price.currencyCode,
+          priceValidUntil,
           availability: selectedVariant?.availableForSale
             ? 'https://schema.org/InStock'
             : 'https://schema.org/OutOfStock',
           itemCondition: 'https://schema.org/NewCondition',
+          seller: {'@id': `${origin}/#organization`},
+          shippingDetails: offerShippingDetails(price),
+          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
         }
       : undefined,
   };
-}
-
-function getStoreBaseUrl(root: any) {
-  const primaryDomain = root?.header?.shop?.primaryDomain?.url;
-  if (primaryDomain) return primaryDomain.replace(/\/$/, '');
-
-  const publicDomain = root?.publicStoreDomain;
-  if (!publicDomain) return '';
-
-  return publicDomain.startsWith('http')
-    ? publicDomain.replace(/\/$/, '')
-    : `https://${publicDomain.replace(/\/$/, '')}`;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql

@@ -15,6 +15,10 @@ import {
 } from '~/components/SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
 import {WelcomePopup} from '~/components/WelcomePopup';
+import {
+  RouteProgressBar,
+  RouteTransition,
+} from '~/components/RouteTransition';
 
 interface PageLayoutProps {
   cart: Promise<CartApiQueryFragment | null>;
@@ -48,7 +52,15 @@ export function PageLayout({
             publicStoreDomain={publicStoreDomain}
           />
         )}
-        <main className="page-body">{children}</main>
+        <RouteProgressBar />
+        {/*
+          Header and Footer sit OUTSIDE the transition on purpose: they are
+          identical on every route, so re-skeletoning them would throw away
+          the one part of the page that never needed to reload.
+        */}
+        <main className="page-body">
+          <RouteTransition>{children}</RouteTransition>
+        </main>
         <Footer
           footer={footer}
           header={header}

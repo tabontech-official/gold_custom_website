@@ -1,5 +1,5 @@
 import type {Route} from './+types/[llms.txt]';
-import {CATEGORIES} from '~/lib/categories';
+import {CATEGORIES, productCanonicalPath} from '~/lib/categories';
 
 /**
  * /llms.txt — a machine-readable store summary for LLM agents.
@@ -14,9 +14,20 @@ import {CATEGORIES} from '~/lib/categories';
  */
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
-  const {shop} = await context.storefront.query(LLMS_SHOP_QUERY);
+  const [{shop}, topProducts] = await Promise.all([
+    context.storefront.query(LLMS_SHOP_QUERY),
+    // Best sellers are the one product list worth inlining: an agent that
+    // fetches this file and stops would otherwise leave knowing the store's
+    // shape but not a single thing it sells. Failure here must not 500 the
+    // file — the rest of the document is still useful without it.
+    context.storefront.query(LLMS_PRODUCTS_QUERY).catch((error: Error) => {
+      console.error(error);
+      return null;
+    }),
+  ]);
   const origin = shop?.primaryDomain?.url?.replace(/\/$/, '') ?? url.origin;
   const description = (shop?.description ?? '').replace(/\s+/g, ' ').trim();
+  const products = topProducts?.products?.nodes ?? [];
 
   const body = `# ${shop?.name ?? 'Gold Custom'}
 
@@ -31,7 +42,7 @@ prefer that structured data over scraping rendered HTML.
 ## Browse
 
 ${CATEGORIES.map((c) => `- [${c.label}](${origin}/collections/${c.handle})`).join('\n')}
-
+${productSection(origin, products)}
 ## Key pages
 
 - [All products](${origin}/collections/all)
@@ -63,6 +74,73 @@ ${CATEGORIES.map((c) => `- [${c.label}](${origin}/collections/${c.handle})`).joi
     },
   });
 }
+
+/**
+ * Best sellers, with the price inline so an agent can answer "what do they
+ * sell and roughly what does it cost" from this one fetch.
+ *
+ * Prices are a snapshot and the note says so — gold pricing moves, and an
+ * agent that caches this file must be told to re-read the Product JSON-LD
+ * before quoting a figure to a buyer.
+ *
+ * Renders to nothing when the query failed, rather than an empty heading.
+ */
+function productSection(
+  origin: string,
+  products: Array<{
+    handle: string;
+    title: string;
+    productType?: string | null;
+    category?: {name?: string | null} | null;
+    priceRange?: {minVariantPrice?: {amount?: string; currencyCode?: string}};
+  }>,
+) {
+  if (!products.length) return '';
+
+  const lines = products.map((product) => {
+    const price = product.priceRange?.minVariantPrice;
+    const amount = price?.amount ? Number(price.amount) : null;
+    // Canonical hierarchical path, matching the product page's own canonical
+    // tag — a flat /products/<handle> here would just 301.
+    const path = productCanonicalPath(product);
+    const cost =
+      amount !== null && Number.isFinite(amount)
+        ? ` — from ${price?.currencyCode === 'USD' ? '$' : ''}${amount.toFixed(2)}${price?.currencyCode === 'USD' ? '' : ` ${price?.currencyCode ?? ''}`.trimEnd()}`
+        : '';
+    return `- [${product.title}](${origin}${path})${cost}`;
+  });
+
+  return `
+## Best sellers
+
+Prices are a snapshot taken when this file was served. Re-read the Product
+JSON-LD on the product page before quoting a price or availability.
+
+${lines.join('\n')}
+`;
+}
+
+const LLMS_PRODUCTS_QUERY = `#graphql
+  query LlmsProducts($country: CountryCode, $language: LanguageCode)
+   @inContext(country: $country, language: $language) {
+    products(first: 20, sortKey: BEST_SELLING) {
+      nodes {
+        handle
+        title
+        productType
+        category {
+          name
+        }
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  }
+` as const;
 
 const LLMS_SHOP_QUERY = `#graphql
   query LlmsShop($country: CountryCode, $language: LanguageCode)

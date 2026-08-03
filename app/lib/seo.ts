@@ -124,6 +124,73 @@ export function websiteJsonLd(origin: string): JsonLd {
   } as JsonLd;
 }
 
+/**
+ * Free U.S. shipping kicks in at $99. Schema has no way to express "free above
+ * a threshold" that Google reads, so a flat `shippingRate: 0` on a $40 charm
+ * would simply be a false claim. The node is therefore attached only to items
+ * that individually clear the threshold, where it is unconditionally true;
+ * cheaper items get no `shippingDetails` rather than a wrong one.
+ *
+ * Mirrors the on-page trust badge in ProductTrustBadges. If that promise
+ * changes both must change — Google cross-checks structured data against the
+ * visible page, and a mismatch is worse than an omission.
+ */
+export const FREE_SHIPPING_THRESHOLD_USD = 99;
+
+export function offerShippingDetails(price: {
+  amount: string;
+  currencyCode: string;
+}) {
+  const amount = Number(price.amount);
+  const qualifies =
+    price.currencyCode === 'USD' &&
+    Number.isFinite(amount) &&
+    amount >= FREE_SHIPPING_THRESHOLD_USD;
+  if (!qualifies) return undefined;
+
+  return {
+    '@type': 'OfferShippingDetails',
+    shippingRate: {'@type': 'MonetaryAmount', value: 0, currency: 'USD'},
+    shippingDestination: {'@type': 'DefinedRegion', addressCountry: 'US'},
+  };
+}
+
+/**
+ * Transcribed from the store's actual refund policy, not the generous default
+ * these snippets usually carry: returns run 14 days, settled as an exchange or
+ * store credit, with shipping and handling deducted.
+ *
+ * Deliberately NOT `FullRefund` — advertising a cash refund the policy does
+ * not honour is the kind of mismatch that costs a Merchant Center account.
+ */
+export const MERCHANT_RETURN_POLICY = {
+  '@type': 'MerchantReturnPolicy',
+  applicableCountry: 'US',
+  returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+  merchantReturnDays: 14,
+  returnMethod: 'https://schema.org/ReturnByMail',
+  returnFees: 'https://schema.org/ReturnShippingFees',
+  refundType: [
+    'https://schema.org/ExchangeRefund',
+    'https://schema.org/StoreCreditRefund',
+  ],
+} as const;
+
+/**
+ * Google treats an `Offer` whose `priceValidUntil` has passed as stale and can
+ * drop the price from rich results, so this rolls a year ahead of each render
+ * rather than being a fixed date that silently expires.
+ *
+ * Call this in a loader, never at render time: it is evaluated on both server
+ * and client, and a `new Date()` that straddles UTC midnight yields two
+ * different strings for the same markup — a hydration mismatch.
+ */
+export function priceValidUntilDate(now: Date = new Date()) {
+  const date = new Date(now);
+  date.setUTCFullYear(date.getUTCFullYear() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
 /** BreadcrumbList from `[{name, path}]`, ordered root → current page. */
 export function breadcrumbJsonLd(
   origin: string,

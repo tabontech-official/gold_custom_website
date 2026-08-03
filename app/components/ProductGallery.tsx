@@ -183,6 +183,18 @@ function GalleryTile({
           alt={m.image.altText || m.alt || title}
           sizes={featured ? '(min-width: 48em) 52vw, 100vw' : '96px'}
           loading="eager"
+          /**
+           * The featured shot is the product page's LCP element. `eager` only
+           * stops it being deferred; it still queues behind the thumbnails at
+           * default priority. This promotes it ahead of them.
+           *
+           * Spread, and lowercase, on purpose: React 18.3 has no built-in
+           * handling for this attribute, so the camelCase spelling that
+           * `@types/react` advertises logs "React does not recognize the
+           * fetchPriority prop" and the lowercase spelling is what actually
+           * reaches the DOM cleanly. Drop the spread when React 19 lands.
+           */
+          {...(featured ? {fetchpriority: 'high'} : null)}
           style={featured ? {transformOrigin: origin} : undefined}
         />
       ) : m.kind === 'video' && m.sources?.length ? (
