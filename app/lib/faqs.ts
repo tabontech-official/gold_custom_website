@@ -1,4 +1,10 @@
-export type Faq = {question: string; answer: string};
+export type Faq = {
+  question: string;
+  answer: string;
+  /** Set only by FAQs lifted out of description HTML, where the answer keeps
+   *  its links and paragraphs. Metaobject FAQs are plain text and omit it. */
+  answerHtml?: string;
+};
 
 function normalizeHandle(value: unknown): string {
   return String(value ?? '')

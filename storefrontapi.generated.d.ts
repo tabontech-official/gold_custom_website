@@ -1810,13 +1810,15 @@ export type SidebarCollectionsQuery = {
 };
 
 export type CollectionContentFragment = {
-  collectionFaqs?: StorefrontAPI.Maybe<{
-    reference?: StorefrontAPI.Maybe<
-      Pick<StorefrontAPI.Metaobject, 'handle'> & {
-        fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
-      }
-    >;
-  }>;
+  collectionFaqs?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'> & {
+      reference?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metaobject, 'handle'> & {
+          fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+        }
+      >;
+    }
+  >;
   collectionCenterImages?: StorefrontAPI.Maybe<{
     reference?: StorefrontAPI.Maybe<
       Pick<StorefrontAPI.Metaobject, 'handle'> & {
@@ -1898,13 +1900,17 @@ export type ParentCollectionContentQueryVariables = StorefrontAPI.Exact<{
 export type ParentCollectionContentQuery = {
   collection?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
-      collectionFaqs?: StorefrontAPI.Maybe<{
-        reference?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.Metaobject, 'handle'> & {
-            fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
-          }
-        >;
-      }>;
+      collectionFaqs?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'> & {
+          reference?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metaobject, 'handle'> & {
+              fields: Array<
+                Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>
+              >;
+            }
+          >;
+        }
+      >;
       collectionCenterImages?: StorefrontAPI.Maybe<{
         reference?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.Metaobject, 'handle'> & {
@@ -1960,7 +1966,7 @@ export type CollectionQuery = {
   collection?: StorefrontAPI.Maybe<
     Pick<
       StorefrontAPI.Collection,
-      'id' | 'handle' | 'title' | 'description'
+      'id' | 'handle' | 'title' | 'description' | 'descriptionHtml'
     > & {
       seo: Pick<StorefrontAPI.Seo, 'title' | 'description'>;
       image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
@@ -2040,13 +2046,17 @@ export type CollectionQuery = {
           }
         >;
       };
-      collectionFaqs?: StorefrontAPI.Maybe<{
-        reference?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.Metaobject, 'handle'> & {
-            fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
-          }
-        >;
-      }>;
+      collectionFaqs?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'> & {
+          reference?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metaobject, 'handle'> & {
+              fields: Array<
+                Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>
+              >;
+            }
+          >;
+        }
+      >;
       collectionCenterImages?: StorefrontAPI.Maybe<{
         reference?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.Metaobject, 'handle'> & {
@@ -2982,11 +2992,11 @@ interface GeneratedQueryTypes {
     return: CategoryMenusQuery;
     variables: CategoryMenusQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query ParentCollectionContent(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      handle\n      ...CollectionContent\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query ParentCollectionContent(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      handle\n      ...CollectionContent\n    }\n  }\n': {
     return: ParentCollectionContentQuery;
     variables: ParentCollectionContentQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # Only used to resolve each product\'s canonical /products/<category>/<handle>\n    # path for the ItemList JSON-LD. Without them productCanonicalPath falls\n    # back to the flat /products/<handle>, which 301s — and a structured-data\n    # list of redirects is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # Only used to resolve each product\'s canonical /products/<category>/<handle>\n    # path for the ItemList JSON-LD. Without them productCanonicalPath falls\n    # back to the flat /products/<handle>, which 301s — and a structured-data\n    # list of redirects is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n            reference {\n              ... on MediaImage {\n                image {\n                  url\n                  altText\n                }\n              }\n              ... on GenericFile {\n                url\n              }\n            }\n            references(first: 20) {\n              nodes {\n                ... on MediaImage {\n                  image {\n                    url\n                    altText\n                  }\n                }\n                ... on GenericFile {\n                  url\n                }\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        before: $startCursor,\n        after: $endCursor,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };

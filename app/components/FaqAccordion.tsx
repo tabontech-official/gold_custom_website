@@ -14,7 +14,14 @@ export function FaqAccordion({faqs}: {faqs: Faq[]}) {
             {faqs.map((faq) => (
               <details className="homepage-faq-item" key={faq.question}>
                 <summary>{faq.question}</summary>
-                <p>{faq.answer}</p>
+                {faq.answerHtml ? (
+                  <div
+                    className="homepage-faq-answer"
+                    dangerouslySetInnerHTML={{__html: faq.answerHtml}}
+                  />
+                ) : (
+                  <p>{faq.answer}</p>
+                )}
               </details>
             ))}
           </div>

@@ -50,6 +50,7 @@ import {
   type Faq,
 } from '~/lib/faqs';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {DescriptionAccordions} from '~/components/DescriptionAccordions';
 import {
   MERCHANT_RETURN_POLICY,
   SITE,
@@ -419,7 +420,7 @@ export default function Product() {
             onRingSizeChange={setRingSize}
           />
 
-          <ProductAccordions descriptionHtml={descriptionHtml} />
+          <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
 
           <div className="product-note">
             <h3>Important Note</h3>
@@ -483,50 +484,6 @@ function ProductWishlistButton({handle}: {handle: string}) {
         </svg>
       </button>
     </fetcher.Form>
-  );
-}
-
-/**
- * Split the description HTML on `<h5>` headings. The first chunk (the intro
- * paragraph, before any heading) renders visible under the product; every
- * `<h5>` and the content up to the next `<h5>` becomes a collapsable panel.
- */
-function splitDescriptionByH5(html: string) {
-  const parts = html.split(/<h5[^>]*>/i);
-  const intro = parts[0]?.trim() || '';
-  const sections = parts.slice(1).map((part) => {
-    const [heading, ...rest] = part.split(/<\/h5>/i);
-    return {heading: heading.replace(/<[^>]+>/g, '').trim(), body: rest.join('')};
-  });
-  return {intro, sections};
-}
-
-function ProductAccordions({
-  descriptionHtml,
-}: {
-  descriptionHtml?: string | null;
-}) {
-  const {intro, sections} = splitDescriptionByH5(descriptionHtml || '');
-
-  return (
-    <div className="product-accordions">
-      {intro && (
-        <div
-          className="product-description-intro"
-          dangerouslySetInnerHTML={{__html: intro}}
-        />
-      )}
-
-      {sections.map((section) => (
-        <details className="product-details" key={section.heading}>
-          <summary>{section.heading}</summary>
-          <div
-            className="product-details-body"
-            dangerouslySetInnerHTML={{__html: section.body}}
-          />
-        </details>
-      ))}
-    </div>
   );
 }
 

@@ -41,7 +41,8 @@ import {
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
-import {parseFaqMetaobject} from '~/lib/faqs';
+import {extractFaqsFromDescription} from '~/lib/description';
+import {parseFaqMetaobject, parseFaqMetafield, type Faq} from '~/lib/faqs';
 
 type CollectionCoverPhoto = {
   image: string;
@@ -247,12 +248,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // Never search or fall back to general site-wide FAQ/cover data here; the only
   // permitted fallback is the collection's own parent department (below).
   let coverSource = collection.collectionCenterImages?.reference ?? null;
-  let faqSource = collection.collectionFaqs?.reference ?? null;
+  let faqs = readFaqMetafield(collection.collectionFaqs);
 
   // A child category with neither of its own inherits both from its parent, so
   // merchants only fill these in once per department. Both lookups are cached
   // and non-fatal: worst case the child page renders without FAQs/covers.
-  if (!coverSource && !faqSource) {
+  if (!coverSource && !faqs.length) {
     // Most departments list their children in a Shopify menu rather than in
     // MEGA_MENU's curated items, so the menus are needed to find the parent.
     const menus = await storefront
@@ -281,7 +282,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
         .catch(() => null);
 
       coverSource = parent?.collectionCenterImages?.reference ?? null;
-      faqSource = parent?.collectionFaqs?.reference ?? null;
+      faqs = readFaqMetafield(parent?.collectionFaqs);
     }
   }
 
@@ -293,8 +294,25 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       handle,
       false,
     ),
-    faqs: parseFaqMetaobject(faqSource),
+    faqs,
   };
+}
+
+/**
+ * FAQs off the `custom.collections_faqs` metafield. It points at a `pages_faqs`
+ * metaobject today, whose `questions_and_answers` field holds the JSON array;
+ * reading `value` first means a plain json metafield holding that same array
+ * works too, without a second code path to keep in sync. On a metaobject
+ * reference `value` is only the gid, so the JSON parse fails and it falls
+ * through — no type check needed.
+ */
+function readFaqMetafield(
+  metafield?: {value?: string | null; reference?: unknown} | null,
+): Faq[] {
+  return (
+    parseFaqMetafield(metafield?.value) ??
+    parseFaqMetaobject(metafield?.reference ?? null)
+  );
 }
 
 /**
@@ -398,6 +416,13 @@ export default function Collection() {
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
+  // The metafield JSON is the source of truth. Any FAQ block still sitting in
+  // a description is stripped out of the prose regardless, so it can never
+  // render twice, and is used only where that collection has no metafield yet
+  // — 9 collections are still in that state and would otherwise show nothing.
+  // Once every collection is migrated, descriptionFaqs is simply always empty.
+  const {faqs: descriptionFaqs, rest: descriptionRest} =
+    extractFaqsFromDescription(collection.descriptionHtml);
   const rootData = useRouteLoaderData<RootLoader>('root');
   const parentCrumb = getCollectionParentCrumb({
     handle: collection.handle,
@@ -578,7 +603,33 @@ export default function Collection() {
         </div>
       </section>
 
-      <FaqAccordion faqs={faqs} />
+      {descriptionRest && (
+        <section
+          className="home-section"
+          aria-labelledby="collection-description-title"
+        >
+          <div className="section-inner">
+            <div className="editorial-heading">
+              <h2
+                id="collection-description-title"
+                className="editorial-title"
+              >
+                About {collection.title}
+              </h2>
+            </div>
+            {/* Straight prose, not an accordion: the copy is headings and
+                paragraphs meant to be read. `product-description-intro` is
+                the existing style for exactly this — merchant rich text at
+                body size, with gold list markers and links. */}
+            <div
+              className="product-description-intro"
+              dangerouslySetInnerHTML={{__html: descriptionRest}}
+            />
+          </div>
+        </section>
+      )}
+
+      <FaqAccordion faqs={faqs.length ? faqs : descriptionFaqs} />
 
       <Analytics.CollectionView
         data={{
@@ -655,6 +706,10 @@ const SIDEBAR_COLLECTIONS_QUERY = `#graphql
 const COLLECTION_CONTENT_FRAGMENT = `#graphql
   fragment CollectionContent on Collection {
     collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {
+      # Today this is a metaobject reference and value is just the gid. If the
+      # metafield is ever retyped to a plain json one holding the array itself,
+      # value carries it and the loader reads that instead.
+      value
       reference {
         ... on Metaobject {
           handle
@@ -765,6 +820,10 @@ const COLLECTION_QUERY = `#graphql
       handle
       title
       description
+      # Rendered on the page below the grid. The flat description above stays
+      # for meta tags; this keeps the editor's headings, lists and links so the
+      # copy can be laid out properly.
+      descriptionHtml
       # Merchant-authored SEO overrides from the Shopify admin; these win over
       # the raw title/description in the page's meta tags.
       seo {

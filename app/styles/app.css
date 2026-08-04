@@ -6565,33 +6565,20 @@ button.announcement-link {
   margin: 0 0 0.85rem;
 }
 
-/* Points are marked with a thin gold rule instead of a disc. Product copy is
-   all <ul> today; `ol` is covered so a merchant writing points as a numbered
-   list gets the same mark. If a description ever needs real numbering, drop
-   `ol` from these three selectors. */
+/* Native disc bullets, gold-tinted via ::marker. The browser owns the mark's
+   position and baseline, so there is no absolute-positioned pseudo-element to
+   re-tune when the line-height changes. `ol` is covered so a merchant writing
+   points as a numbered list gets the same mark; drop `ol` from both selectors
+   if a description ever needs real numbering. */
 .product-details-body :where(ul, ol),
 .product-description-intro :where(ul, ol) {
-  list-style: none;
-  padding-left: 0;
+  list-style: disc;
+  padding-left: 1.25rem;
 }
 
-.product-details-body :where(ul, ol) li,
-.product-description-intro :where(ul, ol) li {
-  padding-left: 1.4rem;
-  position: relative;
-}
-
-.product-details-body :where(ul, ol) li::before,
-.product-description-intro :where(ul, ol) li::before {
-  background: var(--color-gold-dark);
-  content: '';
-  height: 1px;
-  left: 0;
-  position: absolute;
-  /* Half of the 1.7 line-height, nudged up a hair — a rule reads low when
-     it sits on the true optical centre. */
-  top: 0.8em;
-  width: 0.75rem;
+.product-details-body :where(ul, ol) li::marker,
+.product-description-intro :where(ul, ol) li::marker {
+  color: var(--color-gold-dark);
 }
 
 /* Keep every nested element in the description at the same size/face. */
@@ -6618,6 +6605,16 @@ button.announcement-link {
 .product-details-body :where(h3, h4, h5, h6),
 .product-description-intro :where(h3, h4, h5, h6) {
   font-size: 0.95rem;
+}
+
+/* Collection copy cross-links to sibling collections a few hundred times over;
+   product copy has no links at all. Without this they inherit body ink and read
+   as plain text. */
+.product-details-body :where(a),
+.product-description-intro :where(a) {
+  color: var(--color-gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
 }
 
 .product-details-body > :where(h1, h2, h3, h4, h5, h6):first-child,
@@ -6866,7 +6863,6 @@ button.announcement-link {
 /* Sizing-chart link opposite the SIZE label — opens the printable PDF. */
 .ring-size-guide-link {
   display: inline-flex;
-  align-items: center;
   gap: 0.35rem;
   margin: 0;
   font-size: 0.76rem;
@@ -8584,6 +8580,33 @@ button.announcement-link {
   padding: 0 2rem 1.3rem 0;
 }
 
+/* Answers lifted out of collection description HTML. Same measure and colour
+   as the plain-text `p` above, but with real markup inside, so the paragraph
+   spacing that rule flattens has to come back. Two classes deep on purpose:
+   `.homepage-faq-item p` matches these inner paragraphs at equal specificity
+   and would otherwise win on source order. */
+.homepage-faq-item .homepage-faq-answer {
+  color: var(--color-ink-soft);
+  line-height: 1.7;
+  max-width: 42rem;
+  padding: 0 2rem 1.3rem 0;
+}
+
+.homepage-faq-item .homepage-faq-answer :where(p, ul, ol) {
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.homepage-faq-item .homepage-faq-answer > :last-child {
+  margin-bottom: 0;
+}
+
+.homepage-faq-item .homepage-faq-answer a {
+  color: var(--color-gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
 /* Mobile: smaller FAQ text and less side inset so the accordion uses the free
    horizontal space (shared across homepage, category, and product pages). */
 @media (max-width: 48em) {
@@ -9566,6 +9589,21 @@ button.announcement-link {
   text-shadow:
     0 0 26px rgba(212, 175, 55, 0.24),
     0 0 54px rgba(212, 175, 55, 0.14);
+}
+
+/* On a collection page the section headings take that page's own h1 type
+   instead of the homepage's oversized editorial treatment: same size ramp,
+   weight and line-height as `.collection-title-row h1`, minus the gold glow.
+   The face already matches — `--font-display` resolves to `--font-classic`.
+   Alignment is deliberately left alone, so these stay centred on the page
+   while the h1 above them runs flush left. Scoped to `.collection` so the
+   homepage, the other FaqAccordion caller, keeps its full-bleed styling. */
+.collection .editorial-title {
+  font-size: clamp(1.9rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.15;
+  margin: 0.25rem 0 0.5rem;
+  text-shadow: none;
 }
 
 .editorial-heading-row {
