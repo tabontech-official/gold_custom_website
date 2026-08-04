@@ -6249,6 +6249,55 @@ button.announcement-link {
   min-width: 0;
 }
 
+/* Swipe feedback. While the finger is down the transition is off so the photo
+   tracks it 1:1; on release it springs back with an ease-out. */
+.pgg-swipe {
+  position: relative;
+  transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+
+.pgg-swipe.is-dragging {
+  transition: none;
+}
+
+/* The crossfade: only opacity moves, so the outgoing photo is still painted
+   while the incoming one arrives — no blank frame between them.
+
+   The active shot stays in normal flow and sets the stage height, exactly as
+   the single tile used to; only the inactive ones are lifted out and laid over
+   it. Taking every layer out of flow instead would leave the box with no
+   content to size against. They are also inert, otherwise an invisible layer
+   on top would swallow the hover-zoom.
+
+   `:not(.is-active)` is load-bearing, not decoration: a plain `.pgg-swipe > *`
+   ties with `.pgg-feature` below on specificity, and that block's
+   `position: relative` — being later in the file — wins. The layers then stay
+   in flow and stack down the page as a column of blank boxes. */
+.pgg-swipe > * {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 260ms ease;
+}
+
+.pgg-swipe > *:not(.is-active) {
+  position: absolute;
+  inset: 0;
+}
+
+.pgg-swipe > .is-active {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pgg-swipe,
+  .pgg-swipe > * {
+    transition: none;
+  }
+}
+
 .pgg-feature,
 .pgg-tile {
   position: relative;
@@ -6340,80 +6389,11 @@ button.announcement-link {
   transform: translate(-50%, -50%);
 }
 
-.pgg-preload {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  opacity: 0;
-  pointer-events: none;
-}
-
-@media (max-width: 42em) {
-  /* Stack via wrap (not flex-direction:column) — a column flex with an
-     aspect-ratio stage collapses the main image to 0 height. Keep the row
-     direction and let the stage take a full row, so the rail wraps beneath. */
-  .product-grid-gallery {
-    --pgg-rail-w: 5rem;
-    flex-wrap: wrap;
-    gap: 0.6rem;
-  }
-
-  .pgg-stage {
-    order: 1;
-    flex: 1 1 100%;
-    width: 100%;
-  }
-
-  .pgg-rail {
-    order: 2;
-    flex: 1 1 100%;
-    width: 100%;
-    flex-direction: row;
-    /* All thumbnails share one row, no scroll, no gap. */
-    gap: 0;
-    overflow: hidden;
-    padding-right: 0;
-  }
-
-  .pgg-thumb {
-    /* Equal-split the row so any count (5, 6, …) fits in a single row. */
-    flex: 1 1 0;
-    width: auto;
-    min-width: 0;
-    min-height: 0;
-  }
-}
-
-/* Below the two-column breakpoint the layout stacks. Flatten the gallery
-   column (display:contents) so the trust badges become siblings of
-   product-main and can be ordered to the very end. */
-@media (max-width: 48em) {
-  .product-layout {
-    display: flex;
-    flex-direction: column;
-  }
-
-  .product-gallery-column {
-    display: contents;
-  }
-
-  /* As a flex item of the stacked column, the gallery's cross-axis is width;
-     its default align-self:start shrinks it to content (tiny box). Force it
-     to fill the row. */
-  .product-grid-gallery {
-    align-self: stretch;
-    width: 100%;
-  }
-
-  .product-trust-badges {
-    order: 3;
-  }
-}
-
-.product-gallery-empty {
-  aspect-ratio: 1 / 1;
-  background: var(--color-bg-soft);
+/* Arrow pager, laid over the photo. Hidden by default — desktop pages through
+   the thumbnail rail, which shows the whole set at once and needs no stepping.
+   Shown by the mobile block, where the rail is gone. */
+.pgg-nav {
+  display: none;
 }
 
 /* Style code line above the heading */
@@ -6425,21 +6405,48 @@ button.announcement-link {
   color: var(--color-ink-soft);
 }
 
-.product-main {
-  align-self: start;
+/* Desktop: the sticky right column. It holds the heading and the buy panel so
+   the two pin together — which is what .product-main did on its own when the
+   title still lived inside it, so that layout is unchanged. Below 48em the
+   wrapper dissolves to `display: contents`; see the mobile block. */
+.product-buy-column {
+  @media (min-width: 48em) {
+    align-self: start;
+    display: flex;
+    flex-direction: column;
+    gap: 1.05rem;
+    position: sticky;
+    top: 8.5rem;
+  }
+}
+
+.product-heading {
   display: flex;
   flex-direction: column;
   gap: 1.05rem;
   padding: 1.5rem 1.25rem 0;
   @media (min-width: 48em) {
-    position: sticky;
-    top: 8.5rem;
     max-width: 48rem;
     padding: 1.9rem 3rem 0 0;
   }
 }
 
-.product-main h1 {
+.product-main {
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 1.05rem;
+  padding: 0 1.25rem;
+  @media (min-width: 48em) {
+    max-width: 48rem;
+    padding: 0 3rem 0 0;
+  }
+}
+
+/* Selector follows the h1, which now lives in .product-heading. Keeping the
+   old `.product-main h1` here would have matched nothing and dropped the
+   title back to the global heading style. */
+.product-heading h1 {
   margin: 0;
   font-family: var(--font-body);
   font-size: clamp(1.55rem, 2.1vw, 2rem);
@@ -6447,6 +6454,133 @@ button.announcement-link {
   line-height: 1.12;
   letter-spacing: 0;
 }
+
+/* Below the two-column breakpoint the layout stacks. These rules must stay
+   after the base ones above: a media query adds no specificity, so at equal
+   weight the later declaration wins. */
+@media (max-width: 48em) {
+  /* Reading order on a phone: name the piece, show the piece, then the price.
+     Both wrappers dissolve so heading, gallery, buy panel and badges are all
+     siblings of one flex column that `order` can sequence. */
+  .product-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .product-gallery-column,
+  .product-buy-column {
+    display: contents;
+  }
+
+  .product-heading {
+    order: 1;
+    /* The style code is a caption on the title, not a peer of it — 1.05rem
+       between them read as two unrelated lines. */
+    gap: 0.3rem;
+    padding: 1.15rem 1.25rem 0.9rem;
+  }
+
+  .product-main {
+    order: 3;
+    gap: 0.85rem;
+    padding: 1.15rem 1.25rem 0;
+  }
+
+  .product-trust-badges {
+    order: 4;
+  }
+
+  /* As a flex item of the stacked column, the gallery's cross-axis is width;
+     its default align-self:start shrinks it to content (tiny box). Force it
+     to fill the row. */
+  .product-grid-gallery {
+    align-self: stretch;
+    order: 2;
+    width: 100%;
+    /* Stack via wrap, not flex-direction:column — a column flex with an
+       aspect-ratio stage collapses the main image to 0 height. */
+    flex-wrap: wrap;
+    gap: 0;
+  }
+
+  /* Thumbnails are dropped here. At this width they render ~48px, too small to
+     tell two gold chains apart, and they cost a full row of height on the page
+     the shopper most needs to scan. The arrows below replace them. */
+  .pgg-rail {
+    display: none;
+  }
+
+  .pgg-stage {
+    order: 1;
+    flex: 1 1 100%;
+    position: relative;
+    width: 100%;
+  }
+
+  /* Centred on the bottom edge of the photo, as a pair. No disc, no border —
+     the same bare shaft-arrow the footer's Subscribe control uses, so the two
+     read as one vocabulary rather than two different button languages. */
+  .pgg-nav {
+    bottom: 0.5rem;
+    display: flex;
+    gap: 2.25rem;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 2;
+  }
+
+  .pgg-nav-btn {
+    align-items: center;
+    appearance: none;
+    background: transparent;
+    border: 0;
+    /* White glyph carrying its own dark outline. The catalogue mixes shots on
+       white and on black, so neither a light nor a dark arrow works alone:
+       the tight shadow draws a hard edge that reads against white, and the
+       white stroke itself reads against black. The wider, softer second
+       shadow lifts it off busy mid-tone areas of the product. */
+    color: #fff;
+    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.85))
+      drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
+    cursor: pointer;
+    display: inline-flex;
+    justify-content: center;
+    /* Padding, not a box: it buys the 44px touch target without drawing
+       anything. The glyph itself stays 1.15rem. */
+    padding: 0.7rem;
+    transition: color 0.18s ease;
+  }
+
+  .pgg-nav-btn:active {
+    color: var(--color-gold);
+  }
+
+  .pgg-nav-btn:focus-visible {
+    outline: 2px solid var(--color-gold-dark);
+    outline-offset: 2px;
+  }
+
+  .product-heading h1 {
+    font-size: 1.45rem;
+    letter-spacing: -0.01em;
+    line-height: 1.16;
+  }
+
+  /* A reference number, not a label — sized to be findable when looked for
+     and ignorable otherwise, so the title reads as the first thing. */
+  .product-sku {
+    font-size: 0.56rem;
+    letter-spacing: 0.13em;
+  }
+}
+
+.product-gallery-empty {
+  aspect-ratio: 1 / 1;
+  background: var(--color-bg-soft);
+}
+
 
 /* Product-spec highlights under the price — flat icon + label, two columns */
 .product-specs {
@@ -6651,8 +6785,11 @@ button.announcement-link {
 /* Shop Pay Installments banner under the price. The banner and its "sample
    plans" modal are rendered by Shopify's shopify-payment-terms element, which
    carries its own styles — only the surrounding spacing is ours. */
+/* Holds Shopify's <shopify-payment-terms> banner, which renders its own text
+   and brand mark and opens the real installments modal on click. It brings its
+   own internal padding, so this box adds no top margin of its own. */
 .product-monthly {
-  margin: 0.35rem 0 0;
+  margin: 0;
   font-size: 0.9rem;
   color: var(--color-ink-soft);
 }
@@ -6721,7 +6858,28 @@ button.announcement-link {
 
 @media (max-width: 48em) {
   .product-financing {
-    padding: 0.65rem 0.5rem;
+    padding: 0.35rem 0.5rem;
+  }
+
+  /* The marks split whatever the gaps leave over, so on this row the gap IS
+     the size control: widen it and the logos shrink to fit, with the row still
+     spanning the box edge to edge. That beats capping the row's width — which
+     shrank the marks but left dead space at both ends instead of putting it
+     between them. `vw` keeps the rhythm even across phone widths. */
+  .product-financing-list {
+    gap: clamp(1.1rem, 6vw, 1.75rem);
+    max-width: 100%;
+  }
+
+  .product-financing-label {
+    margin-bottom: 0.5rem;
+  }
+
+  /* .product-main already spaces its children with a flex gap; this margin sat
+     on top of it, so the run under the financing box measured roughly twice
+     what every other break in the column uses. */
+  .product-specs {
+    margin-top: 0;
   }
 }
 

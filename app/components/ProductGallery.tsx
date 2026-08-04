@@ -67,6 +67,92 @@ export function ProductGallery({
   }
 
   const activeItem = items.find((item) => item.key === activeKey) ?? items[0];
+  const activeIndex = Math.max(
+    0,
+    items.findIndex((item) => item.key === activeItem.key),
+  );
+  // Wraps at both ends: with the thumbnail rail hidden on mobile these arrows
+  // are the only way through the set, and a dead-ended arrow reads as broken.
+  const step = (delta: number) =>
+    setActiveKey(items[(activeIndex + delta + items.length) % items.length].key);
+
+  // Read through a ref so the swipe listeners below can stay bound across
+  // index changes instead of being torn down and rebuilt after every gesture.
+  const stepRef = useRef(step);
+  stepRef.current = step;
+
+  const stageRef = useRef<HTMLDivElement>(null);
+  // Live finger offset, so the photo moves under the thumb instead of sitting
+  // still until the gesture happens to cross the commit threshold.
+  const [drag, setDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+
+  // Touch swipe, same gesture model as the homepage hero: lock the axis first
+  // and only call preventDefault once the drag reads horizontal, so a vertical
+  // flick still scrolls the page instead of being swallowed by the gallery.
+  // Not shared with the hero's hook — that one is built around its cloned,
+  // auto-advancing track, and this only needs to pick the next key.
+  const canSwipe = items.length > 1;
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el || !canSwipe) return;
+
+    let start: {x: number; y: number} | null = null;
+    let axis: 'h' | 'v' | null = null;
+    let dx = 0;
+
+    const onStart = (event: TouchEvent) => {
+      // A press that begins on an arrow is a tap, not a swipe.
+      if (
+        event.target instanceof Element &&
+        event.target.closest('button') !== null
+      ) {
+        return;
+      }
+      start = {x: event.touches[0].clientX, y: event.touches[0].clientY};
+      axis = null;
+      dx = 0;
+    };
+
+    const onMove = (event: TouchEvent) => {
+      if (!start) return;
+      const moveX = event.touches[0].clientX - start.x;
+      const moveY = event.touches[0].clientY - start.y;
+      if (!axis && Math.abs(moveX) + Math.abs(moveY) > 8) {
+        axis = Math.abs(moveX) > Math.abs(moveY) ? 'h' : 'v';
+      }
+      if (axis === 'h') {
+        event.preventDefault();
+        dx = moveX;
+        setDragging(true);
+        setDrag(dx);
+      }
+    };
+
+    const onEnd = () => {
+      // A twelfth of the stage is enough to commit — the same ratio the hero
+      // uses, and short enough that a thumb flick counts without a full drag.
+      if (axis === 'h' && Math.abs(dx) > (el.clientWidth || 1) * 0.12) {
+        stepRef.current(dx < 0 ? 1 : -1);
+      }
+      start = null;
+      axis = null;
+      dx = 0;
+      setDragging(false);
+      setDrag(0);
+    };
+
+    el.addEventListener('touchstart', onStart, {passive: true});
+    el.addEventListener('touchmove', onMove, {passive: false});
+    el.addEventListener('touchend', onEnd, {passive: true});
+    el.addEventListener('touchcancel', onEnd, {passive: true});
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+      el.removeEventListener('touchcancel', onEnd);
+    };
+  }, [canSwipe]);
 
   return (
     <div
@@ -97,15 +183,57 @@ export function ProductGallery({
           })}
         </div>
       )}
-      <div className="pgg-stage">
-        <GalleryTile media={activeItem} title={title} featured />
-      </div>
-      <div className="pgg-preload" aria-hidden="true">
-        {items
-          .filter((m) => m.kind === 'image' && m.image?.url)
-          .map((m) => (
-            <img key={m.key} src={m.image!.url} alt="" loading="eager" />
-          ))}
+      <div className="pgg-stage" ref={stageRef}>
+        {/* Damped to ~40% of the finger: the photo tracks the gesture enough to
+            feel physical, but never slides so far that the empty stage behind
+            it shows.
+
+            Every image is mounted at once and stacked, with only the active
+            one at opacity 1 — swapping is then a pure crossfade between two
+            already-decoded layers. Remounting a single tile per change (what
+            `key` used to do) tears the old photo out before the new one has
+            painted, which is the blink. Videos and embeds still mount only
+            while active: preloading a stack of them is not worth a fade. */}
+        <div
+          className={`pgg-swipe${dragging ? ' is-dragging' : ''}`}
+          style={drag ? {transform: `translate3d(${drag * 0.4}px,0,0)`} : undefined}
+        >
+          {items.map((m) =>
+            m.kind === 'image' || m.key === activeItem.key ? (
+              <GalleryTile
+                key={m.key}
+                media={m}
+                title={title}
+                featured
+                active={m.key === activeItem.key}
+              />
+            ) : null,
+          )}
+        </div>
+        {/* Mobile paging, laid over the image. The rail is hidden below 48em —
+            thumbnails there are too small to tell two gold chains apart and
+            cost a whole row of height — so stepping lives on the photo itself
+            and the shopper can also just swipe it. */}
+        {items.length > 1 && (
+          <div className="pgg-nav">
+            <button
+              aria-label="Previous image"
+              className="pgg-nav-btn"
+              onClick={() => step(-1)}
+              type="button"
+            >
+              <ArrowIcon direction="left" />
+            </button>
+            <button
+              aria-label="Next image"
+              className="pgg-nav-btn"
+              onClick={() => step(1)}
+              type="button"
+            >
+              <ArrowIcon direction="right" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -144,10 +272,13 @@ function GalleryTile({
   media: m,
   title,
   featured = false,
+  active = true,
 }: {
   media: GalleryMedia;
   title: string;
   featured?: boolean;
+  /** Stage tiles are all mounted; only the active one is visible and hoverable. */
+  active?: boolean;
 }) {
   // Hover-to-zoom on the featured image: pan the transform-origin to the
   // cursor so the shopper can inspect detail without any forced crop at rest.
@@ -167,7 +298,7 @@ function GalleryTile({
     <div
       className={`${featured ? 'pgg-feature' : 'pgg-tile'}${
         zoom ? ' is-zoomed' : ''
-      }`}
+      }${active ? ' is-active' : ''}`}
       onMouseEnter={isZoomable ? () => setZoom(true) : undefined}
       onMouseLeave={isZoomable ? () => setZoom(false) : undefined}
       onMouseMove={onMove}
@@ -194,7 +325,7 @@ function GalleryTile({
            * fetchPriority prop" and the lowercase spelling is what actually
            * reaches the DOM cleanly. Drop the spread when React 19 lands.
            */
-          {...(featured ? {fetchpriority: 'high'} : null)}
+          {...(featured && active ? {fetchpriority: 'high'} : null)}
           style={featured ? {transformOrigin: origin} : undefined}
         />
       ) : m.kind === 'video' && m.sources?.length ? (
@@ -275,6 +406,40 @@ function VideoPlayer({
           />
         ))}
     </video>
+  );
+}
+
+/**
+ * Shaft-and-head arrow, the same mark the footer's Subscribe control uses —
+ * a drawn line rather than a bare chevron, so the two controls read as one
+ * vocabulary. Declared locally because that is how every icon in this codebase
+ * is done; there is no shared icon module to reuse.
+ */
+function ArrowIcon({direction}: {direction: 'left' | 'right'}) {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      focusable="false"
+      height="1.15rem"
+      viewBox="0 0 24 24"
+      width="1.15rem"
+      style={direction === 'left' ? {transform: 'scaleX(-1)'} : undefined}
+    >
+      <path
+        d="M4 12h15"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      <path
+        d="m13 6 6 6-6 6"
+        stroke="currentColor"
+        strokeWidth="2.4"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

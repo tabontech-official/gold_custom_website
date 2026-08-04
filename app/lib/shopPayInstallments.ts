@@ -170,6 +170,27 @@ export function buildShopPayMeta({
   };
 }
 
+/**
+ * Drops the split-pay half of the banner sentence:
+ *
+ *   "Pay in 4 interest-free installments, or from $52.09/mo with Shop Pay"
+ *   -> "Pay from $52.09/mo with Shop Pay"
+ *
+ * Only the comma form is cut, so the band that offers split pay *alone*
+ * ("Pay in 4 interest-free installments of $32.50 with Shop Pay") keeps its
+ * sentence rather than being mangled into "Pay of $32.50…".
+ *
+ * ponytail: the copy belongs to Shopify's shop-js, not to us — there is no
+ * setting for it. If they reword the sentence this stops matching and the
+ * original text comes back; nothing breaks.
+ */
+export function stripSplitPayCopy(text: string) {
+  return text.replace(
+    /\s*(?:in\s+)?\d+ interest-free installments,\s*(?:or\s+)?/i,
+    ' ',
+  );
+}
+
 /** `gid://shopify/ProductVariant/123` -> 123, or null if it isn't one. */
 export function variantIdNumber(gid?: string | null) {
   const id = Number(gid?.split('/').pop());

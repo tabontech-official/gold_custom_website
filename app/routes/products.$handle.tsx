@@ -1,4 +1,4 @@
-import {Suspense, useEffect, useState} from 'react';
+﻿import {Suspense, useEffect, useRef, useState} from 'react';
 import {
   redirect,
   useLoaderData,
@@ -40,6 +40,7 @@ import {FINANCE_LINKS} from '~/lib/finance';
 import {
   buildShopPayMeta,
   variantIdNumber,
+  stripSplitPayCopy,
   FALLBACK_PRICING,
   SHOP_PAY_INSTALLMENTS_QUERY,
   type InstallmentsPricing,
@@ -90,7 +91,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       url: canonical,
       media: image ? {type: 'image', url: image} : undefined,
       // Product schema is emitted at render time (buildProductJsonLd) where the
-      // resolved variant and gallery are available — don't duplicate it here.
+      // resolved variant and gallery are available â€” don't duplicate it here.
       jsonLd: breadcrumbJsonLd(origin, crumbs),
     }) ?? []
   );
@@ -125,7 +126,7 @@ type VariantGroup = {
  * and `custom.variant_label` names the selector (e.g. "Length"). Build the
  * dropdown from those so selecting a value opens that product.
  *
- * `parseLen` only decides sort order — the labels come straight from the
+ * `parseLen` only decides sort order â€” the labels come straight from the
  * metafield, so a non-numeric variant_name still renders, just unsorted.
  */
 function parseLen(value: string) {
@@ -226,7 +227,7 @@ async function loadCriticalData({
     /**
      * Computed here, not at render time. `buildProductJsonLd` runs during
      * hydration too, and a `new Date()` evaluated on both server and client
-     * can straddle a UTC midnight — that produces two different strings for
+     * can straddle a UTC midnight â€” that produces two different strings for
      * the same markup and React reports a hydration mismatch.
      */
     priceValidUntil: priceValidUntilDate(),
@@ -239,7 +240,7 @@ async function loadCriticalData({
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Related products — fetched after first paint so they never block the page.
+  // Related products â€” fetched after first paint so they never block the page.
   const recommendedProducts = context.storefront
     .query(PRODUCT_RECOMMENDATIONS_QUERY, {
       variables: {productHandle: params.handle},
@@ -279,7 +280,7 @@ export default function Product() {
 
   // This ring already in the bag? Show the size that's in there rather than the
   // default, so the picker matches the cart line and the button reads "Added to
-  // bag". Picking another size afterwards leaves this alone — that's a
+  // bag". Picking another size afterwards leaves this alone â€” that's a
   // different line, and it should be addable.
   const bagRingSize = cartLineAttribute(
     useAnalytics().cart,
@@ -385,51 +386,61 @@ export default function Product() {
           <ProductTrustBadges />
         </div>
 
-        <div className="product-main">
-          {sku && <p className="product-sku">SKU / Style Code: {sku}</p>}
-          <h1>{title}</h1>
-          <div className="product-price-row">
-            <ProductPrice
-              price={selectedVariant?.price}
-              compareAtPrice={selectedVariant?.compareAtPrice}
-            />
+        {/* Wrapper exists for mobile only: it is `display: contents` below 48em
+            so the heading, the gallery and the buy panel become siblings that
+            `order` can interleave â€” title, then the piece, then the price.
+            On desktop it is the sticky right column, which is what
+            .product-main used to be, so that layout is unchanged. */}
+        <div className="product-buy-column">
+          <div className="product-heading">
+            {sku && <p className="product-sku">SKU / Style Code: {sku}</p>}
+            <h1>{title}</h1>
           </div>
-          <ShopPayInstallments
-            price={selectedVariant?.price}
-            variant={selectedVariant}
-            pricing={installmentsPricing}
-          />
-          <FinancingPartners />
-          <ProductSpecIcons
-            keyword={`${selectedVariant?.title ?? ''} ${title}`}
-            weight={selectedVariant?.weight}
-            weightUnit={selectedVariant?.weightUnit}
-          />
 
-          <ProductForm
-            productOptions={productOptions}
-            selectedVariant={selectedVariant}
-            wishlistButton={<ProductWishlistButton handle={product.handle} />}
-            variantGroup={buildVariantGroup(product)}
-            product={{
-              id: product.id,
-              title: product.title,
-              handle: product.handle,
-            }}
-            ringSize={isRing ? ringSize : undefined}
-            onRingSizeChange={setRingSize}
-          />
+          <div className="product-main">
+            <div className="product-price-row">
+              <ProductPrice
+                price={selectedVariant?.price}
+                compareAtPrice={selectedVariant?.compareAtPrice}
+              />
+            </div>
+            <ShopPayInstallments
+              price={selectedVariant?.price}
+              variant={selectedVariant}
+              pricing={installmentsPricing}
+            />
+            <FinancingPartners />
+            <ProductSpecIcons
+              keyword={`${selectedVariant?.title ?? ''} ${title}`}
+              weight={selectedVariant?.weight}
+              weightUnit={selectedVariant?.weightUnit}
+            />
 
-          <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
+            <ProductForm
+              productOptions={productOptions}
+              selectedVariant={selectedVariant}
+              wishlistButton={<ProductWishlistButton handle={product.handle} />}
+              variantGroup={buildVariantGroup(product)}
+              product={{
+                id: product.id,
+                title: product.title,
+                handle: product.handle,
+              }}
+              ringSize={isRing ? ringSize : undefined}
+              onRingSizeChange={setRingSize}
+            />
 
-          <div className="product-note">
-            <h3>Important Note</h3>
-            <p>
-              Solid gold is a soft precious metal. Store this piece separately,
-              keep it away from perfume and chlorine, and polish it with a soft
-              cloth. Custom or engraved pieces are crafted to order and may add
-              5–7 business days before shipping.
-            </p>
+            <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
+
+            <div className="product-note">
+              <h3>Important Note</h3>
+              <p>
+                Solid gold is a soft precious metal. Store this piece
+                separately, keep it away from perfume and chlorine, and polish
+                it with a soft cloth. Custom or engraved pieces are crafted to
+                order and may add 5â€“7 business days before shipping.
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -551,7 +562,7 @@ function ProductTrustBadges() {
 
 /**
  * Rendered when the product has no authored `custom.ai_faq` metafield, so the
- * section never looks empty. Deliberately NOT emitted as FAQPage JSON-LD —
+ * section never looks empty. Deliberately NOT emitted as FAQPage JSON-LD â€”
  * these answers are boilerplate derived from fields already in the Product
  * schema, and marking up generated filler as Q&A is what earns a manual
  * action. Only authored FAQs get structured data (see buildFaqJsonLd).
@@ -638,7 +649,7 @@ const WEIGHT_UNIT_ABBR: Record<string, string> = {
 };
 
 /**
- * Product-spec highlights under the price — metal, width, weight, length —
+ * Product-spec highlights under the price â€” metal, width, weight, length â€”
  * read from the variant/title. Each row only renders when its value exists.
  */
 function ProductSpecIcons({
@@ -653,7 +664,7 @@ function ProductSpecIcons({
   const karat = parseKarat(keyword);
   const width = keyword.match(/(\d+(?:\.\d+)?)\s*mm\b/i)?.[1];
   const length = keyword.match(
-    /(\d+(?:\.\d+)?)\s*-?\s*(?:inch(?:es)?\b|in\b|["”″])/i,
+    /(\d+(?:\.\d+)?)\s*-?\s*(?:inch(?:es)?\b|in\b|["â€â€³])/i,
   )?.[1];
   const weightLabel =
     typeof weight === 'number' && weight > 0
@@ -773,6 +784,29 @@ function injectTermsStyle() {
 }
 
 /**
+ * Applies stripSplitPayCopy to every text node under `root`, crossing shadow
+ * boundaries: shop-js renders the banner into nested shadow roots, which a
+ * TreeWalker (and any outside CSS) cannot reach. Returns true once a cut
+ * lands, so the caller can stop polling.
+ */
+function scrubTermsText(root: ParentNode): boolean {
+  let cut = false;
+  for (const node of root.childNodes) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const next = stripSplitPayCopy(node.textContent ?? '');
+      if (next !== node.textContent) {
+        node.textContent = next;
+        cut = true;
+      }
+    } else if (node instanceof Element) {
+      if (node.shadowRoot && scrubTermsText(node.shadowRoot)) cut = true;
+      if (scrubTermsText(node)) cut = true;
+    }
+  }
+  return cut;
+}
+
+/**
  * Shop Pay Installments banner — the same `shopify-payment-terms` custom
  * element the Liquid storefront renders from `{{ form | payment_terms }}`, so
  * the "sample plans" modal here is Shopify's real one (Affirm's plans, APRs
@@ -791,6 +825,24 @@ function ShopPayInstallments({
   variant?: {id: string; availableForSale?: boolean} | null;
   pricing: InstallmentsPricing;
 }) {
+  const box = useRef<HTMLDivElement>(null);
+
+  // Re-run per variant: switching variant rewrites `shopify-meta`, and the
+  // widget re-renders the sentence from scratch. The poll keeps scrubbing for
+  // the whole window rather than stopping at the first cut, because shop-js
+  // repaints the banner a few times while it boots.
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    scrubTermsText(el);
+    const poll = setInterval(() => scrubTermsText(el), 200);
+    const stop = setTimeout(() => clearInterval(poll), 15000);
+    return () => {
+      clearInterval(poll);
+      clearTimeout(stop);
+    };
+  }, [variant?.id, price?.amount]);
+
   useEffect(() => {
     if (!document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) {
       const script = document.createElement('script');
@@ -827,7 +879,7 @@ function ShopPayInstallments({
   if (!meta) return null;
 
   return (
-    <div className="product-monthly">
+    <div className="product-monthly" ref={box}>
       <shopify-payment-terms
         variant-id={String(variantId)}
         shopify-meta={JSON.stringify(meta)}
@@ -851,11 +903,11 @@ const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
  * Every file is 200x102, but the mark inside is letterboxed vertically by a
  * different amount. Measured ink bounding boxes:
  *
- *   acima 200x90 · american 193x94 · progressive 200x75 · synchrony 200x44
+ *   acima 200x90 Â· american 193x94 Â· progressive 200x75 Â· synchrony 200x44
  *
  * That letterboxing is the whole problem. Left uncropped in a row of equal
  * cells, each logo fills the cell width and its height falls out of its own
- * aspect ratio — so synchrony's 4.5:1 mark renders about 19px tall next to
+ * aspect ratio â€” so synchrony's 4.5:1 mark renders about 19px tall next to
  * acima's 39px, and the row looks broken rather than set.
  *
  * So each file is cropped to its own mark, and the row is then sized by height
@@ -864,13 +916,13 @@ const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
  * in their canvases, so a centre crop is safe; `LOGO_INK_PAD` keeps it clear
  * of the ink.
  *
- * The requested height must stay within the source's own 102px — Shopify's CDN
+ * The requested height must stay within the source's own 102px â€” Shopify's CDN
  * will not upscale, and silently returns the original uncropped frame if asked
  * for more. For the same reason there is no 2x retina variant to request:
  * 200x102 is all these files have.
  *
- * Note there is no horizontal margin to reclaim either — three of the four run
- * edge to edge — so scaling a logo past its box only collides its neighbour.
+ * Note there is no horizontal margin to reclaim either â€” three of the four run
+ * edge to edge â€” so scaling a logo past its box only collides its neighbour.
  */
 const LOGO_INK_PAD = 4;
 
@@ -881,7 +933,7 @@ function financingLogo(file: string, ink: number) {
     /**
      * Share of the row this mark takes, proportional to its aspect ratio.
      * Because each image then fills its own share, every logo resolves to the
-     * SAME height — row width divided by the sum of these weights — at any
+     * SAME height â€” row width divided by the sum of these weights â€” at any
      * container width. That is what lets the strip grow with the column
      * instead of sitting at a fixed size with the slack dumped between logos.
      */
@@ -891,7 +943,7 @@ function financingLogo(file: string, ink: number) {
 
 /**
  * These are Gold Custom's own merchant application links, not the lenders'
- * marketing homepages — each carries a code that attributes the application to
+ * marketing homepages â€” each carries a code that attributes the application to
  * this store (Acima `location_guid`, Progressive's `GoldCustomLA` portal,
  * Synchrony's `mmc` merchant code). Sending a customer to the bare homepage
  * instead loses that attribution, so keep the query strings intact.
@@ -1093,7 +1145,7 @@ function buildProductJsonLd({
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
     .filter((url): url is string => Boolean(url));
   const price = selectedVariant?.price;
-  // Must match the <link rel="canonical"> emitted by `meta` above — a product
+  // Must match the <link rel="canonical"> emitted by `meta` above â€” a product
   // that advertises two different URLs splits its own ranking signals.
   const url = absoluteUrl(origin, productCanonicalPath(product));
 

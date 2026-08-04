@@ -4,6 +4,7 @@ import test from 'node:test';
 import {
   buildShopPayMeta,
   variantIdNumber,
+  stripSplitPayCopy,
   FALLBACK_PRICING,
 } from './shopPayInstallments.ts';
 
@@ -63,6 +64,20 @@ test('prices outside the financed range are marked ineligible', () => {
 test('unusable prices produce no banner rather than a broken one', () => {
   assert.equal(build('0.00'), null);
   assert.equal(build('not a price'), null);
+});
+
+test('the split-pay clause is cut, and only when it is a clause', () => {
+  assert.equal(
+    stripSplitPayCopy(
+      'Pay in 4 interest-free installments, or from $52.09/mo with Shop Pay',
+    ),
+    'Pay from $52.09/mo with Shop Pay',
+  );
+  // Split pay alone: no comma, so the sentence is left whole.
+  const only = 'Pay in 4 interest-free installments of $32.50 with Shop Pay';
+  assert.equal(stripSplitPayCopy(only), only);
+  // Nothing to cut is a no-op, not a mangle.
+  assert.equal(stripSplitPayCopy('Learn more'), 'Learn more');
 });
 
 test('variant gids reduce to the bare id the element wants', () => {
