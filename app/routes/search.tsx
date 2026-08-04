@@ -12,6 +12,12 @@ import {
 } from '~/lib/search';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
 import {SITE, pageSeo} from '~/lib/seo';
+import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
+import {
+  SEARCH_SORT_OPTIONS,
+  getFiltersFromParam,
+  getSearchSortFromParam,
+} from '~/lib/collectionFilter';
 
 // Result pages are thin/duplicative and would burn crawl budget across every
 // query permutation, so the route is noindex — but still followable so
@@ -48,6 +54,36 @@ export default function SearchPage() {
 
   const hasResults = Boolean(term) && Boolean(result?.total);
 
+  // `input` is typed as a JSON scalar but is a JSON string at runtime — same
+  // normalisation the collection route does before handing facets to the rail.
+  const filters = (result?.items?.products?.productFilters ?? []).map(
+    (filter) => ({
+      id: filter.id,
+      label: filter.label,
+      type: filter.type,
+      values: filter.values.map((value) => ({
+        id: value.id,
+        label: value.label,
+        count: value.count,
+        input: String(value.input),
+      })),
+    }),
+  );
+
+  const results = !hasResults ? (
+    <SearchResults.Empty />
+  ) : (
+    <SearchResults result={result} term={term}>
+      {({articles, pages, products, term}) => (
+        <div className="search-page-sections">
+          <SearchResults.Products products={products} term={term} />
+          <SearchResults.Pages pages={pages} term={term} />
+          <SearchResults.Articles articles={articles} term={term} />
+        </div>
+      )}
+    </SearchResults>
+  );
+
   return (
     <div className="search-page">
       <div className="section-inner">
@@ -64,21 +100,28 @@ export default function SearchPage() {
         </div>
 
         {error && <p className="search-page-error">{error}</p>}
-
-        {!hasResults ? (
-          <SearchResults.Empty />
-        ) : (
-          <SearchResults result={result} term={term}>
-            {({articles, pages, products, term}) => (
-              <div className="search-page-sections">
-                <SearchResults.Products products={products} term={term} />
-                <SearchResults.Pages pages={pages} term={term} />
-                <SearchResults.Articles articles={articles} term={term} />
-              </div>
-            )}
-          </SearchResults>
-        )}
       </div>
+
+      {term ? (
+        // Same rail + grid the category pages use. Rendered whenever there is
+        // a term, including when a filter narrows the results to nothing —
+        // otherwise the only control that could undo that filter disappears
+        // with the products.
+        <section className="home-section">
+          <div className="section-inner collection-layout">
+            <CollectionFilterSidebar
+              filters={filters}
+              sortOptions={SEARCH_SORT_OPTIONS}
+              showCounts={false}
+              showAppliedChips={false}
+            />
+            <div className="collection-main">{results}</div>
+          </div>
+        </section>
+      ) : (
+        <div className="section-inner">{results}</div>
+      )}
+
       <Analytics.SearchView data={{searchTerm: term, searchResults: result}} />
     </div>
   );
@@ -181,6 +224,9 @@ export const SEARCH_QUERY = `#graphql
     $last: Int
     $term: String!
     $startCursor: String
+    $productFilters: [ProductFilter!]
+    $sortKey: SearchSortKeys
+    $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
     articles: search(
       query: $term,
@@ -210,13 +256,28 @@ export const SEARCH_QUERY = `#graphql
       first: $first,
       last: $last,
       query: $term,
-      sortKey: RELEVANCE,
+      sortKey: $sortKey,
+      reverse: $reverse,
+      productFilters: $productFilters,
       types: [PRODUCT],
       unavailableProducts: HIDE,
     ) {
       nodes {
         ...on Product {
           ...SearchProduct
+        }
+      }
+      # The facets available for THIS result set, so the rail offers only
+      # filters that can actually narrow the current search.
+      productFilters {
+        id
+        label
+        type
+        values {
+          id
+          label
+          count
+          input
         }
       }
       pageInfo {
@@ -244,10 +305,21 @@ async function regularSearch({
   const url = new URL(request.url);
   const variables = getPaginationVariables(request, {pageBy: 8});
   const term = String(url.searchParams.get('q') || '');
+  // Same `filter` and `sort` params the collection rail writes, so the sidebar
+  // component works here unchanged. No `{available: true}` filter is added —
+  // `unavailableProducts: HIDE` on the query already does that job.
+  const productFilters = getFiltersFromParam(url.searchParams);
+  const sort = getSearchSortFromParam(url.searchParams.get('sort'));
 
   // Search articles, pages, and products for the `q` term
   const {errors, ...items}: {errors?: Array<{message: string}>} & RegularSearchQuery = await storefront.query(SEARCH_QUERY, {
-    variables: {...variables, term},
+    variables: {
+      ...variables,
+      term,
+      productFilters,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+    },
   });
 
   if (!items) {

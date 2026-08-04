@@ -1,6 +1,6 @@
 import {useEffect, useState, type CSSProperties} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
-import {SORT_OPTIONS, getSortFromParam} from '~/lib/collectionFilter';
+import {SORT_OPTIONS} from '~/lib/collectionFilter';
 import {useDismissable} from '~/hooks/useDismissable';
 
 type FilterValue = {
@@ -73,9 +73,24 @@ export type SidebarCategory = {handle: string; title: string};
 export function CollectionFilterSidebar({
   categories = [],
   filters,
+  // /search passes SEARCH_SORT_OPTIONS: the search API sorts only by relevance
+  // and price, so the rail must not offer orderings it cannot honour. Only
+  // label/value are read here — the sortKey is the route loader's business.
+  sortOptions = SORT_OPTIONS,
+  // Off for /search: facet counts there disagree with the result set the same
+  // filter actually returns (Shopify reported 14 for a value that yields 20
+  // products). Collection facet counts are exact, so they stay on.
+  showCounts = true,
+  // Off for /search, where the query itself is already the visible context and
+  // the toolbar's "Clear all" plus the rail's own checkboxes still undo a
+  // filter — nothing becomes unreachable by hiding the chip row.
+  showAppliedChips = true,
 }: {
   categories?: SidebarCategory[];
   filters: Filter[];
+  sortOptions?: ReadonlyArray<{label: string; value: string}>;
+  showCounts?: boolean;
+  showAppliedChips?: boolean;
 }) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
@@ -85,7 +100,12 @@ export function CollectionFilterSidebar({
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
-  const activeSort = getSortFromParam(searchParams.get('sort'));
+  // Resolved against whichever list this route passed, so a `sort` param the
+  // current route cannot honour falls back to that route's default rather
+  // than displaying a label the results don't reflect.
+  const sortParam = searchParams.get('sort');
+  const activeSort =
+    sortOptions.find((option) => option.value === sortParam) ?? sortOptions[0];
   const view = searchParams.get('view') === 'list' ? 'list' : 'grid';
   const filterGroups = filters.filter(
     (filter) =>
@@ -246,7 +266,7 @@ export function CollectionFilterSidebar({
           </button>
           {sortOpen && (
             <div className="collection-sort-popover" role="listbox">
-              {SORT_OPTIONS.map((option) => (
+              {sortOptions.map((option) => (
                 <Link
                   aria-selected={activeSort.value === option.value}
                   className={
@@ -267,7 +287,7 @@ export function CollectionFilterSidebar({
         </div>
       </div>
 
-      {activeChips.length > 0 && (
+      {showAppliedChips && activeChips.length > 0 && (
         <div className="collection-active-filters">
           <span className="collection-active-filters-label">Applied:</span>
           <ul className="collection-chip-list">
@@ -341,7 +361,9 @@ export function CollectionFilterSidebar({
                     >
                       <span className="sidebar-check" aria-hidden="true" />
                       <span>{value.label}</span>
-                      <span className="sidebar-count">{value.count}</span>
+                      {showCounts && (
+                        <span className="sidebar-count">{value.count}</span>
+                      )}
                     </Link>
                   </li>
                 );

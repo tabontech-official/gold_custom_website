@@ -1,12 +1,20 @@
 import type {
   ProductFilter,
   ProductCollectionSortKeys,
+  SearchSortKeys,
 } from '@shopify/hydrogen/storefront-api-types';
 
 export type SortOption = {
   label: string;
   value: string;
   sortKey: ProductCollectionSortKeys;
+  reverse: boolean;
+};
+
+export type SearchSortOption = {
+  label: string;
+  value: string;
+  sortKey: SearchSortKeys;
   reverse: boolean;
 };
 
@@ -24,6 +32,29 @@ export const SORT_OPTIONS: SortOption[] = [
 
 export function getSortFromParam(sort?: string | null): SortOption {
   return SORT_OPTIONS.find((option) => option.value === sort) ?? SORT_OPTIONS[0];
+}
+
+/**
+ * Search sorts from a far smaller vocabulary than collections: `SearchSortKeys`
+ * is only PRICE and RELEVANCE. Best-selling, alphabetical and date orderings
+ * live on `ProductCollectionSortKeys` alone, so offering the collection list on
+ * /search would put three-quarters of the menu there as controls that silently
+ * do nothing.
+ *
+ * The `value` strings deliberately match the collection ones, so a shopper who
+ * picked "Price, low to high" in a category keeps it when they search.
+ */
+export const SEARCH_SORT_OPTIONS: SearchSortOption[] = [
+  {label: 'Most relevant', value: 'relevant', sortKey: 'RELEVANCE', reverse: false},
+  {label: 'Price, low to high', value: 'price-asc', sortKey: 'PRICE', reverse: false},
+  {label: 'Price, high to low', value: 'price-desc', sortKey: 'PRICE', reverse: true},
+];
+
+export function getSearchSortFromParam(sort?: string | null): SearchSortOption {
+  return (
+    SEARCH_SORT_OPTIONS.find((option) => option.value === sort) ??
+    SEARCH_SORT_OPTIONS[0]
+  );
 }
 
 /** Every active facet is stored as a JSON-encoded `filter` search param. */
