@@ -28,8 +28,26 @@ export function VideoCarousel({items}: {items: VideoCarouselItem[]}) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const [centerSlide, setCenterSlide] = useState(0);
 
+  const railRef = useRef<HTMLDivElement>(null);
+
   const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
   const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  // Auto-scroll only while the rail is on screen. Embla's loop is a rAF that
+  // never stops on its own, so this section sat near the bottom of the
+  // homepage translating a twelve-slide track every frame from first paint —
+  // stealing frames from whatever the visitor was actually scrolling past.
+  useEffect(() => {
+    const el = railRef.current;
+    const autoScroll = emblaApi?.plugins()?.autoScroll;
+    if (!el || !autoScroll) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) autoScroll.play();
+      else autoScroll.stop();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [emblaApi]);
 
   // Track whichever slide is nearest the viewport center, so only that
   // card's video plays — matches Embla's own scroll progress, so it stays
@@ -65,7 +83,7 @@ export function VideoCarousel({items}: {items: VideoCarouselItem[]}) {
             <span>@goldcustomla</span>
           </h2>
         </div>
-        <div className="video-rail">
+        <div className="video-rail" ref={railRef}>
           <div className="video-rail-viewport" ref={emblaRef}>
             <div className="video-rail-container">
               {slides.map((item, index) => (

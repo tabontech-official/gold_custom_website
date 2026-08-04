@@ -589,15 +589,50 @@ button.reset:hover:not(:has(> *)) {
     #d4af37 55%,
     #b89020 100%
   );
-  background-size: 220% auto;
-  animation: goldShimmer 6s linear infinite;
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   min-height: calc(var(--utility-bar-height) + 8px);
   overflow: hidden;
   padding: 0.48rem clamp(0.9rem, 3vw, 3rem);
+  position: relative;
   text-align: center;
+}
+
+/* The shimmer used to animate `background-position` on the bar itself, which
+   the compositor cannot run — so the topmost strip of the page repainted 60
+   times a second, forever, competing with the sticky header directly below it
+   for raster time. Same sheen, moved onto a pseudo-element and driven by
+   `transform`, which runs entirely on the GPU. Absolutely positioned, so it is
+   not a grid item and the three-column layout above is untouched. */
+.announcement-bar::before {
+  animation: goldShimmer 6s linear infinite;
+  background-image: linear-gradient(
+    100deg,
+    #b89020 0%,
+    #d4af37 45%,
+    #f0d37a 50%,
+    #d4af37 55%,
+    #b89020 100%
+  );
+  /* One gradient tile is 2.2x the bar's width, as before. The strip is a whole
+     tile wider than the bar, so translating it by exactly one tile lands on an
+     identical frame — the loop is seamless with no repaint at the seam. */
+  background-size: 68.75% auto;
+  bottom: 0;
+  content: '';
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 320%;
+}
+
+/* Positioned so they paint above the ::before sheen — the shimmer travels
+   behind the words, as it did when it was the bar's own background. */
+.announcement-link,
+.announcement-text {
+  position: relative;
 }
 
 .announcement-link {
@@ -677,7 +712,7 @@ button.announcement-link {
 
 @keyframes goldShimmer {
   to {
-    background-position: 220% center;
+    transform: translateX(-68.75%);
   }
 }
 
@@ -2824,6 +2859,31 @@ button.announcement-link {
   background: var(--color-bg-soft);
 }
 
+/* Below-the-fold homepage sections: let the browser skip style, layout and
+   paint for them entirely until they are near the viewport. This page is long
+   and dense — product rails, a video rail, a journal rail — and without this
+   every scroll frame carried the cost of the whole document.
+   `contain-intrinsic-size: auto <h>` means the real height is remembered after
+   the first render, so scrolling back up never jumps.
+
+   Two deliberate exclusions. The hero, market bar, category carousel and
+   new-arrivals rail are at or near the fold and must be laid out immediately.
+   `.featured-split` is left out for a different reason: content-visibility
+   brings paint containment with it, which clips at the padding box, and that
+   section's `.split-showcase` casts a 46px shadow into less bottom padding
+   than that — it would end in a hard line instead of a fade. */
+.diamond-value-section,
+.homepage-faq-section,
+.video-rail-section,
+.home-journal {
+  content-visibility: auto;
+  /* Plain value first: engines that don't understand the `auto` keyword keep
+     a usable placeholder height rather than dropping the declaration and
+     collapsing the section to zero. */
+  contain-intrinsic-size: 600px;
+  contain-intrinsic-size: auto 600px;
+}
+
 /* Contact page */
 .contact-page {
   padding-bottom: clamp(3rem, 7vw, 6rem);
@@ -3883,8 +3943,6 @@ button.announcement-link {
 */
 .market-bar {
   background: rgba(212, 175, 55, 0.62);
-  backdrop-filter: blur(18px) saturate(1.25);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
   border-top: 1px solid rgba(255, 255, 255, 0.4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.4);
   margin: 0;
@@ -4027,11 +4085,13 @@ button.announcement-link {
 }
 
 .market-bar {
+  /* No backdrop-filter. This bar is full-width and holds a marquee that
+     animates forever, so the blur had to re-sample and re-blur everything
+     behind it on every single frame — one of the most expensive things on the
+     page, in front of a background that is ~90% opaque anyway. */
   background:
     linear-gradient(90deg, rgba(17, 13, 4, 0.9), rgba(64, 47, 16, 0.72)),
     rgba(212, 175, 55, 0.2);
-  backdrop-filter: blur(18px) saturate(1.2);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
   border: 0;
   border-radius: 0;
   border-top: 1px solid rgba(212, 175, 55, 0.34);
@@ -5825,7 +5885,11 @@ button.announcement-link {
     background-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
-  will-change: transform;
+  /* NO will-change here. Every rail on the homepage renders dozens of these,
+     and `will-change: transform` promotes each one to its own compositor
+     layer permanently — hundreds of layers on a phone, which costs GPU memory
+     the whole time and makes the browser rasterise them coarsely. The hover
+     transform below is desktop-only and cheap enough to promote on demand. */
 }
 
 .product-item:hover,
@@ -5858,7 +5922,7 @@ button.announcement-link {
   position: relative;
   z-index: 1;
   transition: transform 220ms ease;
-  will-change: transform;
+  /* See .product-item — no permanent layer per card. */
 }
 
 .product-item:hover .product-image,

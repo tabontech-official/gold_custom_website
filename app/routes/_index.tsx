@@ -65,6 +65,12 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
+  // Banners, category tiles, badges and FAQs are authored content that changes
+  // a few times a year, but on the storefront default (CacheShort: 1s) every
+  // single homepage hit paid four live Storefront round-trips before a byte
+  // went out — which is most of what made this page slow to start.
+  // The featured-collection query stays on the default: it carries prices.
+  const cache = context.storefront.CacheLong();
   const [
     {collections},
     categoryResponse,
@@ -74,16 +80,18 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     goldRates,
   ] = await Promise.all([
     context.storefront.query(FEATURED_COLLECTION_QUERY),
-    context.storefront.query(SHOP_BY_CATEGORIES_QUERY),
-    context.storefront.query(TRUST_BADGES_QUERY).catch((error: Error) => {
+    context.storefront.query(SHOP_BY_CATEGORIES_QUERY, {cache}),
+    context.storefront
+      .query(TRUST_BADGES_QUERY, {cache})
+      .catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
+    context.storefront.query(HERO_CONTENT_QUERY, {cache}).catch((error: Error) => {
       console.error(error);
       return null;
     }),
-    context.storefront.query(HERO_CONTENT_QUERY).catch((error: Error) => {
-      console.error(error);
-      return null;
-    }),
-    context.storefront.query(FAQS_QUERY).catch((error: Error) => {
+    context.storefront.query(FAQS_QUERY, {cache}).catch((error: Error) => {
       console.error(error);
       return null;
     }),
@@ -258,20 +266,21 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
-  const tiktokVideos = context.storefront
-    .query(TIKTOK_VIDEOS_QUERY)
-    .catch((error: Error) => {
-      console.error(error);
-      return null;
-    });
-
+  // Paired with the commented-out <TikTokVideosSection /> in Homepage — the
+  // section is off, so don't spend a subrequest fetching for it.
+  // const tiktokVideos = context.storefront
+  //   .query(TIKTOK_VIDEOS_QUERY)
+  //   .catch((error: Error) => {
+  //     console.error(error);
+  //     return null;
+  //   });
 
   return {
     recommendedProducts,
     bestSellingProducts,
     genderNewArrivals,
     journalArticles,
-    tiktokVideos,
+    // tiktokVideos,
   };
 }
 // The "Tiktok videos" metaobject holds three reference fields pointing at
@@ -331,7 +340,9 @@ export default function Homepage() {
         bestSelling={data.bestSellingProducts}
       />
       <FaqAccordion faqs={data.faqs} />
-      <TikTokVideosSection videos={data.tiktokVideos} />
+      {/* TikTok rail off for now — uncomment this and the `tiktokVideos`
+          query in loadDeferredData below to bring it back. */}
+      {/* <TikTokVideosSection videos={data.tiktokVideos} /> */}
       <HomeJournal articles={data.journalArticles} />
       <PromiseTicker />
     </div>

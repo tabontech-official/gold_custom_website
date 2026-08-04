@@ -30,6 +30,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
+import {cdnWidth} from '~/lib/cdnImage';
 
 const HEADER_UTILITY_MESSAGES = [
   'Complimentary shipping and returns',
@@ -47,6 +48,32 @@ interface HeaderProps {
 
 type Viewport = 'desktop' | 'mobile';
 
+/**
+ * The rotating utility message, isolated in its own component on purpose.
+ *
+ * The 2.5s interval used to live in `Header`, so every tick re-rendered the
+ * whole header — search bar, cart Suspense boundary and all eight mega-menu
+ * items with their fetchers — forever, on every page. Now the only thing that
+ * re-renders is this one span.
+ */
+function UtilityMessage() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setIndex((current) => (current + 1) % HEADER_UTILITY_MESSAGES.length);
+    }, 2500);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <span key={index} className="announcement-text">
+      {HEADER_UTILITY_MESSAGES[index]}
+    </span>
+  );
+}
+
 export function Header({
   header,
   isLoggedIn,
@@ -54,17 +81,11 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop} = header;
-  const [utilityMessageIndex, setUtilityMessageIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setUtilityMessageIndex(
-        (currentIndex) => (currentIndex + 1) % HEADER_UTILITY_MESSAGES.length,
-      );
-    }, 2500);
-
-    return () => window.clearInterval(timer);
-  }, []);
+  // ponytail: CDN fallback until the logo is assigned in Shopify admin
+  // (Settings > Brand) — then shop.brand takes over.
+  const logoSrc =
+    shop.brand?.logo?.image?.url ??
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/Gold_Custom_Logo.jpg?v=1774676842';
 
   return (
     <>
@@ -75,9 +96,7 @@ export function Header({
           triggerLabel="Book Now"
           triggerClassName="announcement-link"
         />
-        <span key={utilityMessageIndex} className="announcement-text">
-          {HEADER_UTILITY_MESSAGES[utilityMessageIndex]}
-        </span>
+        <UtilityMessage />
         <a
           className="announcement-link"
           href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
@@ -97,15 +116,21 @@ export function Header({
         <NavLink prefetch="intent" to="/" end className="header-logo">
           <img
             className="header-logo-img"
-            // ponytail: CDN fallback until the logo is assigned in Shopify
-            // admin (Settings > Brand) — then shop.brand takes over.
-            src={
-              shop.brand?.logo?.image?.url ??
-              'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/Gold_Custom_Logo.jpg?v=1774676842'
-            }
+            /**
+             * Asked for at the size it is actually drawn (max 3.8rem tall),
+             * with 2x/3x for dense screens.
+             *
+             * The source is a 500x500 progressive JPEG. Squeezing that into a
+             * 35-61px box left the browser to do an ~11x downscale on
+             * fine gold lettering, which is why the mark read as soft — and it
+             * spent 62KB of the header's budget to look that way. Shopify's
+             * CDN resamples it properly and returns a few KB.
+             */
+            src={cdnWidth(logoSrc, 76)}
+            srcSet={`${cdnWidth(logoSrc, 76)} 1x, ${cdnWidth(logoSrc, 152)} 2x, ${cdnWidth(logoSrc, 228)} 3x`}
             alt=""
-            width="500"
-            height="500"
+            width="76"
+            height="76"
           />
           {shop.name}
         </NavLink>

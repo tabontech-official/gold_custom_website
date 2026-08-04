@@ -78,7 +78,12 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
   const rafRef = useRef<number | null>(null);
   // Timestamp of the previous frame; null while the loop is parked.
   const lastFrame = useRef<number | null>(null);
-  const drag = useRef<{startX: number; startTarget: number} | null>(null);
+  const drag = useRef<{
+    startX: number;
+    startY: number;
+    startTarget: number;
+    axis: 'h' | 'v' | null;
+  } | null>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
 
   // Wrap a float offset into [-n/2, n/2] so cards flow around infinitely.
@@ -218,15 +223,33 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
   function onPointerDown(event: React.PointerEvent) {
     drag.current = {
       startX: event.clientX,
+      startY: event.clientY,
       startTarget: scroll.current.target,
+      // A mouse has no scroll gesture to compete with, so it drags immediately.
+      axis: event.pointerType === 'touch' ? null : 'h',
     };
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   }
 
   function onPointerMove(event: React.PointerEvent) {
-    if (!drag.current) return;
-    const dx = event.clientX - drag.current.startX;
-    scroll.current.target = drag.current.startTarget - dx * DRAG_SPEED;
+    const d = drag.current;
+    if (!d) return;
+    const dx = event.clientX - d.startX;
+    // Axis lock. `touch-action: pan-y` lets the browser scroll the page on a
+    // vertical swipe, but pointermove keeps firing during that scroll — so
+    // every flick down the homepage also dragged the rail sideways by whatever
+    // the thumb drifted horizontally, which is what made it feel unsteady.
+    if (!d.axis) {
+      const dy = event.clientY - d.startY;
+      if (Math.abs(dx) + Math.abs(dy) < 8) return;
+      d.axis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+      // Vertical: the gesture belongs to the page. Let go of it entirely.
+      if (d.axis === 'v') {
+        drag.current = null;
+        return;
+      }
+    }
+    scroll.current.target = d.startTarget - dx * DRAG_SPEED;
     kick();
   }
 
@@ -298,7 +321,10 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
               </h3>
               <div className="coverflow-card-links">
                 <Link
-                  prefetch="render"
+                  /* NOT "render": nine collection loaders fired the moment the
+                     homepage painted, competing with its own images for the
+                     connection. "intent" covers hover and touchstart. */
+                  prefetch="intent"
                   to={`/collections/${item.handle}`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onPointerUp={(event) => event.stopPropagation()}
