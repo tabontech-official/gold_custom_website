@@ -15,7 +15,7 @@ export const SITE = {
   origin: 'https://goldcustom.com',
   description:
     'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns and 1-year warranty on every piece.',
-  logo: 'https://goldcustom.com/favicon.svg',
+  logo: 'https://goldcustom.com/favicon.png',
 } as const;
 
 type RootData = {
@@ -83,10 +83,11 @@ export function metaDescription(
  * so the root `titleTemplate` does NOT carry into routes that export their own
  * `meta`. Every route therefore has to restate it — this does that in one
  * place, and normalises `getSeoMeta`'s `| undefined` return to an array.
+ *
+ * A route may pass its own `titleTemplate` to opt out: the homepage title is
+ * authored in Shopify with the brand already in it, so it uses `%s`.
  */
-export function pageSeo(
-  config: Omit<SeoConfig, 'titleTemplate'> & {noIndex?: boolean},
-) {
+export function pageSeo(config: SeoConfig & {noIndex?: boolean}) {
   const {noIndex, ...seo} = config;
 
   return (
@@ -105,7 +106,7 @@ export function organizationJsonLd(origin: string): JsonLd {
     '@id': `${origin}/#organization`,
     name: SITE.name,
     url: origin,
-    logo: absoluteUrl(origin, '/favicon.svg'),
+    logo: absoluteUrl(origin, '/favicon.png'),
     description: SITE.description,
   } as JsonLd;
 }

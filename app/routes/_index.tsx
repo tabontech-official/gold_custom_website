@@ -23,7 +23,10 @@ export const meta: Route.MetaFunction = ({matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
 
   return pageSeo({
-    title: 'Fine Gold Jewelry, Chains & Rings',
+    // The store's own homepage title, as authored in Shopify's Online Store
+    // preferences. It already carries the brand, so no template is applied.
+    title: 'Real 10K & 14K Solid Gold Jewelry | Gold Custom LA',
+    titleTemplate: '%s',
     description: SITE.description,
     url: origin,
   });

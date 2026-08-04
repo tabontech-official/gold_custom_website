@@ -16,7 +16,6 @@ import {
   useRouteLoaderData,
 } from 'react-router';
 import type {Route} from './+types/root';
-import favicon from '~/assets/favicon.svg';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
 import resetStyles from '~/styles/reset.css?url';
@@ -115,7 +114,11 @@ export function links() {
       rel: 'stylesheet',
       href: 'https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap',
     },
-    {rel: 'icon', type: 'image/svg+xml', href: favicon},
+    // Served from public/ at a fixed path rather than imported as a hashed
+    // Vite asset: crawlers and the Organization JSON-LD logo both need a
+    // stable URL, and /favicon.svg was 404ing because the hashed asset never
+    // lived there. This is the store's own icon, pulled from Shopify.
+    {rel: 'icon', type: 'image/png', href: '/favicon.png'},
   ];
 }
 
