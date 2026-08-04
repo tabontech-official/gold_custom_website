@@ -2755,37 +2755,314 @@ button.announcement-link {
 * components/Search
 * --------------------------------------------------
 */
-.predictive-search {
-  height: calc(100vh - var(--header-height) - 40px);
-  overflow-y: auto;
+/* ---------------------------------------------------------------------------
+   Predictive search panel — the overlay behind the header's search toggle.
+
+   Reads as a jeweller's tray: the field is the counter, pinned and always in
+   thumb reach; each result is a piece laid out with its price stated plainly;
+   hairlines divide the case. Every rule here is presentation — the markup and
+   the search behaviour are untouched.
+   ------------------------------------------------------------------------ */
+
+/* Panel shell: field pinned to the top, "View all" pinned to the bottom, only
+   the results scrolling between them. */
+.overlay--search aside {
+  display: flex;
+  flex-direction: column;
+  /* dvh, not vh: on a phone vh measures past the URL bar, so the bottom of
+     this panel — the last results and the View-all link — sat below the fold
+     with no way to scroll to them. */
+  height: 100dvh;
 }
 
-.predictive-search-form {
-  background: var(--color-light);
-  position: sticky;
-  top: 0;
+.overlay--search aside header {
+  border-bottom: 1px solid var(--color-border);
+  flex: 0 0 auto;
+  padding: 0 1.15rem;
 }
 
-.predictive-search-result {
-  margin-bottom: 2rem;
-}
-
-.predictive-search-result h5 {
+.overlay--search aside header h3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
 }
 
-.predictive-search-result-item {
-  margin-bottom: 0.5rem;
+.overlay--search aside header .close {
+  font-size: 1.55rem;
+  line-height: 1;
+  padding: 0.2rem 0.3rem;
+  width: auto;
 }
 
+/* The panel manages its own edges so the field and the hairlines can run the
+   full width; the 1rem inset every other aside uses would inset them. */
+.overlay--search aside main {
+  flex: 1 1 auto;
+  margin: 0;
+  min-height: 0;
+}
+
+.predictive-search {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  /* A flick past the end of the results scrolls the panel, not the page. */
+  overscroll-behavior: contain;
+}
+
+/* The markup carries a stray <br> above the form; it only adds a ragged gap. */
+.predictive-search > br {
+  display: none;
+}
+
+/* --- The counter: one control, input and action joined --- */
+.predictive-search-form {
+  /* Centred, not stretched. Stretch made the button match the field's full
+     height; sizing it to its own text lets it sit inside that height. */
+  align-items: center;
+  background: var(--color-light);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex: 0 0 auto;
+  /* The markup puts a literal &nbsp; between the input and the button, which
+     becomes an anonymous flex item and drives a white sliver between the two
+     halves. Zeroing the form's font-size collapses it; each child sets its
+     own size back below. */
+  font-size: 0;
+  padding: 0.9rem 1.15rem;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.predictive-search-form input {
+  background: var(--color-bg-soft);
+  /* Fully bordered again — the button no longer runs its full height, so the
+     two are separate controls rather than one joined block. */
+  border: 1px solid var(--color-border);
+  color: var(--color-ink);
+  flex: 1 1 auto;
+  font-family: inherit;
+  /* 16px floor — anything smaller and iOS zooms the whole page on focus. */
+  font-size: 1rem;
+  min-width: 0;
+  outline: none;
+  padding: 0.85rem 0.95rem;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.predictive-search-form input:focus {
+  background: #fff;
+  border-color: var(--color-gold);
+}
+
+/* Native search chrome — the clear ✕ and the datalist ▼ — paint in the
+   browser's own blue and read as an unfinished form next to everything else
+   here. The live result list below already does both jobs better. */
+.predictive-search-form input::-webkit-search-cancel-button,
+.predictive-search-form input::-webkit-calendar-picker-indicator {
+  appearance: none;
+  -webkit-appearance: none;
+  display: none;
+}
+
+/* Deliberately compact. The field is the control people use; this is the
+   secondary way out of it, so it takes the smallest share of the row that
+   still reads as a button. Wide letter-spacing plus generous padding had it
+   claiming about a third of the width. */
+.predictive-search-form button {
+  background: var(--color-ink);
+  border: 1px solid var(--color-ink);
+  color: #fff;
+  cursor: pointer;
+  flex: 0 0 auto;
+  font-family: inherit;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  /* The form zeroes its own font-size to collapse the stray &nbsp; in the
+     markup, so the gap to the field has to come from here. */
+  margin-left: 0.55rem;
+  padding: 0.62rem 0.85rem;
+  text-transform: uppercase;
+  transition:
+    background 160ms ease,
+    border-color 160ms ease;
+}
+
+.predictive-search-form button:hover {
+  background: var(--color-gold-deep);
+  border-color: var(--color-gold-deep);
+}
+
+/* --- Sections --- */
+.predictive-search-result {
+  margin: 0;
+  padding: 0 1.15rem;
+}
+
+/* The section label sits on a hairline running to the panel edge, opened by a
+   short gold segment — the way a display case is labelled. This is the only
+   gold in the panel besides the focused field. */
+.predictive-search-result h5 {
+  align-items: center;
+  color: var(--color-ink-soft);
+  display: flex;
+  font-size: 0.62rem;
+  font-weight: 700;
+  gap: 0.6rem;
+  letter-spacing: 0.22em;
+  margin: 1.5rem 0 0.2rem;
+  text-transform: uppercase;
+}
+
+.predictive-search-result h5::before {
+  background: var(--color-gold);
+  content: '';
+  flex: 0 0 auto;
+  height: 2px;
+  width: 1.1rem;
+}
+
+.predictive-search-result h5::after {
+  border-top: 1px solid var(--color-border);
+  content: '';
+  flex: 1 1 auto;
+}
+
+.predictive-search-result ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Two classes deep on purpose: `.overlay aside li` outranks a single class. */
+.predictive-search .predictive-search-result-item {
+  margin: 0;
+}
+
+.predictive-search-result-item + .predictive-search-result-item {
+  border-top: 1px solid var(--color-border);
+}
+
+/* Fixed thumbnail column. Results with no image — most sub-collections — used
+   to drop the column entirely, so those rows stepped left and the list lost
+   its edge. The column is now always there; a quiet placeholder stands in. */
 .predictive-search-result-item a {
   align-items: center;
-  display: flex;
+  color: var(--color-ink);
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  /* Comfortably past 44px — a thumb target, not a mouse target. */
+  min-height: 3.6rem;
+  padding: 0.55rem 0;
+  text-decoration: none;
+  transition: color 140ms ease;
 }
 
-.predictive-search-result-item a img {
-  margin-right: 0.75rem;
-  height: 100%;
+.predictive-search-result-item a:hover {
+  color: var(--color-gold-deep);
+  text-decoration: none;
+}
+
+.predictive-search-result-item a > img {
+  aspect-ratio: 1;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  grid-column: 1;
+  height: auto;
+  margin: 0;
+  object-fit: cover;
+  width: 100%;
+}
+
+.predictive-search-result-item a > div {
+  grid-column: 2;
+  min-width: 0;
+}
+
+.predictive-search-result-item a:not(:has(img))::before {
+  aspect-ratio: 1;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  content: '';
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+}
+
+/* Titles get two lines, then ellipsis. A five-line row pushed the next result
+   clean off the panel. */
+.predictive-search-result-item a p,
+.predictive-search-result-item a span {
+  display: -webkit-box;
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.35;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  -webkit-line-clamp: 2;
+}
+
+/* The price is the thing people scan, so it is not a footnote. */
+.predictive-search-result-item a small {
+  color: var(--color-ink);
+  display: block;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin-top: 0.3rem;
+}
+
+/* --- The one action, pinned so it never hides behind a long result list --- */
+.predictive-search > a:last-child {
+  background: #fff;
+  border-top: 1px solid var(--color-border);
+  bottom: 0;
+  color: var(--color-ink);
+  display: block;
+  /* Sits at the bottom edge when the results are short, sticks there when
+     they are long. */
+  margin-top: auto;
+  padding: 1rem 1.15rem calc(1rem + env(safe-area-inset-bottom));
+  position: sticky;
+  text-decoration: none;
+  transition: background 160ms ease;
+}
+
+.predictive-search > a:last-child:hover {
+  background: var(--color-bg-soft);
+  text-decoration: none;
+}
+
+.predictive-search > a:last-child p {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.predictive-search > a:last-child q {
+  color: var(--color-gold-deep);
+  font-style: normal;
+}
+
+/* Loading and no-results states, so the panel states what is happening
+   instead of going blank mid-fetch. */
+.predictive-search > div:not([class]),
+.predictive-search > p {
+  color: var(--color-ink-soft);
+  font-size: 0.85rem;
+  margin: 0;
+  padding: 1.75rem 1.15rem;
 }
 
 .search-result {
@@ -3838,12 +4115,25 @@ button.announcement-link {
     position: relative;
     flex: 0 0 100%;
     width: 100%;
+    /* The authored portrait ratio (every slide is 1400x2000).
+       Pinned here because the <img> carries no width/height attributes, so
+       until it decoded it contributed zero height — and every slide past the
+       first is loading="lazy", which on a horizontal track often means "not
+       yet". Its neighbours stretched the flex row to full height while it sat
+       short, leaving a white band above the picture mid-swipe.
+       With the box reserved up front, all slides are identical before a single
+       byte of image arrives, and a future upload at a different size can no
+       longer change one slide's height. */
+    aspect-ratio: 7 / 10;
   }
 
   .hero[data-has-mobile] .hero-mobile-image {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
+    /* Fills the reserved box; crops rather than letterboxes, so consistency
+       survives an odd-sized upload. */
+    object-fit: cover;
   }
 
   /* Hide the desktop background-slide track and ITS dots (direct children of
