@@ -42,7 +42,12 @@ import {
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {extractFaqsFromDescription} from '~/lib/description';
-import {parseFaqMetaobject, parseFaqMetafield, type Faq} from '~/lib/faqs';
+import {
+  buildFaqJsonLd,
+  parseFaqMetaobject,
+  parseFaqMetafield,
+  type Faq,
+} from '~/lib/faqs';
 
 type CollectionCoverPhoto = {
   image: string;
@@ -118,6 +123,15 @@ function CollectionProductBreak({item}: {item: CollectionCoverPhoto}) {
   );
 }
 
+/** The FAQs this page renders: metafield first, description block as fallback. */
+function collectionFaqs(data: {
+  faqs?: Faq[];
+  collection?: {descriptionHtml?: string | null} | null;
+}): Faq[] {
+  if (data?.faqs?.length) return data.faqs;
+  return extractFaqsFromDescription(data?.collection?.descriptionHtml).faqs;
+}
+
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const collection = data?.collection;
   const origin = siteOrigin(rootDataFrom(matches));
@@ -144,6 +158,13 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
           {name: title, path: `/collections/${collection.handle}`},
         ]),
         collectionItemListJsonLd(origin, collection),
+        // Resolved exactly as the page does, so the markup describes the
+        // accordion a visitor actually sees rather than a second source.
+        // Both inputs are merchant-authored Q&A, which is what FAQPage
+        // requires — see the warning on buildFaqJsonLd.
+        ...(collectionFaqs(data).length
+          ? [buildFaqJsonLd(collectionFaqs(data))]
+          : []),
       ],
     }) ?? []
   );

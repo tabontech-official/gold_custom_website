@@ -1,5 +1,6 @@
 import type {Route} from './+types/[llms.txt]';
 import {CATEGORIES, productCanonicalPath} from '~/lib/categories';
+import {siteOrigin} from '~/lib/seo';
 
 /**
  * /llms.txt — a machine-readable store summary for LLM agents.
@@ -25,7 +26,9 @@ export async function loader({request, context}: Route.LoaderArgs) {
       return null;
     }),
   ]);
-  const origin = shop?.primaryDomain?.url?.replace(/\/$/, '') ?? url.origin;
+  // Not shop.primaryDomain: that is the Online Store channel's domain, which
+  // on this shop is still goldcustomedo.myshopify.com. See siteOrigin().
+  const origin = siteOrigin();
   const description = (shop?.description ?? '').replace(/\s+/g, ' ').trim();
   const products = topProducts?.products?.nodes ?? [];
 

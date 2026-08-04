@@ -5,17 +5,18 @@ import {getSeoMeta, type SeoConfig} from '@shopify/hydrogen';
 type JsonLd = NonNullable<SeoConfig['jsonLd']>;
 
 /**
- * Canonical identity for the storefront. `origin` is the fallback used when
- * root loader data isn't reachable (error boundaries, the odd static route);
- * everywhere else we prefer the live `shop.primaryDomain.url` so a domain
- * change doesn't silently strand every canonical tag on the old host.
+ * Canonical identity for the storefront.
+ *
+ * `origin` is the www host, not the apex: goldcustom.com 301s to
+ * www.goldcustom.com, and a canonical pointing at a redirect is one more hop
+ * Google has to resolve before it will trust it.
  */
 export const SITE = {
   name: 'Gold Custom',
-  origin: 'https://goldcustom.com',
+  origin: 'https://www.goldcustom.com',
   description:
     'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns and 1-year warranty on every piece.',
-  logo: 'https://goldcustom.com/favicon.png',
+  logo: 'https://www.goldcustom.com/favicon.png',
 } as const;
 
 type RootData = {
@@ -23,18 +24,26 @@ type RootData = {
   publicStoreDomain?: string | null;
 };
 
-/** Resolve the production origin, preferring the shop's own primary domain. */
-export function siteOrigin(root?: RootData | null): string {
-  const primary = root?.header?.shop?.primaryDomain?.url;
-  if (primary) return primary.replace(/\/$/, '');
-
-  const publicDomain = root?.publicStoreDomain;
-  if (publicDomain) {
-    return publicDomain.startsWith('http')
-      ? publicDomain.replace(/\/$/, '')
-      : `https://${publicDomain.replace(/\/$/, '')}`;
-  }
-
+/**
+ * The canonical origin for every URL this storefront emits.
+ *
+ * A constant, and deliberately NOT `shop.primaryDomain.url`. Shopify documents
+ * that field as the *online store's* URL, and this shop runs two storefronts:
+ * the Online Store channel keeps goldcustomedo.myshopify.com as its primary
+ * domain, while this Hydrogen storefront serves www.goldcustom.com. Reading
+ * primaryDomain therefore stamped every canonical, og:url and JSON-LD @id on
+ * this site with the other storefront's hostname — pointing all of our own
+ * ranking signals at a duplicate site. `publicStoreDomain` is the same trap:
+ * it is the API host, not this storefront.
+ *
+ * Preview deployments (*.o2.myshopify.dev) resolve to production here too,
+ * which is correct — Oxygen serves them with a blanket robots disallow, so
+ * they must never advertise themselves as canonical.
+ *
+ * The root-data argument is accepted but unread, so the 26 call sites stay as
+ * they are. Nothing about the canonical host is runtime-derived any more.
+ */
+export function siteOrigin(_root?: RootData | null): string {
   return SITE.origin;
 }
 
@@ -99,15 +108,107 @@ export function pageSeo(config: SeoConfig & {noIndex?: boolean}) {
   );
 }
 
+/**
+ * The physical store, as the Liquid storefront published it. Keeping the same
+ * name, phone, address and coordinates across the migration matters: Google
+ * matches these against the Business Profile, and a changed NAP reads as a
+ * different business and resets the local listing's history.
+ *
+ * Every value here is already visible on /contact and in the footer — except
+ * the hours. Those are the ones the old storefront published; the contact page
+ * only says "by appointment". If appointment-only is now the whole truth,
+ * delete `openingHoursSpecification` rather than let the markup claim more
+ * than the page does.
+ */
+const STORE = {
+  name: 'Gold Custom LA',
+  telephone: '+1-323-688-8837',
+  email: 'mr10k@goldcustom.com',
+  streetAddress: '550 S Hill Street Suite 660',
+  addressLocality: 'Los Angeles',
+  addressRegion: 'CA',
+  postalCode: '90013',
+  addressCountry: 'US',
+  latitude: '34.04779037759987',
+  longitude: '-118.25260717605978',
+  sameAs: [
+    'https://www.facebook.com/people/Gold-Custom-Los-Angeles/100090201579473/',
+    'https://www.instagram.com/goldcustom_la',
+    'https://www.youtube.com/@goldcustomla',
+    'https://www.tiktok.com/@goldcustomla',
+  ],
+} as const;
+
+// The three nodes below are emitted together inside a single `@graph` in
+// root.tsx, which carries the `@context` for all of them. A bare top-level
+// array parses under the spec but several validators only surface its first
+// or last member — `@graph` is what the Liquid storefront used and what tools
+// reliably read. Do not re-add `@context` here.
 export function organizationJsonLd(origin: string): JsonLd {
   return {
-    '@context': 'https://schema.org',
     '@type': 'Organization',
     '@id': `${origin}/#organization`,
     name: SITE.name,
     url: origin,
     logo: absoluteUrl(origin, '/favicon.png'),
     description: SITE.description,
+    sameAs: [...STORE.sameAs],
+    contactPoint: {
+      '@type': 'ContactPoint',
+      contactType: 'Customer Support',
+      telephone: STORE.telephone,
+      email: STORE.email,
+      availableLanguage: 'English',
+    },
+  } as JsonLd;
+}
+
+/**
+ * JewelryStore is a LocalBusiness subtype — this is what puts the shop in the
+ * map pack and "jeweler near me" results. It is the one schema the storefront
+ * lost in the migration that has nothing to do with the catalogue.
+ */
+export function localBusinessJsonLd(origin: string): JsonLd {
+  return {
+    '@type': 'JewelryStore',
+    '@id': `${origin}/#localbusiness`,
+    name: STORE.name,
+    url: origin,
+    image: absoluteUrl(origin, '/favicon.png'),
+    telephone: STORE.telephone,
+    email: STORE.email,
+    priceRange: '$$$',
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: STORE.streetAddress,
+      addressLocality: STORE.addressLocality,
+      addressRegion: STORE.addressRegion,
+      postalCode: STORE.postalCode,
+      addressCountry: STORE.addressCountry,
+    },
+    geo: {
+      '@type': 'GeoCoordinates',
+      latitude: STORE.latitude,
+      longitude: STORE.longitude,
+    },
+    openingHoursSpecification: [
+      {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday',
+        ],
+        opens: '12:00',
+        closes: '17:00',
+      },
+    ],
+    areaServed: {'@type': 'City', name: 'Los Angeles'},
+    sameAs: [...STORE.sameAs],
+    parentOrganization: {'@id': `${origin}/#organization`},
   } as JsonLd;
 }
 
@@ -117,7 +218,6 @@ export function organizationJsonLd(origin: string): JsonLd {
  */
 export function websiteJsonLd(origin: string): JsonLd {
   return {
-    '@context': 'https://schema.org',
     '@type': 'WebSite',
     '@id': `${origin}/#website`,
     name: SITE.name,

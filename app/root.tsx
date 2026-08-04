@@ -25,6 +25,7 @@ import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
 import {
   SITE,
+  localBusinessJsonLd,
   organizationJsonLd,
   rootDataFrom,
   siteOrigin,
@@ -229,10 +230,14 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify([
-              organizationJsonLd(origin),
-              websiteJsonLd(origin),
-            ]),
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                organizationJsonLd(origin),
+                localBusinessJsonLd(origin),
+                websiteJsonLd(origin),
+              ],
+            }),
           }}
         />
       </head>
