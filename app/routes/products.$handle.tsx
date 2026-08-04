@@ -209,7 +209,11 @@ async function loadCriticalData({
         categoryHandle,
         subcategoryHandle: breadcrumbContext?.subcategoryHandle,
       });
-      throw redirect(`${nextPath}${url.search}`);
+      // 301, not the default 302: the hierarchical path is this product's
+      // canonical URL, and the sitemap still lists the flat /products/<handle>
+      // form. A temporary redirect leaves Google crawling the alias forever
+      // and never consolidating ranking onto the real URL.
+      throw redirect(`${nextPath}${url.search}`, 301);
     }
   }
 

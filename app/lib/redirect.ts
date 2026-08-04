@@ -18,6 +18,8 @@ export function redirectIfHandleIsLocalized(
   });
 
   if (shouldRedirect) {
-    throw redirect(url.toString());
+    // 301: a localized handle is a permanent canonicalization, not a temporary
+    // detour. Callers are products/collections/pages — all the same case.
+    throw redirect(url.toString(), 301);
   }
 }
