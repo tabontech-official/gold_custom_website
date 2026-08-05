@@ -136,6 +136,12 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
     __typename
     handle
     id
+    # Resolve each result's canonical /collections/<category>/products/<handle>
+    # link. Without them the card falls back to the flat path, which 301s.
+    productType
+    category {
+      name
+    }
     publishedAt
     title
     trackingParameters
@@ -393,6 +399,13 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     id
     title
     handle
+    # Resolve each suggestion's canonical
+    # /collections/<category>/products/<handle> link, so picking one out of the
+    # dropdown doesn't cost a redirect.
+    productType
+    category {
+      name
+    }
     trackingParameters
     selectedOrFirstAvailableVariant(
       selectedOptions: []

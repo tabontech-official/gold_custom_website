@@ -106,31 +106,34 @@ export function getProductCategoryMatch(product: CategorizableProduct) {
   });
 }
 
-export function buildHierarchicalProductPath({
-  handle,
-  categoryHandle,
-  subcategoryHandle,
-}: {
-  handle: string;
-  categoryHandle: string;
-  subcategoryHandle?: string | null;
-}) {
-  const segments = ['products', categoryHandle];
-  if (subcategoryHandle) segments.push(subcategoryHandle);
-  segments.push(handle);
-  return `/${segments.map(encodeURIComponent).join('/')}`;
+/**
+ * `/collections/{collection}/products/{handle}` — the storefront's one product
+ * URL shape.
+ *
+ * This is the shape the previous Liquid storefront used, so every product link
+ * Google, an old email or a customer's bookmark still holds resolves here
+ * directly with no redirect at all. It also keeps the path a shopper is
+ * standing in stable: clicking a product inside /collections/earrings no
+ * longer throws them out to a different top-level branch of the site.
+ */
+export function buildProductPath(collectionHandle: string, handle: string) {
+  return `/collections/${encodeURIComponent(collectionHandle)}/products/${encodeURIComponent(handle)}`;
 }
 
 /**
  * The single indexable path for a product.
  *
- * `/products/{handle}` 302-redirects to the category path, so the canonical
- * URL must be that destination or we point search engines at a redirect.
- * Subcategory paths are reachable via breadcrumb links but deliberately
- * collapse to the 2-segment category path — one product, one indexed URL.
+ * A product sits in many collections, so it is reachable at many valid URLs —
+ * exactly as it was on the Liquid storefront. The collection segment here is
+ * the product's OWN resolved category, never whichever collection it happened
+ * to be browsed through, so the answer is the same on every one of those pages
+ * and they all point at one indexed URL.
  *
- * The loader, the `<link rel="canonical">` and the sitemap all call this, so
- * the three can never drift apart.
+ * Products whose category doesn't resolve have no collection to nest under and
+ * stay at the flat `/products/{handle}`, which serves 200 for them.
+ *
+ * The loader, the `<link rel="canonical">`, the JSON-LD and llms.txt all call
+ * this, so they can never drift apart.
  */
 export function productCanonicalPath(
   product: CategorizableProduct & {handle: string},
@@ -138,8 +141,20 @@ export function productCanonicalPath(
   const category = getProductCategoryMatch(product);
   if (!category) return `/products/${encodeURIComponent(product.handle)}`;
 
-  return buildHierarchicalProductPath({
-    handle: product.handle,
-    categoryHandle: category.handle,
-  });
+  return buildProductPath(category.handle, product.handle);
+}
+
+/**
+ * Display name for a collection handle, for breadcrumbs on a product page
+ * reached through a collection. The handle is all the URL carries, and
+ * querying the collection just to title it would cost a round trip on every
+ * product view — so use the known label where we have one and title-case the
+ * handle otherwise ("mens-gold-rings" → "Mens Gold Rings").
+ */
+export function collectionLabel(handle: string) {
+  const known = CATEGORIES.find((c) => c.handle === handle);
+  if (known) return known.label;
+  return handle
+    .replace(/-/g, ' ')
+    .replace(/\b[a-z]/g, (char) => char.toUpperCase());
 }

@@ -196,8 +196,9 @@ function collectionItemListJsonLd(origin: string, collection: any) {
     itemListElement: nodes.map((product, index) => ({
       '@type': 'ListItem',
       position: index + 1,
-      // Must be the canonical hierarchical path, not /products/<handle>,
-      // which 301s. See the productType/category fields on ProductItem.
+      // Must be the canonical /collections/<category>/products/<handle>, not
+      // the flat /products/<handle>, which 301s. See the productType/category
+      // fields on the ProductItem fragment.
       url: absoluteUrl(origin, productCanonicalPath(product)),
       name: product.title,
     })),
@@ -451,13 +452,6 @@ export default function Collection() {
     header: rootData?.header,
     publicStoreDomain: rootData?.publicStoreDomain,
   });
-  const productCollectionContext = {
-    categoryLabel: parentCrumb?.label ?? collection.title,
-    categoryHandle:
-      parentCrumb?.to?.replace('/collections/', '') ?? collection.handle,
-    subcategoryLabel: parentCrumb ? collection.title : undefined,
-    subcategoryHandle: parentCrumb ? collection.handle : undefined,
-  };
 
   // Only the collections the header nav doesn't already link to — the nav
   // holds the departments, the sidebar holds the rest of the catalog.
@@ -560,7 +554,7 @@ export default function Collection() {
                                 <ProductItem
                                   key={product.id}
                                   product={product}
-                                  collectionContext={productCollectionContext}
+                                  collectionHandle={collection.handle}
                                   loading={
                                     rowIndex === 0 && productIndex < 8
                                       ? 'eager'
@@ -683,10 +677,11 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     id
     handle
     title
-    # Only used to resolve each product's canonical /products/<category>/<handle>
-    # path for the ItemList JSON-LD. Without them productCanonicalPath falls
-    # back to the flat /products/<handle>, which 301s — and a structured-data
-    # list of redirects is worth less than no list at all.
+    # Only used to resolve each product's canonical
+    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
+    # Without them productCanonicalPath falls back to the flat
+    # /products/<handle>, which 301s — and a structured-data list of redirects
+    # is worth less than no list at all.
     productType
     category {
       name

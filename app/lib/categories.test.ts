@@ -9,7 +9,12 @@
  * /products/rings/.
  */
 import assert from 'node:assert/strict';
-import {getProductCategoryMatch, productCanonicalPath} from './categories.ts';
+import {
+  buildProductPath,
+  collectionLabel,
+  getProductCategoryMatch,
+  productCanonicalPath,
+} from './categories.ts';
 
 const match = (category: string) =>
   getProductCategoryMatch({category: {name: category}})?.handle;
@@ -50,15 +55,38 @@ assert.equal(
 
 // --- canonical paths, which is what all of the above feeds -----------------
 
+// The shape the old Liquid storefront used, so its indexed links land here
+// with no redirect at all.
 assert.equal(
   productCanonicalPath({handle: 'gold-hoop', category: {name: 'Earrings'}}),
-  '/products/earrings/gold-hoop',
+  '/collections/earrings/products/gold-hoop',
 );
-// Unmatched category falls back to the flat path (which 301s to itself, i.e.
-// stays put) rather than inventing a category segment.
+assert.equal(
+  buildProductPath('chains', '10k-miami-cuban'),
+  '/collections/chains/products/10k-miami-cuban',
+);
+
+// Unmatched category has no collection to nest under, so it stays flat — and
+// products.$handle.tsx compares against exactly this string to decide whether
+// to redirect. Change the fallback and that route redirects to itself forever.
 assert.equal(
   productCanonicalPath({handle: 'mystery-item', category: {name: 'Widgets'}}),
   '/products/mystery-item',
 );
+
+// Canonical follows the product's OWN category, never the collection it was
+// browsed through — that is what keeps one product on one indexed URL no
+// matter how many collections list it.
+assert.equal(
+  productCanonicalPath({handle: 'gold-hoop', category: {name: 'Drop Earrings'}}),
+  '/collections/earrings/products/gold-hoop',
+);
+
+// --- breadcrumb labels for a collection handle -----------------------------
+
+assert.equal(collectionLabel('earrings'), 'Earrings');
+assert.equal(collectionLabel('engagement-rings'), 'Engagement');
+// Not a CATEGORIES tile: title-cased rather than shown raw as "mens-gold-rings".
+assert.equal(collectionLabel('mens-gold-rings'), 'Mens Gold Rings');
 
 console.log('categories: all assertions passed');

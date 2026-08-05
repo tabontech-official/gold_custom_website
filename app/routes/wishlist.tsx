@@ -88,6 +88,12 @@ const WISHLIST_PRODUCT_QUERY = `#graphql
     id
     title
     handle
+    # Resolve each card's canonical /collections/<category>/products/<handle>
+    # link. Without them the card falls back to the flat path, which 301s.
+    productType
+    category {
+      name
+    }
     priceRange {
       minVariantPrice {
         amount

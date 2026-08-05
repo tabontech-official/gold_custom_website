@@ -4,6 +4,7 @@ import type {
   ProductItemFragment,
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
+import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {
   AddToCartButton,
@@ -28,22 +29,30 @@ export function ProductItem({
   product,
   loading,
   className,
-  collectionContext,
+  collectionHandle,
   showQuickAdd = false,
 }: {
   product: ProductItemFragment | RecommendedProductFragment | any;
   loading?: 'eager' | 'lazy';
   className?: string;
-  collectionContext?: {
-    categoryLabel?: string;
-    categoryHandle?: string;
-    subcategoryLabel?: string;
-    subcategoryHandle?: string;
-  };
+  /**
+   * The collection this card is being shown in, if any. Set, the card links
+   * into that collection so the shopper stays where they are browsing; unset
+   * (sliders, search, wishlist) the flat path redirects to the canonical URL.
+   */
+  collectionHandle?: string;
   /** Wishlist cards can add their first available variant without leaving the page. */
   showQuickAdd?: boolean;
 }) {
-  const productUrl = buildProductUrl(product.handle, collectionContext);
+  // Without a collection to stay inside, link straight at the canonical URL
+  // instead of the flat path — otherwise every card outside a collection grid
+  // costs the shopper a redirect on click. `productCanonicalPath` returns that
+  // flat path anyway when the card's query didn't ask for category, so a
+  // fragment missing those fields degrades to the old behaviour rather than
+  // producing a broken link.
+  const productUrl = collectionHandle
+    ? buildProductPath(collectionHandle, product.handle)
+    : productCanonicalPath(product);
   const image = product.featuredImage;
 
   return (
@@ -106,22 +115,6 @@ function WishlistQuickAdd({product}: {product: any}) {
       {variant.availableForSale ? 'Add to bag →' : 'Sold out'}
     </AddToCartButton>
   );
-}
-
-function buildProductUrl(
-  handle: string,
-  context?: {
-    categoryLabel?: string;
-    categoryHandle?: string;
-    subcategoryLabel?: string;
-    subcategoryHandle?: string;
-  },
-) {
-  if (!context?.categoryHandle) return `/products/${handle}`;
-  const segments = ['products', context.categoryHandle];
-  if (context.subcategoryHandle) segments.push(context.subcategoryHandle);
-  segments.push(handle);
-  return `/${segments.map(encodeURIComponent).join('/')}`;
 }
 
 // Heart toggle. Posts to /wishlist and flips optimistically while the request

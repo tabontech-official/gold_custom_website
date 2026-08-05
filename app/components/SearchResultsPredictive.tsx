@@ -7,6 +7,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {useAside} from './Aside';
+import {productCanonicalPath} from '~/lib/categories';
 
 type PredictiveSearchItems = PredictiveSearchReturn['result']['items'];
 
@@ -208,7 +209,7 @@ function SearchResultsPredictiveProducts({
       <ul>
         {products.map((product) => {
           const productUrl = urlWithTrackingParams({
-            baseUrl: `/products/${product.handle}`,
+            baseUrl: productCanonicalPath(product),
             trackingParams: product.trackingParameters,
             term: term.current,
           });

@@ -1,28 +1,27 @@
-import {redirect} from 'react-router';
-import type {Route} from './+types/collections.$handle_.products.$productHandle';
-
 /**
- * Shopify's nested product URL, `/collections/<collection>/products/<handle>`.
+ * `/collections/<collection>/products/<handle>` — the product page.
  *
- * Liquid themes link products this way from every grid and carousel, so the
- * old storefront had these indexed alongside the flat form. Hydrogen has no
- * such route and answered 404, stranding whatever Google still holds.
+ * This is the URL shape the Liquid storefront linked products with from every
+ * grid and carousel, so it is the shape Google indexed and customers
+ * bookmarked. It used to 301 here (on to `/products/<handle>`, which 301'd
+ * again to the category path), which put every inbound link from the old site
+ * behind a double redirect and threw a shopper browsing a collection out to an
+ * unrelated branch of the site mid-session. It now renders.
  *
- * The collection segment is dropped rather than mapped onto the hierarchical
- * path: the category in the canonical URL comes from the product's own
- * category match, not from whichever collection it was browsed through, and
- * those disagree often enough that guessing here would send some products to
- * a second redirect anyway. `/products/<handle>` then 301s on to the
- * canonical path, so both hops are permanent and Google consolidates.
+ * The collection segment is browsing context, not identity: the same product
+ * is reachable under every collection it belongs to. `productCanonicalPath`
+ * resolves the one indexed URL from the product's own category, so all of
+ * those pages agree on a single canonical (see products.$handle.tsx).
  *
  * `$handle_` keeps this out of collections.$handle.tsx's tree — that route has
  * no Outlet, and nesting would run its full collection query for nothing.
+ *
+ * ponytail: the collection segment is validated for shape but not checked to
+ * exist, so /collections/anything/products/<handle> serves the product with a
+ * breadcrumb pointing at a collection that 404s. Verifying it would cost a
+ * second query on every product view — the hottest page on the store — to
+ * defend against a URL nothing links to, and the canonical tag already keeps
+ * the invented ones out of the index. Query the collection here if that
+ * breadcrumb ever gets clicked in anger.
  */
-export async function loader({params, request}: Route.LoaderArgs) {
-  const {search} = new URL(request.url);
-  throw redirect(`/products/${params.productHandle}${search}`, 301);
-}
-
-export default function CollectionProductRedirect() {
-  return null;
-}
+export {default, loader, meta} from './products.$handle';

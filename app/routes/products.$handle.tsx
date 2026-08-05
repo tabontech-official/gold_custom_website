@@ -26,7 +26,7 @@ import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {
-  buildHierarchicalProductPath,
+  collectionLabel,
   getProductCategoryMatch,
   productCanonicalPath,
 } from '~/lib/categories';
@@ -51,6 +51,7 @@ import {
   type Faq,
 } from '~/lib/faqs';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
+import {meaningfulSelectedOptions} from '~/lib/variants';
 import {DescriptionAccordions} from '~/components/DescriptionAccordions';
 import {
   MERCHANT_RETURN_POLICY,
@@ -165,13 +166,19 @@ async function loadCriticalData({
   params,
   request,
 }: Route.LoaderArgs) {
-  const {handle} = params;
   const {storefront} = context;
   const url = new URL(request.url);
   const routeParams = params as Route.LoaderArgs['params'] & {
-    category?: string;
-    subcategory?: string;
+    productHandle?: string;
   };
+
+  // Two routes share this loader. On `/collections/<c>/products/<h>` the router
+  // binds the collection to `handle` and the product to `productHandle`; on the
+  // bare `/products/<h>` there is no collection and `handle` IS the product.
+  const handle = routeParams.productHandle ?? params.handle;
+  const collectionHandle = routeParams.productHandle
+    ? normalizeCollectionHandle(params.handle ?? null)
+    : null;
 
   if (!handle) {
     throw new Error('Expected product handle to be defined');
@@ -197,31 +204,30 @@ async function loadCriticalData({
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
-  const breadcrumbContext = getBreadcrumbContext(
-    url.searchParams,
-    routeParams,
-  );
-  const inferredCategory = getProductCategoryMatch(product);
-  if (!routeParams.category && (breadcrumbContext?.categoryHandle || inferredCategory)) {
-    const categoryHandle =
-      breadcrumbContext?.categoryHandle ?? inferredCategory?.handle;
-    if (categoryHandle) {
-      const nextPath = buildHierarchicalProductPath({
-        handle: product.handle,
-        categoryHandle,
-        subcategoryHandle: breadcrumbContext?.subcategoryHandle,
-      });
-      // 301, not the default 302: the hierarchical path is this product's
-      // canonical URL, and the sitemap still lists the flat /products/<handle>
-      // form. A temporary redirect leaves Google crawling the alias forever
-      // and never consolidating ranking onto the real URL.
-      throw redirect(`${nextPath}${url.search}`, 301);
+  // A product reached WITHOUT a collection in the path has no browsing context
+  // worth preserving, so send it to its canonical URL — one address in the bar,
+  // in the sitemap and in Google. Reached WITH one, it stays put: the collection
+  // is where the shopper actually is, and every such page names the same
+  // canonical anyway.
+  //
+  // 301, not the default 302: a temporary redirect leaves Google crawling the
+  // alias forever and never consolidating ranking onto the real URL.
+  //
+  // No loop is possible — `productCanonicalPath` returns the flat
+  // `/products/<handle>` for a product whose category doesn't resolve, which is
+  // the path we are already on, so the comparison stops it.
+  if (!collectionHandle) {
+    const canonical = productCanonicalPath(product);
+    if (canonical !== url.pathname) {
+      throw redirect(`${canonical}${url.search}`, 301);
     }
   }
 
   return {
     product,
-    breadcrumbContext,
+    breadcrumbContext: collectionHandle
+      ? {handle: collectionHandle, label: collectionLabel(collectionHandle)}
+      : null,
     installmentsPricing:
       installments?.shop?.shopPayInstallmentsPricing ?? FALLBACK_PRICING,
     /**
@@ -275,8 +281,12 @@ export default function Product() {
   );
 
   // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url
-  useSelectedOptionInUrlParam(selectedVariant.selectedOptions);
+  // only when no search params are set in the url. Filtered, or a product with
+  // no real options stamps `?Title=Default+Title` onto its own URL on hydrate
+  // — see meaningfulSelectedOptions.
+  useSelectedOptionInUrlParam(
+    meaningfulSelectedOptions(selectedVariant.selectedOptions),
+  );
 
   // This ring already in the bag? Show the size that's in there rather than the
   // default, so the picker matches the cart line and the button reads "Added to
@@ -321,39 +331,25 @@ export default function Product() {
   // Shopify taxonomy names look like "Necklaces in Jewelry", so we match on
   // containment as well as exact label/handle.
   const categoryMatch = getProductCategoryMatch(product);
-  const contextCategory = breadcrumbContext?.categoryHandle
+  // The collection in the URL is where the shopper actually came from, so it
+  // outranks the product's own category for the crumb — landing on
+  // /collections/mens-gold-rings/products/x and being told "Rings" would
+  // describe a page they were never on.
+  const collectionCrumb = breadcrumbContext
     ? {
-        label:
-          breadcrumbContext.categoryName ||
-          breadcrumbContext.categoryHandle,
-        to: `/collections/${breadcrumbContext.categoryHandle}`,
+        label: breadcrumbContext.label,
+        to: `/collections/${breadcrumbContext.handle}`,
       }
-    : null;
-  const contextSubcategory = breadcrumbContext?.subcategoryHandle
-    ? {
-        label:
-          breadcrumbContext.subcategoryName ||
-          breadcrumbContext.subcategoryHandle,
-        to: `/collections/${breadcrumbContext.subcategoryHandle}`,
-      }
-    : null;
+    : categoryMatch
+      ? {label: categoryMatch.label, to: `/collections/${categoryMatch.handle}`}
+      : categoryName
+        ? {label: categoryName}
+        : null;
 
   const breadcrumbs = [
     {label: 'Home', to: '/'},
     {label: 'Shop', to: '/collections/all'},
-    ...(contextCategory
-      ? [contextCategory]
-      : categoryName
-      ? [
-          {
-            label: categoryMatch?.label ?? categoryName,
-            to: categoryMatch
-              ? `/collections/${categoryMatch.handle}`
-              : undefined,
-          },
-        ]
-      : []),
-    contextSubcategory,
+    ...(collectionCrumb ? [collectionCrumb] : []),
     {label: title},
   ];
 
@@ -1084,48 +1080,15 @@ function normalizeMedia(nodes: any[], title: string): GalleryMedia[] {
     .filter((item): item is GalleryMedia => item !== null);
 }
 
-function getBreadcrumbContext(
-  params: URLSearchParams,
-  routeParams?: {category?: string; subcategory?: string},
-) {
-  const categoryHandle = normalizeCollectionHandle(params.get('category'));
-  const subcategoryHandle = normalizeCollectionHandle(params.get('subcategory'));
-  const pathCategoryHandle = normalizeCollectionHandle(
-    routeParams?.category ?? null,
-  );
-  const pathSubcategoryHandle = normalizeCollectionHandle(
-    routeParams?.subcategory ?? null,
-  );
-  const categoryName = normalizeCrumbLabel(params.get('categoryName'));
-  const subcategoryName = normalizeCrumbLabel(params.get('subcategoryName'));
-
-  if (
-    !categoryHandle &&
-    !subcategoryHandle &&
-    !pathCategoryHandle &&
-    !pathSubcategoryHandle
-  ) {
-    return null;
-  }
-
-  return {
-    categoryHandle: categoryHandle ?? pathCategoryHandle,
-    categoryName,
-    subcategoryHandle: subcategoryHandle ?? pathSubcategoryHandle,
-    subcategoryName,
-  };
-}
-
+/**
+ * The collection segment is echoed into a breadcrumb link, so it is validated
+ * rather than trusted — anything that isn't handle-shaped is dropped and the
+ * page falls back to the product's own category.
+ */
 function normalizeCollectionHandle(value: string | null) {
   if (!value) return null;
-  const handle = value.replace(/^\/?collections\//, '').trim();
+  const handle = value.trim();
   return /^[a-z0-9][a-z0-9-]*$/i.test(handle) ? handle : null;
-}
-
-function normalizeCrumbLabel(value: string | null) {
-  if (!value) return null;
-  const label = value.trim().slice(0, 80);
-  return label || null;
 }
 
 function buildProductJsonLd({
@@ -1341,6 +1304,12 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
     id
     title
     handle
+    # Resolve each card's canonical /collections/<category>/products/<handle>
+    # link. Without them the card falls back to the flat path, which 301s.
+    productType
+    category {
+      name
+    }
     priceRange {
       minVariantPrice {
         amount

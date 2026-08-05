@@ -888,10 +888,13 @@ function ProductRail({
   products,
   ariaLabel,
   emptyMessage = 'No products to show right now.',
+  collectionHandle,
 }: {
   products: any[];
   ariaLabel: string;
   emptyMessage?: string;
+  /** Set when the rail IS a collection's products, so cards link into it. */
+  collectionHandle?: string;
 }) {
   const [shown, setShown] = useState(RAIL_BATCH);
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -928,6 +931,7 @@ function ProductRail({
           key={product.id}
           product={product}
           className="split-rail-item"
+          collectionHandle={collectionHandle}
           loading={index < 4 ? 'eager' : undefined}
         />
       ))}
@@ -1001,6 +1005,7 @@ function FeaturedProducts({
               products={featuredNodes}
               ariaLabel="featured products"
               emptyMessage="Featured products are loading right now."
+              collectionHandle={collection.handle}
             />
           ) : (
             <Suspense fallback={<ProductSliderSkeleton />}>
@@ -1371,6 +1376,12 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
     id
     title
     handle
+    # Resolve each card's canonical /collections/<category>/products/<handle>
+    # link. Without them the card falls back to the flat path, which 301s.
+    productType
+    category {
+      name
+    }
     priceRange {
       minVariantPrice {
         amount
@@ -1406,6 +1417,11 @@ const BEST_SELLING_PRODUCTS_QUERY = `#graphql
     id
     title
     handle
+    # See RecommendedProduct — canonical link resolution.
+    productType
+    category {
+      name
+    }
     priceRange {
       minVariantPrice {
         amount
@@ -1440,6 +1456,11 @@ const NEW_ARRIVALS_BY_GENDER_QUERY = `#graphql
     id
     title
     handle
+    # See RecommendedProduct — canonical link resolution.
+    productType
+    category {
+      name
+    }
     priceRange {
       minVariantPrice {
         amount

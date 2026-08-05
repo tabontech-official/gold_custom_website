@@ -61,9 +61,11 @@ ${productSection(origin, products)}
 
 ## Notes for agents
 
-- Canonical product URLs are /products/{category}/{handle}. A bare
-  /products/{handle} redirects to that path; follow the redirect and treat the
-  destination as the product's identity.
+- Canonical product URLs are /collections/{collection}/products/{handle}, where
+  the collection is the product's own category. A product listed in several
+  collections is reachable under each of them; every one of those pages names
+  the same canonical, so treat that canonical as the product's identity.
+- A bare /products/{handle} redirects to it; follow the redirect.
 - Prices and availability change; always re-read the Product JSON-LD rather
   than relying on a cached value.
 - /cart, /account, /wishlist and /checkout are user-specific and not indexable.
@@ -103,8 +105,9 @@ function productSection(
   const lines = products.map((product) => {
     const price = product.priceRange?.minVariantPrice;
     const amount = price?.amount ? Number(price.amount) : null;
-    // Canonical hierarchical path, matching the product page's own canonical
-    // tag — a flat /products/<handle> here would just 301.
+    // Canonical /collections/<category>/products/<handle>, matching the
+    // product page's own canonical tag — a flat /products/<handle> here would
+    // just 301.
     const path = productCanonicalPath(product);
     const cost =
       amount !== null && Number.isFinite(amount)

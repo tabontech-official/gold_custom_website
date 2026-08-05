@@ -211,10 +211,22 @@ function RulerIcon() {
   );
 }
 
+/**
+ * Swap the product handle in the path the shopper is already on, so picking a
+ * length from inside /collections/chains/products/x lands on
+ * /collections/chains/products/y — staying in the collection instead of
+ * bouncing out through a redirect.
+ *
+ * Both product URL shapes end in `products/<handle>`, so the check is on the
+ * second-to-last segment. Anything else (a stale path shape) falls back to the
+ * flat form, which redirects to the product's canonical URL.
+ */
 function replaceProductHandleInPath(pathname: string, handle?: string | null) {
   if (!handle) return pathname;
   const parts = pathname.split('/').filter(Boolean);
-  if (parts[0] !== 'products') return `/products/${handle}`;
+  if (parts[parts.length - 2] !== 'products') {
+    return `/products/${encodeURIComponent(handle)}`;
+  }
   return `/${[...parts.slice(0, -1), handle].map(encodeURIComponent).join('/')}`;
 }
 

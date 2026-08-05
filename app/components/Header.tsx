@@ -31,6 +31,7 @@ import {
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
 import {cdnWidth} from '~/lib/cdnImage';
+import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
 const HEADER_UTILITY_MESSAGES = [
   'Complimentary shipping and returns',
@@ -236,7 +237,7 @@ function HeaderSearchBar() {
                     <li key={product.id}>
                       <Link
                         onClick={closeResults}
-                        to={`/products/${product.handle}`}
+                        to={productCanonicalPath(product)}
                       >
                         {image && (
                           <Image
@@ -505,7 +506,10 @@ function MegaMenuItem({
                       key={product.id}
                       onClick={closeMegaMenu}
                       prefetch="intent"
-                      to={`/products/${product.handle}`}
+                      // These are always the active department's own products
+                      // (see featuredProducts above), so link into that
+                      // collection — same browsing context, and no redirect.
+                      to={buildProductPath(handle, product.handle)}
                     >
                       {product.featuredImage ? (
                         <Image

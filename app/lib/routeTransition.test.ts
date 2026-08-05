@@ -13,7 +13,10 @@ import {isPageChange, routeSkeletonVariant} from './routeTransition.ts';
 
 // Real page changes: the whole point.
 assert.equal(isPageChange('/collections/rings', '/'), true);
-assert.equal(isPageChange('/products/rings/x', '/collections/rings'), true);
+assert.equal(
+  isPageChange('/collections/rings/products/x', '/collections/rings'),
+  true,
+);
 
 // Same pathname is NOT a page change. Collection filters, sort and pagination
 // all land here — they keep the pathname and vary only search params, and they
@@ -23,11 +26,24 @@ assert.equal(isPageChange('/collections/rings', '/collections/rings'), false);
 
 // --- which shape to show ---------------------------------------------------
 
-assert.equal(routeSkeletonVariant('/products/earrings/gold-hoop'), 'product');
-assert.equal(routeSkeletonVariant('/products/chains/cuban'), 'product');
+// Product URLs live under /collections/<collection>/products/<handle>, so the
+// product check has to win over the /collections prefix. Getting this backwards
+// flashes a collection grid on every product open.
+assert.equal(
+  routeSkeletonVariant('/collections/earrings/products/gold-hoop'),
+  'product',
+);
+assert.equal(
+  routeSkeletonVariant('/collections/chains/products/cuban'),
+  'product',
+);
+// Flat form, for products whose category doesn't resolve.
+assert.equal(routeSkeletonVariant('/products/gold-hoop'), 'product');
 
 assert.equal(routeSkeletonVariant('/collections'), 'collection');
 assert.equal(routeSkeletonVariant('/collections/earrings'), 'collection');
+// A collection page, not a product — nothing follows the collection handle.
+assert.equal(routeSkeletonVariant('/collections/all'), 'collection');
 
 // A single article is prose; the blog index is a card grid, so it takes the
 // grid shape instead. Getting this backwards produces a layout jump at commit,
