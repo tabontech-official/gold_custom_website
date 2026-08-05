@@ -211,6 +211,20 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        {/*
+          Google Search Console ownership. Rendered in the shell rather than a
+          route `meta` export for the same reason as the JSON-LD below: a child
+          route's `meta` REPLACES the root's, so a `meta`-based tag would vanish
+          on exactly the pages that define their own — including the home page.
+
+          Verification is re-checked periodically, not just once: removing this
+          tag silently un-verifies the property and cuts off Search Console
+          data. Leave it in place.
+        */}
+        <meta
+          name="google-site-verification"
+          content="_oBhTHP7os68yaOsHXe330yYwZwHMUBUAvfzm7WnwLw"
+        />
         <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
