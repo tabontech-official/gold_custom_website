@@ -1,7 +1,6 @@
 import {Link} from 'react-router';
 import {Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
-import {AutoLoadMore} from '~/components/AutoLoadMore';
 import {ProductItem} from '~/components/ProductItem';
 
 type SearchItems = RegularSearchReturn['result']['items'];
@@ -122,7 +121,6 @@ function SearchResultsProducts({
               ))}
             </div>
             <div className="load-more-bar">
-              <AutoLoadMore hasNextPage={hasNextPage} isLoading={isLoading} />
               <NextLink className="load-more-btn">
                 {isLoading ? 'Loading...' : <span>Load more ↓</span>}
               </NextLink>

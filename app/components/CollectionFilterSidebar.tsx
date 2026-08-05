@@ -1,6 +1,12 @@
 import {useEffect, useState, type CSSProperties} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS} from '~/lib/collectionFilter';
+import {
+  BROWSE_GROUPS,
+  browseLabel,
+  browseNameKey,
+  tagSearchPath,
+} from '~/lib/browseTags';
 import {useDismissable} from '~/hooks/useDismissable';
 
 type FilterValue = {
@@ -384,8 +390,9 @@ export function CollectionFilterSidebar({
  */
 function CategoryNav({categories}: {categories: SidebarCategory[]}) {
   const {pathname} = useLocation();
+  const entries = categoryEntries(categories);
 
-  if (categories.length === 0) return null;
+  if (entries.length === 0) return null;
 
   return (
     <details className="sidebar-group sidebar-group-categories" open>
@@ -393,18 +400,20 @@ function CategoryNav({categories}: {categories: SidebarCategory[]}) {
       {/* The list is scrolled, not searched — the filter-a-filter box that
           used to sit here was a control for finding a control. */}
       <ul className="sidebar-categories">
-        {categories.map((category) => {
-          const to = `/collections/${category.handle}`;
-          const isActive = pathname === to;
+        {entries.map((entry) => {
+          const isActive = pathname === entry.to;
           return (
-            <li key={category.handle}>
+            <li key={entry.key}>
               <Link
                 aria-current={isActive ? 'page' : undefined}
                 className={`sidebar-category${isActive ? ' is-active' : ''}`}
-                prefetch="intent"
-                to={to}
+                // Collections are real routes worth warming; tag links are
+                // search queries, and prefetching forty of them on hover
+                // costs far more than the navigation saves.
+                prefetch={entry.isCollection ? 'intent' : 'none'}
+                to={entry.to}
               >
-                {category.title}
+                {entry.label}
               </Link>
             </li>
           );
@@ -412,6 +421,54 @@ function CategoryNav({categories}: {categories: SidebarCategory[]}) {
       </ul>
     </details>
   );
+}
+
+type CategoryEntry = {
+  key: string;
+  label: string;
+  to: string;
+  isCollection: boolean;
+};
+
+/**
+ * One alphabetical list of everything browsable: the collections, plus the
+ * curated tags for styles, materials and occasions that no collection covers.
+ *
+ * The two kinds of link go to different places by necessity. Collections have
+ * real `/collections/<handle>` routes; tags cannot, because Shopify silently
+ * IGNORES `ProductFilter.tag` on a collection's products connection unless a
+ * tag filter is enabled in the Search & Discovery app — verified against the
+ * live API, where a nonexistent tag still returned the full unfiltered
+ * collection. Only the search route's `query` argument filters by tag, so tags
+ * route through `/search?q=tag:"…"`. Shoppers see one uniform list either way.
+ */
+function categoryEntries(categories: SidebarCategory[]): CategoryEntry[] {
+  const entries: CategoryEntry[] = categories.map((category) => ({
+    key: `c:${category.handle}`,
+    label: category.title,
+    to: `/collections/${category.handle}`,
+    isCollection: true,
+  }));
+
+  // A tag the collection list already covers must not appear twice. Matched on
+  // a loose key so "mens-bracelets" and "Men's Bracelets" collapse together.
+  const taken = new Set(categories.map((category) => browseNameKey(category.title)));
+
+  for (const entry of BROWSE_GROUPS.flatMap((group) => group.tags)) {
+    const label = browseLabel(entry);
+    if (taken.has(browseNameKey(label)) || taken.has(browseNameKey(entry.tag))) {
+      continue;
+    }
+    taken.add(browseNameKey(label));
+    entries.push({
+      key: `t:${entry.tag}`,
+      label,
+      to: tagSearchPath(entry.tag),
+      isCollection: false,
+    });
+  }
+
+  return entries.sort((a, b) => a.label.localeCompare(b.label));
 }
 
 type PriceBounds = {min: number; max: number};

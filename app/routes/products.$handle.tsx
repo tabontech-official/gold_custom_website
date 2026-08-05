@@ -98,6 +98,27 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   );
 };
 
+/**
+ * Which param holds the product handle depends on which route is rendering.
+ *
+ * Two routes share this loader. On `/collections/<c>/products/<h>` the router
+ * binds the COLLECTION to `handle` and the product to `productHandle`; on the
+ * bare `/products/<h>` there is no collection and `handle` IS the product.
+ *
+ * This lives in one function because reading `params.handle` directly is right
+ * on one route and silently wrong on the other — `loadDeferredData` did exactly
+ * that and asked the API for recommendations for a product called "chains",
+ * which returned nothing, so "You May Also Like" rendered empty on every
+ * product page. Nothing threw: the collection URL is the canonical one, so
+ * every real visit took the broken path and just showed a bare heading.
+ */
+function productHandleFromParams(params: Route.LoaderArgs['params']): string | undefined {
+  const routeParams = params as Route.LoaderArgs['params'] & {
+    productHandle?: string;
+  };
+  return routeParams.productHandle ?? params.handle;
+}
+
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
   const deferredData = loadDeferredData(args);
@@ -172,10 +193,7 @@ async function loadCriticalData({
     productHandle?: string;
   };
 
-  // Two routes share this loader. On `/collections/<c>/products/<h>` the router
-  // binds the collection to `handle` and the product to `productHandle`; on the
-  // bare `/products/<h>` there is no collection and `handle` IS the product.
-  const handle = routeParams.productHandle ?? params.handle;
+  const handle = productHandleFromParams(params);
   const collectionHandle = routeParams.productHandle
     ? normalizeCollectionHandle(params.handle ?? null)
     : null;
@@ -249,7 +267,9 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // Related products â€” fetched after first paint so they never block the page.
   const recommendedProducts = context.storefront
     .query(PRODUCT_RECOMMENDATIONS_QUERY, {
-      variables: {productHandle: params.handle},
+      // NOT `params.handle` — see productHandleFromParams. On the canonical
+      // `/collections/<c>/products/<h>` URL that is the collection.
+      variables: {productHandle: productHandleFromParams(params)},
     })
     .catch((error: Error) => {
       console.error(error);

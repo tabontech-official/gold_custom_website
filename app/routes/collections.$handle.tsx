@@ -26,7 +26,6 @@ import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
-import {AutoLoadMore} from '~/components/AutoLoadMore';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   CATEGORY_MENU_HANDLES,
@@ -599,15 +598,6 @@ export default function Collection() {
                       <span className="load-more-count">
                         {nodes.length} pieces shown
                       </span>
-                      {/* Fires the NextLink beside it once the bar is within a
-                          screenful, so scrolling keeps loading without a click.
-                          Hydrogen's Pagination links set preventScrollReset, so
-                          the viewport stays put as rows append. The button stays
-                          for keyboard users and when the observer never runs. */}
-                      <AutoLoadMore
-                        hasNextPage={hasNextPage}
-                        isLoading={isLoading}
-                      />
                       {hasNextPage ? (
                         <NextLink className="load-more-btn">
                           {isLoading ? 'Loading…' : 'Load More'}

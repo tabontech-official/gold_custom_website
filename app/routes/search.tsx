@@ -1,6 +1,4 @@
-import {
-  useLoaderData,
-} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchResults} from '~/components/SearchResults';
@@ -12,6 +10,7 @@ import {
 } from '~/lib/search';
 import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
 import {SITE, pageSeo} from '~/lib/seo';
+import {tagFromSearchTerm} from '~/lib/browseTags';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {
   SEARCH_SORT_OPTIONS,
@@ -70,6 +69,10 @@ export default function SearchPage() {
     }),
   );
 
+  // Non-null only when the visitor arrived from a tag link in the collection
+  // sidebar, which encodes the tag as `tag:"…"` in `q`.
+  const browsedTag = tagFromSearchTerm(term);
+
   const results = !hasResults ? (
     <SearchResults.Empty />
   ) : (
@@ -87,15 +90,41 @@ export default function SearchPage() {
   return (
     <div className="search-page">
       <div className="section-inner">
-        <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Search'}]} />
+        <Breadcrumb
+          items={
+            browsedTag
+              ? [
+                  {label: 'Home', to: '/'},
+                  {label: 'Search', to: '/search'},
+                  {label: browsedTag},
+                ]
+              : [{label: 'Home', to: '/'}, {label: 'Search'}]
+          }
+        />
+        {/*
+          Tag links from the collection sidebar carry a `tag:"…"` term. Showing
+          that verbatim put raw query syntax in front of the shopper, so a tag
+          search gets named after the tag instead — and the tag becomes the h1,
+          because on those visits it, not the word "Search", is what the page
+          is about.
+        */}
         <div className="search-page-header">
-          <h1 className="search-page-title">Search</h1>
-          {term && (
+          <h1 className="search-page-title">{browsedTag ?? 'Search'}</h1>
+          {browsedTag ? (
             <p className="search-page-summary">
               {result?.total
-                ? `Results for "${term}"`
-                : `No results for "${term}"`}
+                ? `Every ${browsedTag.toLowerCase()} piece we carry.`
+                : `Nothing tagged ${browsedTag} right now.`}{' '}
+              <Link to="/collections/shop-all">Shop all →</Link>
             </p>
+          ) : (
+            term && (
+              <p className="search-page-summary">
+                {result?.total
+                  ? `Results for "${term}"`
+                  : `No results for "${term}"`}
+              </p>
+            )
           )}
         </div>
 
