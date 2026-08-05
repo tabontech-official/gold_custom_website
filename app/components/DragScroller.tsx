@@ -89,7 +89,16 @@ function ScrollProgressBar({
       const width = Math.max((clientWidth / scrollWidth) * 100, 12);
       const maxScroll = scrollWidth - clientWidth;
       const left = (scrollLeft / maxScroll) * (100 - width);
-      setThumb({width, left, visible: true});
+      // Returning the SAME object when nothing moved lets React bail out.
+      // A fresh object literal here re-rendered the rail on every scroll
+      // event — sub-pixel thumb moves nobody can see, at 60+ renders/second.
+      setThumb((t) =>
+        t.visible &&
+        Math.abs(t.left - left) < 0.1 &&
+        Math.abs(t.width - width) < 0.1
+          ? t
+          : {width, left, visible: true},
+      );
     }
     update();
     viewport.addEventListener('scroll', update, {passive: true});
