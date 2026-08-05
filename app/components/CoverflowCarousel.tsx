@@ -306,6 +306,11 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
                   alt={item.title}
                   /* Off the main thread, so a decode can't land mid-drag. */
                   decoding="async"
+                  /* Below the fold on every page that renders it. All eight
+                     cards share one container box, so they still arrive
+                     together the moment the section scrolls in — nothing pops
+                     in mid-drag. */
+                  loading="lazy"
                   draggable={false}
                 />
               ) : (

@@ -10,6 +10,7 @@ import {MarketBar} from '~/components/MarketBar';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
 import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
+import {cdnWidth} from '~/lib/cdnImage';
 import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
@@ -576,7 +577,9 @@ function Hero({content}: {content: HeroContent | null}) {
                 key={index}
                 className="hero-slide"
                 data-position={slide.position}
-                style={{backgroundImage: `url(${slide.image})`}}
+                /* Desktop LCP. A CSS background can't take a srcSet, so cap it
+                   at a sane full-bleed width instead of shipping the original. */
+                style={{backgroundImage: `url(${cdnWidth(slide.image, 2000)})`}}
               >
                 <HeroCaption slide={slide} />
               </div>
@@ -640,8 +643,17 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
           <div key={index} className="hero-mobile-slide">
             <img
               className="hero-mobile-image"
-              src={slide.image}
+              /**
+               * This is the mobile LCP element. It used to render the
+               * metaobject's original upload — a multi-thousand-pixel banner
+               * decoded down to a ~400px-wide phone viewport. The slider is
+               * only shown below 48em, so 1200w covers even a DPR-3 handset.
+               */
+              src={cdnWidth(slide.image, 800)}
+              srcSet={`${cdnWidth(slide.image, 480)} 480w, ${cdnWidth(slide.image, 800)} 800w, ${cdnWidth(slide.image, 1200)} 1200w`}
+              sizes="100vw"
               alt=""
+              decoding="async"
               draggable={false}
               /**
                * Only the slide on screen at load is the LCP candidate. The
@@ -851,16 +863,10 @@ export function ShopByCategory({
 }: {
   categories: CategoryTile[] | any[];
 }) {
-  const publicImages: Record<string, string> = {
-    rings: '/gold%20ring.webp',
-    chains: '/chain.webp',
-    bracelets: '/bracelet.webp',
-    earrings: '/earring.webp',
-    pendants: '/pandents.webp',
-    necklaces: '/neckles.webp',
-    diamond: '/dimond.webp',
-    'engagement-rings': '/enganment.webp',
-  };
+  // No /public fallback images: they were multi-megapixel originals rendered
+  // into a 495px card and have been removed. A collection with no image in
+  // Shopify now falls through to CoverflowCarousel's initial-letter card
+  // rather than a 404'd <img>.
   return (
     <section className="home-section">
       <div className="section-inner">
@@ -872,7 +878,7 @@ export function ShopByCategory({
             id: category.id,
             title: category.title,
             handle: category.handle,
-            image: category.image?.url ?? publicImages[category.handle],
+            image: category.image?.url ?? undefined,
           }))}
         />
       </div>
@@ -1047,7 +1053,7 @@ function DiamondValueSection({image}: {image: string | null}) {
       <div className="section-inner">
         <div className="diamond-value-visual">
           <img
-            src={src}
+            src={cdnWidth(src, 1400)}
             alt="Diamond jewelry craftsmanship and value assurance"
             loading="lazy"
             decoding="async"
@@ -1582,9 +1588,10 @@ function JournalCard({
       <Link className="blog-card-media" to={to} prefetch="intent" tabIndex={-1}>
         {article.image && (
           <img
-            src={article.image.url}
+            src={cdnWidth(article.image.url, 800)}
             alt={article.image.altText || article.title}
             loading={eager ? 'eager' : 'lazy'}
+            decoding="async"
             draggable={false}
           />
         )}

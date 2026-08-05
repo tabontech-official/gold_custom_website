@@ -18,8 +18,8 @@ import {
 import type {Route} from './+types/root';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
-import resetStyles from '~/styles/reset.css?url';
 import appStyles from '~/styles/app.css?url';
+import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
@@ -95,25 +95,16 @@ export function links() {
       rel: 'preconnect',
       href: 'https://shop.app',
     },
-    {
-      rel: 'preconnect',
-      href: 'https://fonts.googleapis.com',
-    },
-    {
-      rel: 'preconnect',
-      href: 'https://fonts.gstatic.com',
-      crossOrigin: 'anonymous',
-    },
-    // Preload the font CSS at highest priority so it isn't discovered late as a
-    // render-blocking stylesheet; the stylesheet link below then resolves from cache.
+    // Almarai is self-hosted (@font-face in app.css) — no fonts.googleapis.com
+    // stylesheet in the critical path, no second origin to connect to. Preload
+    // the body weight so it starts downloading alongside app.css instead of
+    // waiting for the CSS to parse.
     {
       rel: 'preload',
-      as: 'style',
-      href: 'https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap',
-    },
-    {
-      rel: 'stylesheet',
-      href: 'https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap',
+      as: 'font',
+      type: 'font/woff2',
+      href: almarai400,
+      crossOrigin: 'anonymous',
     },
     // Served from public/ at a fixed path rather than imported as a hashed
     // Vite asset: crawlers and the Organization JSON-LD logo both need a
@@ -225,7 +216,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
           name="google-site-verification"
           content="_oBhTHP7os68yaOsHXe330yYwZwHMUBUAvfzm7WnwLw"
         />
-        <link rel="stylesheet" href={resetStyles}></link>
         <link rel="stylesheet" href={appStyles}></link>
         <Meta />
         <Links />

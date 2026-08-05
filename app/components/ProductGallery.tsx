@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Image} from '@shopify/hydrogen';
+import {cdnWidth} from '~/lib/cdnImage';
 import type Hls from 'hls.js';
 
 export type GalleryMedia = {
@@ -257,10 +258,18 @@ function playableSources(sources: NonNullable<GalleryMedia['sources']>) {
 function GalleryThumb({media: m, title}: {media: GalleryMedia; title: string}) {
   const thumbUrl = m.kind === 'image' ? m.image?.url : m.thumbUrl;
 
+  // 8rem rail, so 400w covers a DPR-3 phone. These load eagerly and a product
+  // can carry a dozen of them — at full resolution they were the thing the
+  // featured shot's `fetchpriority` had to outrun.
   return (
     <span className="pgg-tile">
       {thumbUrl ? (
-        <img src={thumbUrl} alt={m.alt || title} loading="eager" />
+        <img
+          src={cdnWidth(thumbUrl, 400)}
+          alt={m.alt || title}
+          loading="eager"
+          decoding="async"
+        />
       ) : (
         <span className="pgg-thumb-fallback" />
       )}
