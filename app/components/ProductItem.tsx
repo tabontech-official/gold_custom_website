@@ -31,10 +31,20 @@ export function ProductItem({
   className,
   collectionHandle,
   showQuickAdd = false,
+  sizes = '(min-width: 45em) 400px, calc(100vw - 3rem)',
 }: {
   product: ProductItemFragment | RecommendedProductFragment | any;
   loading?: 'eager' | 'lazy';
   className?: string;
+  /**
+   * How wide this card actually renders. The default describes the grid
+   * (`--grid-item-width`, minus `body > main`'s 1.5rem side margins).
+   *
+   * Rails and sliders MUST override it: their cards top out at 240–340px, so
+   * the grid's `100vw` had them pulling an ~800px image into a 240px box —
+   * roughly ten times the pixels needed, times every card on screen.
+   */
+  sizes?: string;
   /**
    * The collection this card is being shown in, if any. Set, the card links
    * into that collection so the shopper stays where they are browsing; unset
@@ -68,7 +78,7 @@ export function ProductItem({
               data={image}
               className="product-image"
               loading={loading ?? 'lazy'}
-              sizes="(min-width: 45em) 400px, 100vw"
+              sizes={sizes}
             />
           )}
         </Link>

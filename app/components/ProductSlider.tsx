@@ -58,6 +58,8 @@ export function ProductSlider({
             key={product.id}
             product={product}
             className="slider-item"
+            /* .slider-item is `min(240px, 62vw)` — never wider than 240px. */
+            sizes="240px"
             loading={index < 4 ? 'eager' : undefined}
           />
         ))}

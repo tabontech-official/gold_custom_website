@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import AutoScroll from 'embla-carousel-auto-scroll';
+import {cdnWidth} from '~/lib/cdnImage';
 
 export type VideoCarouselItem = {
   id: string;
@@ -166,7 +167,8 @@ function VideoCard({
             ref={videoRef}
             className="video-rail-media"
             src={item.video}
-            poster={item.poster ?? undefined}
+            // Slide caps at 20vw of a 1700px shell ≈ 340px; 700 covers DPR2.
+            poster={item.poster ? cdnWidth(item.poster, 700) : undefined}
             muted
             playsInline
             preload="metadata"
@@ -175,9 +177,10 @@ function VideoCard({
           item.poster && (
             <img
               className="video-rail-media"
-              src={item.poster}
+              src={cdnWidth(item.poster, 700)}
               alt=""
               loading="lazy"
+              decoding="async"
               draggable={false}
             />
           )
@@ -249,7 +252,12 @@ function VideoLightbox({
             />
           ) : (
             item.poster && (
-              <img className="video-lightbox-media" src={item.poster} alt="" />
+              <img
+                className="video-lightbox-media"
+                src={cdnWidth(item.poster, 1400)}
+                alt=""
+                decoding="async"
+              />
             )
           )}
         </div>

@@ -760,7 +760,7 @@ export const TRUST_PROMISES = [
     pill: 'U.S.A.',
     // Source: product-page trust badge "Made in U.S.A — From our factory to you".
     copy: 'No middleman markup between our bench and your order.',
-    icon: '/handmade.png',
+    icon: '/handmade.webp',
     signal: 'gold',
     keys: ['craft', 'mastercraft', 'craftsmanship'],
   },
@@ -769,7 +769,7 @@ export const TRUST_PROMISES = [
     pill: 'Never plated',
     // Source: the catalogue — every piece is 10K/14K, no plated or filled stock.
     copy: 'Real gold throughout, with the karat stated on every piece.',
-    icon: '/purity.png',
+    icon: '/purity.webp',
     signal: 'amber',
     keys: ['purity', 'certifiedpurity'],
   },
@@ -778,7 +778,7 @@ export const TRUST_PROMISES = [
     pill: 'Custom',
     // Source: homepage FAQ — design, gold type, gemstones and engraving.
     copy: 'Choose the design, karat, stones and engraving on a custom order.',
-    icon: '/care.png',
+    icon: '/care.webp',
     signal: 'brown',
     keys: ['care', 'lifetimecare'],
   },
@@ -787,7 +787,7 @@ export const TRUST_PROMISES = [
     pill: 'Appointment',
     // Source: contact page — 550 S Hill St #660, the Jewelry District.
     copy: 'See a piece in person at 550 S Hill St, in the Jewelry District.',
-    icon: '/secure%20delivery.jpg',
+    icon: '/secure%20delivery.webp',
     signal: 'green',
     keys: ['delivery', 'securedelivery'],
   },
@@ -938,6 +938,9 @@ function ProductRail({
           product={product}
           className="split-rail-item"
           collectionHandle={collectionHandle}
+          /* --rail-card-w is `clamp(260px, 30vw, 340px)`: 30vw only beats the
+             260px floor above ~867px of viewport, so phones get the floor. */
+          sizes="(min-width: 54em) 340px, 260px"
           loading={index < 4 ? 'eager' : undefined}
         />
       ))}
