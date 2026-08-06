@@ -1,8 +1,4 @@
 import {getSeoMeta, type SeoConfig} from '@shopify/hydrogen';
-// Relative, not `~/lib/cdnImage`: the self-checks in this folder run under bare
-// `npx tsx`, which rejects the tsconfig's `paths` alias (no `baseUrl`). An
-// aliased import here takes seoOffer.test.ts down with it.
-import {cdnWidth} from './cdnImage';
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -27,15 +23,20 @@ export const SITE = {
    *
    * NOT `logo`: that is a 150x134 favicon, far under the 600x315 every platform
    * needs before it will render a large card, so it would have swapped a blank
-   * preview for a postage stamp. This is a brand shot asked for at 1200x630;
-   * the source tops out around 1100px so the CDN returns 1100x619, which still
-   * clears the threshold comfortably.
+   * preview for a postage stamp. This one resolves to 1100x619.
+   *
+   * Stored BARE, with no transform params. `socialImage` adds them, so the
+   * fallback goes through exactly the same sizing as every other share image —
+   * an already-sized value here got a second `&width=&quality=` appended and
+   * shipped a URL with each param twice.
    *
    * Swap this for a purpose-made 1200x630 banner the moment there is one — this
    * is the one string to change.
    */
   ogImage:
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/collections/Gold_Jewelry-1-757994.webp?v=1770959624&width=1200&height=630&crop=center&quality=80',
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/collections/Gold_Jewelry-1-757994.webp?v=1770959624',
+  /** Known size of `ogImage`, so it is never mistaken for a too-small source. */
+  ogImageSize: {width: 1100, height: 619},
 } as const;
 
 type RootData = {
@@ -124,18 +125,6 @@ function firstMedia(
 }
 
 /**
- * Normalise an image for social crawlers: absolute, and not a 3000px original.
- *
- * Absolute because a relative `og:image` is the single most reliable way to get
- * a blank preview — the crawler has no page context to resolve it against.
- * Capped at 1200px because crawlers download whatever you point them at, and
- * the product masters here are 3024x3024.
- *
- * Deliberately NOT cropped to 1.91:1. A centre crop of a chain photo cuts the
- * ends off the chain; a 1200px square still clears every platform's
- * large-card threshold, so there is nothing to buy by cropping.
- */
-/**
  * Same media, minus `width`/`height`. See the call site in `pageSeo`: those two
  * keys make `getSeoMeta` publish dimensions for the ORIGINAL file while
  * `og:image` points at a resized copy.
@@ -154,17 +143,59 @@ function stripMediaDimensions(media: SeoConfig['media']): SeoConfig['media'] {
 
 const OG_IMAGE_WIDTH = 1200;
 
-function socialImage(media: {
+/**
+ * Smallest image every major platform will still render as a large card. Below
+ * this you get a thumbnail, or nothing.
+ */
+const OG_MIN_WIDTH = 600;
+const OG_MIN_HEIGHT = 315;
+
+type ImageSource = {url: string; width?: number | null; height?: number | null};
+
+/**
+ * Build the URL a social crawler is sent.
+ *
+ * `format=jpg` is the important one, and it is why category links showed no
+ * image when shared from a phone. Collection images are whatever the merchant
+ * uploaded: the Necklaces banner is a PNG, and `?width=1200&quality=70` on a
+ * PNG returns a PNG — 1.6 MB of it, because `quality` is a lossy-codec setting
+ * and does nothing to lossless output. Facebook and LinkedIn on desktop will
+ * happily pull 1.6 MB; WhatsApp and iMessage cap the preview near 300 KB and
+ * silently show no image. Forcing JPEG takes that same banner to 161 KB.
+ *
+ * NOT `cdnWidth`: that helper feeds real page images, where WebP negotiation is
+ * a win. Here it would be the bug — `format=jpg` must not leak into the
+ * storefront's own <img> tags.
+ *
+ * No crop. A centre crop to 1.91:1 cuts the ends off a chain, and it buys
+ * nothing a crawler cares about: a 1200px square already clears the large-card
+ * threshold on every platform.
+ */
+function socialImageUrl(url: string): string {
+  const sep = url.includes('?') ? '&' : '?';
+  return `${url}${sep}width=${OG_IMAGE_WIDTH}&quality=80&format=jpg`;
+}
+
+/** True when a source is too small to render as a large card — and the CDN
+ *  cannot help, because it refuses to upscale. */
+function tooSmallToShare({width, height}: ImageSource): boolean {
+  if (!width || !height) return false; // unknown: give it the benefit of the doubt
+  return width < OG_MIN_WIDTH || height < OG_MIN_HEIGHT;
+}
+
+function socialImage(media: ImageSource): {
   url: string;
-  width?: number | null;
-  height?: number | null;
-}): {url: string; width?: number; height?: number} {
+  width?: number;
+  height?: number;
+} {
+  // Absolute, because a relative og:image is the single most reliable way to
+  // get a blank preview — a crawler has no page context to resolve it against.
   const absolute = media.url.startsWith('/')
     ? absoluteUrl(SITE.origin, media.url)
     : media.url;
   if (!absolute.includes('cdn.shopify.com')) return {url: absolute};
 
-  const url = cdnWidth(absolute, OG_IMAGE_WIDTH);
+  const url = socialImageUrl(absolute);
   const {width: sourceWidth, height: sourceHeight} = media;
   // Dimensions are only published when they can be DERIVED, never assumed.
   // The number has to describe the resized copy above, not the master: the
@@ -234,7 +265,16 @@ export function pageSeo(
       ? '%s'
       : `%s | ${SITE.name}`);
 
-  const image = socialImage(firstMedia(seo.media) ?? {url: SITE.ogImage});
+  // A source too small to render as a large card is worse than the brand shot:
+  // the Rings collection banner is 400x363, and no transform saves it because
+  // Shopify's CDN will not upscale. Better a correct brand card than a broken
+  // thumbnail. Unknown dimensions pass through — only a measured miss falls back.
+  const routeMedia = firstMedia(seo.media);
+  const media =
+    routeMedia && !tooSmallToShare(routeMedia)
+      ? routeMedia
+      : {url: SITE.ogImage, ...SITE.ogImageSize};
+  const image = socialImage(media);
 
   const tags =
     getSeoMeta({

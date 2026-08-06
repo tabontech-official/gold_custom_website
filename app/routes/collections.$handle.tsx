@@ -143,7 +143,12 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ),
     url: absoluteUrl(origin, `/collections/${collection.handle}`),
     media: collection.image?.url
-      ? {type: 'image', url: collection.image.url}
+      ? {
+          type: 'image' as const,
+          url: collection.image.url,
+          width: collection.image.width,
+          height: collection.image.height,
+        }
       : undefined,
     jsonLd: [
       breadcrumbJsonLd(origin, [
@@ -843,6 +848,11 @@ const COLLECTION_QUERY = `#graphql
       image {
         url
         altText
+        # width/height are for the share card, not the page: pageSeo needs them
+        # to tell a usable collection image from one too small to render as a
+        # large preview (rings.webp is 400x363) and fall back to the brand shot.
+        width
+        height
       }
       ...CollectionContent
       products(
