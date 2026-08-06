@@ -124,23 +124,6 @@ function firstMedia(
   return null;
 }
 
-/**
- * Same media, minus `width`/`height`. See the call site in `pageSeo`: those two
- * keys make `getSeoMeta` publish dimensions for the ORIGINAL file while
- * `og:image` points at a resized copy.
- */
-function stripMediaDimensions(media: SeoConfig['media']): SeoConfig['media'] {
-  // `any` only inside: the element type is a four-way union including null and
-  // bare strings, and spelling it out buys nothing for a two-key omit. The
-  // exported signature stays exact.
-  const strip = (item: any): any => {
-    if (!item || typeof item !== 'object') return item;
-    const {width: _width, height: _height, ...rest} = item;
-    return rest;
-  };
-  return Array.isArray(media) ? media.map(strip) : strip(media);
-}
-
 const OG_IMAGE_WIDTH = 1200;
 
 /**
@@ -281,33 +264,44 @@ export function pageSeo(
       ...seo,
       // Width and height are stripped before `getSeoMeta` sees them. It emits
       // `og:image:<key>` for every truthy key on a media object, so passing the
-      // real source dimensions made it publish og:image:width=4284 describing a
-      // master that is NOT the URL in og:image — a 1200px resize. Two
-      // contradictory pairs of dimensions is worse than none. Callers still
-      // pass the natural `{type, url, width, height}` shape; the correct pair
-      // is emitted below, derived from the URL actually published.
-      media: stripMediaDimensions(seo.media),
+      // `media` is withheld from getSeoMeta ENTIRELY, and the whole image block
+      // is emitted below instead.
+      //
+      // Open Graph is RDFa: `og:image:url`, `:secure_url`, `:type`, `:width`,
+      // `:height` and `:alt` are structured properties of the LAST `og:image`
+      // declared above them. Given a media object, getSeoMeta emits
+      // `og:image:url`/`:secure_url`/`:type` and never a bare `og:image` — so
+      // those three arrived with no parent to attach to, and the real
+      // `og:image` we appended landed after them. A lenient parser shrugs; a
+      // strict one reads it as two images, or as one image with no source, and
+      // a share card with an ambiguous image is a share card with no image.
+      //
+      // Withholding it also means the dimensions problem cannot come back:
+      // getSeoMeta derived width/height from the ORIGINAL file (4284px) while
+      // og:image points at a 1200px resize.
+      media: undefined,
       titleTemplate,
       ...(noIndex ? {robots: {noIndex: true, noFollow: false}} : {}),
     }) ?? [];
 
   return [
     ...tags,
-    // The tag every scraper actually looks for. `property`, not `name` — the
-    // Open Graph spec is RDFa, and `name` is what Hydrogen uses for its
-    // string-media branch, which is its own small bug.
+    // One image, its properties immediately after it, in spec order. `property`
+    // not `name`, because Open Graph is RDFa.
     {property: 'og:image', content: image.url},
-    {property: 'og:image:alt', content: title || SITE.name},
+    {property: 'og:image:secure_url', content: image.url},
+    // Always JPEG: socialImage forces `format=jpg`.
+    {property: 'og:image:type', content: 'image/jpeg'},
     // Only when derived — see socialImage. Declaring them lets a platform lay
     // the card out before the image finishes downloading; declaring them WRONG
-    // makes it drop the card entirely, so silence beats a guess. The brand
-    // fallback has no known dimensions and therefore ships without them.
+    // makes it drop the card entirely, so silence beats a guess.
     ...(image.width && image.height
       ? [
           {property: 'og:image:width', content: String(image.width)},
           {property: 'og:image:height', content: String(image.height)},
         ]
       : []),
+    {property: 'og:image:alt', content: title || SITE.name},
     {property: 'og:type', content: ogType},
     {property: 'og:site_name', content: SITE.name},
     // Facebook's product extension, carried over from the Liquid storefront.
