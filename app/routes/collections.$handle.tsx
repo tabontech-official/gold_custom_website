@@ -14,6 +14,7 @@ import {
   breadcrumbJsonLd,
   metaDescription,
   pageSeo,
+  resolveShareImage,
   rootDataFrom,
   siteOrigin,
 } from '~/lib/seo';
@@ -142,12 +143,18 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       collection.seo?.description || collection.description,
     ),
     url: absoluteUrl(origin, `/collections/${collection.handle}`),
-    media: collection.image?.url
+    // `data.shareImage`, not `collection.image` — the loader already asked the
+    // CDN whether this banner survives as a share image. Null means it does
+    // not (a transparent PNG the CDN will not transcode, so it stays megabytes
+    // and WhatsApp drops the preview), and pageSeo falls back to the brand
+    // shot. It hands back the RAW url, so pageSeo still applies its own
+    // transform exactly once.
+    media: data?.shareImage
       ? {
           type: 'image' as const,
-          url: collection.image.url,
-          width: collection.image.width,
-          height: collection.image.height,
+          url: data.shareImage,
+          width: collection.image?.width,
+          height: collection.image?.height,
         }
       : undefined,
     jsonLd: [
@@ -314,6 +321,14 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       false,
     ),
     faqs,
+    // Resolved here, not in `meta`, because deciding it needs one look at what
+    // the CDN actually returns and a meta function cannot await. Null means the
+    // banner is unusable as a share image and pageSeo should fall back to the
+    // brand shot — see resolveShareImage.
+    shareImage: await resolveShareImage(
+      context.withCache,
+      collection.image?.url,
+    ),
   };
 }
 

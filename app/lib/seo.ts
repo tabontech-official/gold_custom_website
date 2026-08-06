@@ -1,4 +1,4 @@
-import {getSeoMeta, type SeoConfig} from '@shopify/hydrogen';
+import {getSeoMeta, type SeoConfig, type WithCache} from '@shopify/hydrogen';
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -124,7 +124,38 @@ function firstMedia(
   return null;
 }
 
-const OG_IMAGE_WIDTH = 1200;
+/**
+ * Width requested for share images.
+ *
+ * 600, not the 1200 you would expect, and the reason is a hard CDN limitation:
+ * Shopify REFUSES to transcode an image that has an alpha channel. On a
+ * transparent PNG, `format=jpg`, `format=webp`, `pad_color` and no format at
+ * all return byte-identical PNG. Measured on the Stud Earrings banner, all four
+ * came back as the same 1,171,966-byte file.
+ *
+ * `quality` is equally inert there — it is a lossy-codec setting and PNG is
+ * lossless — so pixel count is the ONLY lever left, and WhatsApp drops any
+ * preview much past 300 KB. Measured across the three transparent collection
+ * banners:
+ *
+ *              @1200px   @700px   @600px
+ *   Rope Br.    ~712 KB   236 KB   172 KB
+ *   Clover      ~1.08 MB  377 KB   280 KB
+ *   Stud Earr.  ~1.17 MB  399 KB   292 KB
+ *
+ * 600 is the only width where all three clear the cap, and it is exactly
+ * OG_MIN_WIDTH, so the card still renders large rather than as a thumbnail.
+ *
+ * Flat images lose nothing by this: they transcode to JPEG and a 600px JPEG of
+ * a product shot is well under 100 KB either way.
+ *
+ * THE REAL FIX IS IN SHOPIFY, NOT HERE. Re-save those collection images without
+ * transparency and `format=jpg` starts working, at which point this can go back
+ * to 1200. Transparency is wrong for a share image regardless — WhatsApp and
+ * Facebook composite alpha onto a background you do not control, often black,
+ * which can render gold jewellery nearly invisible even when it fits.
+ */
+const OG_IMAGE_WIDTH = 600;
 
 /**
  * Smallest image every major platform will still render as a large card. Below
@@ -138,25 +169,94 @@ type ImageSource = {url: string; width?: number | null; height?: number | null};
 /**
  * Build the URL a social crawler is sent.
  *
- * `format=jpg` is the important one, and it is why category links showed no
- * image when shared from a phone. Collection images are whatever the merchant
- * uploaded: the Necklaces banner is a PNG, and `?width=1200&quality=70` on a
- * PNG returns a PNG — 1.6 MB of it, because `quality` is a lossy-codec setting
- * and does nothing to lossless output. Facebook and LinkedIn on desktop will
- * happily pull 1.6 MB; WhatsApp and iMessage cap the preview near 300 KB and
- * silently show no image. Forcing JPEG takes that same banner to 161 KB.
+ * `format=jpg` rescues every FLAT image: the Necklaces banner is a PNG, and
+ * `?width=1200&quality=70` on it returned 1.6 MB of PNG, because `quality` is a
+ * lossy-codec setting and does nothing to lossless output. Forcing JPEG took
+ * that same banner to 161 KB. Desktop Facebook and LinkedIn will happily pull
+ * 1.6 MB; WhatsApp and iMessage cap the preview near 300 KB and show nothing.
+ *
+ * It is a no-op on TRANSPARENT images — see OG_IMAGE_WIDTH, which is what
+ * actually covers those. Both are kept: the format wins on flat images, the
+ * width wins on the ones the CDN refuses to transcode.
  *
  * NOT `cdnWidth`: that helper feeds real page images, where WebP negotiation is
  * a win. Here it would be the bug — `format=jpg` must not leak into the
  * storefront's own <img> tags.
  *
- * No crop. A centre crop to 1.91:1 cuts the ends off a chain, and it buys
- * nothing a crawler cares about: a 1200px square already clears the large-card
- * threshold on every platform.
+ * No crop. A centre crop to 1.91:1 cuts the ends off a chain, and buys nothing
+ * a crawler cares about: a square at OG_IMAGE_WIDTH already clears the
+ * large-card threshold on every platform.
  */
 function socialImageUrl(url: string): string {
   const sep = url.includes('?') ? '&' : '?';
   return `${url}${sep}width=${OG_IMAGE_WIDTH}&quality=80&format=jpg`;
+}
+
+/**
+ * Largest share image WhatsApp will still render. Past roughly this it shows
+ * the link with no picture at all.
+ */
+const OG_MAX_BYTES = 300 * 1024;
+
+/**
+ * Decide, by actually asking the CDN, whether a collection image can be used as
+ * a share image — and fall back to the brand shot when it cannot.
+ *
+ * This exists because the URL alone cannot tell you. Shopify refuses to
+ * transcode any image carrying an alpha channel: on a transparent PNG,
+ * `format=jpg`, `format=webp`, `pad_color` and no format at all return the
+ * identical PNG. Measured across the collection banners, the ones that stay PNG
+ * land at 261-605 KB even cropped to the bare 600x315 minimum — over WhatsApp's
+ * cap, so the preview arrives with no image. Meanwhile plenty of other PNGs
+ * here are flat and transcode to a 43 KB JPEG, so the file extension is not a
+ * usable signal either. The only reliable test is the response itself.
+ *
+ * One request per collection per cache period, and it is a loader-side check
+ * because a `meta` function cannot await anything.
+ *
+ * Delete this the day those images are re-saved without transparency — see
+ * OG_IMAGE_WIDTH.
+ */
+export async function resolveShareImage(
+  withCache: WithCache,
+  imageUrl?: string | null,
+): Promise<string | null> {
+  if (!imageUrl) return null;
+  const candidate = socialImageUrl(
+    imageUrl.startsWith('/') ? absoluteUrl(SITE.origin, imageUrl) : imageUrl,
+  );
+
+  try {
+    const {response} = await withCache.fetch<null>(
+      candidate,
+      // `Accept: */*` on purpose: it is what WhatsApp and Facebook send, so
+      // this measures the exact bytes they will be served. Asking with a
+      // browser's Accept would get WebP back and quietly pass an image the
+      // crawlers still cannot use.
+      {method: 'GET', headers: {Accept: '*/*'}},
+      {
+        displayName: 'share image probe',
+        cacheKey: ['share-image', candidate],
+        shouldCacheResponse: () => true,
+      },
+    );
+
+    const type = response.headers.get('content-type') ?? '';
+    const length = Number(response.headers.get('content-length') ?? '0');
+    const usable =
+      type.includes('jpeg') || (length > 0 && length < OG_MAX_BYTES);
+    // The RAW url is returned, never `candidate`. pageSeo runs every image
+    // through socialImageUrl itself, so handing back the transformed one would
+    // append `&width=&quality=&format=` a second time — the same duplicated
+    // params the bare SITE.ogImage constant was fixed for. Probing the
+    // transformed URL and publishing the raw one is safe precisely because
+    // both sides derive it the same way.
+    return usable ? imageUrl : null;
+  } catch {
+    // A probe failure must never take a page down, and must never silently
+    // publish an image we could not verify.
+    return null;
+  }
 }
 
 /** True when a source is too small to render as a large card — and the CDN
