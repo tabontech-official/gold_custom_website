@@ -1194,8 +1194,18 @@ button.announcement-link {
 /* Two-pane layout: sub-menu columns (left) + featured cards (right) */
 .mega-menu-inner {
   display: grid;
-  grid-template-columns: minmax(16rem, 0.8fr) minmax(28rem, 1.4fr);
-  gap: clamp(2rem, 3.5vw, 4rem);
+  /* Links slightly ahead of the gallery, where it used to be 0.8fr against
+     1.4fr — a 35/61 split that left each link column 194px to render names
+     needing up to 273px, so seven of the twenty were cut off mid-word.
+     Measured at 1440px this reads ~604px of links against ~549px of gallery:
+     enough for the longest collection name on one line, with the product row
+     still comfortably wider than its three cards. */
+  grid-template-columns: minmax(22rem, 1.05fr) minmax(19rem, 0.95fr);
+  /* The gallery floor is 19rem, three rem below the links floor, so when the
+     viewport tightens it is the products that give ground rather than the
+     names. At 1100px the old symmetric floors clawed back enough width to
+     start cutting six links again. */
+  gap: clamp(1.75rem, 3vw, 4rem);
   align-items: flex-start;
   min-width: 0;
 }
@@ -1210,7 +1220,10 @@ button.announcement-link {
 
 .mega-menu-link-list {
   display: grid;
-  gap: 0.75rem 2rem;
+  /* Row gap a little deeper than it was (0.75rem): now that a very long name
+     may run to a second line, the extra breathing room keeps the list reading
+     as separate entries rather than a block of text. */
+  gap: 0.9rem 2rem;
   grid-template-columns: repeat(var(--mega-link-columns, 1), minmax(0, 1fr));
   margin: 0 0 1.75rem;
   padding-bottom: 1.5rem;
@@ -1225,14 +1238,17 @@ button.announcement-link {
   font-size: var(--navigation-font-size);
   font-weight: var(--navigation-font-weight);
   letter-spacing: var(--navigation-letter-spacing);
-  line-height: 1.35;
+  line-height: 1.4;
   max-width: 100%;
-  overflow: hidden;
   padding-bottom: 0.25rem;
   position: relative;
-  text-overflow: ellipsis;
   text-transform: capitalize;
-  white-space: nowrap;
+  /* No `nowrap` + `overflow: hidden` + ellipsis any more. That trio silently
+     amputated seven collection names — "Best Quality Solid Gold Rollo Link
+     Chains" arrived as "Best Quality Solid Gold Rollo…". The column is wide
+     enough for nearly all of them on one line now, and anything longer wraps
+     and stays readable instead of being cut. */
+  overflow-wrap: anywhere;
   width: fit-content;
 }
 
@@ -1281,8 +1297,18 @@ button.announcement-link {
 
 .mega-menu-product-grid {
   display: grid;
-  gap: 1rem;
-  grid-template-columns: repeat(var(--mega-product-columns, 3), 170px);
+  /* Cards eased from 170px to 158px and the gap from 1rem to 0.9rem — the
+     "gradually" part of giving the link column its width back. Three cards now
+     occupy ~503px inside a ~549px panel, so the row still breathes; taking any
+     more would start to make the products look like thumbnails. */
+  gap: 0.9rem;
+  /* minmax(0, 158px), not a flat 158px: a fixed track cannot shrink, so the
+     row overran its panel by a couple of pixels at some widths. This caps the
+     card at 158 and lets it give way instead of overflowing. */
+  grid-template-columns: repeat(
+    var(--mega-product-columns, 3),
+    minmax(0, 158px)
+  );
   justify-content: space-evenly;
   min-width: 0;
 }
@@ -1389,12 +1415,21 @@ button.announcement-link {
 
 @media (max-width: 76em) {
   .mega-menu-inner {
-    grid-template-columns: minmax(18rem, 0.85fr) minmax(24rem, 1fr);
+    /* Same rebalance as the wide layout. This block was still running the old
+       ratio — links 0.85fr against a gallery on 1fr with a 24rem floor — which
+       is why a 1100px window kept cutting six collection names long after the
+       wide breakpoint had been fixed. The gallery gives ground first here too. */
+    grid-template-columns: minmax(20rem, 1.05fr) minmax(17rem, 0.9fr);
     gap: 2rem;
   }
 
   .mega-menu-link-list {
     gap: 1rem 1.4rem;
+    /* One column from here down, overriding the --mega-link-columns the header
+       sets. Two columns at this width leave ~252px each, and the longest
+       collection names need ~273px — so the choice is a single roomy list or
+       two that keep breaking. The list reads better as one column anyway. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mega-menu-featured h3 {
@@ -1402,7 +1437,7 @@ button.announcement-link {
   }
 
   .mega-menu-product-grid {
-    grid-template-columns: repeat(auto-fit, 170px);
+    grid-template-columns: repeat(auto-fit, minmax(0, 158px));
     justify-content: center;
   }
 }

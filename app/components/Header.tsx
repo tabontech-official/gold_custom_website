@@ -21,7 +21,7 @@ import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
 import {
   MEGA_MENU,
-  getColumnItems,
+  getDepartmentItems,
   hasDepartmentItems,
   toRelativeUrl,
 } from '~/lib/megaMenu';
@@ -416,9 +416,11 @@ function MegaMenuItem({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data]);
-  const menuItems = department.columns
-    .flatMap((column) => getColumnItems(header, column))
-    .filter((item) => item.url);
+  // getDepartmentItems, not a raw flatMap over the columns: it dedupes by
+  // collection handle and titles each link from the collection itself. Chains
+  // is fed by four Shopify menus and was rendering `clover-necklace` twice —
+  // once as "Clover Necklaces", once as the stale "Women Necklaces".
+  const menuItems = getDepartmentItems(header, department);
   // Short menus read best as one deliberate list. Chains retains two columns
   // regardless, as that department has enough breadth to warrant the denser
   // scanning pattern.
@@ -601,29 +603,30 @@ function MobileMenu({
                 {isOpen ? '−' : '+'}
               </button>
             </div>
+            {/* One flat list, through the same deduping helper as the desktop
+                mega menu — the phone was showing clover-necklace twice under
+                Chains for exactly the same reason.
+
+                The old code mapped the columns separately so each could carry
+                a `column.title` heading. No column in MEGA_MENU sets one, so
+                that produced a wrapper div per column and nothing else, while
+                making cross-column duplicates impossible to spot. Restore the
+                grouping when a column actually gets a title — and dedupe
+                before splitting. */}
             {isOpen && (
               <div className="mobile-nav-submenu">
-                {department.columns.map((column, index) => {
-                  const items = getColumnItems(header, column);
-                  if (!items.length) return null;
-                  return (
-                    <div key={index}>
-                      {column.title && <h5>{column.title}</h5>}
-                      {items.map((item) =>
-                        item.url ? (
-                          <NavLink
-                            key={item.id}
-                            onClick={onNavigate}
-                            prefetch="viewport"
-                            to={relativeUrl(item.url)}
-                          >
-                            {item.title}
-                          </NavLink>
-                        ) : null,
-                      )}
-                    </div>
-                  );
-                })}
+                {getDepartmentItems(header, department).map((item) =>
+                  item.url ? (
+                    <NavLink
+                      key={item.id}
+                      onClick={onNavigate}
+                      prefetch="viewport"
+                      to={relativeUrl(item.url)}
+                    >
+                      {item.title}
+                    </NavLink>
+                  ) : null,
+                )}
               </div>
             )}
           </div>

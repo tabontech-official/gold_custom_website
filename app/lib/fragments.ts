@@ -182,6 +182,16 @@ const MENU_FRAGMENT = `#graphql
     resource {
       __typename
       ... on Collection {
+        # handle and title come from the COLLECTION, not the menu link.
+        #
+        # A Shopify menu item carries its own hand-typed title, and renaming a
+        # collection does not touch it — which is how "Clover Necklaces" ended
+        # up still reading "Women Necklaces" in one menu. handle is also the
+        # only reliable dedupe key: the same collection is linked from more
+        # than one of the menus that feed the Chains department, and matching
+        # on the typed title cannot see that they are the same thing.
+        handle
+        title
         products(first: 1) {
           nodes {
             id

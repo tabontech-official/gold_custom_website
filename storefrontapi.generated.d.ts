@@ -296,9 +296,10 @@ export type MenuItemFragment = Pick<
           | 'Product'
           | 'ShopPolicy';
       }
-    | ({__typename: 'Collection'} & {
-        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-      })
+    | ({__typename: 'Collection'} & Pick<
+        StorefrontAPI.Collection,
+        'handle' | 'title'
+      > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
   >;
 };
 
@@ -316,9 +317,10 @@ export type ChildMenuItemFragment = Pick<
           | 'Product'
           | 'ShopPolicy';
       }
-    | ({__typename: 'Collection'} & {
-        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-      })
+    | ({__typename: 'Collection'} & Pick<
+        StorefrontAPI.Collection,
+        'handle' | 'title'
+      > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
   >;
 };
 
@@ -341,9 +343,10 @@ export type ParentMenuItemFragment = Pick<
               | 'Product'
               | 'ShopPolicy';
           }
-        | ({__typename: 'Collection'} & {
-            products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-          })
+        | ({__typename: 'Collection'} & Pick<
+            StorefrontAPI.Collection,
+            'handle' | 'title'
+          > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
       >;
     }
   >;
@@ -357,9 +360,10 @@ export type ParentMenuItemFragment = Pick<
           | 'Product'
           | 'ShopPolicy';
       }
-    | ({__typename: 'Collection'} & {
-        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-      })
+    | ({__typename: 'Collection'} & Pick<
+        StorefrontAPI.Collection,
+        'handle' | 'title'
+      > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
   >;
 };
 
@@ -384,9 +388,10 @@ export type MenuFragment = Pick<StorefrontAPI.Menu, 'id'> & {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -400,9 +405,10 @@ export type MenuFragment = Pick<StorefrontAPI.Menu, 'id'> & {
               | 'Product'
               | 'ShopPolicy';
           }
-        | ({__typename: 'Collection'} & {
-            products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-          })
+        | ({__typename: 'Collection'} & Pick<
+            StorefrontAPI.Collection,
+            'handle' | 'title'
+          > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
       >;
     }
   >;
@@ -457,9 +463,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -473,9 +484,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -503,9 +515,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -519,9 +536,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -549,9 +567,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -565,9 +588,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -595,9 +619,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -611,9 +640,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -641,9 +671,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -657,9 +692,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -687,9 +723,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -703,9 +744,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -733,9 +775,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -749,9 +796,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -779,9 +827,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -795,9 +848,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -825,9 +879,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -841,9 +900,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -871,9 +931,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -887,9 +952,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -917,9 +983,14 @@ export type HeaderQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -933,9 +1004,10 @@ export type HeaderQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -972,9 +1044,14 @@ export type FooterQuery = {
                       | 'Product'
                       | 'ShopPolicy';
                   }
-                | ({__typename: 'Collection'} & {
-                    products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-                  })
+                | ({__typename: 'Collection'} & Pick<
+                    StorefrontAPI.Collection,
+                    'handle' | 'title'
+                  > & {
+                      products: {
+                        nodes: Array<Pick<StorefrontAPI.Product, 'id'>>;
+                      };
+                    })
               >;
             }
           >;
@@ -988,9 +1065,10 @@ export type FooterQuery = {
                   | 'Product'
                   | 'ShopPolicy';
               }
-            | ({__typename: 'Collection'} & {
-                products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-              })
+            | ({__typename: 'Collection'} & Pick<
+                StorefrontAPI.Collection,
+                'handle' | 'title'
+              > & {products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>}})
           >;
         }
       >;
@@ -2970,11 +3048,11 @@ interface GeneratedQueryTypes {
     return: FaqsQuery;
     variables: FaqsQueryVariables;
   };
-  '#graphql\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  query Header(\n    $country: CountryCode\n    $headerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      ...Shop\n    }\n    menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n    chainsGroup1: menu(handle: "chains-copy-copy-1") {\n      ...Menu\n    }\n    chainsGroup2: menu(handle: "chains-copy-copy") {\n      ...Menu\n    }\n    chainsGroup3: menu(handle: "chains-copy") {\n      ...Menu\n    }\n    braceletsMenu: menu(handle: "bracelets-1") {\n      ...Menu\n    }\n    earringsMenu: menu(handle: "earrings") {\n      ...Menu\n    }\n    pendantsMenu: menu(handle: "pendants") {\n      ...Menu\n    }\n    chainWithPendantMenu: menu(handle: "chain-with-pendant") {\n      ...Menu\n    }\n    necklacesMenu: menu(handle: "necklaces") {\n      ...Menu\n    }\n    diamondMenu: menu(handle: "diamond") {\n      ...Menu\n    }\n    engagementRingsMenu: menu(handle: "engagement-rings") {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n    resource {\n      __typename\n      ... on Collection {\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
+  '#graphql\n  fragment Shop on Shop {\n    id\n    name\n    description\n    primaryDomain {\n      url\n    }\n    brand {\n      logo {\n        image {\n          url\n        }\n      }\n    }\n  }\n  query Header(\n    $country: CountryCode\n    $headerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      ...Shop\n    }\n    menu(handle: $headerMenuHandle) {\n      ...Menu\n    }\n    chainsGroup1: menu(handle: "chains-copy-copy-1") {\n      ...Menu\n    }\n    chainsGroup2: menu(handle: "chains-copy-copy") {\n      ...Menu\n    }\n    chainsGroup3: menu(handle: "chains-copy") {\n      ...Menu\n    }\n    braceletsMenu: menu(handle: "bracelets-1") {\n      ...Menu\n    }\n    earringsMenu: menu(handle: "earrings") {\n      ...Menu\n    }\n    pendantsMenu: menu(handle: "pendants") {\n      ...Menu\n    }\n    chainWithPendantMenu: menu(handle: "chain-with-pendant") {\n      ...Menu\n    }\n    necklacesMenu: menu(handle: "necklaces") {\n      ...Menu\n    }\n    diamondMenu: menu(handle: "diamond") {\n      ...Menu\n    }\n    engagementRingsMenu: menu(handle: "engagement-rings") {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n    resource {\n      __typename\n      ... on Collection {\n        # handle and title come from the COLLECTION, not the menu link.\n        #\n        # A Shopify menu item carries its own hand-typed title, and renaming a\n        # collection does not touch it — which is how "Clover Necklaces" ended\n        # up still reading "Women Necklaces" in one menu. handle is also the\n        # only reliable dedupe key: the same collection is linked from more\n        # than one of the menus that feed the Chains department, and matching\n        # on the typed title cannot see that they are the same thing.\n        handle\n        title\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: HeaderQuery;
     variables: HeaderQueryVariables;
   };
-  '#graphql\n  query Footer(\n    $country: CountryCode\n    $footerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    menu(handle: $footerMenuHandle) {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n    resource {\n      __typename\n      ... on Collection {\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
+  '#graphql\n  query Footer(\n    $country: CountryCode\n    $footerMenuHandle: String!\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    menu(handle: $footerMenuHandle) {\n      ...Menu\n    }\n  }\n  #graphql\n  fragment MenuItem on MenuItem {\n    id\n    resourceId\n    tags\n    title\n    type\n    url\n    resource {\n      __typename\n      ... on Collection {\n        # handle and title come from the COLLECTION, not the menu link.\n        #\n        # A Shopify menu item carries its own hand-typed title, and renaming a\n        # collection does not touch it — which is how "Clover Necklaces" ended\n        # up still reading "Women Necklaces" in one menu. handle is also the\n        # only reliable dedupe key: the same collection is linked from more\n        # than one of the menus that feed the Chains department, and matching\n        # on the typed title cannot see that they are the same thing.\n        handle\n        title\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n  fragment ChildMenuItem on MenuItem {\n    ...MenuItem\n  }\n  fragment ParentMenuItem on MenuItem {\n    ...MenuItem\n    items {\n      ...ChildMenuItem\n    }\n  }\n  fragment Menu on Menu {\n    id\n    items {\n      ...ParentMenuItem\n    }\n  }\n\n': {
     return: FooterQuery;
     variables: FooterQueryVariables;
   };

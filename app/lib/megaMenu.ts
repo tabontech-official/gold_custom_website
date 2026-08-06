@@ -26,10 +26,7 @@ export type MegaMenuColumn = {
  * their collection pages redirect here (see collections.$handle).
  */
 export const MIAMI_CUBAN_HANDLE = 'cuban-chains';
-export const MERGED_CUBAN_HANDLES = [
-  'miami-cuban-links',
-  'miami-cuban-chains',
-];
+export const MERGED_CUBAN_HANDLES = ['miami-cuban-links', 'miami-cuban-chains'];
 
 export type MegaMenuDepartment = {
   id: string;
@@ -159,12 +156,63 @@ export function getColumnItems(
     });
 }
 
+/**
+ * Every link in a department, across all its columns — deduplicated, and titled
+ * from the collection rather than the menu link.
+ *
+ * Both corrections exist because of the same real breakage. The Chains
+ * department is fed by four separate Shopify menus, and `clover-necklace` is
+ * linked from more than one of them, so it rendered TWICE in one dropdown. The
+ * two copies did not even agree: one menu item had been retitled to "Clover
+ * Necklaces" and the other still read "Women Necklaces", because renaming a
+ * collection in Shopify does not touch the hand-typed title on a menu link
+ * pointing at it.
+ *
+ * So:
+ *  - the key is the collection HANDLE, which is the only thing that can tell
+ *    two differently-typed links to the same collection apart;
+ *  - the label prefers `resource.title`, the collection's live name, so a
+ *    rename in Shopify shows up here without anyone editing a menu.
+ *
+ * First occurrence wins, keeping the column order authors set up.
+ */
+export function getDepartmentItems(
+  header: HeaderQuery,
+  department: MegaMenuDepartment,
+): MenuItems {
+  const seen = new Set<string>();
+
+  return department.columns
+    .flatMap((column) => getColumnItems(header, column))
+    .filter((item) => item.url)
+    .map((item) => {
+      const resource = item.resource;
+      const title =
+        resource?.__typename === 'Collection' && resource.title
+          ? resource.title
+          : item.title;
+      return title === item.title ? item : {...item, title};
+    })
+    .filter((item) => {
+      const resource = item.resource;
+      // Handle first; fall back to the URL path so non-collection links (pages,
+      // external URLs) still dedupe sensibly instead of all collapsing to one.
+      const key =
+        resource?.__typename === 'Collection' && resource.handle
+          ? `collection:${resource.handle}`
+          : `url:${item.url}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
 /** Whether a department still has at least one product-backed submenu link. */
 export function hasDepartmentItems(
   header: HeaderQuery,
   department: MegaMenuDepartment,
 ): boolean {
-  return department.columns.some((column) => getColumnItems(header, column).length > 0);
+  return getDepartmentItems(header, department).length > 0;
 }
 
 /**
@@ -199,7 +247,9 @@ export function getNavCollectionHandles(
 export function getMegaMenuDepartmentForHandle(
   handle: string,
 ): MegaMenuDepartment | undefined {
-  return MEGA_MENU.find((department) => department.to === `/collections/${handle}`);
+  return MEGA_MENU.find(
+    (department) => department.to === `/collections/${handle}`,
+  );
 }
 
 /**
