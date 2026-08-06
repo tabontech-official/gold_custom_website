@@ -111,10 +111,14 @@ export function metaDescription(
  * Pull the first usable image URL out of a `SeoConfig['media']`, which may be a
  * bare string, one object, or an array of either.
  */
-function firstMediaUrl(media: SeoConfig['media']): string | null {
+function firstMedia(
+  media: SeoConfig['media'],
+): {url: string; width?: number | null; height?: number | null} | null {
   for (const item of Array.isArray(media) ? media : [media]) {
-    if (typeof item === 'string' && item) return item;
-    if (item && typeof item === 'object' && item.url) return item.url;
+    if (typeof item === 'string' && item) return {url: item};
+    if (item && typeof item === 'object' && item.url) {
+      return {url: item.url, width: item.width, height: item.height};
+    }
   }
   return null;
 }
@@ -131,11 +135,46 @@ function firstMediaUrl(media: SeoConfig['media']): string | null {
  * ends off the chain; a 1200px square still clears every platform's
  * large-card threshold, so there is nothing to buy by cropping.
  */
-function socialImage(url: string): string {
-  const absolute = url.startsWith('/') ? absoluteUrl(SITE.origin, url) : url;
-  return absolute.includes('cdn.shopify.com')
-    ? cdnWidth(absolute, 1200)
-    : absolute;
+/**
+ * Same media, minus `width`/`height`. See the call site in `pageSeo`: those two
+ * keys make `getSeoMeta` publish dimensions for the ORIGINAL file while
+ * `og:image` points at a resized copy.
+ */
+function stripMediaDimensions(media: SeoConfig['media']): SeoConfig['media'] {
+  // `any` only inside: the element type is a four-way union including null and
+  // bare strings, and spelling it out buys nothing for a two-key omit. The
+  // exported signature stays exact.
+  const strip = (item: any): any => {
+    if (!item || typeof item !== 'object') return item;
+    const {width: _width, height: _height, ...rest} = item;
+    return rest;
+  };
+  return Array.isArray(media) ? media.map(strip) : strip(media);
+}
+
+const OG_IMAGE_WIDTH = 1200;
+
+function socialImage(media: {
+  url: string;
+  width?: number | null;
+  height?: number | null;
+}): {url: string; width?: number; height?: number} {
+  const absolute = media.url.startsWith('/')
+    ? absoluteUrl(SITE.origin, media.url)
+    : media.url;
+  if (!absolute.includes('cdn.shopify.com')) return {url: absolute};
+
+  const url = cdnWidth(absolute, OG_IMAGE_WIDTH);
+  const {width: sourceWidth, height: sourceHeight} = media;
+  // Dimensions are only published when they can be DERIVED, never assumed.
+  // The number has to describe the resized copy above, not the master: the
+  // Storefront API reports these product images as 3024x3024, but the URL we
+  // hand the crawler is capped at 1200. And the cap is a ceiling, not a
+  // promise — Shopify's CDN refuses to upscale, so a smaller master comes back
+  // at its own size, which is why this takes the min rather than trusting it.
+  if (!sourceWidth || !sourceHeight) return {url};
+  const width = Math.min(OG_IMAGE_WIDTH, sourceWidth);
+  return {url, width, height: Math.round((sourceHeight * width) / sourceWidth)};
 }
 
 /**
@@ -173,9 +212,17 @@ export function pageSeo(
     noIndex?: boolean;
     /** `product` on PDPs, `article` on blog posts, `website` everywhere else. */
     ogType?: 'website' | 'product' | 'article';
+    /**
+     * Emits `og:price:*`. Pass the Storefront API's `price` straight through —
+     * its `amount` is already a bare decimal ("2250.00"). Do NOT pass a
+     * display-formatted price: the old Liquid storefront published
+     * `og:price:amount` as "2,250.00", and the thousands separator makes it
+     * unparseable as a number.
+     */
+    price?: {amount: string; currencyCode: string} | null;
   },
 ) {
-  const {noIndex, ogType = 'website', ...seo} = config;
+  const {noIndex, ogType = 'website', price, ...seo} = config;
 
   // Shopify's own SEO titles often already end in the brand ("… | Gold
   // Custom"), and appending the template on top produced the doubled
@@ -187,31 +234,58 @@ export function pageSeo(
       ? '%s'
       : `%s | ${SITE.name}`);
 
+  const image = socialImage(firstMedia(seo.media) ?? {url: SITE.ogImage});
+
   const tags =
     getSeoMeta({
       ...seo,
+      // Width and height are stripped before `getSeoMeta` sees them. It emits
+      // `og:image:<key>` for every truthy key on a media object, so passing the
+      // real source dimensions made it publish og:image:width=4284 describing a
+      // master that is NOT the URL in og:image — a 1200px resize. Two
+      // contradictory pairs of dimensions is worse than none. Callers still
+      // pass the natural `{type, url, width, height}` shape; the correct pair
+      // is emitted below, derived from the URL actually published.
+      media: stripMediaDimensions(seo.media),
       titleTemplate,
       ...(noIndex ? {robots: {noIndex: true, noFollow: false}} : {}),
     }) ?? [];
-
-  const image = socialImage(firstMediaUrl(seo.media) ?? SITE.ogImage);
 
   return [
     ...tags,
     // The tag every scraper actually looks for. `property`, not `name` — the
     // Open Graph spec is RDFa, and `name` is what Hydrogen uses for its
     // string-media branch, which is its own small bug.
-    {property: 'og:image', content: image},
+    {property: 'og:image', content: image.url},
     {property: 'og:image:alt', content: title || SITE.name},
+    // Only when derived — see socialImage. Declaring them lets a platform lay
+    // the card out before the image finishes downloading; declaring them WRONG
+    // makes it drop the card entirely, so silence beats a guess. The brand
+    // fallback has no known dimensions and therefore ships without them.
+    ...(image.width && image.height
+      ? [
+          {property: 'og:image:width', content: String(image.width)},
+          {property: 'og:image:height', content: String(image.height)},
+        ]
+      : []),
     {property: 'og:type', content: ogType},
     {property: 'og:site_name', content: SITE.name},
+    // Facebook's product extension, carried over from the Liquid storefront.
+    ...(price && Number.isFinite(Number(price.amount))
+      ? [
+          // Two decimals, because the API hands back "440.0" and a price tag
+          // reading "440.0" looks like a bug to anyone who sees it. Still a
+          // bare decimal — no separator, no symbol — so it stays parseable.
+          {
+            property: 'og:price:amount',
+            content: Number(price.amount).toFixed(2),
+          },
+          {property: 'og:price:currency', content: price.currencyCode},
+        ]
+      : []),
     // No card type means X renders no card. `name`, per the Twitter spec.
     {name: 'twitter:card', content: 'summary_large_image'},
-    {name: 'twitter:image', content: image},
-    // Deliberately no og:image:width/height. The CDN silently returns the
-    // source's own size when asked for more (the brand fallback resolves to
-    // 1100x619, not the 1200x630 requested), so any number here would be a
-    // claim we cannot keep — and a wrong one suppresses the card outright.
+    {name: 'twitter:image', content: image.url},
   ];
 }
 

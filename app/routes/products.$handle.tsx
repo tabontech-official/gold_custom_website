@@ -62,7 +62,8 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
 
   const origin = siteOrigin(rootDataFrom(matches));
   const canonical = absoluteUrl(origin, productCanonicalPath(product));
-  const image = product.selectedOrFirstAvailableVariant?.image?.url;
+  const variant = product.selectedOrFirstAvailableVariant;
+  const image = variant?.image;
 
   const category = getProductCategoryMatch(product);
   const crumbs = [
@@ -80,7 +81,20 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       product.seo?.description || product.description,
     ),
     url: canonical,
-    media: image ? {type: 'image', url: image} : undefined,
+    // width/height come along so pageSeo can publish og:image:width/height —
+    // the Liquid storefront did, and a card that knows its own aspect ratio
+    // lays out before the image lands.
+    media: image?.url
+      ? {
+          type: 'image' as const,
+          url: image.url,
+          width: image.width,
+          height: image.height,
+        }
+      : undefined,
+    // og:price:*, as the Liquid storefront published it. The API's `amount` is
+    // a bare decimal, so this does not repeat the old site's "2,250.00".
+    price: variant?.price,
     // Product schema is emitted at render time (buildProductJsonLd) where the
     // resolved variant and gallery are available — don't duplicate it here.
     jsonLd: breadcrumbJsonLd(origin, crumbs),
