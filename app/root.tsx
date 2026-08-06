@@ -19,6 +19,7 @@ import type {Route} from './+types/root';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
 import appStyles from '~/styles/app.css?url';
+import appStylesInline from '~/styles/app.css?inline';
 import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
@@ -97,8 +98,9 @@ export function links() {
     },
     // Almarai is self-hosted (@font-face in app.css) — no fonts.googleapis.com
     // stylesheet in the critical path, no second origin to connect to. Preload
-    // the body weight so it starts downloading alongside app.css instead of
-    // waiting for the CSS to parse.
+    // the body weight so it starts downloading before the parser reaches the
+    // @font-face rule it belongs to (inlined in Layout, so that is early — but
+    // still 160 KB of CSS later than this tag).
     {
       rel: 'preload',
       as: 'font',
@@ -216,9 +218,62 @@ export function Layout({children}: {children?: React.ReactNode}) {
           name="google-site-verification"
           content="_oBhTHP7os68yaOsHXe330yYwZwHMUBUAvfzm7WnwLw"
         />
-        <link rel="stylesheet" href={appStyles}></link>
+        {/*
+          BEFORE the stylesheet, deliberately. `Links` carries the preconnects
+          and the font preload, and the inlined `<style>` below is 160 KB of
+          markup — roughly 21 KB even brotlied. Sitting after it, every hint in
+          here was discovered that much later in the stream.
+
+          It matters more since the stylesheet stopped being a `<link>`. That
+          link used to be the first thing to touch cdn.shopify.com, so it opened
+          the connection the product images then reused for free. Nothing opens
+          it now, which makes the `preconnect` below load-bearing rather than
+          belt-and-braces: it is what gets the handshake started before the
+          parser has waded through the CSS to reach the LCP `<img>`.
+        */}
         <Meta />
         <Links />
+        {/*
+          The stylesheet is INLINED in production, not linked.
+
+          Linked, it was the page's only render-blocking request and cost
+          ~1,950 ms on a throttled phone — and only ~350 ms of that was the
+          bytes. The rest is a cold connection: the built assets live on
+          cdn.shopify.com while the document comes from the storefront origin,
+          so the browser has to spend a DNS + TCP + TLS handshake before it can
+          even ask for it. A `preconnect` only overlaps that handshake with
+          whatever else is in flight — it cannot remove the round trip. The only
+          way to not pay for one is to not make one.
+
+          Measured cost of doing it this way, so the next person can re-decide
+          with real numbers rather than re-derive them:
+
+            document      19.7 KB -> ~45 KB brotli
+            root JS chunk  8.2 KB -> 33.4 KB brotli
+            CSS request    25 KB + ~1,600 ms of connection -> gone
+
+          The JS growth is the same CSS a second time: `Layout` is universal, so
+          the string ships in the client bundle as well to keep hydration
+          matching. It is a string literal, not code — no parse or execute cost,
+          just bytes on an async chunk that lands after first paint. Net +25 KB
+          transfer for roughly -1.2 s of FCP, which is the right way round for a
+          storefront whose mobile traffic mostly arrives cold from search.
+
+          The alternative — splitting app.css per route — was measured too and
+          is the worse deal: only ~36% of the sheet is exclusive to a single
+          route, so it leaves the request (and its handshake) in place and saves
+          about 175 ms for a 1,297-block partitioning job. Worth doing ON TOP of
+          this one day to shrink the inlined payload; not worth doing instead.
+
+          Dev still links it, so CSS hot-reload keeps working. `import.meta.env`
+          is a build-time constant, identical on server and client, so the two
+          branches can never disagree across a hydration boundary.
+        */}
+        {import.meta.env.DEV ? (
+          <link rel="stylesheet" href={appStyles} />
+        ) : (
+          <style dangerouslySetInnerHTML={{__html: appStylesInline}} />
+        )}
         {/*
           Organization + WebSite must appear on every page, but a child route's
           `meta` export REPLACES the root's rather than merging with it — so
@@ -254,7 +309,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
     </html>
   );
 }
-
 
 export default function App() {
   const data = useRouteLoaderData<RootLoader>('root');

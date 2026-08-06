@@ -8,7 +8,19 @@ const STORAGE_KEY = 'welcome-popup-seen';
 const WELCOME_CODE = 'WELCOME10';
 
 // First-visit popup offering the welcome discount for joining the list.
-// Shows once (localStorage) after a short delay.
+// Shows once (localStorage) after a delay.
+//
+// 8s, not the 2.5s it was. The timer starts at hydration, and on a throttled
+// phone hydration lands while the product photo is still arriving — so the old
+// delay put a full-screen overlay on top of the page mid-LCP, over a shopper
+// who had not yet seen what they came for. 8s clears the load on a slow
+// connection and is still well inside a real browsing session.
+//
+// ponytail: a plain timer. Scroll depth or exit intent target the offer better,
+// but they are a behavioural change to argue about with whoever owns the
+// discount, not a performance fix — this is the part that was costing speed.
+const SHOW_AFTER_MS = 8000;
+
 export function WelcomePopup() {
   const [open, setOpen] = useState(false);
   const fetcher = useFetcher<{success?: boolean; error?: string}>();
@@ -16,7 +28,7 @@ export function WelcomePopup() {
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY)) return;
-    const timer = window.setTimeout(() => setOpen(true), 2500);
+    const timer = window.setTimeout(() => setOpen(true), SHOW_AFTER_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
