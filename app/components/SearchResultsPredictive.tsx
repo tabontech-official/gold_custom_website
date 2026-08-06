@@ -1,5 +1,6 @@
 import {Link, useFetcher, type Fetcher} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import React, {useRef, useEffect} from 'react';
 import {
   getEmptyPredictiveSearchResult,
@@ -104,6 +105,7 @@ function SearchResultsPredictiveArticles({
               <Link onClick={closeSearch} to={articleUrl}>
                 {article.image?.url && (
                   <Image
+                    loader={cdnLoader}
                     alt={article.image.altText ?? ''}
                     src={article.image.url}
                     width={50}
@@ -145,6 +147,7 @@ function SearchResultsPredictiveCollections({
               <Link onClick={closeSearch} to={collectionUrl}>
                 {collection.image?.url && (
                   <Image
+                    loader={cdnLoader}
                     alt={collection.image.altText ?? ''}
                     src={collection.image.url}
                     width={50}
@@ -221,6 +224,7 @@ function SearchResultsPredictiveProducts({
               <Link to={productUrl} onClick={closeSearch}>
                 {image && (
                   <Image
+                    loader={cdnLoader}
                     alt={image.altText ?? ''}
                     src={image.url}
                     width={50}

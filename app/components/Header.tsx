@@ -30,7 +30,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
-import {cdnWidth} from '~/lib/cdnImage';
+import {cdnWidth, cdnLoader} from '~/lib/cdnImage';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
 const HEADER_UTILITY_MESSAGES = [
@@ -241,6 +241,7 @@ function HeaderSearchBar() {
                       >
                         {image && (
                           <Image
+                            loader={cdnLoader}
                             alt={image.altText ?? ''}
                             aspectRatio="1/1"
                             data={image}
@@ -513,6 +514,7 @@ function MegaMenuItem({
                     >
                       {product.featuredImage ? (
                         <Image
+                          loader={cdnLoader}
                           className="mega-menu-card-img"
                           data={product.featuredImage}
                           width={170}

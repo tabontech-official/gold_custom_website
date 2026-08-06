@@ -1,10 +1,5 @@
 ﻿import {Suspense, useEffect, useRef, useState} from 'react';
-import {
-  redirect,
-  useLoaderData,
-  Await,
-  useRouteLoaderData,
-} from 'react-router';
+import {redirect, useLoaderData, Await, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -45,11 +40,7 @@ import {
   SHOP_PAY_INSTALLMENTS_QUERY,
   type InstallmentsPricing,
 } from '~/lib/shopPayInstallments';
-import {
-  buildFaqJsonLd,
-  parseFaqMetafield,
-  type Faq,
-} from '~/lib/faqs';
+import {buildFaqJsonLd, parseFaqMetafield, type Faq} from '~/lib/faqs';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {meaningfulSelectedOptions} from '~/lib/variants';
 import {DescriptionAccordions} from '~/components/DescriptionAccordions';
@@ -112,7 +103,9 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
  * product page. Nothing threw: the collection URL is the canonical one, so
  * every real visit took the broken path and just showed a bare heading.
  */
-function productHandleFromParams(params: Route.LoaderArgs['params']): string | undefined {
+function productHandleFromParams(
+  params: Route.LoaderArgs['params'],
+): string | undefined {
   const routeParams = params as Route.LoaderArgs['params'] & {
     productHandle?: string;
   };
@@ -182,11 +175,7 @@ function buildVariantGroup(product: any): VariantGroup | null {
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
-async function loadCriticalData({
-  context,
-  params,
-  request,
-}: Route.LoaderArgs) {
+async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const url = new URL(request.url);
   const routeParams = params as Route.LoaderArgs['params'] & {
@@ -633,7 +622,6 @@ function ProductFaqSection({faqs}: {faqs: Faq[]}) {
   );
 }
 
-
 /**
  * Derive a karat + metal tone from a variant/product keyword like
  * "10K Yellow Gold" or "14k White Gold". Returns null when no karat is found
@@ -651,9 +639,11 @@ function parseKarat(keyword: string) {
       ? 'rose'
       : 'yellow';
 
-  const toneLabel = {yellow: 'Yellow Gold', white: 'White Gold', rose: 'Rose Gold'}[
-    tone
-  ];
+  const toneLabel = {
+    yellow: 'Yellow Gold',
+    white: 'White Gold',
+    rose: 'Rose Gold',
+  }[tone];
   return {karat, tone, label: `${karat} ${toneLabel}`};
 }
 
@@ -687,7 +677,8 @@ function ProductSpecIcons({
       ? `Approx. ${weight}${WEIGHT_UNIT_ABBR[weightUnit ?? ''] ?? weightUnit ?? ''}`
       : null;
 
-  const specs: Array<{icon: SpecIconName; label: string; toneClass?: string}> = [];
+  const specs: Array<{icon: SpecIconName; label: string; toneClass?: string}> =
+    [];
   if (karat)
     specs.push({
       icon: 'metal',
@@ -945,7 +936,10 @@ const LOGO_INK_PAD = 4;
 function financingLogo(file: string, ink: number) {
   const height = ink + LOGO_INK_PAD;
   return {
-    src: `${SHOPIFY_FILES}/${file}.avif?v=1783667298&width=200&height=${height}&crop=center`,
+    // `quality` for the same reason every other CDN image on the site carries
+    // it (see ~/lib/cdnImage) — the default is ~q85 and these are flat vector
+    // marks, which is the case that loses the least from a lower setting.
+    src: `${SHOPIFY_FILES}/${file}.avif?v=1783667298&width=200&height=${height}&crop=center&quality=70`,
     /**
      * Share of the row this mark takes, proportional to its aspect ratio.
      * Because each image then fills its own share, every logo resolves to the
@@ -994,14 +988,14 @@ function FinancingPartners() {
     <>
       {/* Heading sits outside the bordered box; `aria-labelledby` resolves by
           id across the document, so the section stays named regardless. */}
-      
+
       <section
         className="product-financing"
         aria-labelledby="product-financing-label"
       >
         <h2 className="product-financing-label" id="product-financing-label">
-        Financing available
-      </h2>
+          Financing available
+        </h2>
         <ul className="product-financing-list">
           {FINANCING_PARTNERS.map((partner) => (
             // flex-basis 0 + this grow factor makes the ratios describe the
@@ -1043,7 +1037,6 @@ function RelatedProducts({
       <div className="section-inner pdp-similar-header">
         <div>
           <h2 className="pdp-similar-title">You May Also Like</h2>
-          
         </div>
       </div>
       <Suspense fallback={null}>
@@ -1057,14 +1050,20 @@ function RelatedProducts({
                 ariaLabel="You may also like"
                 showButtons
               >
-                {items.map((product, index) => (
+                {/* All lazy. The first four used to be eager, which is right
+                    for a rail near the top of a collection page and wrong
+                    here: this one sits below the gallery, the buy panel, the
+                    description and the FAQs, so four eager cards were ~240 KB
+                    fetched at LCP priority for a section a phone screen never
+                    shows. `<Suspense>` already holds them back to a second
+                    payload; `lazy` keeps them out of the first one's way. */}
+                {items.map((product) => (
                   <ProductItem
                     key={product.id}
                     product={product}
                     className="slider-item"
                     /* .slider-item is `min(240px, 62vw)` — capped at 240px. */
                     sizes="240px"
-                    loading={index < 4 ? 'eager' : undefined}
                   />
                 ))}
               </HorizontalCarousel>

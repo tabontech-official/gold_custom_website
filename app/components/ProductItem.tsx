@@ -1,15 +1,13 @@
 import {Link} from 'react-router';
 import {Image, Money} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import type {
   ProductItemFragment,
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
-import {
-  AddToCartButton,
-  AddedToBagLabel,
-} from '~/components/AddToCartButton';
+import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
 
 function HeartIcon() {
@@ -73,6 +71,7 @@ export function ProductItem({
         <Link prefetch="intent" to={productUrl} className="product-image-link">
           {image && (
             <Image
+              loader={cdnLoader}
               alt={image.altText || product.title}
               aspectRatio="1/1"
               data={image}

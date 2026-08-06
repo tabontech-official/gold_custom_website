@@ -1,6 +1,7 @@
 import {useLoaderData, Link} from 'react-router';
 import type {Route} from './+types/collections._index';
 import {getPaginationVariables, Image} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {Breadcrumb} from '~/components/Breadcrumb';
@@ -12,7 +13,6 @@ export const meta: Route.MetaFunction = ({matches}) =>
     description: `Browse every ${SITE.name} collection — gold chains, rings, bracelets, pendants, earrings and charms in 10K and 14K gold.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/collections'),
   });
-
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -69,12 +69,10 @@ export default function Collections() {
             From solid-gold chains to certified-diamond rings — explore every
             corner of the house.
           </p>
-          <p>
-           
-          </p>
-                  </div>
+          <p></p>
+        </div>
       </section>
-      
+
       <section className="home-section is-soft">
         <div className="section-inner">
           <PaginatedResourceSection<CollectionFragment>
@@ -87,7 +85,6 @@ export default function Collections() {
                 collection={collection}
                 index={index}
               />
-
             )}
           </PaginatedResourceSection>
         </div>
@@ -115,6 +112,7 @@ function CollectionItem({
     >
       {collection.image ? (
         <Image
+          loader={cdnLoader}
           alt={collection.image.altText || collection.title}
           aspectRatio="1/1"
           data={collection.image}

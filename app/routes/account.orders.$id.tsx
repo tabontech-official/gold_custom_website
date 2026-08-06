@@ -1,6 +1,7 @@
 import {redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/account.orders.$id';
 import {Money, Image} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import type {
   OrderLineItemFullFragment,
   OrderQuery,
@@ -201,7 +202,12 @@ function OrderLineRow({lineItem}: {lineItem: OrderLineItemFullFragment}) {
         <div>
           {lineItem?.image && (
             <div>
-              <Image data={lineItem.image} width={96} height={96} />
+              <Image
+                loader={cdnLoader}
+                data={lineItem.image}
+                width={96}
+                height={96}
+              />
             </div>
           )}
           <div>

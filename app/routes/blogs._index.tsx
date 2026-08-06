@@ -1,6 +1,7 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
 import {Image, getPaginationVariables} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
@@ -109,6 +110,7 @@ function ArticleItem({
       <Link className="blog-card-media" to={to} prefetch="intent" tabIndex={-1}>
         {article.image && (
           <Image
+            loader={cdnLoader}
             alt={article.image.altText || article.title}
             aspectRatio="3/2"
             data={article.image}

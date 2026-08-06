@@ -1,6 +1,7 @@
 import type {CartLineUpdateInput} from '@shopify/hydrogen/storefront-api-types';
 import type {CartLayout, LineItemChildrenMap} from '~/components/CartMain';
 import {CartForm, Image, type OptimisticCartLine} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import {useVariantUrl} from '~/lib/variants';
 import {Link, useFetcher} from 'react-router';
 import {ProductPrice} from './ProductPrice';
@@ -82,6 +83,7 @@ export function CartLineItem({
 
   const thumb = image && (
     <Image
+      loader={cdnLoader}
       alt={title}
       aspectRatio="1/1"
       data={image}
@@ -260,7 +262,9 @@ function CartLineRemoveButton({
       inputs={{lineIds}}
     >
       <button
-        className={variant === 'stepper' ? 'cart-remove-icon' : 'cart-remove-btn'}
+        className={
+          variant === 'stepper' ? 'cart-remove-icon' : 'cart-remove-btn'
+        }
         disabled={disabled}
         type="submit"
         aria-label="Remove item"

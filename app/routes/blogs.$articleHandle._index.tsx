@@ -1,6 +1,7 @@
 import {redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs.$articleHandle._index';
 import {Image} from '@shopify/hydrogen';
+import {cdnLoader} from '~/lib/cdnImage';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {
   SITE,
@@ -151,6 +152,7 @@ export default function Article() {
         {image && (
           <div className="article-hero">
             <Image
+              loader={cdnLoader}
               data={image}
               sizes="(min-width: 1100px) 1040px, 100vw"
               loading="eager"

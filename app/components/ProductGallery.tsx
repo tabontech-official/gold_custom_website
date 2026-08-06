@@ -1,6 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react';
 import {Image} from '@shopify/hydrogen';
-import {cdnWidth} from '~/lib/cdnImage';
+import {cdnWidth, cdnLoader} from '~/lib/cdnImage';
 import type Hls from 'hls.js';
 
 export type GalleryMedia = {
@@ -75,7 +75,9 @@ export function ProductGallery({
   // Wraps at both ends: with the thumbnail rail hidden on mobile these arrows
   // are the only way through the set, and a dead-ended arrow reads as broken.
   const step = (delta: number) =>
-    setActiveKey(items[(activeIndex + delta + items.length) % items.length].key);
+    setActiveKey(
+      items[(activeIndex + delta + items.length) % items.length].key,
+    );
 
   // Read through a ref so the swipe listeners below can stay bound across
   // index changes instead of being torn down and rebuilt after every gesture.
@@ -197,7 +199,9 @@ export function ProductGallery({
             while active: preloading a stack of them is not worth a fade. */}
         <div
           className={`pgg-swipe${dragging ? ' is-dragging' : ''}`}
-          style={drag ? {transform: `translate3d(${drag * 0.4}px,0,0)`} : undefined}
+          style={
+            drag ? {transform: `translate3d(${drag * 0.4}px,0,0)`} : undefined
+          }
         >
           {items.map((m) =>
             m.kind === 'image' || m.key === activeItem.key ? (
@@ -258,16 +262,21 @@ function playableSources(sources: NonNullable<GalleryMedia['sources']>) {
 function GalleryThumb({media: m, title}: {media: GalleryMedia; title: string}) {
   const thumbUrl = m.kind === 'image' ? m.image?.url : m.thumbUrl;
 
-  // 8rem rail, so 400w covers a DPR-3 phone. These load eagerly and a product
-  // can carry a dozen of them — at full resolution they were the thing the
-  // featured shot's `fetchpriority` had to outrun.
+  // 8rem rail, so 400w covers a DPR-3 phone.
+  //
+  // `lazy`, and that word is doing the most work on this page: the rail is
+  // `display: none` below 48em, and a lazy image inside a hidden subtree never
+  // intersects, so the browser skips it outright. Eager downloaded all dozen
+  // of them on every phone — for a rail nobody can see — straight out of the
+  // featured shot's bandwidth. On desktop the rail is at the fold and these
+  // still arrive immediately, just behind the photo instead of ahead of it.
   return (
     <span className="pgg-tile">
       {thumbUrl ? (
         <img
           src={cdnWidth(thumbUrl, 400)}
           alt={m.alt || title}
-          loading="eager"
+          loading="lazy"
           decoding="async"
         />
       ) : (
@@ -322,11 +331,23 @@ function GalleryTile({
           }}
           alt={m.image.altText || m.alt || title}
           sizes={featured ? '(min-width: 48em) 52vw, 100vw' : '96px'}
-          loading="eager"
+          loader={cdnLoader}
+          /**
+           * Only the visible photo is eager. Every image in the set is mounted
+           * at once (see the stacking note above) and they were ALL eager, so a
+           * product with eight shots pulled eight full-stage images — roughly a
+           * megabyte — in parallel with the one the shopper is waiting to see.
+           * That, not the file size of any single image, is what put LCP at
+           * 7.4s on a phone.
+           *
+           * The stack still loads, so the crossfade keeps its already-decoded
+           * layers; it just queues behind the LCP instead of racing it.
+           */
+          loading={active ? 'eager' : 'lazy'}
           /**
            * The featured shot is the product page's LCP element. `eager` only
-           * stops it being deferred; it still queues behind the thumbnails at
-           * default priority. This promotes it ahead of them.
+           * stops it being deferred; it still queues at default priority
+           * alongside its own siblings. This promotes it and demotes them.
            *
            * Spread, and lowercase, on purpose: React 18.3 has no built-in
            * handling for this attribute, so the camelCase spelling that
@@ -334,7 +355,9 @@ function GalleryTile({
            * fetchPriority prop" and the lowercase spelling is what actually
            * reaches the DOM cleanly. Drop the spread when React 19 lands.
            */
-          {...(featured && active ? {fetchpriority: 'high'} : null)}
+          {...(featured && active
+            ? {fetchpriority: 'high'}
+            : {fetchpriority: 'low'})}
           style={featured ? {transformOrigin: origin} : undefined}
         />
       ) : m.kind === 'video' && m.sources?.length ? (
@@ -370,7 +393,8 @@ function VideoPlayer({
   const orderedSources = playableSources(sources);
   const hlsSource = sources.find((source) => isHls(source.mimeType));
   const hasMp4 = orderedSources.some(
-    (source) => /mp4/i.test(source.mimeType ?? '') || /\.mp4(?:\?|$)/i.test(source.url),
+    (source) =>
+      /mp4/i.test(source.mimeType ?? '') || /\.mp4(?:\?|$)/i.test(source.url),
   );
 
   useEffect(() => {
