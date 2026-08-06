@@ -1,4 +1,8 @@
 import {getSeoMeta, type SeoConfig} from '@shopify/hydrogen';
+// Relative, not `~/lib/cdnImage`: the self-checks in this folder run under bare
+// `npx tsx`, which rejects the tsconfig's `paths` alias (no `baseUrl`). An
+// aliased import here takes seoOffer.test.ts down with it.
+import {cdnWidth} from './cdnImage';
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -17,10 +21,27 @@ export const SITE = {
   description:
     'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns and 1-year warranty on every piece.',
   logo: 'https://www.goldcustom.com/favicon.png',
+  /**
+   * Fallback for any page with no image of its own — which was every share of
+   * the home page, and is why those previews came back blank.
+   *
+   * NOT `logo`: that is a 150x134 favicon, far under the 600x315 every platform
+   * needs before it will render a large card, so it would have swapped a blank
+   * preview for a postage stamp. This is a brand shot asked for at 1200x630;
+   * the source tops out around 1100px so the CDN returns 1100x619, which still
+   * clears the threshold comfortably.
+   *
+   * Swap this for a purpose-made 1200x630 banner the moment there is one — this
+   * is the one string to change.
+   */
+  ogImage:
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/collections/Gold_Jewelry-1-757994.webp?v=1770959624&width=1200&height=630&crop=center&quality=80',
 } as const;
 
 type RootData = {
-  header?: {shop?: {primaryDomain?: {url?: string | null} | null} | null} | null;
+  header?: {
+    shop?: {primaryDomain?: {url?: string | null} | null} | null;
+  } | null;
   publicStoreDomain?: string | null;
 };
 
@@ -60,7 +81,8 @@ export function absoluteUrl(origin: string, path: string): string {
 export function rootDataFrom(
   matches: readonly ({id: string; data?: unknown} | undefined)[],
 ) {
-  return (matches.find((m) => m?.id === 'root')?.data ?? null) as RootData | null;
+  return (matches.find((m) => m?.id === 'root')?.data ??
+    null) as RootData | null;
 }
 
 /**
@@ -86,26 +108,111 @@ export function metaDescription(
 }
 
 /**
- * Wrapper around `getSeoMeta` that applies the sitewide defaults.
+ * Pull the first usable image URL out of a `SeoConfig['media']`, which may be a
+ * bare string, one object, or an array of either.
+ */
+function firstMediaUrl(media: SeoConfig['media']): string | null {
+  for (const item of Array.isArray(media) ? media : [media]) {
+    if (typeof item === 'string' && item) return item;
+    if (item && typeof item === 'object' && item.url) return item.url;
+  }
+  return null;
+}
+
+/**
+ * Normalise an image for social crawlers: absolute, and not a 3000px original.
+ *
+ * Absolute because a relative `og:image` is the single most reliable way to get
+ * a blank preview — the crawler has no page context to resolve it against.
+ * Capped at 1200px because crawlers download whatever you point them at, and
+ * the product masters here are 3024x3024.
+ *
+ * Deliberately NOT cropped to 1.91:1. A centre crop of a chain photo cuts the
+ * ends off the chain; a 1200px square still clears every platform's
+ * large-card threshold, so there is nothing to buy by cropping.
+ */
+function socialImage(url: string): string {
+  const absolute = url.startsWith('/') ? absoluteUrl(SITE.origin, url) : url;
+  return absolute.includes('cdn.shopify.com')
+    ? cdnWidth(absolute, 1200)
+    : absolute;
+}
+
+/**
+ * Wrapper around `getSeoMeta` that applies the sitewide defaults AND the social
+ * tags Hydrogen does not emit.
  *
  * React Router replaces a parent's meta with the child's rather than merging,
  * so the root `titleTemplate` does NOT carry into routes that export their own
  * `meta`. Every route therefore has to restate it — this does that in one
  * place, and normalises `getSeoMeta`'s `| undefined` return to an array.
  *
- * A route may pass its own `titleTemplate` to opt out: the homepage title is
- * authored in Shopify with the brand already in it, so it uses `%s`.
+ * THE OG IMAGE BUG THIS EXISTS TO FIX
+ * -----------------------------------
+ * `getSeoMeta` branches on the shape of `media`. Given a string it emits
+ * `og:image`. Given an OBJECT — `{type: 'image', url}`, which is what every
+ * route here passes — it emits only:
+ *
+ *     og:image:url · og:image:secure_url · og:image:type
+ *
+ * and never a plain `og:image`. The Open Graph spec calls `og:image:url`
+ * "identical to og:image", and Facebook honours that, but LinkedIn, WhatsApp,
+ * iMessage and Slack look for `og:image` and find nothing. Verified against the
+ * live site: every product and collection page had the three sub-properties and
+ * no `og:image`, and the home page had no image tag of any kind.
+ *
+ * `getSeoMeta` also never emits `og:type`, `og:site_name`, `twitter:card` or
+ * `twitter:image` — without `twitter:card` X renders no card at all.
+ *
+ * So this appends those, and falls back to a brand image when a route has no
+ * media of its own, because an absent image and an empty one look the same to a
+ * crawler: a blank preview.
  */
-export function pageSeo(config: SeoConfig & {noIndex?: boolean}) {
-  const {noIndex, ...seo} = config;
+export function pageSeo(
+  config: SeoConfig & {
+    noIndex?: boolean;
+    /** `product` on PDPs, `article` on blog posts, `website` everywhere else. */
+    ogType?: 'website' | 'product' | 'article';
+  },
+) {
+  const {noIndex, ogType = 'website', ...seo} = config;
 
-  return (
+  // Shopify's own SEO titles often already end in the brand ("… | Gold
+  // Custom"), and appending the template on top produced the doubled
+  // "… | Gold Custom | Gold Custom" that was live on collection pages.
+  const title = typeof seo.title === 'string' ? seo.title : '';
+  const titleTemplate =
+    seo.titleTemplate ??
+    (title.trim().toLowerCase().endsWith(SITE.name.toLowerCase())
+      ? '%s'
+      : `%s | ${SITE.name}`);
+
+  const tags =
     getSeoMeta({
-      titleTemplate: `%s | ${SITE.name}`,
       ...seo,
+      titleTemplate,
       ...(noIndex ? {robots: {noIndex: true, noFollow: false}} : {}),
-    }) ?? []
-  );
+    }) ?? [];
+
+  const image = socialImage(firstMediaUrl(seo.media) ?? SITE.ogImage);
+
+  return [
+    ...tags,
+    // The tag every scraper actually looks for. `property`, not `name` — the
+    // Open Graph spec is RDFa, and `name` is what Hydrogen uses for its
+    // string-media branch, which is its own small bug.
+    {property: 'og:image', content: image},
+    {property: 'og:image:alt', content: title || SITE.name},
+    {property: 'og:type', content: ogType},
+    {property: 'og:site_name', content: SITE.name},
+    // No card type means X renders no card. `name`, per the Twitter spec.
+    {name: 'twitter:card', content: 'summary_large_image'},
+    {name: 'twitter:image', content: image},
+    // Deliberately no og:image:width/height. The CDN silently returns the
+    // source's own size when asked for more (the brand fallback resolves to
+    // 1100x619, not the 1200x630 requested), so any number here would be a
+    // claim we cannot keep — and a wrong one suppresses the card outright.
+  ];
 }
 
 /**

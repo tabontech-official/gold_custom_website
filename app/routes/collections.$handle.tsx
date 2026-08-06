@@ -6,19 +6,14 @@ import {
 } from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import {
-  getPaginationVariables,
-  Analytics,
-  Pagination,
-  getSeoMeta,
-} from '@shopify/hydrogen';
+import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {productCanonicalPath} from '~/lib/categories';
 import {
-  SITE,
   absoluteUrl,
   breadcrumbJsonLd,
   metaDescription,
+  pageSeo,
   rootDataFrom,
   siteOrigin,
 } from '~/lib/seo';
@@ -138,36 +133,33 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   const title = displayTitle(collection);
 
   if (!collection) {
-    return getSeoMeta({title, titleTemplate: `%s | ${SITE.name}`}) ?? [];
+    return pageSeo({title});
   }
 
-  return (
-    getSeoMeta({
-      title: collection.seo?.title || title,
-      titleTemplate: `%s | ${SITE.name}`,
-      description: metaDescription(
-        collection.seo?.description || collection.description,
-      ),
-      url: absoluteUrl(origin, `/collections/${collection.handle}`),
-      media: collection.image?.url
-        ? {type: 'image', url: collection.image.url}
-        : undefined,
-      jsonLd: [
-        breadcrumbJsonLd(origin, [
-          {name: 'Home', path: '/'},
-          {name: title, path: `/collections/${collection.handle}`},
-        ]),
-        collectionItemListJsonLd(origin, collection),
-        // Resolved exactly as the page does, so the markup describes the
-        // accordion a visitor actually sees rather than a second source.
-        // Both inputs are merchant-authored Q&A, which is what FAQPage
-        // requires — see the warning on buildFaqJsonLd.
-        ...(collectionFaqs(data).length
-          ? [buildFaqJsonLd(collectionFaqs(data))]
-          : []),
-      ],
-    }) ?? []
-  );
+  return pageSeo({
+    title: collection.seo?.title || title,
+    description: metaDescription(
+      collection.seo?.description || collection.description,
+    ),
+    url: absoluteUrl(origin, `/collections/${collection.handle}`),
+    media: collection.image?.url
+      ? {type: 'image', url: collection.image.url}
+      : undefined,
+    jsonLd: [
+      breadcrumbJsonLd(origin, [
+        {name: 'Home', path: '/'},
+        {name: title, path: `/collections/${collection.handle}`},
+      ]),
+      collectionItemListJsonLd(origin, collection),
+      // Resolved exactly as the page does, so the markup describes the
+      // accordion a visitor actually sees rather than a second source.
+      // Both inputs are merchant-authored Q&A, which is what FAQPage
+      // requires — see the warning on buildFaqJsonLd.
+      ...(collectionFaqs(data).length
+        ? [buildFaqJsonLd(collectionFaqs(data))]
+        : []),
+    ],
+  });
 };
 
 /**

@@ -1,9 +1,4 @@
-import {
-  Analytics,
-  getShopAnalytics,
-  getSeoMeta,
-  useNonce,
-} from '@shopify/hydrogen';
+import {Analytics, getShopAnalytics, useNonce} from '@shopify/hydrogen';
 import {
   Outlet,
   useRouteError,
@@ -28,6 +23,7 @@ import {
   SITE,
   localBusinessJsonLd,
   organizationJsonLd,
+  pageSeo,
   rootDataFrom,
   siteOrigin,
   websiteJsonLd,
@@ -44,14 +40,15 @@ export type RootLoader = typeof loader;
 export const meta: Route.MetaFunction = ({matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
 
-  return (
-    getSeoMeta({
-      title: SITE.name,
-      titleTemplate: `%s | ${SITE.name}`,
-      description: SITE.description,
-      url: origin,
-    }) ?? []
-  );
+  // pageSeo, not getSeoMeta — it is the only thing that emits `og:image`,
+  // `og:type`, `og:site_name` and `twitter:card`, and it supplies the brand
+  // fallback image. Routes that called getSeoMeta directly were the ones
+  // shipping blank social previews. See lib/seo.ts.
+  return pageSeo({
+    title: SITE.name,
+    description: SITE.description,
+    url: origin,
+  });
 };
 
 /**

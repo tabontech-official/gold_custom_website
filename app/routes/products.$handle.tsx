@@ -9,7 +9,6 @@ import {
   getAdjacentAndFirstAvailableVariants,
   useSelectedOptionInUrlParam,
   useAnalytics,
-  getSeoMeta,
 } from '@shopify/hydrogen';
 import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
 import {ProductPrice} from '~/components/ProductPrice';
@@ -51,6 +50,7 @@ import {
   breadcrumbJsonLd,
   metaDescription,
   offerShippingDetails,
+  pageSeo,
   priceValidUntilDate,
   rootDataFrom,
   siteOrigin,
@@ -58,7 +58,7 @@ import {
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const product = data?.product;
-  if (!product) return getSeoMeta({title: SITE.name}) ?? [];
+  if (!product) return pageSeo({title: SITE.name});
 
   const origin = siteOrigin(rootDataFrom(matches));
   const canonical = absoluteUrl(origin, productCanonicalPath(product));
@@ -73,20 +73,18 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     {name: product.title, path: productCanonicalPath(product)},
   ];
 
-  return (
-    getSeoMeta({
-      title: product.seo?.title || product.title,
-      titleTemplate: `%s | ${SITE.name}`,
-      description: metaDescription(
-        product.seo?.description || product.description,
-      ),
-      url: canonical,
-      media: image ? {type: 'image', url: image} : undefined,
-      // Product schema is emitted at render time (buildProductJsonLd) where the
-      // resolved variant and gallery are available â€” don't duplicate it here.
-      jsonLd: breadcrumbJsonLd(origin, crumbs),
-    }) ?? []
-  );
+  return pageSeo({
+    ogType: 'product',
+    title: product.seo?.title || product.title,
+    description: metaDescription(
+      product.seo?.description || product.description,
+    ),
+    url: canonical,
+    media: image ? {type: 'image', url: image} : undefined,
+    // Product schema is emitted at render time (buildProductJsonLd) where the
+    // resolved variant and gallery are available — don't duplicate it here.
+    jsonLd: breadcrumbJsonLd(origin, crumbs),
+  });
 };
 
 /**
