@@ -11,6 +11,25 @@ import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
 import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
 import {cdnWidth} from '~/lib/cdnImage';
+/**
+ * Imported as Vite assets, NOT referenced as `/purity.webp` out of `public/`.
+ *
+ * Anything in `public/` is served from a fixed path with
+ * `Cache-Control: max-age=31536000`. That combination is a trap: the URL never
+ * changes, so a year-long cache entry can outlive the file behind it. These
+ * four were re-encoded from ~250 KB of PNG/JPEG down to 43 KB of real WebP and
+ * committed — and the live site still serves the old PNGs, byte for byte, at
+ * the same paths. The repo is right, the build output is right, and shoppers
+ * still get the 250 KB.
+ *
+ * `?url` gives each file a content hash, so the URL changes whenever the bytes
+ * do and the immutable cache becomes correct instead of dangerous. It also
+ * means the next person to optimise an image does not have to know any of this.
+ */
+import purityIcon from '~/assets/img/purity.webp?url';
+import handmadeIcon from '~/assets/img/handmade.webp?url';
+import careIcon from '~/assets/img/care.webp?url';
+import secureDeliveryIcon from '~/assets/img/secure-delivery.webp?url';
 import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
@@ -88,10 +107,12 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
         console.error(error);
         return null;
       }),
-    context.storefront.query(HERO_CONTENT_QUERY, {cache}).catch((error: Error) => {
-      console.error(error);
-      return null;
-    }),
+    context.storefront
+      .query(HERO_CONTENT_QUERY, {cache})
+      .catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
     context.storefront.query(FAQS_QUERY, {cache}).catch((error: Error) => {
       console.error(error);
       return null;
@@ -144,7 +165,9 @@ function extractHeroFields(fields: any): {
     const rawKey = String(field?.key ?? '');
     const key = rawKey.replace(/[-_\s]+/g, '').toLowerCase();
     if (url) {
-      const order = Number(rawKey.match(/(\d+)/)?.[1] ?? imageFields.length + 1);
+      const order = Number(
+        rawKey.match(/(\d+)/)?.[1] ?? imageFields.length + 1,
+      );
       imageFields.push({order, url});
     }
     if (
@@ -181,7 +204,9 @@ function toHeroSlide(entry: any): HeroSlide | null {
     // The authored dropdown. An unrecognised value falls back to `left` rather
     // than leaking the raw string into a data attribute.
     if (key === 'textposition') {
-      const value = String(field?.value ?? '').trim().toLowerCase();
+      const value = String(field?.value ?? '')
+        .trim()
+        .toLowerCase();
       if (value === 'right' || value === 'up' || value === 'left') {
         position = value;
       }
@@ -251,7 +276,6 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       console.error(error);
       return null;
     });
-
 
   const genderNewArrivals = context.storefront
     .query(NEW_ARRIVALS_BY_GENDER_QUERY)
@@ -373,7 +397,7 @@ function useSwipeSlider<T extends HTMLElement>(
   const dragRef = useRef(0);
 
   // Real slide index for the dots (pos 1..count → 0..count-1; clones map back).
-  const active = ((pos - 1) % count + count) % count;
+  const active = (((pos - 1) % count) + count) % count;
   // Never let pos escape [0, count+1] — stepping past an edge lands on the
   // clone there; the effect below then snaps back to the matching real slide.
   const step = (dir: number) =>
@@ -690,12 +714,7 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
   );
 }
 
-function TikTokVideosSection({
-  videos,
-}: {
-  videos: Promise<any | null>;
-
-}) {
+function TikTokVideosSection({videos}: {videos: Promise<any | null>}) {
   return (
     <Suspense fallback={null}>
       <Await resolve={videos}>
@@ -760,7 +779,7 @@ export const TRUST_PROMISES = [
     pill: 'U.S.A.',
     // Source: product-page trust badge "Made in U.S.A — From our factory to you".
     copy: 'No middleman markup between our bench and your order.',
-    icon: '/handmade.webp',
+    icon: handmadeIcon,
     signal: 'gold',
     keys: ['craft', 'mastercraft', 'craftsmanship'],
   },
@@ -769,7 +788,7 @@ export const TRUST_PROMISES = [
     pill: 'Never plated',
     // Source: the catalogue — every piece is 10K/14K, no plated or filled stock.
     copy: 'Real gold throughout, with the karat stated on every piece.',
-    icon: '/purity.webp',
+    icon: purityIcon,
     signal: 'amber',
     keys: ['purity', 'certifiedpurity'],
   },
@@ -778,7 +797,7 @@ export const TRUST_PROMISES = [
     pill: 'Custom',
     // Source: homepage FAQ — design, gold type, gemstones and engraving.
     copy: 'Choose the design, karat, stones and engraving on a custom order.',
-    icon: '/care.webp',
+    icon: careIcon,
     signal: 'brown',
     keys: ['care', 'lifetimecare'],
   },
@@ -787,7 +806,7 @@ export const TRUST_PROMISES = [
     pill: 'Appointment',
     // Source: contact page — 550 S Hill St #660, the Jewelry District.
     copy: 'See a piece in person at 550 S Hill St, in the Jewelry District.',
-    icon: '/secure%20delivery.webp',
+    icon: secureDeliveryIcon,
     signal: 'green',
     keys: ['delivery', 'securedelivery'],
   },

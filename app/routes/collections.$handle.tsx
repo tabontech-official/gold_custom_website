@@ -513,6 +513,11 @@ export default function Collection() {
           <div
             className={`collection-main${isListView ? ' is-list-view' : ''}`}
           >
+            {/* The grid sat directly under the collection's h1 with nothing
+                between, so the product cards' h3 would jump a level. It also
+                names the region: an agent looking for the products on a
+                collection page had only an unlabelled <div> to go on. */}
+            <h2 className="visually-hidden">Products</h2>
             <Pagination connection={collection.products}>
               {({
                 nodes,
@@ -625,10 +630,7 @@ export default function Collection() {
         >
           <div className="section-inner">
             <div className="editorial-heading">
-              <h2
-                id="collection-description-title"
-                className="editorial-title"
-              >
+              <h2 id="collection-description-title" className="editorial-title">
                 About {collection.title}
               </h2>
             </div>

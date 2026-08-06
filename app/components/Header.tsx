@@ -663,8 +663,18 @@ function HeaderMenuMobileToggle() {
     <button
       className="header-menu-mobile-toggle reset"
       onClick={() => open('mobile')}
+      /* Without this the button's only accessible name was the glyph itself —
+         an agent or screen reader was told the control is called "☰". */
+      aria-label="Open menu"
     >
-      <h3>☰</h3>
+      {/* Was an <h3>. It was never a heading: it is a glyph on a button, and it
+          was the FIRST heading in the document, so every page announced its
+          outline as starting at h3 "☰" before reaching the real h1. The class
+          reproduces the h3's computed box exactly (18.72px / 600 / block) so
+          nothing moves. */}
+      <span className="header-burger" aria-hidden="true">
+        ☰
+      </span>
     </button>
   );
 }

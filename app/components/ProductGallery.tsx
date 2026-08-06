@@ -314,6 +314,20 @@ function GalleryTile({
 
   return (
     <div
+      /**
+       * The stack hides inactive photos with `opacity: 0`, which hides them
+       * from eyes and from nobody else — opacity is not `visibility` or
+       * `display`, so all of them stay in the accessibility tree. A shopper on
+       * a screen reader, or an agent reading the page, met the same product
+       * image announced once per photo in the set: two here, twelve on a
+       * product with twelve shots, every one with the identical alt text.
+       *
+       * Safe to hide wholesale because a non-active tile is only ever an image:
+       * the parent mounts video and embed tiles solely while they are active,
+       * so there is never a focusable control sealed inside an `aria-hidden`
+       * subtree (which would be its own violation).
+       */
+      aria-hidden={!active}
       className={`${featured ? 'pgg-feature' : 'pgg-tile'}${
         zoom ? ' is-zoomed' : ''
       }${active ? ' is-active' : ''}`}

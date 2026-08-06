@@ -8,7 +8,6 @@ import {pageSeo} from '~/lib/seo';
 export const meta: Route.MetaFunction = () =>
   pageSeo({title: 'Your Wishlist', noIndex: true});
 
-
 // POST here (from the heart button) to toggle a handle. The signed session
 // cookie is the store, so we commit it back on the response.
 export async function action({request, context}: Route.ActionArgs) {
@@ -59,6 +58,9 @@ export default function WishlistPage() {
 
         {products.length ? (
           <div className="products-grid">
+            {/* See collections.$handle — same bare h1 above a card grid, same
+                level skip, same unnamed region. */}
+            <h2 className="visually-hidden">Saved products</h2>
             {products.map((product: any) => (
               <ProductItem key={product.id} product={product} showQuickAdd />
             ))}

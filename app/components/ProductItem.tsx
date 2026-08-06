@@ -89,8 +89,14 @@ export function ProductItem({
       </div>
 
       <div className="product-card-body">
+        {/* h3, not h4. Every grid and rail that renders these cards sits under
+            an h2 section heading, so h4 skipped a level and broke the document
+            outline — an agent walking the tree sees a gap where a section
+            should be. The two places that had a bare h1 above the grid
+            (collections, wishlist) now carry a visually-hidden h2, which also
+            gives those regions a name worth navigating to. */}
         <Link prefetch="intent" to={productUrl} className="product-item-copy">
-          <h4>{product.title}</h4>
+          <h3>{product.title}</h3>
         </Link>
         <div className="product-card-price">
           <Money data={product.priceRange.minVariantPrice} />
@@ -132,8 +138,14 @@ function WishlistQuickAdd({product}: {product: any}) {
 function WishlistButton({handle}: {handle: string}) {
   const {fetcher, active} = useWishlistToggle(handle);
 
+  // `role="presentation"` strips the form landmark, not the button. A page
+  // showing nine cards was publishing nine anonymous `form` regions into the
+  // accessibility tree — an agent scanning landmarks got a wall of
+  // indistinguishable "form" entries and no way to tell them apart. There is
+  // nothing here to navigate to: the whole form is one toggle, and that button
+  // keeps its own label and `aria-pressed`.
   return (
-    <fetcher.Form method="post" action="/wishlist">
+    <fetcher.Form method="post" action="/wishlist" role="presentation">
       <input type="hidden" name="handle" value={handle} />
       <button
         type="submit"

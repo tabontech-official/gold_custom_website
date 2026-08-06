@@ -7,9 +7,10 @@
   font-weight: 300;
   font-display: swap;
   src: url('../assets/fonts/almarai-300.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Almarai';
@@ -17,9 +18,10 @@
   font-weight: 400;
   font-display: swap;
   src: url('../assets/fonts/almarai-400.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Almarai';
@@ -27,9 +29,10 @@
   font-weight: 700;
   font-display: swap;
   src: url('../assets/fonts/almarai-700.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 @font-face {
   font-family: 'Almarai';
@@ -37,9 +40,10 @@
   font-weight: 800;
   font-display: swap;
   src: url('../assets/fonts/almarai-800.woff2') format('woff2');
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
-    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
-    U+2212, U+2215, U+FEFF, U+FFFD;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
 }
 
 /* ---------------------------------------------------------------------------
@@ -1033,6 +1037,16 @@ button.announcement-link {
   @media (min-width: 60em) {
     display: flex;
   }
+}
+
+/* The hamburger glyph used to be an <h3> purely for its size. It is a span now
+   (a heading inside a button is not a real heading, and it was landing in the
+   accessibility tree ahead of every page's h1) — these three declarations are
+   the h3's computed box, measured, so the header does not move. */
+.header-burger {
+  display: block;
+  font-size: 1.17em;
+  font-weight: 600;
 }
 
 .header-menu-mobile-toggle {
@@ -4117,7 +4131,6 @@ button.announcement-link {
   }
 }
 
-
 .hero-eyebrow {
   color: var(--color-gold);
   font-weight: 600;
@@ -5570,7 +5583,7 @@ button.announcement-link {
     gap: 0.55rem;
   }
 
-  .product-item-copy h4 {
+  .product-item-copy h3 {
     font-size: 0.82rem;
   }
 }
@@ -6475,7 +6488,7 @@ button.announcement-link {
   color: inherit;
 }
 
-.product-item-copy h4 {
+.product-item-copy h3 {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 500;
@@ -7118,7 +7131,6 @@ button.announcement-link {
   aspect-ratio: 1 / 1;
   background: var(--color-bg-soft);
 }
-
 
 /* Product-spec highlights under the price — flat icon + label, two columns */
 .product-specs {
@@ -9078,7 +9090,6 @@ button.announcement-link {
   color: #fff;
 }
 
-
 /* Homepage FAQ â€” a centered, quietly luxurious accordion after categories. */
 .homepage-faq-section {
   background: transparent;
@@ -9549,7 +9560,9 @@ button.announcement-link {
   gap: 0.5rem;
   padding: 0.4rem 0.5rem 0.4rem 0.85rem;
   text-decoration: none;
-  transition: background-color 160ms ease, border-color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease;
 }
 
 .collection-chip:hover {
@@ -9577,7 +9590,10 @@ button.announcement-link {
   letter-spacing: 0.02em;
   padding: 0 0.75rem;
   text-decoration: none;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
 }
 
 .collection-toolbar-clear span:first-child {
@@ -9659,7 +9675,6 @@ button.announcement-link {
     letter-spacing: 0.01em;
   }
 }
-
 
 .subnav-icon {
   align-items: center;
@@ -10648,7 +10663,6 @@ button.announcement-link {
   border-radius: 0;
 }
 
-
 @media (prefers-reduced-motion: reduce) {
   .trust-promise-card,
   .trust-promise-card::before,
@@ -10875,12 +10889,12 @@ button.announcement-link {
   min-width: 0;
 }
 
-.collection-main.is-list-view .product-item-copy h4,
+.collection-main.is-list-view .product-item-copy h3,
 .collection-main.is-list-view .product-card-price {
   text-align: right;
 }
 
-.collection-main.is-list-view .product-item-copy h4 {
+.collection-main.is-list-view .product-item-copy h3 {
   min-height: 0;
 }
 
@@ -11636,4 +11650,3 @@ button.announcement-link {
     transform: scaleX(0.4);
   }
 }
-

@@ -28,10 +28,15 @@ export function Footer({
                   Subscribe for new drops, private offers, and jewelry care
                   notes.
                 </p>
+                {/* Named, unlike the wishlist toggles, because this one IS a
+                    landmark worth reaching: it is a real form with an input a
+                    shopper (or an agent) may want to find. An unnamed <form>
+                    lands in the tree as an anonymous "form" region. */}
                 <newsletter.Form
                   action="/api/subscribe"
                   className="footer-newsletter"
                   method="post"
+                  aria-label="Sign up for the newsletter"
                 >
                   <label className="visually-hidden" htmlFor="footer-email">
                     Email address

@@ -481,8 +481,10 @@ export default function Product() {
 function ProductWishlistButton({handle}: {handle: string}) {
   const {fetcher, active} = useWishlistToggle(handle);
 
+  // See ProductItem's WishlistButton — same one-toggle form, same reason for
+  // dropping the landmark role.
   return (
-    <fetcher.Form method="post" action="/wishlist">
+    <fetcher.Form method="post" action="/wishlist" role="presentation">
       <input type="hidden" name="handle" value={handle} />
       <button
         type="submit"
