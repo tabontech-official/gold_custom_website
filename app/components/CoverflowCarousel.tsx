@@ -321,8 +321,21 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
             </div>
             <div className="coverflow-card-body">
               <h3 className="coverflow-card-title">
-                {item.title}
-                <span>Collection</span>
+                {/* The title links to the same place as Shop Now, so the card's
+                    heading is a target too and not just the button. It needs the
+                    same three stopPropagation handlers: the <article> owns a
+                    click that re-centres an off-centre card and pointer handlers
+                    that drive the drag, and without these a tap on the heading
+                    would be swallowed by the carousel instead of navigating. */}
+                <Link
+                  prefetch="intent"
+                  to={`/collections/${item.handle}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onPointerUp={(event) => event.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {item.title}
+                </Link>
               </h3>
               <div className="coverflow-card-links">
                 <Link

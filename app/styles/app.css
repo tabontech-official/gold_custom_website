@@ -5141,14 +5141,20 @@ button.announcement-link {
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.42);
 }
 
-.coverflow-card-title span {
-  color: rgba(255, 255, 255, 0.82);
-  font-family: var(--font-body);
-  font-size: 0.48em;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  opacity: 1;
+/* Global `a` sets its own colour and underlines on hover; both would repaint the
+   card heading, so inherit the h3's colour and keep the underline as the hover
+   and keyboard-focus affordance only. */
+.coverflow-card-title a {
+  color: inherit;
+  text-decoration: none;
 }
+
+.coverflow-card-title a:hover,
+.coverflow-card-title a:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 0.1em;
+}
+
 
 .coverflow-card-links {
   display: flex;
