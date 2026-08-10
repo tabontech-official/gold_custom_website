@@ -136,9 +136,6 @@ export function Footer({
                   <h4>Customers</h4>
                   <ul>
                     <li>
-                      <Link to="/search">Search</Link>
-                    </li>
-                    <li>
                       <Link to="/policies">Policies</Link>
                     </li>
                     <li>
