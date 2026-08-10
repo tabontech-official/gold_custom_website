@@ -74,7 +74,8 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     {name: product.title, path: productCanonicalPath(product)},
   ];
 
-  return pageSeo({
+  // Base SEO tags
+  const tags = pageSeo({
     ogType: 'product',
     title: product.seo?.title || product.title,
     description: metaDescription(
@@ -99,6 +100,18 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     // resolved variant and gallery are available — don't duplicate it here.
     jsonLd: breadcrumbJsonLd(origin, crumbs),
   });
+
+  // If there is a main product image, add a preload link to speed LCP.
+  // Ensure absolute URL so the link works from any route.
+  const preloadLink = image?.url
+    ? {
+        rel: 'preload',
+        as: 'image',
+        href: image.url.startsWith('/') ? absoluteUrl(origin, image.url) : image.url,
+      }
+    : null;
+
+  return preloadLink ? [...tags, preloadLink] : tags;
 };
 
 /**
