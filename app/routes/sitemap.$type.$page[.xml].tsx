@@ -1,5 +1,6 @@
 import type {Route} from './+types/sitemap.$type.$page[.xml]';
 import {getSitemap} from '@shopify/hydrogen';
+import type {SitemapProductCategoriesQuery} from 'storefrontapi.generated';
 import {productCanonicalPath} from '~/lib/categories';
 
 type Storefront = Route.LoaderArgs['context']['storefront'];
@@ -38,7 +39,10 @@ async function productCanonicalPaths(
   // ponytail: linear paging is fine at this size; revisit if the catalogue
   // outgrows the 10,000 products this cap allows.
   for (let page = 0; page < 40; page++) {
-    const {products} = await storefront.query(
+    // Annotated, not inferred: `cursor` feeds the query variables and is then
+    // reassigned from this result, which TS reads as a circular initializer and
+    // widens the whole thing to `any`.
+    const {products}: SitemapProductCategoriesQuery = await storefront.query(
       SITEMAP_PRODUCT_CATEGORIES_QUERY,
       {variables: {cursor}, cache: storefront.CacheLong()},
     );
@@ -47,7 +51,9 @@ async function productCanonicalPaths(
       paths.set(product.handle, productCanonicalPath(product));
     }
 
-    if (!products.pageInfo.hasNextPage) break;
+    // A missing endCursor ends it too — otherwise a null cursor alongside
+    // hasNextPage would re-request page one until the guard above trips.
+    if (!products.pageInfo.hasNextPage || !products.pageInfo.endCursor) break;
     cursor = products.pageInfo.endCursor;
   }
 

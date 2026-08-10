@@ -3002,6 +3002,25 @@ export type PredictiveSearchQuery = {
   }>;
 };
 
+export type SitemapProductCategoriesQueryVariables = StorefrontAPI.Exact<{
+  cursor?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type SitemapProductCategoriesQuery = {
+  products: {
+    nodes: Array<
+      Pick<StorefrontAPI.Product, 'handle' | 'productType'> & {
+        category?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+        >;
+      }
+    >;
+    pageInfo: Pick<StorefrontAPI.PageInfo, 'hasNextPage' | 'endCursor'>;
+  };
+};
+
 export type WishlistProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'productType'
@@ -3171,6 +3190,10 @@ interface GeneratedQueryTypes {
   "#graphql\n  query PredictiveSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $limit: Int!\n    $limitScope: PredictiveSearchLimitScope!\n    $term: String!\n    $types: [PredictiveSearchType!]\n  ) @inContext(country: $country, language: $language) {\n    predictiveSearch(\n      limit: $limit,\n      limitScope: $limitScope,\n      query: $term,\n      types: $types,\n    ) {\n      articles {\n        ...PredictiveArticle\n      }\n      collections {\n        ...PredictiveCollection\n      }\n      pages {\n        ...PredictivePage\n      }\n      products {\n        ...PredictiveProduct\n      }\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveArticle on Article {\n    __typename\n    id\n    title\n    handle\n    blog {\n      handle\n    }\n    image {\n      url\n      altText\n      width\n      height\n    }\n    trackingParameters\n  }\n\n  #graphql\n  fragment PredictiveCollection on Collection {\n    __typename\n    id\n    title\n    handle\n    image {\n      url\n      altText\n      width\n      height\n    }\n    trackingParameters\n  }\n\n  #graphql\n  fragment PredictivePage on Page {\n    __typename\n    id\n    title\n    handle\n    trackingParameters\n  }\n\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion's canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn't cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n": {
     return: PredictiveSearchQuery;
     variables: PredictiveSearchQueryVariables;
+  };
+  '#graphql\n  query SitemapProductCategories(\n    $cursor: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    products(first: 250, after: $cursor) {\n      nodes {\n        handle\n        productType\n        category {\n          name\n        }\n      }\n      pageInfo {\n        hasNextPage\n        endCursor\n      }\n    }\n  }\n': {
+    return: SitemapProductCategoriesQuery;
+    variables: SitemapProductCategoriesQueryVariables;
   };
   "#graphql\n  fragment WishlistProduct on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query WishlistProduct(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...WishlistProduct\n    }\n  }\n": {
     return: WishlistProductQuery;
