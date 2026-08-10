@@ -3384,7 +3384,6 @@ button.announcement-link {
    than that — it would end in a hard line instead of a fade. */
 .diamond-value-section,
 .homepage-faq-section,
-.video-rail-section,
 .home-journal {
   content-visibility: auto;
   /* Plain value first: engines that don't understand the `auto` keyword keep
@@ -3890,6 +3889,18 @@ button.announcement-link {
 .google-reviews-stage [class*='HeaderTitle'],
 .google-reviews-stage [class*='Title'][class*='Header'] {
   display: none !important;
+}
+
+/* Reserves the carousel's height so the lazy-loaded widget doesn't shift the
+   page when it mounts. Values are Reputon's own defaults for data-type=carousel. */
+.reputon-tiktok-widget[data-type='carousel'] {
+  min-height: 450px;
+}
+
+@media (max-width: 450px) {
+  .reputon-tiktok-widget[data-type='carousel'] {
+    min-height: 250px;
+  }
 }
 
 /* Policy / Generic page styles */
@@ -10943,202 +10954,6 @@ button.announcement-link {
     margin: 1.75rem 0 1.1rem;
     padding: 0.65rem 1rem;
   }
-}
-
-/* Video rail: small TikTok-style cards, several per row, infinite
-   auto-scroll (Embla + AutoScroll plugin). Scale is the only animated
-   property on hover — cheap on the compositor. */
-.video-rail-heading h2 span {
-  display: block;
-  margin-top: 0.35rem;
-  font-size: 0.5em;
-  font-weight: 500;
-  color: var(--color-gold-dark);
-  text-shadow: none;
-}
-
-/* Desktop: noticeably wider than the other content sections. Raising
-   max-width alone does nothing below the 1700px content cap — most desktop
-   viewports never actually hit that cap, so the container's true width is
-   set by its side padding instead. Shrinking the padding here widens the
-   usable row without any risk of viewport overflow. */
-@media (min-width: 60em) {
-  .video-rail-section .section-inner {
-    max-width: calc(var(--content-max-width) * 1.2);
-    padding: 0 1rem;
-  }
-}
-
-.video-rail {
-  position: relative;
-  margin-top: 1.5rem;
-}
-
-.video-rail-viewport {
-  overflow: hidden;
-}
-
-.video-rail-container {
-  display: flex;
-  touch-action: pan-y;
-}
-
-.video-rail-slide {
-  flex: 0 0 42%;
-  min-width: 0;
-  padding: 0 0.6rem;
-  cursor: pointer;
-}
-
-.video-rail-card {
-  position: relative;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--color-bg-soft);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  aspect-ratio: 9 / 14;
-  transition: transform 0.25s ease;
-}
-
-.video-rail-slide:hover .video-rail-card,
-.video-rail-slide.is-active .video-rail-card {
-  transform: scale(1.03);
-}
-
-.video-rail-media {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.video-rail-play {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  width: 1.6rem;
-  height: 1.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.45);
-  color: #fff;
-  font-size: 0.6rem;
-  line-height: 1;
-}
-
-.video-rail-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 50%;
-  border: 1px solid var(--color-gold);
-  background: #fff;
-  color: var(--color-gold-dark);
-  font-size: 1.3rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  z-index: 2;
-}
-
-.video-rail-arrow:hover {
-  background: var(--color-gold);
-  color: #fff;
-}
-
-.video-rail-arrow-prev {
-  left: -0.75rem;
-}
-
-.video-rail-arrow-next {
-  right: -0.75rem;
-}
-
-@media (min-width: 40em) {
-  .video-rail-slide {
-    flex: 0 0 30%;
-    padding: 0 0.75rem;
-  }
-}
-
-@media (min-width: 60em) {
-  .video-rail-slide {
-    flex: 0 0 20%;
-    padding: 0 1rem;
-  }
-}
-
-/* Simple full-video lightbox: dark backdrop, one player, close button. */
-.video-lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  background: rgba(0, 0, 0, 0.92);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem 1rem;
-}
-
-.video-lightbox-close {
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  border: none;
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-size: 1.75rem;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.video-lightbox-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  width: 100%;
-  max-width: 420px;
-  max-height: 90vh;
-}
-
-.video-lightbox-player {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 9 / 16;
-  flex-shrink: 0;
-}
-
-.video-lightbox-media {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: #000;
-  border-radius: 8px;
-  display: block;
-}
-
-.video-lightbox-caption {
-  margin: 0;
-  padding: 0 0.25rem;
-  color: #fff;
-  font-size: 0.85rem;
-  line-height: 1.4;
-  overflow-y: auto;
-  max-height: 20vh;
 }
 
 /* ===== Book Private Consultation — button + modal ===== */

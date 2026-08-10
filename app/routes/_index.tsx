@@ -34,10 +34,7 @@ import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
 import {getGoldRates} from '~/lib/goldRates';
-import {
-  VideoCarousel,
-  type VideoCarouselItem,
-} from '~/components/VideoCarousel';
+import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 
 export const meta: Route.MetaFunction = ({matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
@@ -291,60 +288,12 @@ function loadDeferredData({context}: Route.LoaderArgs) {
       return null;
     });
 
-  // Paired with the commented-out <TikTokVideosSection /> in Homepage — the
-  // section is off, so don't spend a subrequest fetching for it.
-  // const tiktokVideos = context.storefront
-  //   .query(TIKTOK_VIDEOS_QUERY)
-  //   .catch((error: Error) => {
-  //     console.error(error);
-  //     return null;
-  //   });
-
   return {
     recommendedProducts,
     bestSellingProducts,
     genderNewArrivals,
     journalArticles,
-    // tiktokVideos,
   };
-}
-// The "Tiktok videos" metaobject holds three reference fields pointing at
-// individual "tiktok video detail" metaobjects: video_1 is a list (for
-// historical reasons), video_2/video_3 are single references. Collect
-// whichever of the three are populated into one flat list.
-function parseTikTokVideos(response: any): VideoCarouselItem[] {
-  const fields = response?.metaobjects?.nodes?.[0]?.fields;
-  if (!Array.isArray(fields)) return [];
-
-  const detailRefs: any[] = [];
-  for (const field of fields as any[]) {
-    if (field?.key === 'video_1' && Array.isArray(field.references?.nodes)) {
-      detailRefs.push(...field.references.nodes);
-    } else if (field?.reference) {
-      detailRefs.push(field.reference);
-    }
-  }
-
-  return detailRefs
-    .map((detail, index): VideoCarouselItem | null => {
-      if (!Array.isArray(detail?.fields)) return null;
-      const detailFields = detail.fields as any[];
-      const videoField: any = detailFields.find((f) => f.key === 'video');
-      const descriptionField: any = detailFields.find(
-        (f) => f.key === 'description',
-      );
-      const source = videoField?.reference?.sources?.find(
-        (s: any) => s.mimeType === 'video/mp4',
-      );
-      if (!source?.url) return null;
-      return {
-        id: detail.id ?? String(index),
-        video: source.url,
-        poster: videoField.reference?.previewImage?.url ?? null,
-        description: descriptionField?.value ?? null,
-      };
-    })
-    .filter((item): item is VideoCarouselItem => item !== null);
 }
 
 export default function Homepage() {
@@ -365,9 +314,8 @@ export default function Homepage() {
         bestSelling={data.bestSellingProducts}
       />
       <FaqAccordion faqs={data.faqs} />
-      {/* TikTok rail off for now — uncomment this and the `tiktokVideos`
-          query in loadDeferredData below to bring it back. */}
-      {/* <TikTokVideosSection videos={data.tiktokVideos} /> */}
+      <TikTokFeedSection />
+
       <HomeJournal articles={data.journalArticles} />
       <PromiseTicker />
     </div>
@@ -711,20 +659,6 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
         </div>
       )}
     </div>
-  );
-}
-
-function TikTokVideosSection({videos}: {videos: Promise<any | null>}) {
-  return (
-    <Suspense fallback={null}>
-      <Await resolve={videos}>
-        {(response) => {
-          const items = parseTikTokVideos(response);
-          if (!items.length) return null;
-          return <VideoCarousel items={items} />;
-        }}
-      </Await>
-    </Suspense>
   );
 }
 
@@ -1655,53 +1589,6 @@ const HOME_ARTICLES_QUERY = `#graphql
           url
           width
           height
-        }
-      }
-    }
-  }
-` as const;
-
-// First (and only) "Tiktok videos" metaobject: video_1 is a list reference,
-// video_2/video_3 are single references, all pointing at "tiktok video
-// detail" metaobjects (video file + description). See parseTikTokVideos.
-const TIKTOK_VIDEOS_QUERY = `#graphql
-  fragment TikTokVideoDetail on Metaobject {
-    id
-    fields {
-      key
-      value
-      reference {
-        ... on Video {
-          sources {
-            url
-            mimeType
-          }
-          previewImage {
-            url
-          }
-        }
-      }
-    }
-  }
-  query TikTokVideos($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    metaobjects(type: "tiktok_videos", first: 1) {
-      nodes {
-        fields {
-          key
-          value
-          reference {
-            ... on Metaobject {
-              ...TikTokVideoDetail
-            }
-          }
-          references(first: 10) {
-            nodes {
-              ... on Metaobject {
-                ...TikTokVideoDetail
-              }
-            }
-          }
         }
       }
     }

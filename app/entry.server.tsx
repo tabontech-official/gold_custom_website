@@ -30,6 +30,8 @@ export default async function handleRequest(
       'https://*.elfsightcdn.com',
       'https://static.elfsight.com',
       'https://*.elfsight.com',
+      // Reputon TikTok feed.
+      'https://cdn.ttw.reputon.com',
     ],
     // Allow embedded product videos (YouTube / Vimeo) and hosted Shopify video.
     frameSrc: [
@@ -43,6 +45,9 @@ export default async function handleRequest(
       'https://*.elfsight.com',
       'https://elfsightcdn.com',
       'https://*.elfsightcdn.com',
+      // Reputon renders each clip in TikTok's own player iframe
+      // (tiktok.com/player/v1/<id>).
+      'https://www.tiktok.com',
     ],
     // Hosted product videos are served from the store's own domain
     // (e.g. goldcustom.com/cdn/shop/videos/...), not cdn.shopify.com.
@@ -54,6 +59,10 @@ export default async function handleRequest(
       'https://goldcustom.com',
       // Tidio's notification sounds.
       'https://code.tidio.co',
+      // TikTok clip mp4s (v15m/v16m/v19/v45/v77 hosts, three regional CDNs).
+      'https://*.tiktokcdn.com',
+      'https://*.tiktokcdn-us.com',
+      'https://*.tiktokcdn-eu.com',
       'blob:',
       'data:',
     ],
@@ -70,6 +79,10 @@ export default async function handleRequest(
       'https://*.elfsight.com',
       'https://elfsightcdn.com',
       'https://*.elfsightcdn.com',
+      // TikTok clip posters and avatars (p16/p19 hosts).
+      'https://*.tiktokcdn.com',
+      'https://*.tiktokcdn-us.com',
+      'https://*.tiktokcdn-eu.com',
       'data:',
     ],
     // Google Fonts (stylesheet + font files).
@@ -102,6 +115,8 @@ export default async function handleRequest(
       'https://elfsightcdn.com',
       'https://*.elfsightcdn.com',
       'https://core.service.elfsight.com',
+      // Reputon's content API — /app/storefront/content?shop=...
+      'https://ttw.reputon.com',
     ],
   });
 

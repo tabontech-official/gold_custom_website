@@ -1598,67 +1598,6 @@ export type HomeArticlesQuery = {
   };
 };
 
-export type TikTokVideoDetailFragment = Pick<StorefrontAPI.Metaobject, 'id'> & {
-  fields: Array<
-    Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-      reference?: StorefrontAPI.Maybe<{
-        sources: Array<Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>>;
-        previewImage?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url'>>;
-      }>;
-    }
-  >;
-};
-
-export type TikTokVideosQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type TikTokVideosQuery = {
-  metaobjects: {
-    nodes: Array<{
-      fields: Array<
-        Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-          reference?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.Metaobject, 'id'> & {
-              fields: Array<
-                Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-                  reference?: StorefrontAPI.Maybe<{
-                    sources: Array<
-                      Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
-                    >;
-                    previewImage?: StorefrontAPI.Maybe<
-                      Pick<StorefrontAPI.Image, 'url'>
-                    >;
-                  }>;
-                }
-              >;
-            }
-          >;
-          references?: StorefrontAPI.Maybe<{
-            nodes: Array<
-              Pick<StorefrontAPI.Metaobject, 'id'> & {
-                fields: Array<
-                  Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-                    reference?: StorefrontAPI.Maybe<{
-                      sources: Array<
-                        Pick<StorefrontAPI.VideoSource, 'url' | 'mimeType'>
-                      >;
-                      previewImage?: StorefrontAPI.Maybe<
-                        Pick<StorefrontAPI.Image, 'url'>
-                      >;
-                    }>;
-                  }
-                >;
-              }
-            >;
-          }>;
-        }
-      >;
-    }>;
-  };
-};
-
 export type AppointmentCustomerMutationVariables = StorefrontAPI.Exact<{
   input: StorefrontAPI.CustomerCreateInput;
 }>;
@@ -2735,6 +2674,55 @@ export type ProductRecommendationsQuery = {
   >;
 };
 
+export type AjaxProductQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type AjaxProductQuery = {
+  product?: StorefrontAPI.Maybe<
+    Pick<
+      StorefrontAPI.Product,
+      | 'id'
+      | 'title'
+      | 'handle'
+      | 'descriptionHtml'
+      | 'vendor'
+      | 'productType'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'publishedAt'
+    > & {
+      options: Array<
+        Pick<StorefrontAPI.ProductOption, 'name'> & {
+          optionValues: Array<Pick<StorefrontAPI.ProductOptionValue, 'name'>>;
+        }
+      >;
+      images: {
+        nodes: Array<Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText'>>;
+      };
+      variants: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.ProductVariant,
+            'id' | 'title' | 'sku' | 'availableForSale' | 'requiresShipping'
+          > & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+            selectedOptions: Array<
+              Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+            >;
+            image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'id'>>;
+          }
+        >;
+      };
+    }
+  >;
+};
+
 export type SearchProductFragment = {__typename: 'Product'} & Pick<
   StorefrontAPI.Product,
   | 'handle'
@@ -3123,10 +3111,6 @@ interface GeneratedQueryTypes {
     return: HomeArticlesQuery;
     variables: HomeArticlesQueryVariables;
   };
-  '#graphql\n  fragment TikTokVideoDetail on Metaobject {\n    id\n    fields {\n      key\n      value\n      reference {\n        ... on Video {\n          sources {\n            url\n            mimeType\n          }\n          previewImage {\n            url\n          }\n        }\n      }\n    }\n  }\n  query TikTokVideos($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    metaobjects(type: "tiktok_videos", first: 1) {\n      nodes {\n        fields {\n          key\n          value\n          reference {\n            ... on Metaobject {\n              ...TikTokVideoDetail\n            }\n          }\n          references(first: 10) {\n            nodes {\n              ... on Metaobject {\n                ...TikTokVideoDetail\n              }\n            }\n          }\n        }\n      }\n    }\n  }\n': {
-    return: TikTokVideosQuery;
-    variables: TikTokVideosQueryVariables;
-  };
   '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
@@ -3182,6 +3166,10 @@ interface GeneratedQueryTypes {
   "#graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n": {
     return: ProductRecommendationsQuery;
     variables: ProductRecommendationsQueryVariables;
+  };
+  '#graphql\n  query AjaxProduct($country: CountryCode, $language: LanguageCode, $handle: String!)\n  @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      descriptionHtml\n      vendor\n      productType\n      createdAt\n      updatedAt\n      publishedAt\n      options {\n        name\n        optionValues {\n          name\n        }\n      }\n      images(first: 100) {\n        nodes {\n          id\n          url\n          altText\n        }\n      }\n      variants(first: 100) {\n        nodes {\n          id\n          title\n          sku\n          availableForSale\n          requiresShipping\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n          selectedOptions {\n            name\n            value\n          }\n          image {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
+    return: AjaxProductQuery;
+    variables: AjaxProductQueryVariables;
   };
   "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $endCursor: String\n    $first: Int\n    $language: LanguageCode\n    $last: Int\n    $term: String!\n    $startCursor: String\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    articles: search(\n      query: $term,\n      types: [ARTICLE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Article {\n          ...SearchArticle\n        }\n      }\n    }\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      after: $endCursor,\n      before: $startCursor,\n      first: $first,\n      last: $last,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: HIDE,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n      pageInfo {\n        ...PageInfoFragment\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n  #graphql\n  fragment SearchArticle on Article {\n    __typename\n    handle\n    id\n    title\n    trackingParameters\n  }\n\n  #graphql\n  fragment PageInfoFragment on PageInfo {\n    hasNextPage\n    hasPreviousPage\n    startCursor\n    endCursor\n  }\n\n": {
     return: RegularSearchQuery;
