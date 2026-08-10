@@ -243,8 +243,15 @@ export async function resolveShareImage(
 
     const type = response.headers.get('content-type') ?? '';
     const length = Number(response.headers.get('content-length') ?? '0');
+    // Byte count is the gate; format gets no say. This was an OR —
+    // `type.includes('jpeg') || under cap` — so ANY response that came back
+    // JPEG passed no matter how heavy, which is the one thing the cap exists to
+    // stop. A PNG that fits is perfectly usable: WhatsApp renders PNG, it is the
+    // size it refuses. Content-length is always set by the Shopify CDN; if it
+    // ever is not, fall back to "is this an image at all" rather than dropping a
+    // collection's banner over a missing header.
     const usable =
-      type.includes('jpeg') || (length > 0 && length < OG_MAX_BYTES);
+      length > 0 ? length < OG_MAX_BYTES : type.startsWith('image/');
     // The RAW url is returned, never `candidate`. pageSeo runs every image
     // through socialImageUrl itself, so handing back the transformed one would
     // append `&width=&quality=&format=` a second time — the same duplicated
@@ -390,8 +397,25 @@ export function pageSeo(
     // not `name`, because Open Graph is RDFa.
     {property: 'og:image', content: image.url},
     {property: 'og:image:secure_url', content: image.url},
-    // Always JPEG: socialImage forces `format=jpg`.
-    {property: 'og:image:type', content: 'image/jpeg'},
+    // NO `og:image:type`. It used to be hardcoded `image/jpeg` on the reasoning
+    // that socialImage forces `format=jpg` — but that is exactly the CDN call
+    // `format=jpg` does NOT win (see OG_IMAGE_WIDTH). Any source with an alpha
+    // channel comes back as unchanged PNG, and most of this store's jewellery
+    // is shot on transparency, so the tag was declaring a MIME type that
+    // contradicted the bytes served: measured live, 28 of 125 collection pages
+    // and the product pages served `image/png` under a JPEG declaration.
+    //
+    // That single mismatch is the whole "works everywhere except Meta apps"
+    // report. Twitter, Slack, Discord and iMessage sniff the response and never
+    // read this tag, so they rendered the card fine; Meta's scraper trusts the
+    // declared type and drops an image whose bytes disagree with it — WhatsApp
+    // then falls all the way back to showing the bare domain.
+    //
+    // The tag is optional in Open Graph and a crawler that does not get it
+    // sniffs the bytes, which is the path already proven to work here. Omitting
+    // it is therefore strictly safer than guessing, and it cannot rot the way a
+    // hardcoded constant did. Publish one again ONLY if it is the
+    // content-type actually measured off the response — never a derived guess.
     // Only when derived — see socialImage. Declaring them lets a platform lay
     // the card out before the image finishes downloading; declaring them WRONG
     // makes it drop the card entirely, so silence beats a guess.
