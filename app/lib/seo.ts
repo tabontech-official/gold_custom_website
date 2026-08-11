@@ -14,8 +14,15 @@ type JsonLd = NonNullable<SeoConfig['jsonLd']>;
 export const SITE = {
   name: 'Gold Custom',
   origin: 'https://www.goldcustom.com',
+  /**
+   * Kept under ~125 characters. This is the site-wide fallback, so it is what
+   * shows on the home page, the root document and any page with no
+   * description of its own — and social previews clip around 125 on mobile,
+   * which was cutting the warranty clause mid-phrase. The previous wording
+   * ran 132.
+   */
   description:
-    'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns and 1-year warranty on every piece.',
+    'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns, 1-year warranty.',
   logo: 'https://www.goldcustom.com/favicon.png',
   /**
    * Fallback for any page with no image of its own — which was every share of
@@ -146,16 +153,43 @@ function firstMedia(
  * 600 is the only width where all three clear the cap, and it is exactly
  * OG_MIN_WIDTH, so the card still renders large rather than as a thumbnail.
  *
- * Flat images lose nothing by this: they transcode to JPEG and a 600px JPEG of
- * a product shot is well under 100 KB either way.
+ * THAT REASONING STILL HOLDS FOR TRANSPARENT PNGs, and they are still caught —
+ * by `resolveShareImage` below, which measures the actual response and drops
+ * anything over the cap. What changed is that the width no longer has to be
+ * set low enough for the WORST source: an image that cannot transcode now
+ * fails the probe and falls back to the brand shot, instead of every image on
+ * the site being shrunk to protect three banners.
  *
- * THE REAL FIX IS IN SHOPIFY, NOT HERE. Re-save those collection images without
- * transparency and `format=jpg` starts working, at which point this can go back
- * to 1200. Transparency is wrong for a share image regardless — WhatsApp and
- * Facebook composite alpha onto a background you do not control, often black,
- * which can render gold jewellery nearly invisible even when it fits.
+ * Re-measured on the flat fallback at 1200x630: 119 KB as JPEG, comfortably
+ * under the 300 KB cap.
+ *
+ * THE REAL FIX IS STILL IN SHOPIFY. Re-save those three banners without
+ * transparency and they stop falling back. Transparency is wrong for a share
+ * image regardless — WhatsApp and Facebook composite alpha onto a background
+ * you do not control, often black, which can render gold jewellery nearly
+ * invisible even when it fits.
  */
-const OG_IMAGE_WIDTH = 600;
+const OG_IMAGE_WIDTH = 1200;
+
+/**
+ * 1200x630 is the 1.91:1 card every platform lays out for; anything else gets
+ * cropped or letterboxed by them, on their terms.
+ *
+ * Reached by PADDING, not cropping — `pad_color` fills the leftover edge
+ * instead of cutting into the picture, which matters because these are chains
+ * and necklaces shot long: a centre crop to 1.91:1 takes the ends off. Padding
+ * also makes the output dimensions exact for ANY source shape, which is what
+ * fixes the square collection banners that were being published as 600x600.
+ *
+ * Verified against the CDN: `crop=center` at this size returns the source's
+ * own 1100x619 (Shopify refuses to upscale), while `pad_color` returns a true
+ * 1200x630. Crop would not have fixed the ratio at all.
+ *
+ * White to match the storefront's own background, so the pad reads as the page
+ * rather than as bars.
+ */
+const OG_IMAGE_HEIGHT = 630;
+const OG_PAD_COLOR = 'fff';
 
 /**
  * Smallest image every major platform will still render as a large card. Below
@@ -189,7 +223,7 @@ type ImageSource = {url: string; width?: number | null; height?: number | null};
  */
 function socialImageUrl(url: string): string {
   const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}width=${OG_IMAGE_WIDTH}&quality=80&format=jpg`;
+  return `${url}${sep}width=${OG_IMAGE_WIDTH}&height=${OG_IMAGE_HEIGHT}&pad_color=${OG_PAD_COLOR}&quality=80&format=jpg`;
 }
 
 /**
@@ -286,16 +320,12 @@ function socialImage(media: ImageSource): {
   if (!absolute.includes('cdn.shopify.com')) return {url: absolute};
 
   const url = socialImageUrl(absolute);
-  const {width: sourceWidth, height: sourceHeight} = media;
-  // Dimensions are only published when they can be DERIVED, never assumed.
-  // The number has to describe the resized copy above, not the master: the
-  // Storefront API reports these product images as 3024x3024, but the URL we
-  // hand the crawler is capped at 1200. And the cap is a ceiling, not a
-  // promise — Shopify's CDN refuses to upscale, so a smaller master comes back
-  // at its own size, which is why this takes the min rather than trusting it.
-  if (!sourceWidth || !sourceHeight) return {url};
-  const width = Math.min(OG_IMAGE_WIDTH, sourceWidth);
-  return {url, width, height: Math.round((sourceHeight * width) / sourceWidth)};
+  // Fixed, not derived from the master. This used to scale the source's own
+  // dimensions and take a min, because the CDN refuses to upscale and a small
+  // master came back at its own size — publishing a number the file did not
+  // match. Padding removes that whole class of problem: every CDN image comes
+  // back in exactly this box whatever shape it started, so these are facts.
+  return {url, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT};
 }
 
 /**

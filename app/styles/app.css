@@ -11578,12 +11578,13 @@ html[data-intro='seen'] .intro {
   pointer-events: none;
   /*
     1.5s total. Draw to 0.8s, ink settles at 0.88s, a short rest, then the
-    curtain: the word leaves first and the veil follows it up, uncovering the
-    page from the bottom edge.
+    word rushes the camera: it scales up past the frame while the veil
+    dissolves behind it, so the homepage is arriving through the letterforms
+    rather than from behind a curtain.
 
-    The veil SLIDES rather than fades. A fade dissolves the whole screen at
-    once and reveals nothing in particular; sliding it off the top edge makes
-    the page underneath arrive the way a cloth comes off a display case.
+    The veil fades here rather than sliding. Against a zoom, a slide fights
+    it — two directions at once — whereas a dissolve lets the growing word own
+    the movement and simply stops standing in front of the page.
 
     This total is set by Speed Index, not taste. SI scores how much of the
     page is visible over time, sampled frame by frame — an opaque veil holds
@@ -11592,10 +11593,9 @@ html[data-intro='seen'] .intro {
     the Lighthouse score on its own. Every 100ms added here comes straight
     off SI, so treat this as a performance budget.
   */
-  animation: intro-veil 1.5s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-  /* Promotes the veil to its own compositor layer for the slide, so the page
-     underneath is not repainted every frame as it is uncovered. */
-  will-change: transform;
+  animation: intro-veil 1.5s linear forwards;
+  /* Opacity, not transform: the veil now dissolves rather than travels. */
+  will-change: opacity;
 }
 
 .intro-svg {
@@ -11604,11 +11604,11 @@ html[data-intro='seen'] .intro {
      enlarges the word and its stroke together and neither needs re-tuning. */
   width: min(92vw, 34rem);
   height: auto;
-  /* One transform track for the word's whole life: a barely-there push toward
-     the viewer while it draws, the rest on the finished word, then out
-     through the top edge. Kept as a single animation because two competing
+  /* One track for the word's whole life: a barely-there push toward the
+     viewer while it draws, the rest on the finished word, then the zoom out
+     through the frame. Kept as a single animation because two competing
      `transform` animations on one element would overwrite each other. */
-  animation: intro-lift 1.5s forwards;
+  animation: intro-zoom 1.5s forwards;
   /* Desktop gets the full statement size. Capped in rem rather than left at a
      bare vw so it stops growing on an ultrawide instead of running to the
      screen edges. */
@@ -11688,38 +11688,52 @@ html[data-intro='seen'] .intro {
 
 /*
   Per-keyframe easing, because the two halves want opposite curves: the settle
-  decelerates into its rest, and the exit accelerates away. A single easing
-  across the whole track would make the word drift out limply.
+  decelerates into its rest, and the zoom accelerates away. A single easing
+  across the whole track would make the word swell evenly, which reads as a
+  slow push-in rather than something rushing past the camera.
 
-  75% = 1.13s, the end of the rest. The word starts leaving here, a beat
-  BEFORE the veil does at 80% — it reads as the word pulling the curtain up
-  behind it rather than the two sliding as one slab.
+  75% = 1.13s, the end of the rest. The word starts growing here, a beat
+  BEFORE the veil begins to dissolve at 80%, so the movement leads and the
+  reveal follows it.
 */
-@keyframes intro-lift {
+@keyframes intro-zoom {
   0% {
-    transform: translateY(0) scale(0.975);
+    transform: scale(0.975);
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
   70%,
   75% {
-    transform: translateY(0) scale(1);
-    animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
+    opacity: 1;
+    transform: scale(1);
+    /* Hard ease-in: barely moves at first, then rushes. */
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+  }
+  /* Holds most of its weight while it is still legible, so the word is not
+     already ghost-like by the time it is large. Transform is deliberately
+     absent here — it interpolates straight from 75% to 100% regardless. */
+  90% {
+    opacity: 0.72;
   }
   100% {
-    /* Clears the top edge on its own; the veil's own travel is on top of
-       this, so the word is well gone before the reveal finishes. */
-    transform: translateY(-75vh) scale(1);
+    /* 5.5, not more: past roughly this the rasterised layer visibly softens
+       as it is scaled, and the extra travel buys nothing once the word is
+       already wider than the viewport. */
+    opacity: 0;
+    transform: scale(5.5);
   }
 }
 
 /*
-  Stays put through the draw and the rest, then slides off the top edge from
-  80% (1.2s of 1.5s), uncovering the page beneath from the bottom up.
+  Holds solid through the draw and the rest, then dissolves from 80% (1.2s of
+  1.5s) while the word is already growing over it — the page resolves behind
+  the zoom instead of being uncovered by it.
 
-  -101%, not -100%: a fractional rounding gap at some zoom levels leaves a
-  hairline of veil across the top of the page, and the extra percent costs
-  nothing. `visibility` at the end so a finished overlay is out of the a11y
-  tree rather than merely parked off-screen.
+  `linear` on this one: an eased fade spends its middle hovering around half
+  opacity, which shows the page as a wash behind a translucent sheet. A
+  constant fade passes through that state instead of sitting in it.
+
+  `visibility` at the end so a finished overlay is out of the a11y tree
+  rather than merely transparent and still hit-testable.
 
   Which metrics this actually touches, measured rather than assumed:
 
@@ -11738,10 +11752,10 @@ html[data-intro='seen'] .intro {
 @keyframes intro-veil {
   0%,
   80% {
-    transform: translateY(0);
+    opacity: 1;
   }
   100% {
-    transform: translateY(-101%);
+    opacity: 0;
     visibility: hidden;
   }
 }
