@@ -5148,18 +5148,53 @@ button.announcement-link {
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.42);
 }
 
-/* Global `a` sets its own colour and underlines on hover; both would repaint the
-   card heading, so inherit the h3's colour and keep the underline as the hover
-   and keyboard-focus affordance only. */
+/* Global `a` sets its own colour and underlines on hover; both would repaint
+   the card heading, so inherit the h3's colour and draw the affordance here.
+
+   `inline-block` so the rule below can size itself against the text rather
+   than the flex column, which is full-card width. */
 .coverflow-card-title a {
   color: inherit;
+  display: inline-block;
+  position: relative;
   text-decoration: none;
 }
 
-.coverflow-card-title a:hover,
-.coverflow-card-title a:focus-visible {
-  text-decoration: underline;
-  text-underline-offset: 0.1em;
+/*
+  A drawn rule instead of `text-decoration: underline`. The browser underline
+  snaps on at full width, sits at whatever offset the font metrics dictate,
+  and takes the descender gaps out of the middle of it — which at this size is
+  what was reading as cheap.
+
+  Hairline and set off the baseline so it reads as a rule under the word
+  rather than a link decoration.
+*/
+.coverflow-card-title a::after {
+  background: currentColor;
+  bottom: -0.14em;
+  content: '';
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  /* Wipes in from the left, and back out to the right on leave — the two
+     origins are what make it feel drawn rather than toggled. Transform only,
+     so it composites and never reflows the card. */
+  transform: scaleX(0);
+  transform-origin: right center;
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.coverflow-card-title a:hover::after,
+.coverflow-card-title a:focus-visible::after {
+  transform: scaleX(1);
+  transform-origin: left center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coverflow-card-title a::after {
+    transition: none;
+  }
 }
 
 
