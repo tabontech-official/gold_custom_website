@@ -11542,16 +11542,22 @@ html[data-intro='seen'] .intro {
      first click of a session is worse than showing no intro at all. */
   pointer-events: none;
   /*
-    3.2s total. Draw to 1.7s, ink settles at 1.85s, a 0.6s rest on the
-    finished word, then the curtain: the word leaves first and the veil
-    follows it up, uncovering the page from the bottom edge.
+    1.5s total. Draw to 0.8s, ink settles at 0.88s, a short rest, then the
+    curtain: the word leaves first and the veil follows it up, uncovering the
+    page from the bottom edge.
 
-    The veil now SLIDES rather than fades. A fade dissolves the whole screen
-    at once and reveals nothing in particular; sliding it off the top edge
-    makes the page underneath arrive the way a cloth comes off a display case,
-    which is the gesture this brand should open with. See the LCP note below.
+    The veil SLIDES rather than fades. A fade dissolves the whole screen at
+    once and reveals nothing in particular; sliding it off the top edge makes
+    the page underneath arrive the way a cloth comes off a display case.
+
+    This total is set by Speed Index, not taste. SI scores how much of the
+    page is visible over time, sampled frame by frame — an opaque veil holds
+    that at zero for as long as it is up, and it does so no matter how cheap
+    the animation on top is. At 3.2s SI measured 2.7s and cost ~6 points of
+    the Lighthouse score on its own. Every 100ms added here comes straight
+    off SI, so treat this as a performance budget.
   */
-  animation: intro-veil 3.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  animation: intro-veil 1.5s cubic-bezier(0.76, 0, 0.24, 1) forwards;
   /* Promotes the veil to its own compositor layer for the slide, so the page
      underneath is not repainted every frame as it is uncovered. */
   will-change: transform;
@@ -11567,7 +11573,7 @@ html[data-intro='seen'] .intro {
      the viewer while it draws, the rest on the finished word, then out
      through the top edge. Kept as a single animation because two competing
      `transform` animations on one element would overwrite each other. */
-  animation: intro-lift 3.2s forwards;
+  animation: intro-lift 1.5s forwards;
   /* Desktop gets the full statement size. Capped in rem rather than left at a
      bare vw so it stops growing on an ultrawide instead of running to the
      screen edges. */
@@ -11629,8 +11635,8 @@ html[data-intro='seen'] .intro {
     there is never a frame where nothing is moving.
   */
   animation:
-    intro-draw 1.7s linear forwards,
-    intro-ink 0.5s ease-out 1.35s forwards;
+    intro-draw 0.8s linear forwards,
+    intro-ink 0.3s ease-out 0.58s forwards;
 }
 
 @keyframes intro-draw {
@@ -11650,8 +11656,8 @@ html[data-intro='seen'] .intro {
   decelerates into its rest, and the exit accelerates away. A single easing
   across the whole track would make the word drift out limply.
 
-  77% = 2.46s, the end of the rest. The word starts leaving here, a beat
-  BEFORE the veil does at 81% — it reads as the word pulling the curtain up
+  75% = 1.13s, the end of the rest. The word starts leaving here, a beat
+  BEFORE the veil does at 80% — it reads as the word pulling the curtain up
   behind it rather than the two sliding as one slab.
 */
 @keyframes intro-lift {
@@ -11660,7 +11666,7 @@ html[data-intro='seen'] .intro {
     animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
   70%,
-  77% {
+  75% {
     transform: translateY(0) scale(1);
     animation-timing-function: cubic-bezier(0.7, 0, 0.84, 0);
   }
@@ -11673,30 +11679,30 @@ html[data-intro='seen'] .intro {
 
 /*
   Stays put through the draw and the rest, then slides off the top edge from
-  81% (2.59s of 3.2s), uncovering the page beneath from the bottom up.
+  80% (1.2s of 1.5s), uncovering the page beneath from the bottom up.
 
   -101%, not -100%: a fractional rounding gap at some zoom levels leaves a
   hairline of veil across the top of the page, and the extra percent costs
   nothing. `visibility` at the end so a finished overlay is out of the a11y
   tree rather than merely parked off-screen.
 
-  This duration is NOT an LCP ceiling. Chrome's LCP does not account for
-  occlusion — the hero underneath is recorded as painted when it paints,
-  whether or not something opaque is drawn over it — and a background-colour
-  div is not itself an LCP candidate. What actually moves LCP here is when
-  the hero image finishes downloading, which is why _index.tsx preloads it
-  rather than why this animation is short.
+  Which metrics this actually touches, measured rather than assumed:
 
-  The intro helps FCP if anything: the word paints almost immediately, well
-  before the hero would have.
+  LCP — unaffected. Chrome's LCP ignores occlusion, so the hero is recorded
+  when it paints regardless of the veil, and a background-colour div is not
+  itself a candidate. Measured 1.2s with the intro at 3.2s.
 
-  The one real cost is bandwidth contention. The almarai-800 preload this
-  intro needs competes with the hero image on a slow connection; that, not
-  the duration, is the thing to cut first if field LCP regresses.
+  FCP — helped. The word paints almost immediately, ahead of the hero.
+
+  SPEED INDEX — this is the one that pays. SI samples visual completeness
+  over time, so an opaque veil pins it near zero for its whole duration. At
+  3.2s SI measured 2.7s; the duration is the only lever that moves it.
+
+  So: length is cheap for LCP and expensive for SI. Budget against SI.
 */
 @keyframes intro-veil {
   0%,
-  81% {
+  80% {
     transform: translateY(0);
   }
   100% {
