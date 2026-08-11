@@ -13,7 +13,7 @@
  */
 import assert from 'node:assert/strict';
 import type {WithCache} from '@shopify/hydrogen';
-import {pageSeo, resolveShareImage} from './seo';
+import {pageSeo, resolveShareImage} from './seo.ts';
 
 const PNG = 'https://cdn.shopify.com/s/files/1/0806/collections/chain.png?v=1';
 

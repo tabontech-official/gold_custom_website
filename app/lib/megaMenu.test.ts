@@ -8,7 +8,7 @@ import {
   collectionHandlesFromMenu,
   getMegaMenuParentHandle,
   MIAMI_CUBAN_HANDLE,
-} from './megaMenu';
+} from './megaMenu.ts';
 
 // Curated children resolve to their department.
 assert.equal(getMegaMenuParentHandle('men-rings'), 'rings');

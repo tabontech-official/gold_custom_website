@@ -208,6 +208,49 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     throw redirect(`/collections/${MIAMI_CUBAN_HANDLE}`, 301);
   }
 
+  // Kicked off HERE, next to the queries below, not after them.
+  //
+  // Which parent a collection inherits from depends only on the handle in the
+  // URL — never on the collection response — so this chain has no reason to
+  // wait for it. It used to run in series behind the main query: up to three
+  // Shopify round trips stacked end to end, measured at 1.69s TTFB on a child
+  // category against 0.88s on a department that skipped both. Overlapping it
+  // with the main query costs whatever is left over, usually nothing.
+  //
+  // Every hop is CacheLong and ends in a catch, so this promise always
+  // resolves and never produces an unhandled rejection while it sits
+  // un-awaited. `null` is an ordinary outcome, not an error: departments have
+  // no parent, and most collections never read the result at all.
+  const parentContent = storefront
+    .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheLong()})
+    .catch(() => null)
+    .then((menus) => {
+      const menuItemHandles = menus
+        ? Object.fromEntries(
+            Object.keys(CATEGORY_MENU_HANDLES).map((key) => [
+              key,
+              collectionHandlesFromMenu(
+                menus[key as keyof typeof CATEGORY_MENU_HANDLES],
+              ),
+            ]),
+          )
+        : undefined;
+
+      const parentHandle = getMegaMenuParentHandle(handle, menuItemHandles);
+      // A department has nothing above it, so most pages stop here and never
+      // make the second request at all.
+      if (!parentHandle) return null;
+
+      return storefront
+        .query(PARENT_COLLECTION_CONTENT_QUERY, {
+          variables: {handle: parentHandle},
+          cache: storefront.CacheLong(),
+        })
+        .then((data) => data.collection)
+        .catch(() => null);
+    })
+    .catch(() => null);
+
   const [{collection}, allCollections] = await Promise.all([
     storefront.query(COLLECTION_QUERY, {
       variables: {
@@ -246,35 +289,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // merchants only fill these in once per department. Both lookups are cached
   // and non-fatal: worst case the child page renders without FAQs/covers.
   if (!coverSource && !faqs.length) {
-    // Most departments list their children in a Shopify menu rather than in
-    // MEGA_MENU's curated items, so the menus are needed to find the parent.
-    const menus = await storefront
-      .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheLong()})
-      .catch(() => null);
-
-    const menuItemHandles = menus
-      ? Object.fromEntries(
-          Object.keys(CATEGORY_MENU_HANDLES).map((key) => [
-            key,
-            collectionHandlesFromMenu(
-              menus[key as keyof typeof CATEGORY_MENU_HANDLES],
-            ),
-          ]),
-        )
-      : undefined;
-
-    const parentHandle = getMegaMenuParentHandle(handle, menuItemHandles);
-    if (parentHandle) {
-      const parent = await storefront
-        .query(PARENT_COLLECTION_CONTENT_QUERY, {
-          variables: {handle: parentHandle},
-          cache: storefront.CacheLong(),
-        })
-        .then((data) => data.collection)
-        .catch(() => null);
-
-      coverSource = parent?.collectionCenterImages?.reference ?? null;
-      faqs = readFaqMetafield(parent?.collectionFaqs);
+    // Started before the query above, so by now it has usually already
+    // resolved and this awaits nothing.
+    const parent = await parentContent;
+    if (parent) {
+      coverSource = parent.collectionCenterImages?.reference ?? null;
+      faqs = readFaqMetafield(parent.collectionFaqs);
     }
   }
 

@@ -301,6 +301,11 @@ export function Layout({children}: {children?: React.ReactNode}) {
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
+            // This graph is built from compile-time constants, so it is safe
+            // today by accident rather than by rule. Escaping `<` the same way
+            // the product page does makes that structural: if anything here
+            // ever starts reading merchant or session data, a stray
+            // `</script>` still cannot break out of the block.
             __html: JSON.stringify({
               '@context': 'https://schema.org',
               '@graph': [
@@ -308,7 +313,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
                 localBusinessJsonLd(origin),
                 websiteJsonLd(origin),
               ],
-            }),
+            }).replace(/</g, '\\u003c'),
           }}
         />
         {/*

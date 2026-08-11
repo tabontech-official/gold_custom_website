@@ -5,7 +5,7 @@
  * ponytail: plain asserts; move to a runner if this grows past a handful of cases.
  */
 import assert from 'node:assert/strict';
-import {cdnWidth, cdnLoader} from './cdnImage';
+import {cdnWidth, cdnLoader} from './cdnImage.ts';
 
 const BASE = 'https://cdn.shopify.com/s/files/1/0806/files/chain.webp';
 

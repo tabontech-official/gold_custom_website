@@ -19,10 +19,20 @@ const ENTITIES: Record<string, string> = {
 };
 
 /** Markup to readable text. Entities must be decoded here: the result is
- *  rendered as a React text child, which would escape a raw `&amp;` again. */
-function toText(html: string): string {
+ *  rendered as a React text child, which would escape a raw `&amp;` again.
+ *
+ *  Strip order is load-bearing — tags first, THEN entities. Decoding first
+ *  would turn an encoded `&lt;b&gt;` into a real-looking tag that the strip
+ *  then eats, silently deleting text the author wrote.
+ *
+ *  Exported because `metaDescription` needs the same treatment: it used to
+ *  only collapse whitespace, so policy pages shipped meta descriptions
+ *  starting with a literal "&nbsp;". */
+export function toText(html: string): string {
   return html
-    .replace(/<[^>]+>/g, '')
+    // A space, not an empty string: block tags butt words together
+    // ("...gold.</p><p>Free shipping..." became "gold.Free shipping").
+    .replace(/<[^>]+>/g, ' ')
     .replace(/&(#?\w+);/g, (match, entity) => ENTITIES[entity.toLowerCase()] ?? match)
     .replace(/\s+/g, ' ')
     .trim();

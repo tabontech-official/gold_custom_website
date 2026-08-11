@@ -1,4 +1,8 @@
 import {getSeoMeta, type SeoConfig, type WithCache} from '@shopify/hydrogen';
+// Relative, with the extension: the self-checks beside this file run under
+// bare `node`, which resolves neither the `~` alias nor an extensionless
+// path. Same convention the test files themselves use.
+import {toText} from './description.ts';
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -109,7 +113,11 @@ export function metaDescription(
   input?: string | null,
   fallback: string = SITE.description,
 ): string {
-  const text = (input ?? '').replace(/\s+/g, ' ').trim() || fallback;
+  // `toText`, not a whitespace collapse. Callers pass rich text straight from
+  // Shopify — this only trimmed spaces, so the live refund and terms policies
+  // published descriptions opening with a literal "&nbsp;", and because
+  // pageSeo feeds this to getSeoMeta it reached og:description too.
+  const text = toText(input ?? '') || fallback;
   if (text.length <= MAX_DESCRIPTION) return text;
   // -3 leaves room for the ellipsis; the word-boundary cut only shortens it.
   return text.slice(0, MAX_DESCRIPTION - 3).replace(/\s+\S*$/, '') + '…';
@@ -543,7 +551,13 @@ export function localBusinessJsonLd(origin: string): JsonLd {
     '@id': `${origin}/#localbusiness`,
     name: STORE.name,
     url: origin,
-    image: absoluteUrl(origin, '/favicon.png'),
+    // Was /favicon.png — a 150x134 icon. Google shows this image in the local
+    // knowledge panel and map pack, and rejects anything that small, so the
+    // business was effectively publishing no photo. SITE.ogImage is a
+    // known-good 1100x619 already declared in this file. Replace with a real
+    // photograph of the storefront when there is one; that is what this field
+    // is meant to be.
+    image: SITE.ogImage,
     telephone: STORE.telephone,
     email: STORE.email,
     priceRange: '$$$',

@@ -33,6 +33,23 @@ for (const length of [100, 155, 156, 160, 300]) {
 }
 // Short input is passed through untouched — no gratuitous ellipsis.
 assert.equal(metaDescription('A short description.'), 'A short description.');
+
+// Rich text from Shopify is reduced to prose. This shipped live: the refund
+// and terms policies published descriptions whose FIRST characters were a
+// literal "&nbsp;", and pageSeo feeds this straight to og:description too.
+assert.equal(
+  metaDescription('<p>&nbsp;If, for any reason &amp; at any time</p>'),
+  'If, for any reason & at any time',
+);
+// Block tags become a space, never nothing — otherwise adjacent blocks glue
+// their words together ("gold.Free" instead of "gold. Free").
+assert.equal(
+  metaDescription('<p>Solid 14K gold.</p><p>Free shipping.</p>'),
+  'Solid 14K gold. Free shipping.',
+);
+// Tags are stripped BEFORE entities are decoded. Reversing that order turns
+// an encoded &lt;b&gt; into a real-looking tag and silently eats the text.
+assert.equal(metaDescription('<p>Use &lt;b&gt; for bold</p>'), 'Use <b> for bold');
 // Empty input falls back rather than emitting an empty description tag.
 assert.ok(metaDescription('').length > 0);
 assert.ok(metaDescription(null).length > 0);

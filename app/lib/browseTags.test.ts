@@ -18,7 +18,7 @@ import {
   tagFromSearchTerm,
   tagSearchPath,
   tagSearchTerm,
-} from './browseTags';
+} from './browseTags.ts';
 
 // Double-quoted, because a third of these tags contain an apostrophe.
 assert.equal(tagSearchTerm('Cross Pendants'), 'tag:"Cross Pendants"');
@@ -104,7 +104,7 @@ console.log(
 );
 
 // --- browseNameKey ----------------------------------------------------------
-import {browseNameKey} from './browseTags';
+import {browseNameKey} from './browseTags.ts';
 
 // A tag and the collection that covers it must collapse to one key.
 assert.equal(browseNameKey('Cross Pendants'), browseNameKey('cross-pendants'));

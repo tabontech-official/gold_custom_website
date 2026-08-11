@@ -413,14 +413,31 @@ export default function Product() {
 
   return (
     <div className="product">
+      {/*
+        Escaping `<` is load-bearing, not defensive dressing. Every string in
+        this payload is merchant-controlled — title, description, sku, image
+        URLs, and the `custom.ai_faq` metafield that tooling writes with no
+        validated form behind it. A literal `</script>` anywhere in that data
+        closes this element early: broken structured data at best, injected
+        markup at worst. `<` is invisible to a JSON parser and also
+        neutralises `<!--`.
+
+        Everything routed through pageSeo is escaped for free by React Router;
+        this is the one hand-serialised path, which is exactly why it needed
+        it.
+
+        Wrapped in @graph rather than emitted as a bare top-level array —
+        several validators read only the first or last member of a bare array.
+      */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(
-            authoredFaqs
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': authoredFaqs
               ? [productJsonLd, buildFaqJsonLd(authoredFaqs)]
-              : productJsonLd,
-          ),
+              : [productJsonLd],
+          }).replace(/</g, '\\u003c'),
         }}
       />
 
@@ -1197,13 +1214,20 @@ function buildProductJsonLd({
     },
     description: product.seo?.description || product.description || undefined,
     image: images.length ? images : undefined,
-    mpn: selectedVariant?.sku || product.handle,
+    // No `|| product.handle` fallback. A URL slug is not a manufacturer part
+    // number, and inventing one publishes a fabricated identifier that Google
+    // may try to match against real product feeds. Omitted is honest; `sku`
+    // below already carries the real identifier when there is one.
+    mpn: selectedVariant?.sku || undefined,
     sku: selectedVariant?.sku || undefined,
     offers: price
       ? {
           '@type': 'Offer',
           url,
-          price: price.amount,
+          // The API returns a bare decimal — "440.0" — while og:price:amount
+          // publishes "440.00" for the same variant. Two prices that differ in
+          // text is a needless mismatch for anything reconciling the two.
+          price: Number(price.amount).toFixed(2),
           priceCurrency: price.currencyCode,
           priceValidUntil,
           availability: selectedVariant?.availableForSale
