@@ -253,6 +253,53 @@ export function getMegaMenuDepartmentForHandle(
 }
 
 /**
+ * The department crumb that sits above a collection in the trail — "Pendants"
+ * for `religious-pendants`.
+ *
+ * Lives here rather than in a route because BOTH the collection page and the
+ * product page need it, and they disagreed while it was private to the
+ * collection route: a category page showed Home / Shop / Pendants / Religious
+ * Pendants, and the product under it showed Home / Shop / Religious Pendants /
+ * <product>, silently dropping a level on the deepest page of the funnel.
+ *
+ * Resolves against the LIVE header rather than MEGA_MENU's curated items,
+ * because most departments source their children from Shopify menus — matching
+ * only the static table would miss those. `getMegaMenuParentHandle` is the
+ * handle-only equivalent for loaders, which have no header in scope.
+ *
+ * Returns null for a department itself (nothing sits above it) and whenever
+ * the header has not loaded, so callers can pass the result straight into a
+ * crumb list — <Breadcrumb> already drops nullish entries.
+ */
+export function getMegaMenuParentCrumb({
+  handle,
+  header,
+  publicStoreDomain,
+}: {
+  handle?: string | null;
+  header?: HeaderQuery | null;
+  publicStoreDomain?: string | null;
+}): {label: string; to: string} | null {
+  if (!handle || !header || !publicStoreDomain) return null;
+  if (getMegaMenuDepartmentForHandle(handle)) return null;
+
+  const currentPath = `/collections/${handle}`;
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+  const parent = MEGA_MENU.find((department) =>
+    department.columns.some((column) =>
+      getColumnItems(header, column).some(
+        (item) =>
+          Boolean(item.url) &&
+          toRelativeUrl(item.url!, primaryDomainUrl, publicStoreDomain) ===
+            currentPath,
+      ),
+    ),
+  );
+
+  return parent ? {label: parent.label, to: parent.to} : null;
+}
+
+/**
  * The department handle a child collection sits under, for inheriting the
  * parent's FAQ/cover metaobjects on child category pages.
  *

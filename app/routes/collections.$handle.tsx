@@ -25,15 +25,12 @@ import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
 import {
   CATEGORY_MENU_HANDLES,
-  MEGA_MENU,
   MERGED_CUBAN_HANDLES,
   MIAMI_CUBAN_HANDLE,
   collectionHandlesFromMenu,
-  getColumnItems,
-  getMegaMenuDepartmentForHandle,
+  getMegaMenuParentCrumb,
   getMegaMenuParentHandle,
   getNavCollectionHandles,
-  toRelativeUrl,
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
@@ -75,37 +72,6 @@ type CoverPhotoField = {
 function displayTitle(collection?: {handle: string; title: string} | null) {
   if (!collection) return '';
   return collection.handle === 'all' ? 'All Products' : collection.title;
-}
-
-function getCollectionParentCrumb({
-  handle,
-  header,
-  publicStoreDomain,
-}: {
-  handle: string;
-  header?: HeaderQuery;
-  publicStoreDomain?: string;
-}) {
-  if (!header || !publicStoreDomain) return null;
-
-  const directDepartment = getMegaMenuDepartmentForHandle(handle);
-  if (directDepartment) return null;
-
-  const currentPath = `/collections/${handle}`;
-  const primaryDomainUrl = header.shop.primaryDomain.url;
-  const parent = MEGA_MENU.find((department) =>
-    department.columns.some((column) =>
-      getColumnItems(header, column).some((item) => {
-        if (!item.url) return false;
-        return (
-          toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain) ===
-          currentPath
-        );
-      }),
-    ),
-  );
-
-  return parent ? {label: parent.label, to: parent.to} : null;
 }
 
 function CollectionProductBreak({item}: {item: CollectionCoverPhoto}) {
@@ -458,7 +424,7 @@ export default function Collection() {
   const {faqs: descriptionFaqs, rest: descriptionRest} =
     extractFaqsFromDescription(collection.descriptionHtml);
   const rootData = useRouteLoaderData<RootLoader>('root');
-  const parentCrumb = getCollectionParentCrumb({
+  const parentCrumb = getMegaMenuParentCrumb({
     handle: collection.handle,
     header: rootData?.header,
     publicStoreDomain: rootData?.publicStoreDomain,

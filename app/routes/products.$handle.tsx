@@ -18,6 +18,7 @@ import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {getMegaMenuParentCrumb} from '~/lib/megaMenu';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {
   collectionLabel,
@@ -380,9 +381,28 @@ export default function Product() {
         ? {label: categoryName}
         : null;
 
+  // The department above that collection — "Pendants" over "Religious
+  // Pendants". Without it the product page dropped a level that the category
+  // page directly above it shows, so walking Shop -> Pendants -> Religious
+  // Pendants -> product silently lost "Pendants" on the last step.
+  //
+  // Keyed off the crumb actually being rendered, not the product's category,
+  // so the parent always belongs to the collection shown beside it. Returns
+  // null for a department (nothing sits above it) and when the header has not
+  // loaded; <Breadcrumb> drops nullish entries, so both cases just collapse
+  // back to the previous trail.
+  const parentCrumb = collectionCrumb?.to
+    ? getMegaMenuParentCrumb({
+        handle: collectionCrumb.to.replace('/collections/', ''),
+        header: root?.header,
+        publicStoreDomain: root?.publicStoreDomain,
+      })
+    : null;
+
   const breadcrumbs = [
     {label: 'Home', to: '/'},
     {label: 'Shop', to: '/collections/all'},
+    parentCrumb,
     ...(collectionCrumb ? [collectionCrumb] : []),
     {label: title},
   ];
