@@ -340,10 +340,13 @@ function GalleryTile({
           data={{
             url: m.image.url,
             altText: m.image.altText,
-            width: m.image.width ?? undefined,
-            height: m.image.height ?? undefined,
-          }}
-          alt={m.image.altText || m.alt || title}
+          // Provide conservative fallbacks so the browser can compute an
+          // intrinsic aspect ratio and reserve space before images decode,
+          // reducing CLS when product image dimensions are missing.
+          width: m.image.width ?? 1200,
+          height: m.image.height ?? 1200,
+        }}
+        alt={m.image.altText || m.alt || title}
           sizes={featured ? '(min-width: 48em) 52vw, 100vw' : '96px'}
           loader={cdnLoader}
           /**
