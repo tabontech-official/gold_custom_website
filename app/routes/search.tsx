@@ -408,6 +408,16 @@ const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
       width
       height
     }
+    # Existence check, not a listing. Predictive search matches a collection on
+    # its title alone and will happily suggest one with nothing in it, so the
+    # caller needs some way to tell a real category from a dead link. The
+    # Storefront API has no productCount on Collection — asking for a single
+    # node is the cheapest signal available.
+    products(first: 1) {
+      nodes {
+        id
+      }
+    }
     trackingParameters
   }
 ` as const;
@@ -546,10 +556,23 @@ async function predictiveSearch({
     throw new Error('No predictive search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
+  // Drop collections that have nothing in them. Shopify matches a collection
+  // on its title, so searching "ring" surfaced empty categories alongside real
+  // ones and every click landed on a page reading "no products". Filtered here
+  // rather than in the component so the count below stays truthful — a `total`
+  // that includes suggestions the UI then hides is what makes an "empty"
+  // result render as a non-empty one.
+  const filtered = {
+    ...items,
+    collections: (items.collections ?? []).filter(
+      (collection) => collection.products.nodes.length > 0,
+    ),
+  };
+
+  const total = Object.values(filtered).reduce(
     (acc: number, item: Array<unknown>) => acc + item.length,
     0,
   );
 
-  return {type, term, result: {items, total}};
+  return {type, term, result: {items: filtered, total}};
 }
