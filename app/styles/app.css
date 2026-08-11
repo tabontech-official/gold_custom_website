@@ -193,6 +193,10 @@ code {
   --grid-item-width: min(355px, 100%);
   --header-height: 64px;
   --desktop-header-primary-height: 100px;
+  /* Rendered height of the sticky .header-primary row on mobile: 0.95rem
+     padding x2 + the 2.2rem logo image, which is the tallest item in the row.
+     Re-measure if that padding or .header-logo-img height changes. */
+  --mobile-header-height: 4.1rem;
   --utility-bar-height: 36px;
   /* Rendered height of .collection-toolbar (0.75rem padding x2 + ~20px content
      + 2 hairline borders). Only the sticky filter rail's top offset reads this;
@@ -437,8 +441,11 @@ html:has(.overlay.expanded) {
    Keep the announcement and primary header accessible above it at every mobile
    breakpoint, and allow long category lists to scroll inside the drawer. */
 @media (max-width: 60em) {
+  /* ponytail: anchor to .header-primary — the only sticky layer on mobile — so
+     the drawer opens directly under it. The old 7.25rem also counted the
+     announcement bar, which isn't sticky and scrolls away, leaving a gap. */
   .overlay--mobile {
-    top: 7.25rem;
+    top: var(--mobile-header-height);
   }
 
   .overlay--mobile aside {
@@ -446,9 +453,9 @@ html:has(.overlay.expanded) {
     border-left: 1px solid rgba(60, 60, 67, 0.12);
     border-radius: 0;
     box-shadow: -14px 0 35px rgba(0, 0, 0, 0.14);
-    height: calc(100vh - 7.25rem);
+    height: calc(100dvh - var(--mobile-header-height));
     overflow-y: auto;
-    top: 7.25rem;
+    top: var(--mobile-header-height);
     width: min(25rem, calc(100vw - 1rem));
   }
 
