@@ -521,6 +521,31 @@ function Hero({content}: {content: HeroContent | null}) {
 
   return (
     <>
+      {/*
+        The desktop hero is a CSS `background-image` on .hero-slide, and the
+        preload scanner cannot see inside a style attribute — so without this
+        the LCP image does not begin downloading until the parser has built
+        the element and resolved its style. This starts it with the rest of
+        the early markup instead, which matters most on the first load of a
+        session: the intro overlay is on screen for ~3s, and this is what
+        lets the hero finish arriving underneath it rather than after it.
+
+        `media` scopes it to desktop. Phones render <MobileHeroSlider/> from a
+        different image set below, so preloading the landscape file there
+        would be a wasted download on the connection least able to afford it.
+
+        Lowercase `fetchpriority` via spread, matching the mobile <img> below:
+        React 18 does not recognise the camelCase prop and would drop it.
+      */}
+      {slides[0]?.image && (
+        <link
+          rel="preload"
+          as="image"
+          href={cdnWidth(slides[0].image, 2000)}
+          media="(min-width: 48em)"
+          {...{fetchpriority: 'high'}}
+        />
+      )}
       <section
         ref={sectionRef}
         className="hero"
