@@ -13,9 +13,11 @@ import {
 import type {Route} from './+types/root';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
+import {introGateScript} from '~/lib/introGate';
 import appStyles from '~/styles/app.css?url';
 import appStylesInline from '~/styles/app.css?inline';
 import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
+import almarai800 from '~/assets/fonts/almarai-800.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
@@ -103,6 +105,19 @@ export function links() {
       as: 'font',
       type: 'font/woff2',
       href: almarai400,
+      crossOrigin: 'anonymous',
+    },
+    // The 800 weight too, because the first-load intro is drawn in it and is
+    // the very first thing painted. Without this it arrives after first paint
+    // and `font-display: swap` re-renders the word mid-animation — the glyphs
+    // visibly change shape partway through the draw. 19 KB, and the weight is
+    // used by headings further down the page regardless, so this promotes a
+    // download that was already going to happen rather than adding one.
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: almarai800,
       crossOrigin: 'anonymous',
     },
     // Served from public/ at a fixed path rather than imported as a hashed
@@ -296,8 +311,44 @@ export function Layout({children}: {children?: React.ReactNode}) {
             }),
           }}
         />
+        {/*
+          Decides the first-load intro BEFORE the first paint.
+
+          `sessionStorage` is client-only, so the server cannot know whether
+          this visitor has already seen the intro — render it unconditionally
+          and let React decide later, and every page change in the session
+          flashes the overlay for a frame before the effect tears it down.
+          This runs synchronously in `<head>`, ahead of any paint, so the
+          stamped attribute is already on `<html>` when the body first draws.
+
+          A throwing/blocked storage (private mode, sandboxed iframe) lands in
+          the catch and marks it seen: failing to a silent page is right, since
+          the alternative is an intro on literally every navigation.
+        */}
+        <script
+          nonce={nonce}
+          dangerouslySetInnerHTML={{__html: introGateScript()}}
+        />
       </head>
       <body>
+        {/*
+          Branded first-load intro. Deliberately markup + CSS only: no state,
+          no timer, no effect. The animation ends itself (`forwards`) and the
+          overlay never captures input, so there is nothing to unmount and no
+          way for it to strand a visitor if JS is slow or dead. The script
+          above is what limits it to once per session.
+        */}
+        <div className="intro" aria-hidden="true">
+          <svg
+            className="intro-svg"
+            viewBox="0 0 640 190"
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <text className="intro-text" x="320" y="128" textAnchor="middle">
+              Welcome
+            </text>
+          </svg>
+        </div>
         {children}
         <WishlistToast />
         <ScrollRestoration nonce={nonce} />

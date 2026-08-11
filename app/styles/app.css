@@ -11513,3 +11513,162 @@ button.announcement-link {
     transform: scaleX(0.4);
   }
 }
+
+/*
+* --------------------------------------------------
+* First-load intro — branded, once per session
+* --------------------------------------------------
+*/
+
+/*
+   The pre-paint script in root.tsx stamps this on the second and later loads
+   of a session, so a returning visitor never sees a single frame. `display:
+   none` (not opacity/visibility) so the element costs nothing to lay out and
+   its animation never starts.
+*/
+html[data-intro='seen'] .intro {
+  display: none;
+}
+
+.intro {
+  position: fixed;
+  inset: 0;
+  /* Above the cart/search overlays (2000), below Tidio's inline launcher. */
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg);
+  /* Never eats a tap, not even mid-animation. An intro that swallows the
+     first click of a session is worse than showing no intro at all. */
+  pointer-events: none;
+  /* 2.2s total: the draw runs to 1.7s and the ink settles at 1.85s, leaving
+     the tail purely for the lift. See the LCP note on intro-veil. */
+  animation: intro-veil 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.intro-svg {
+  /* Scaled as a whole rather than by raising font-size: the viewBox geometry
+     and the dash length below are in viewBox units, so growing the element
+     enlarges the word and its stroke together and neither needs re-tuning. */
+  width: min(92vw, 34rem);
+  height: auto;
+  /* A barely-there push toward the viewer across the whole timeline. Pure
+     transform, so it composites on the GPU and costs nothing; its job is to
+     stop the word sitting dead still while it draws. */
+  animation: intro-settle 2.2s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* Desktop gets the full statement size. Capped in rem rather than left at a
+     bare vw so it stops growing on an ultrawide instead of running to the
+     screen edges. */
+  @media (min-width: 48em) {
+    width: min(86vw, 64rem);
+  }
+  /* The stroke sits outside the glyph box; without this the outer edge of the
+     W and the descender get clipped by the viewBox. */
+  overflow: visible;
+}
+
+.intro-text {
+  font-family: var(--font-display);
+  font-size: 118px;
+  /*
+    800 is a separate file from the body weight, so root.tsx preloads it
+    alongside almarai-400 — otherwise it lands after first paint and
+    `font-display: swap` re-renders the word mid-draw.
+
+    A heavy face traces as two near-parallel contours per stem rather than one
+    line, so the stroke is thinner here than it was at 400: at 1.15 the two
+    edges of each stem nearly touch and the letterform fills in muddy while
+    it is still drawing.
+  */
+  font-weight: 800;
+  letter-spacing: -2px;
+  fill: var(--cg-champagne);
+  stroke: var(--cg-champagne);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /*
+    The draw. Every glyph outline is its own closed subpath, and a dash
+    pattern restarts on each one — so a single length longer than the biggest
+    glyph's perimeter makes all seven letters trace at once, no per-letter
+    markup or stagger needed.
+
+    Tuning knob: too low and the letters finish tracing before the timeline
+    ends (they pop); too high and they crawl. Re-tune if the font-size above
+    changes, since perimeter scales with it.
+  */
+  /*
+    Raised from 560 with the jump to weight 800: a heavier glyph has a longer
+    contour, and this value must stay ABOVE the longest glyph's perimeter or
+    that letter never finishes drawing — it stalls part-formed. Overshooting
+    is the safe direction; it only costs a beat of stillness at the end.
+  */
+  stroke-dasharray: 700;
+  stroke-dashoffset: 700;
+  /* Outline first, then the gold floods in behind it. */
+  fill-opacity: 0;
+  /*
+    `linear` on the draw, deliberately. An eased curve spends its middle
+    slowing down, which on a trace reads as the pen hesitating half way
+    through the word — constant speed is what makes it feel like one
+    continuous stroke from W to the final e.
+
+    The ink overlaps the last third of the draw rather than waiting for it, so
+    there is never a frame where nothing is moving.
+  */
+  animation:
+    intro-draw 1.7s linear forwards,
+    intro-ink 0.5s ease-out 1.35s forwards;
+}
+
+@keyframes intro-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes intro-ink {
+  to {
+    fill-opacity: 1;
+  }
+}
+
+@keyframes intro-settle {
+  from {
+    transform: scale(0.975);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/*
+  Holds opaque until the word has finished inking (1.85s of 2.2s = 84%), then
+  lifts. `visibility` at the end so a finished overlay is out of the a11y
+  tree, not merely transparent.
+
+  The total duration is an LCP ceiling: the hero cannot count as painted while
+  an opaque veil covers it, so the reported LCP is roughly this timeline plus
+  the hero's own load. 2.2s is a deliberate choice of a slower, fuller
+  animation over Core Web Vitals headroom — on a fast connection it stays
+  near the 2.5s "good" threshold, on a slow phone it will exceed it. Shorten
+  this first if field LCP regresses.
+*/
+@keyframes intro-veil {
+  0%,
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* A full-screen animation on arrival is exactly the motion that triggers
+   vestibular discomfort. Skip it outright rather than shortening it. */
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
+  }
+}
