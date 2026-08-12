@@ -8,7 +8,7 @@ import {
   type ProductViewPayload,
   type SearchViewPayload,
 } from '@shopify/hydrogen';
-import type {AnalyticsTagIds} from '~/lib/analytics';
+import {analyticsVendorScripts, type AnalyticsTagIds} from '~/lib/analytics';
 
 /**
  * Translates Hydrogen's analytics events into GA4 and Meta pixel events.
@@ -177,6 +177,26 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
   readyRef.current = ready;
 
   const lastConsent = useRef('');
+
+  /**
+   * Load gtag.js and fbevents.js, once, after hydration.
+   *
+   * Appending to `document.body` rather than `<head>` matches how every other
+   * third-party script in this app is loaded (chat, reviews, the TikTok feed):
+   * React owns the head it server-rendered, and a foreign node appended there
+   * is a hydration mismatch waiting to happen the next time the head
+   * re-renders. Nothing about a tag requires it to live in the head.
+   */
+  useEffect(() => {
+    for (const {id, src} of analyticsVendorScripts({ga4Id, metaPixelId})) {
+      if (document.getElementById(id)) continue;
+      const script = document.createElement('script');
+      script.id = id;
+      script.src = src;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, [ga4Id, metaPixelId]);
 
   useEffect(() => {
     /**

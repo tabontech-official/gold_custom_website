@@ -97,11 +97,46 @@ export function analyticsProduct(node: AnalyticsProductNode) {
   };
 }
 
-/** `https://www.googletagmanager.com/gtag/js?id=…`, or null when unconfigured. */
-export function gtagScriptSrc({ga4Id}: AnalyticsTagIds): string | null {
-  return ga4Id
-    ? `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`
-    : null;
+/**
+ * The vendor bundles, injected by AnalyticsBridge *after* hydration — never
+ * rendered into `<head>` by React.
+ *
+ * This is not a preference, it is the fix for a real bug. Meta's official
+ * snippet ends with
+ * `document.getElementsByTagName('script')[0].parentNode.insertBefore(...)`,
+ * which runs while the document is still parsing and puts a `<script>` node in
+ * the middle of `<head>` — ahead of the JSON-LD block, which is the first
+ * script element on the page. React then hydrates a head with one more child
+ * than it server-rendered, fails with a hydration mismatch, and throws the
+ * whole root away to re-render on the client (React errors #418 and #423).
+ *
+ * Injecting both bundles from an effect instead means nothing touches the DOM
+ * until React has finished with it. Neither tag loses an event by arriving
+ * late: the inline bootstrap below has already created `dataLayer` and `fbq`
+ * as queues, and each vendor drains its queue on arrival. It also keeps two
+ * third-party requests off the critical path, which the LCP image was
+ * competing with.
+ */
+export function analyticsVendorScripts({
+  ga4Id,
+  metaPixelId,
+}: AnalyticsTagIds): Array<{id: string; src: string}> {
+  const scripts: Array<{id: string; src: string}> = [];
+
+  if (ga4Id) {
+    scripts.push({
+      id: 'ga4-gtag',
+      src: `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(ga4Id)}`,
+    });
+  }
+  if (metaPixelId) {
+    scripts.push({
+      id: 'meta-pixel',
+      src: 'https://connect.facebook.net/en_US/fbevents.js',
+    });
+  }
+
+  return scripts;
 }
 
 /**
@@ -144,15 +179,22 @@ export function analyticsBootstrap({
 
   if (metaPixelId) {
     parts.push(
-      // Canonical Meta snippet, minus its trailing `fbq('track','PageView')`:
-      // that would fire before consent is known and again on no navigation at
-      // all. The bridge owns PageView for the same reason gtag does.
-      `!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){` +
+      // Meta's snippet with BOTH of its tails removed.
+      //
+      // Gone: the `createElement`/`insertBefore` that loads fbevents.js. It
+      // mutates `<head>` mid-parse and breaks React's hydration — see
+      // analyticsVendorScripts above, which now loads the bundle instead.
+      //
+      // Gone: the trailing `fbq('track','PageView')`. It would fire before
+      // consent is known, and never again on an in-app navigation. The bridge
+      // owns PageView for the same reason gtag does.
+      //
+      // What is left is only the queue stub, which is all fbevents.js needs to
+      // find when it eventually loads.
+      `!function(f,n){if(f.fbq)return;n=f.fbq=function(){` +
         `n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};` +
-        `if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];` +
-        `t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];` +
-        `s.parentNode.insertBefore(t,s)}(window,document,'script',` +
-        `'https://connect.facebook.net/en_US/fbevents.js');` +
+        `if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[]}` +
+        `(window);` +
         `fbq('consent','revoke');` +
         `fbq('init','${metaPixelId}');`,
     );

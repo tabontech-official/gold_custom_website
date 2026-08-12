@@ -133,14 +133,33 @@ export default async function handleRequest(
       'https://core.service.elfsight.com',
       // Reputon's content API — /app/storefront/content?shop=...
       'https://ttw.reputon.com',
-      // GA4 measurement traffic. The wildcards are load-bearing: GA4 routes
-      // hits to a regional collector (region1.google-analytics.com and
-      // friends) that varies by visitor, so the bare host alone drops European
-      // sessions.
+      // GA4 measurement traffic. Every one of these is a host gtag.js was
+      // observed hitting in the browser console — the list is not theoretical,
+      // and it is longer than Google's own documented CSP because that one is
+      // wrong in two places.
+      //
+      // `analytics.google.com` is listed WITHOUT a wildcard as well as with
+      // one: in CSP `*.analytics.google.com` matches subdomains only, never
+      // the bare host, and the bare host is exactly where GA4 sends
+      // `/g/collect`. Google's published snippet omits it and every page view
+      // gets refused.
+      //
+      // The `*.google-analytics.com` wildcard is the regional collector
+      // (region1, region12, …) which varies by visitor, so the bare host alone
+      // drops sessions outside the US.
       'https://www.google-analytics.com',
       'https://*.google-analytics.com',
+      'https://analytics.google.com',
       'https://*.analytics.google.com',
       'https://www.googletagmanager.com',
+      // Google Signals / Ads remarketing pings, fired only once a visitor
+      // consents to marketing. Note the limitation: the audience ping goes to
+      // the visitor's own Google ccTLD (www.google.co.uk, www.google.com.pk),
+      // and CSP cannot wildcard a TLD — so a non-US visitor's remarketing ping
+      // is refused unless that country's domain is added here by hand. Store
+      // traffic is US, where this covers it.
+      'https://stats.g.doubleclick.net',
+      'https://www.google.com',
       // Meta pixel: the bundle, and the /tr endpoint it posts events to.
       'https://connect.facebook.net',
       'https://www.facebook.com',

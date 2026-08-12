@@ -22,11 +22,7 @@ import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
 import {AnalyticsBridge} from './components/AnalyticsBridge';
-import {
-  analyticsBootstrap,
-  analyticsTagIds,
-  gtagScriptSrc,
-} from '~/lib/analytics';
+import {analyticsBootstrap, analyticsTagIds} from '~/lib/analytics';
 import {
   SITE,
   localBusinessJsonLd,
@@ -221,9 +217,7 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const origin = siteOrigin(rootData);
   // Undefined on the error shell, where the root loader never resolved. No
   // tags there is the right outcome — an error page is not a pageview.
-  const tags = rootData?.analyticsTags ?? {};
-  const gtagSrc = gtagScriptSrc(tags);
-  const tagBootstrap = analyticsBootstrap(tags);
+  const tagBootstrap = analyticsBootstrap(rootData?.analyticsTags ?? {});
 
   return (
     <html lang="en">
@@ -349,19 +343,17 @@ export function Layout({children}: {children?: React.ReactNode}) {
           dangerouslySetInnerHTML={{__html: introGateScript()}}
         />
         {/*
-          GA4 + Meta pixel. Last in `<head>`, deliberately.
+          GA4 + Meta pixel — the queue stubs only, no vendor `<script src>`.
 
-          The inline bootstrap is what has to run early — it creates
-          `dataLayer` and `fbq` as queues, so an event published during
-          hydration is held rather than dropped. That costs nothing: it is
-          inline, so there is no request to schedule.
+          This has to run early: it creates `dataLayer` and `fbq` as queues, so
+          an event published during hydration is held rather than dropped. It
+          costs nothing, being inline with no request to schedule.
 
-          `gtag/js` is `async` and sits behind every hint above it, because the
-          thing it would otherwise compete with is the LCP image. Both vendor
-          scripts drain their queue on arrival, so loading them late loses no
-          events — only the illusion that a tag has to be first to be correct.
+          AnalyticsBridge loads the two vendor bundles after hydration instead
+          of React rendering them here. That is deliberate and load-bearing —
+          see app/lib/analytics.ts. Both drain their queue on arrival, so
+          arriving late loses no events.
         */}
-        {gtagSrc && <script async src={gtagSrc} nonce={nonce} />}
         {tagBootstrap && (
           <script
             nonce={nonce}
