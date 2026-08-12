@@ -11643,8 +11643,9 @@ html[data-intro='seen'] .intro {
   /*
     The draw. Every glyph outline is its own closed subpath, and a dash
     pattern restarts on each one — so a single length longer than the biggest
-    glyph's perimeter makes all seven letters trace at once, no per-letter
-    markup or stagger needed.
+    glyph's perimeter traces every letter of both lines at once, no per-letter
+    or per-line markup and no stagger needed. Adding words costs nothing here;
+    only changing font-size would, since perimeter scales with it.
 
     Tuning knob: too low and the letters finish tracing before the timeline
     ends (they pop); too high and they crawl. Re-tune if the font-size above
@@ -11775,4 +11776,11 @@ html[data-intro='seen'] .intro {
   .intro {
     display: none;
   }
+}
+.form-content{
+  justify-content: center;
+  justify-items: inline block;
+  padding-top:30px;
+  align-items: centre;
+  
 }

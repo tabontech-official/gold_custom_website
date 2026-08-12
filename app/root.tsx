@@ -370,13 +370,29 @@ export function Layout({children}: {children?: React.ReactNode}) {
           above is what limits it to once per session.
         */}
         <div className="intro" aria-hidden="true">
+          {/*
+            Two lines, not one. "Welcome to Gold Custom" is three times the
+            width of "Welcome", and on one line the viewBox has to grow wide
+            enough that `min(92vw, 34rem)` scales the whole thing down to a
+            thin strip — the letterforms end up smaller than the body copy
+            behind them on a phone. Breaking after "to" keeps the type at a
+            size worth animating.
+
+            The viewBox grew with the word rather than the font-size shrinking:
+            the draw below is tuned to glyph perimeter, which scales with
+            font-size, so leaving 118px alone means `stroke-dasharray` still
+            clears the longest glyph and needs no re-tuning.
+          */}
           <svg
             className="intro-svg"
-            viewBox="0 0 640 190"
+            viewBox="0 0 820 330"
             preserveAspectRatio="xMidYMid meet"
           >
-            <text className="intro-text" x="320" y="128" textAnchor="middle">
-              Welcome
+            <text className="intro-text" x="410" y="135" textAnchor="middle">
+              Welcome to
+            </text>
+            <text className="intro-text" x="410" y="262" textAnchor="middle">
+              Gold Custom
             </text>
           </svg>
         </div>
