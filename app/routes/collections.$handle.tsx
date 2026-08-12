@@ -9,6 +9,7 @@ import type {HeaderQuery} from 'storefrontapi.generated';
 import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {productCanonicalPath} from '~/lib/categories';
+import {analyticsProduct} from '~/lib/analytics';
 import {
   absoluteUrl,
   breadcrumbJsonLd,
@@ -652,6 +653,17 @@ export default function Collection() {
             id: collection.id,
             handle: collection.handle,
           },
+        }}
+        /*
+          Hydrogen's collection payload carries the id and handle and nothing
+          else, but GA4's `view_item_list` is only worth sending with the list
+          in it — without `items` it populates no report. `customData` is the
+          supported way to widen a payload, and AnalyticsBridge reads
+          `products` from it. Cards show the from-price, so that is the price
+          reported here; the exact variant price arrives with `view_item`.
+        */
+        customData={{
+          products: (collection.products?.nodes ?? []).map(analyticsProduct),
         }}
       />
     </div>

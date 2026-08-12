@@ -21,6 +21,12 @@ import almarai800 from '~/assets/fonts/almarai-800.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
+import {AnalyticsBridge} from './components/AnalyticsBridge';
+import {
+  analyticsBootstrap,
+  analyticsTagIds,
+  gtagScriptSrc,
+} from '~/lib/analytics';
 import {
   SITE,
   localBusinessJsonLd,
@@ -143,6 +149,9 @@ export async function loader(args: Route.LoaderArgs) {
     ...criticalData,
     wishlist: getWishlist(args.context.session),
     publicStoreDomain: env.PUBLIC_STORE_DOMAIN,
+    // GA4 + Meta pixel IDs. Both tags used to be injected by Shopify's Web
+    // Pixels Manager, which Hydrogen never loads — see app/lib/analytics.ts.
+    analyticsTags: analyticsTagIds(env),
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -210,6 +219,11 @@ export function Layout({children}: {children?: React.ReactNode}) {
   const nonce = useNonce();
   const rootData = useRouteLoaderData<RootLoader>('root');
   const origin = siteOrigin(rootData);
+  // Undefined on the error shell, where the root loader never resolved. No
+  // tags there is the right outcome — an error page is not a pageview.
+  const tags = rootData?.analyticsTags ?? {};
+  const gtagSrc = gtagScriptSrc(tags);
+  const tagBootstrap = analyticsBootstrap(tags);
 
   return (
     <html lang="en">
@@ -334,6 +348,26 @@ export function Layout({children}: {children?: React.ReactNode}) {
           nonce={nonce}
           dangerouslySetInnerHTML={{__html: introGateScript()}}
         />
+        {/*
+          GA4 + Meta pixel. Last in `<head>`, deliberately.
+
+          The inline bootstrap is what has to run early — it creates
+          `dataLayer` and `fbq` as queues, so an event published during
+          hydration is held rather than dropped. That costs nothing: it is
+          inline, so there is no request to schedule.
+
+          `gtag/js` is `async` and sits behind every hint above it, because the
+          thing it would otherwise compete with is the LCP image. Both vendor
+          scripts drain their queue on arrival, so loading them late loses no
+          events — only the illusion that a tag has to be first to be correct.
+        */}
+        {gtagSrc && <script async src={gtagSrc} nonce={nonce} />}
+        {tagBootstrap && (
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{__html: tagBootstrap}}
+          />
+        )}
       </head>
       <body>
         {/*
@@ -380,6 +414,12 @@ export default function App() {
         <Outlet />
       </PageLayout>
       <ChatWidget />
+      {/*
+        Inside the provider, because it subscribes to it. It renders nothing —
+        it forwards Shopify's events to GA4 and Meta, which used to be the Web
+        Pixels Manager's job on the Liquid storefront.
+      */}
+      <AnalyticsBridge {...data.analyticsTags} />
     </Analytics.Provider>
   );
 }

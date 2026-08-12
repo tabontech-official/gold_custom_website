@@ -16,4 +16,19 @@ declare global {
       };
     }
   }
+
+  /**
+   * Hydrogen declares `interface Env extends HydrogenEnv {}` globally, so the
+   * storefront's own variables merge in here rather than replacing it.
+   *
+   * Both are optional on purpose: an unset ID has to mean "don't load that
+   * tag", not "crash the storefront". Oxygen environments are configured by
+   * hand, so a preview deployment that nobody added them to must still boot.
+   */
+  interface Env {
+    /** GA4 measurement ID, e.g. `G-XXXXXXXXXX`. See app/lib/analytics.ts. */
+    PUBLIC_GA4_ID?: string;
+    /** Meta (Facebook/Instagram) pixel ID — all digits. */
+    PUBLIC_META_PIXEL_ID?: string;
+  }
 }

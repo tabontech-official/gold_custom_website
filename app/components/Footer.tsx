@@ -1,6 +1,7 @@
 import {Suspense} from 'react';
 import {Await, Link, NavLink, useFetcher} from 'react-router';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
+import {useTrackConversion} from '~/hooks/useTrackConversion';
 
 interface FooterProps {
   footer: Promise<FooterQuery | null>;
@@ -15,6 +16,13 @@ export function Footer({
 }: FooterProps) {
   const newsletter = useFetcher<{success?: boolean; error?: string}>();
   const newsletterBusy = newsletter.state !== 'idle';
+
+  useTrackConversion(
+    Boolean(newsletter.data?.success),
+    'sign_up',
+    'footer_newsletter',
+    'Lead',
+  );
 
   return (
     <Suspense>

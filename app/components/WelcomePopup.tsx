@@ -1,5 +1,6 @@
 import {useEffect, useState} from 'react';
 import {useFetcher} from 'react-router';
+import {useTrackConversion} from '~/hooks/useTrackConversion';
 
 const STORAGE_KEY = 'welcome-popup-seen';
 // ponytail: code is hardcoded — WELCOME10 is the store's active first-order
@@ -25,6 +26,11 @@ export function WelcomePopup() {
   const [open, setOpen] = useState(false);
   const fetcher = useFetcher<{success?: boolean; error?: string}>();
   const subscribed = Boolean(fetcher.data?.success);
+
+  // Same event as the footer form, different `method` — GA4 breaks sign-ups
+  // down by it, which is the only way to tell whether the popup is earning the
+  // interruption it costs.
+  useTrackConversion(subscribed, 'sign_up', 'welcome_popup', 'Lead');
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY)) return;

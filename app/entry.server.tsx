@@ -32,6 +32,13 @@ export default async function handleRequest(
       'https://*.elfsight.com',
       // Reputon TikTok feed.
       'https://cdn.ttw.reputon.com',
+      // GA4 (gtag.js) and the Meta pixel. `'unsafe-inline'` above is inert
+      // here — Hydrogen puts a nonce in script-src, and a nonce makes browsers
+      // ignore 'unsafe-inline' — so these host entries are what actually admit
+      // the two vendor bundles, including fbevents.js, which Meta's bootstrap
+      // injects via createElement and which therefore carries no nonce.
+      'https://www.googletagmanager.com',
+      'https://connect.facebook.net',
     ],
     // Allow embedded product videos (YouTube / Vimeo) and hosted Shopify video.
     frameSrc: [
@@ -83,6 +90,15 @@ export default async function handleRequest(
       'https://*.tiktokcdn.com',
       'https://*.tiktokcdn-us.com',
       'https://*.tiktokcdn-eu.com',
+      // Analytics still measure over image beacons, not only fetch: GA4 falls
+      // back to one when sendBeacon is unavailable, Meta's /tr endpoint is an
+      // image by design, and the doubleclick/google.com hosts are the
+      // remarketing pings that fire once a visitor consents to marketing.
+      'https://www.google-analytics.com',
+      'https://www.googletagmanager.com',
+      'https://www.facebook.com',
+      'https://stats.g.doubleclick.net',
+      'https://www.google.com',
       'data:',
     ],
     // Google Fonts (stylesheet + font files).
@@ -117,6 +133,17 @@ export default async function handleRequest(
       'https://core.service.elfsight.com',
       // Reputon's content API — /app/storefront/content?shop=...
       'https://ttw.reputon.com',
+      // GA4 measurement traffic. The wildcards are load-bearing: GA4 routes
+      // hits to a regional collector (region1.google-analytics.com and
+      // friends) that varies by visitor, so the bare host alone drops European
+      // sessions.
+      'https://www.google-analytics.com',
+      'https://*.google-analytics.com',
+      'https://*.analytics.google.com',
+      'https://www.googletagmanager.com',
+      // Meta pixel: the bundle, and the /tr endpoint it posts events to.
+      'https://connect.facebook.net',
+      'https://www.facebook.com',
     ],
   });
 

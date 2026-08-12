@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useFetcher} from 'react-router';
+import {useTrackConversion} from '~/hooks/useTrackConversion';
 
 type ProductInfo = {
   title: string;
@@ -42,6 +43,11 @@ export function AppointmentModal({
   const submitting = fetcher.state !== 'idle';
   const result = fetcher.data;
   const succeeded = result?.ok === true;
+
+  // A booked consultation is the highest-intent action on the site that isn't
+  // a purchase, and it is the one Meta can optimise campaigns toward for a
+  // product this considered — `Schedule` rather than a generic `Lead`.
+  useTrackConversion(succeeded, 'generate_lead', 'appointment', 'Schedule');
   const fieldErrors = result && !result.ok ? result.errors : undefined;
   const formError = result && !result.ok ? result.error : undefined;
 
