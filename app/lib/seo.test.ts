@@ -13,7 +13,20 @@
  */
 import assert from 'node:assert/strict';
 import type {WithCache} from '@shopify/hydrogen';
-import {pageSeo, resolveShareImage} from './seo.ts';
+import {pageSeo, resolveShareImage, stripBrandSuffix} from './seo.ts';
+
+// No brand suffix on titles — it pushed products past the ~60 chars Google
+// renders. Real collection value from Shopify's SEO field, plus the two ways
+// this could go wrong: eating a mid-title brand, and eating the whole title.
+assert.equal(
+  stripBrandSuffix('10K & 14K Gold Charms | Gold Custom'),
+  '10K & 14K Gold Charms',
+);
+assert.equal(
+  stripBrandSuffix('Gold Custom Chains for Men'),
+  'Gold Custom Chains for Men',
+);
+assert.equal(stripBrandSuffix('Gold Custom'), 'Gold Custom');
 
 const PNG = 'https://cdn.shopify.com/s/files/1/0806/collections/chain.png?v=1';
 

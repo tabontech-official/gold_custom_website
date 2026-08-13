@@ -41,8 +41,15 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   return [
     ...pageSeo({
       // The store's own homepage title, as authored in Shopify's Online Store
-      // preferences. It already carries the brand, so no template is applied.
-      title: 'Real 10K & 14K Solid Gold Jewelry | Gold Custom LA',
+      // preferences — minus the "| Gold Custom LA" it was authored with.
+      // pageSeo strips a trailing brand anyway, so leaving it here only made
+      // the source disagree with the output.
+      //
+      // The homepage is the one page where a brand suffix is defensible, and
+      // it is still the right call to drop it: Google derives the site name
+      // for this result from the WebSite JSON-LD and the domain, not from the
+      // title tag, so the words here are better spent on what the store sells.
+      title: 'Real 10K & 14K Solid Gold Jewelry',
       titleTemplate: '%s',
       description: SITE.description,
       url: origin,
@@ -88,13 +95,21 @@ function heroPreloadTags(hero: HeroContent | null) {
       // srcset/sizes disagree with the element's is not a head start, it is a
       // second download of a different resize on the connection least able to
       // afford one.
-      // All three lowercase deliberately. React 18 canonicalises none of these
-      // — it passes unknown props through verbatim — so the camelCase spellings
-      // survive into the markup as-is and only work because HTML attribute
-      // names happen to be case-insensitive. Writing the real attribute names
-      // means the tag does not depend on that.
-      imagesrcset: `${cdnWidth(mobile, 480)} 480w, ${cdnWidth(mobile, 800)} 800w, ${cdnWidth(mobile, 1200)} 1200w`,
-      imagesizes: '100vw',
+      // camelCase for these two, lowercase for `fetchpriority` — the split is
+      // not a style choice, it is which names React 18 actually knows.
+      //
+      // `imageSrcSet` and `imageSizes` ARE in React's property list: it maps
+      // them to the real `imagesrcset` / `imagesizes` attributes. Passing the
+      // lowercase spellings instead makes them UNKNOWN props, which React
+      // still renders but warns about in dev ("Invalid DOM property
+      // `imagesrcset`. Did you mean `imageSrcSet`?"). They happened to work
+      // only because HTML attribute names are case-insensitive.
+      //
+      // `fetchPriority` is the opposite case — React 18 has no mapping for it,
+      // so the camelCase spelling would be dropped and the lowercase one is
+      // what gets through. React 19 adds it; this can go camelCase on upgrade.
+      imageSrcSet: `${cdnWidth(mobile, 480)} 480w, ${cdnWidth(mobile, 800)} 800w, ${cdnWidth(mobile, 1200)} 1200w`,
+      imageSizes: '100vw',
       media: '(max-width: 47.99em)',
       fetchpriority: 'high',
     });

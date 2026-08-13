@@ -366,6 +366,20 @@ function socialImage(media: ImageSource): {
  * media of its own, because an absent image and an empty one look the same to a
  * crawler: a blank preview.
  */
+/**
+ * Drop a trailing `| Gold Custom` from a title.
+ *
+ * Not redundant with removing the titleTemplate: 6 of this store's collections
+ * have the suffix typed into Shopify's own SEO field, e.g.
+ * "10K & 14K Gold Charms | Gold Custom". Verified against the Storefront API.
+ *
+ * ponytail: only the pipe form, only the bare name — that is every case in the
+ * catalogue. Widen if a dash variant ever shows up.
+ */
+export function stripBrandSuffix(title: string): string {
+  return title.replace(new RegExp(`\\s*\\|\\s*${SITE.name}\\s*$`, 'i'), '').trim();
+}
+
 export function pageSeo(
   config: SeoConfig & {
     noIndex?: boolean;
@@ -383,15 +397,34 @@ export function pageSeo(
 ) {
   const {noIndex, ogType = 'website', price, ...seo} = config;
 
-  // Shopify's own SEO titles often already end in the brand ("… | Gold
-  // Custom"), and appending the template on top produced the doubled
-  // "… | Gold Custom | Gold Custom" that was live on collection pages.
-  const title = typeof seo.title === 'string' ? seo.title : '';
-  const titleTemplate =
-    seo.titleTemplate ??
-    (title.trim().toLowerCase().endsWith(SITE.name.toLowerCase())
-      ? '%s'
-      : `%s | ${SITE.name}`);
+  // No brand suffix on titles, anywhere.
+  //
+  // This used to append `| Gold Custom` to any title that did not already end
+  // in it. On products that pushed the tag straight past what Google renders —
+  // measured on the live storefront:
+  //
+  //   10K Gold The Last Supper Sculptural Two Fingers Ring | Gold Custom   67
+  //   10K Gold The World Is Yours Globe Signet Ring 5.9g | Gold Custom     64
+  //   10K/14K Solid Gold Sweet 15 Crown Ring with Gems | Gold Custom       62
+  //
+  // Google truncates around 60 characters, so the brand was not just wasting
+  // the budget, it was spending the part of the title that got cut — and the
+  // words it displaced are the ones a shopper actually searches on (karat,
+  // material, style). Product names here are long by nature; they need the
+  // whole width.
+  //
+  // Stripping is done rather than only dropping the template, because the
+  // title can ARRIVE with the brand already on it: `product.seo.title` and
+  // `collection.seo.title` come from the Shopify admin, where the merchant
+  // frequently types the suffix by hand. Changing the template alone would fix
+  // the generated titles and leave those untouched.
+  //
+  // The stripped value has to be spread back over `seo` below — `getSeoMeta`
+  // reads `seo.title`, so computing it into a local and forgetting to pass it
+  // silently does nothing at all.
+  const titleTemplate = seo.titleTemplate ?? '%s';
+  const title =
+    typeof seo.title === 'string' ? stripBrandSuffix(seo.title) : seo.title;
 
   // A source too small to render as a large card is worse than the brand shot:
   // the Rings collection banner is 400x363, and no transform saves it because
@@ -407,6 +440,8 @@ export function pageSeo(
   const tags =
     getSeoMeta({
       ...seo,
+      // AFTER the spread — `seo.title` still holds the unstripped original.
+      title,
       // Width and height are stripped before `getSeoMeta` sees them. It emits
       // `og:image:<key>` for every truthy key on a media object, so passing the
       // `media` is withheld from getSeoMeta ENTIRELY, and the whole image block

@@ -1079,19 +1079,38 @@ button.announcement-link {
     justify-content: center;
     justify-self: center;
     flex: 1 1 0;
-    overflow-x: auto;
-    overflow-y: visible;
+    /*
+      `overflow: visible` on BOTH axes, deliberately — this used to say
+      `overflow-x: auto; overflow-y: visible`, which is not a legal pair.
+      When one axis is `visible` and the other is not, CSS computes the
+      `visible` one to `auto`; verified in Chrome, which reported auto/auto
+      here. So the row was silently a scroll container on both axes.
+
+      That is the wrong shape for this element. The dropdown panel and the
+      hover bridge are `position: absolute` against `.header`, which sits
+      OUTSIDE this box — so they escape the clip today purely because the
+      containing block is elsewhere. Make `.mega-menu-item` positioned (a
+      transform, a `position: relative`, an `overflow` of its own) and the
+      panel starts resolving against the scroller instead, and gets cut off
+      at the header's bottom edge. Nothing warns you; the menu just clips.
+
+      Horizontal scroll is not what should happen if the bar ever outgrows
+      its width either — a hidden scroll region on a hover menu is a menu
+      with unreachable items on touch. `flex-wrap` below is the honest
+      failure mode: items drop to a second line and all stay clickable.
+    */
+    overflow: visible;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
     white-space: nowrap;
     padding: 0 0.5rem;
     max-width: min(100%, 100vw - 3rem);
     min-width: 0;
-    scrollbar-width: none;
   }
 }
 
-.header-menu-desktop::-webkit-scrollbar {
-  display: none;
-}
+/* The `::-webkit-scrollbar` hide that used to sit here is gone with the
+   scroll container it was hiding — see the overflow note above. */
 
 .header-menu-item {
   color: var(--color-cream-text);
@@ -1231,7 +1250,37 @@ button.announcement-link {
      may run to a second line, the extra breathing room keeps the list reading
      as separate entries rather than a block of text. */
   gap: 0.9rem 2rem;
-  grid-template-columns: repeat(var(--mega-link-columns, 1), minmax(0, 1fr));
+  /*
+    Columns sized to the LONGEST NAME IN THIS DEPARTMENT, not to an equal
+    split of the panel.
+
+    `1fr` divides the space evenly and takes no account of what is in it, so
+    every two-column department sized its tracks identically — and measured at
+    six viewport widths from 1220 to 1920, the widest link came out pinned to
+    the track width every single time (280/280, 284/284.5, 290/290.4 ...).
+    "Luxury Emerald-Cut Diamond Engagement Rings" does not fit a half-panel
+    column at ANY width. It was only staying inside because `overflow-wrap:
+    anywhere` on the link broke it mid-word, and any nudge — browser zoom, the
+    fallback face during font swap, sub-pixel rounding — pushed it over the
+    gap and into the column beside it.
+
+    `max-content` is the fix and it is the thing being asked for: the track
+    becomes exactly as wide as the longest item it holds, so the gap below is
+    always real whitespace rather than whatever happens to be left. `minmax(0,
+    max-content)` keeps it able to shrink if the panel is genuinely too narrow,
+    so a very long name still wraps instead of overflowing the panel.
+
+    `fit-content(100%)` was the other candidate and is worse here: it resolves
+    against the panel width, so on a narrow panel it reintroduces exactly the
+    squeeze this is removing.
+  */
+  grid-template-columns: repeat(
+    var(--mega-link-columns, 1),
+    minmax(0, max-content)
+  );
+  /* The tracks no longer fill the panel, so say what happens to the slack:
+     it goes to the right, keeping the list left-aligned under the heading. */
+  justify-content: start;
   margin: 0 0 1.75rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.18);
@@ -1255,7 +1304,20 @@ button.announcement-link {
      Chains" arrived as "Best Quality Solid Gold Rollo…". The column is wide
      enough for nearly all of them on one line now, and anything longer wraps
      and stays readable instead of being cut. */
-  overflow-wrap: anywhere;
+  /*
+    `break-word`, NOT `anywhere`. The two behave identically once a line has to
+    break, but they differ in the one place that matters here: `anywhere` lets
+    the browser count the post-break width as the element's MIN-CONTENT size,
+    while `break-word` reports min-content as the longest whole word.
+
+    The list above is sized on `max-content`, so with `anywhere` the track
+    could collapse to a few characters and the name would shred down the column
+    one letter per line. With `break-word` the track can never size below the
+    longest word, which is what keeps names readable. Mid-word breaking is
+    still available as the last resort if a single word is wider than the
+    panel — it just stops being the browser's opening move.
+  */
+  overflow-wrap: break-word;
   width: fit-content;
 }
 
