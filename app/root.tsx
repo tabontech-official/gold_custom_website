@@ -362,12 +362,20 @@ export function Layout({children}: {children?: React.ReactNode}) {
         )}
       </head>
       <body>
+        {children}
         {/*
           Branded first-load intro. Deliberately markup + CSS only: no state,
           no timer, no effect. The animation ends itself (`forwards`) and the
           overlay never captures input, so there is nothing to unmount and no
           way for it to strand a visitor if JS is slow or dead. The script
           above is what limits it to once per session.
+
+          AFTER `{children}`, not before. It is `position: fixed` at z-index
+          3000, so document order changes nothing about how it looks — but
+          sitting first, its markup was one more thing the parser had to get
+          through before it reached the hero image. Later in the DOM is also
+          strictly safer for the stacking: nothing after it can now paint over
+          it by source order alone.
         */}
         <div className="intro" aria-hidden="true">
           {/*
@@ -396,7 +404,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
             </text>
           </svg>
         </div>
-        {children}
         <WishlistToast />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />

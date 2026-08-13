@@ -2082,18 +2082,78 @@ button.announcement-link {
   background: transparent;
 }
 
+/*
+  Hover fills the button with the network's OWN brand colour and knocks the
+  glyph out in white. The generic ink fill is kept as the base so a network
+  added to SOCIAL_LINKS without a rule below still has a sane hover rather than
+  none at all.
+
+  Hex values are the official ones published by each brand (via Simple Icons,
+  same source as the glyph paths in Footer.tsx) — not eyeballed off a
+  screenshot, which is how brand colours usually end up subtly wrong.
+*/
 .footer-social a:hover {
   border-color: var(--color-ink);
   background: var(--color-ink);
   color: #fff;
 }
+/* Instagram has no single brand colour — the mark is defined as a gradient,
+   anchored bottom-left, and a flat pink is a substitute for it rather than the
+   real thing. `border-color` still needs a solid, so it takes the magenta the
+   gradient passes through at the midpoint. */
+.footer-social a[data-social='instagram']:hover {
+  border-color: #d6249f;
+  background: radial-gradient(
+    circle at 30% 107%,
+    #fdf497 0%,
+    #fdf497 5%,
+    #fd5949 45%,
+    #d6249f 60%,
+    #285aeb 90%
+  );
+}
+.footer-social a[data-social='facebook']:hover {
+  border-color: #0866ff;
+  background: #0866ff;
+}
+.footer-social a[data-social='youtube']:hover {
+  border-color: #ff0000;
+  background: #ff0000;
+}
+/*
+  TikTok's official colour IS #000 — which is also --color-ink, so a plain fill
+  would make its hover identical to the fallback above and read as "nothing
+  happened". What actually identifies the mark is the chromatic split: cyan
+  offset one way, magenta the other. Two drop-shadows on the glyph reproduce it
+  exactly, and because they follow the alpha channel they trace the letterform
+  rather than boxing it.
+*/
+.footer-social a[data-social='tiktok']:hover {
+  border-color: #000000;
+  background: #000000;
+}
+.footer-social a[data-social='tiktok']:hover svg {
+  filter: drop-shadow(-1px -1px 0 #25f4ee) drop-shadow(1px 1px 0 #fe2c55);
+}
 
 .footer-social svg {
-  width: 18px;
-  height: 18px;
+  /* 1rem inside a 2.6rem button. The brand marks are full-bleed on their 24x24
+     grid — unlike the padded glyphs they replaced — so the same pixel size
+     reads noticeably heavier; this keeps the optical weight where it was. */
+  width: 1rem;
+  height: 1rem;
   color: inherit;
   fill: currentColor;
-  stroke: currentColor;
+  /*
+    NOT `stroke: currentColor`, which is what this was.
+
+    Every social mark is a solid filled path, so a stroke did not outline them,
+    it FATTENED them: SVG's default stroke-width is 1 on a 24-unit grid, laid
+    half outside and half inside every edge. That closed up the counters — the
+    notch in YouTube's play triangle, the gap in TikTok's note, the ring in
+    Instagram's lens — and is why the row looked like blobs at small size.
+  */
+  stroke: none;
 }
 
 .footer-bottom {

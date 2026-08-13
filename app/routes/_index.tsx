@@ -9,7 +9,6 @@ import {ProductItem} from '~/components/ProductItem';
 import {MarketBar} from '~/components/MarketBar';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
-import {CATEGORIES as CATEGORY_CONFIG} from '~/lib/categories';
 import {cdnWidth} from '~/lib/cdnImage';
 /**
  * Imported as Vite assets, NOT referenced as `/purity.webp` out of `public/`.
@@ -36,18 +35,88 @@ import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
 import {getGoldRates} from '~/lib/goldRates';
 import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 
-export const meta: Route.MetaFunction = ({matches}) => {
+export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
 
-  return pageSeo({
-    // The store's own homepage title, as authored in Shopify's Online Store
-    // preferences. It already carries the brand, so no template is applied.
-    title: 'Real 10K & 14K Solid Gold Jewelry | Gold Custom LA',
-    titleTemplate: '%s',
-    description: SITE.description,
-    url: origin,
-  });
+  return [
+    ...pageSeo({
+      // The store's own homepage title, as authored in Shopify's Online Store
+      // preferences. It already carries the brand, so no template is applied.
+      title: 'Real 10K & 14K Solid Gold Jewelry | Gold Custom LA',
+      titleTemplate: '%s',
+      description: SITE.description,
+      url: origin,
+    }),
+    ...heroPreloadTags(data?.hero ?? null),
+  ];
 };
+
+/**
+ * LCP preload for whichever hero the visitor will actually see.
+ *
+ * Emitted through `meta` rather than as a `<link>` in the component tree, and
+ * that placement IS the optimisation. root.tsx inlines the whole stylesheet —
+ * ~163 KB minified — as a `<style>` in `<head>`, and the tag this replaces sat
+ * in `<body>`, so the preload scanner only reached it after chewing through all
+ * of that plus the cart aside, the search aside, the whole mobile mega-menu and
+ * the header. `<Meta />` renders FIRST in `<head>`, ahead of both `<Links />`
+ * and that `<style>`, so the image request now leaves in the document's opening
+ * packets instead of after its last.
+ *
+ * Two tags, `media`-scoped to mirror what actually renders: phones get the
+ * portrait <img> from MobileHeroSlider (`@media (max-width: 48em)`), desktop
+ * gets the landscape CSS background. The scopes don't overlap, so this never
+ * costs a second download — the boundary is 47.99em/48em because at exactly
+ * 48em the later desktop rules win in the stylesheet.
+ *
+ * The mobile tag is the one that matters. There was no mobile preload at all
+ * before — the old tag was `media="(min-width: 48em)"`, desktop only — which is
+ * why phones discovered their LCP image dead last.
+ */
+function heroPreloadTags(hero: HeroContent | null) {
+  const desktop = hero?.slides?.[0]?.image;
+  const mobile = hero?.mobileSlides?.[0]?.image;
+  const tags: Array<Record<string, string>> = [];
+
+  if (mobile) {
+    tags.push({
+      tagName: 'link',
+      rel: 'preload',
+      as: 'image',
+      href: cdnWidth(mobile, 800),
+      // Must mirror the <img> in MobileHeroSlider exactly. A preload whose
+      // srcset/sizes disagree with the element's is not a head start, it is a
+      // second download of a different resize on the connection least able to
+      // afford one.
+      // All three lowercase deliberately. React 18 canonicalises none of these
+      // — it passes unknown props through verbatim — so the camelCase spellings
+      // survive into the markup as-is and only work because HTML attribute
+      // names happen to be case-insensitive. Writing the real attribute names
+      // means the tag does not depend on that.
+      imagesrcset: `${cdnWidth(mobile, 480)} 480w, ${cdnWidth(mobile, 800)} 800w, ${cdnWidth(mobile, 1200)} 1200w`,
+      imagesizes: '100vw',
+      media: '(max-width: 47.99em)',
+      fetchpriority: 'high',
+    });
+  }
+
+  if (desktop) {
+    tags.push({
+      tagName: 'link',
+      rel: 'preload',
+      as: 'image',
+      href: cdnWidth(desktop, 2000),
+      // Scoped to desktop ONLY when a mobile set exists. Without one,
+      // `.hero:not([data-has-mobile])` keeps the landscape track at every
+      // width, so the banner is the phone's LCP too and a desktop-scoped
+      // preload would leave mobile with nothing again.
+      ...(mobile ? {media: '(min-width: 48em)'} : {}),
+      fetchpriority: 'high',
+    });
+  }
+
+  return tags;
+}
 
 /** The `text_position` dropdown in Shopify: left | right | up. */
 type HeroPosition = 'left' | 'right' | 'up';
@@ -522,30 +591,11 @@ function Hero({content}: {content: HeroContent | null}) {
   return (
     <>
       {/*
-        The desktop hero is a CSS `background-image` on .hero-slide, and the
-        preload scanner cannot see inside a style attribute — so without this
-        the LCP image does not begin downloading until the parser has built
-        the element and resolved its style. This starts it with the rest of
-        the early markup instead, which matters most on the first load of a
-        session: the intro overlay is on screen for ~3s, and this is what
-        lets the hero finish arriving underneath it rather than after it.
-
-        `media` scopes it to desktop. Phones render <MobileHeroSlider/> from a
-        different image set below, so preloading the landscape file there
-        would be a wasted download on the connection least able to afford it.
-
-        Lowercase `fetchpriority` via spread, matching the mobile <img> below:
-        React 18 does not recognise the camelCase prop and would drop it.
+        The hero preloads used to live here. They are in `heroPreloadTags` now,
+        emitted via the route's `meta` export — a `<link>` rendered here lands
+        in `<body>`, behind the whole inlined stylesheet; `<Meta />` puts it at
+        the top of `<head>`. See the comment on that function.
       */}
-      {slides[0]?.image && (
-        <link
-          rel="preload"
-          as="image"
-          href={cdnWidth(slides[0].image, 2000)}
-          media="(min-width: 48em)"
-          {...{fetchpriority: 'high'}}
-        />
-      )}
       <section
         ref={sectionRef}
         className="hero"
