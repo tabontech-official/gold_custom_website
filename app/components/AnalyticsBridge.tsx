@@ -179,7 +179,38 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
   const lastConsent = useRef('');
 
   /**
-   * Load gtag.js and fbevents.js, once, after hydration.
+   * Load gtag.js and fbevents.js, once — at the first idle moment or the first
+   * interaction, whichever comes first, NOT immediately on hydration.
+   *
+   * Measured on the live homepage (Lighthouse, Moto G / Slow 4G): these two
+   * bundles blocked the main thread for 636 ms between them — fbevents.js 304
+   * ms, its signals/config follow-up 185 ms, gtag.js 197 + 150 ms. That was the
+   * bulk of a 1,000 ms Total Blocking Time on a page whose own hydration costs
+   * ~312 ms. None of it is our code and none of it can be made faster; the only
+   * variable is when it runs, and running it the instant React finishes puts it
+   * squarely in the window where a shopper is trying to tap something.
+   *
+   * No event is lost by waiting. The inline bootstrap in root.tsx has already
+   * created `dataLayer` and `fbq` as QUEUES, this bridge only ever pushes onto
+   * them, and each vendor drains its queue when it loads — see the contract in
+   * app/lib/analytics.ts. Arriving late is a supported state; arriving never is
+   * not, which is why this cannot be interaction-only:
+   *
+   *   interaction-only  -> a visitor who reads the page and leaves without
+   *                        touching it is never counted. On a storefront that
+   *                        is most of the landing-page traffic, and it would
+   *                        quietly delete the bounce data the marketing side
+   *                        reads. It would also flatter Lighthouse, which never
+   *                        interacts — the wrong reason to pick a design.
+   *   idle-only         -> fine, but a real shopper usually touches the screen
+   *                        before the main thread is ever idle, so the tag
+   *                        would load later than it needs to.
+   *   whichever first   -> engaged visitors are tracked from their first touch,
+   *                        bounced visitors are still counted at idle.
+   *
+   * The `timeout` matters: `requestIdleCallback` fires it as a deadline even if
+   * idle never arrives, so a page that stays busy still gets its tags rather
+   * than dropping the session.
    *
    * Appending to `document.body` rather than `<head>` matches how every other
    * third-party script in this app is loaded (chat, reviews, the TikTok feed):
@@ -188,14 +219,50 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
    * re-renders. Nothing about a tag requires it to live in the head.
    */
   useEffect(() => {
-    for (const {id, src} of analyticsVendorScripts({ga4Id, metaPixelId})) {
-      if (document.getElementById(id)) continue;
-      const script = document.createElement('script');
-      script.id = id;
-      script.src = src;
-      script.async = true;
-      document.body.appendChild(script);
+    const scripts = analyticsVendorScripts({ga4Id, metaPixelId});
+    if (!scripts.length) return;
+
+    const controller = new AbortController();
+    let idleHandle: number | undefined;
+
+    const load = () => {
+      controller.abort(); // drops the interaction listeners with one call
+      if (idleHandle !== undefined) window.cancelIdleCallback?.(idleHandle);
+      for (const {id, src} of scripts) {
+        if (document.getElementById(id)) continue;
+        const script = document.createElement('script');
+        script.id = id;
+        script.src = src;
+        script.async = true;
+        document.body.appendChild(script);
+      }
+    };
+
+    // Same interaction set as ChatWidget, for the same reason: pointermove
+    // catches desktop, pointerdown touch, and the other two keyboard and
+    // reading.
+    for (const type of ['pointermove', 'pointerdown', 'keydown', 'scroll']) {
+      window.addEventListener(type, load, {
+        passive: true,
+        signal: controller.signal,
+      });
     }
+
+    // Safari only shipped requestIdleCallback in 16.4 — the timer is the
+    // fallback, at roughly the deadline the idle timeout would have enforced.
+    if (window.requestIdleCallback) {
+      idleHandle = window.requestIdleCallback(load, {timeout: 5000});
+    } else {
+      const timer = window.setTimeout(load, 5000);
+      controller.signal.addEventListener('abort', () =>
+        window.clearTimeout(timer),
+      );
+    }
+
+    return () => {
+      controller.abort();
+      if (idleHandle !== undefined) window.cancelIdleCallback?.(idleHandle);
+    };
   }, [ga4Id, metaPixelId]);
 
   useEffect(() => {

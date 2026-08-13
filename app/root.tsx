@@ -17,7 +17,7 @@ import {introGateScript} from '~/lib/introGate';
 import appStyles from '~/styles/app.css?url';
 import appStylesInline from '~/styles/app.css?inline';
 import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
-import almarai800 from '~/assets/fonts/almarai-800.woff2?url';
+import almarai700 from '~/assets/fonts/almarai-700.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
@@ -109,17 +109,31 @@ export function links() {
       href: almarai400,
       crossOrigin: 'anonymous',
     },
-    // The 800 weight too, because the first-load intro is drawn in it and is
-    // the very first thing painted. Without this it arrives after first paint
-    // and `font-display: swap` re-renders the word mid-animation — the glyphs
-    // visibly change shape partway through the draw. 19 KB, and the weight is
-    // used by headings further down the page regardless, so this promotes a
-    // download that was already going to happen rather than adding one.
+    // The 700 weight, which is the face the page is mostly SET in — not 800,
+    // which this used to preload.
+    //
+    // Almarai ships 300/400/700/800 and nothing between. app.css asks for
+    // `font-weight: 600` 93 times and `500` 30 times, and neither face exists,
+    // so CSS font matching resolves 600 -> 700 and 500 -> 400. That makes 700
+    // the single most-rendered face on the page (127 declarations once the 600s
+    // are counted) while 800 is reached by 5 — all of them the intro overlay,
+    // which shows once per session.
+    //
+    // So the old pair preloaded one face the page barely draws and missed the
+    // one it draws most; the network trace showed 700 being fetched late, on
+    // discovery, behind everything else. Preloading the two the body copy and
+    // headings actually resolve to is what this pair is for.
+    //
+    // Cost of the swap: on the FIRST load of a session the intro's word can now
+    // swap mid-draw, since 800 arrives on discovery. That is a once-per-session
+    // cosmetic wobble on an overlay, traded for every heading on every page
+    // painting sooner. Preloading all three was the other option and was worse —
+    // a third font in front of the LCP image on a phone.
     {
       rel: 'preload',
       as: 'font',
       type: 'font/woff2',
-      href: almarai800,
+      href: almarai700,
       crossOrigin: 'anonymous',
     },
     // Served from public/ at a fixed path rather than imported as a hashed
