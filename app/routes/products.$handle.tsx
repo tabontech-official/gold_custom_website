@@ -460,7 +460,7 @@ export default function Product() {
             .product-main used to be, so that layout is unchanged. */}
         <div className="product-buy-column">
           <div className="product-heading">
-            {sku && <p className="product-sku">SKU / Style Code: {sku}</p>}
+            {sku && <p className="product-sku">SKU : {sku}</p>}
             <h1>{title}</h1>
           </div>
 
