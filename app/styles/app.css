@@ -1926,14 +1926,11 @@ button.announcement-link {
   padding: 0.75rem 1rem;
 }
 
-.welcome-popup-code {
-  border: 1px dashed var(--cg-champagne);
-  color: var(--cg-champagne-dark);
-  font-size: 1.3rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  padding: 0.6rem;
-  user-select: all;
+/* Replaces .welcome-popup-code, which is gone with the on-screen discount —
+   the code is emailed now, so the popup has a spam-folder nudge here instead. */
+.welcome-popup-hint {
+  color: var(--color-ink-soft);
+  font-size: 0.85rem;
 }
 
 .welcome-popup-close {

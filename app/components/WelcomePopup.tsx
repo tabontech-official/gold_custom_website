@@ -3,10 +3,6 @@ import {useFetcher} from 'react-router';
 import {useTrackConversion} from '~/hooks/useTrackConversion';
 
 const STORAGE_KEY = 'welcome-popup-seen';
-// ponytail: code is hardcoded — WELCOME10 is the store's active first-order
-// discount and the Storefront API can't read discount codes. Update here if
-// the discount changes in admin.
-const WELCOME_CODE = 'WELCOME10';
 
 // First-visit popup offering the welcome discount for joining the list.
 // Shows once (localStorage) after a delay.
@@ -24,8 +20,17 @@ const SHOW_AFTER_MS = 8000;
 
 export function WelcomePopup() {
   const [open, setOpen] = useState(false);
-  const fetcher = useFetcher<{success?: boolean; error?: string}>();
+  const fetcher = useFetcher<{
+    success?: boolean;
+    error?: string;
+    email?: string;
+  }>();
   const subscribed = Boolean(fetcher.data?.success);
+  // Comes back from the action, NOT from `fetcher.formData` — React Router
+  // clears formData the moment the fetcher goes idle (getDoneFetcher sets it
+  // to undefined), which is exactly when this screen renders. Reading it there
+  // silently showed the fallback every time.
+  const sentTo = fetcher.data?.email ?? 'your inbox';
 
   // Same event as the footer form, different `method` — GA4 breaks sign-ups
   // down by it, which is the only way to tell whether the popup is earning the
@@ -71,9 +76,22 @@ export function WelcomePopup() {
 
         {subscribed ? (
           <>
-            <h2>Welcome to the Family</h2>
-            <p>Use this code at checkout for 10% off your first order:</p>
-            <p className="welcome-popup-code">{WELCOME_CODE}</p>
+            <h2>Check Your Inbox</h2>
+            {/*
+              The code is emailed, not printed here.
+
+              Showing it on screen handed the discount to anyone who typed
+              something shaped like an address — the form only ever checked the
+              string against a regex, so `a@b.co` collected it. Delivering it to
+              the mailbox makes the mailbox the proof.
+            */}
+            <p>
+              We&rsquo;ve sent your 10% code to <strong>{sentTo}</strong>. It
+              should arrive in a minute or two.
+            </p>
+            <p className="welcome-popup-hint">
+              Not there? Check your spam folder.
+            </p>
             <button type="button" className="btn btn-primary" onClick={dismiss}>
               Start Shopping
             </button>

@@ -1,7 +1,15 @@
 import type {Route} from './+types/api.subscribe';
 
-// Newsletter signup: creates a customer with marketing consent via the
-// Storefront API. Used by the welcome popup and the footer form.
+/**
+ * Newsletter signup. Used by the welcome popup and the footer form.
+ *
+ * Sends no email — `customerCreate` activates the account, and Shopify's own
+ * "Customer account welcome" notification carries the discount code. Nothing
+ * here needs to know what that code is.
+ *
+ * Edit the email at: Shopify Admin -> Settings -> Notifications ->
+ * Customer account welcome.
+ */
 export async function action({request, context}: Route.ActionArgs) {
   const form = await request.formData();
   const email = String(form.get('email') ?? '').trim();
@@ -11,6 +19,9 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 
   try {
+    // Creates a real customer account, not a mailing-list row — the Storefront
+    // API has no subscribe-only mutation. That account activation is also what
+    // triggers the welcome email.
     const {customerCreate} = await context.storefront.mutate(
       SUBSCRIBE_MUTATION,
       {
@@ -31,7 +42,10 @@ export async function action({request, context}: Route.ActionArgs) {
     if (error && error.code !== 'TAKEN') {
       return {error: error.message};
     }
-    return {success: true};
+
+    // `email` echoed back so the popup can say where it went — the fetcher's
+    // own formData is cleared by then. See WelcomePopup.
+    return {success: true, email};
   } catch (error) {
     console.error(error);
     return {error: 'Something went wrong. Please try again.'};
