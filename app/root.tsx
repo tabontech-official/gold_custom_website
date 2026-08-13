@@ -17,7 +17,8 @@ import {introGateScript} from '~/lib/introGate';
 import appStyles from '~/styles/app.css?url';
 import appStylesInline from '~/styles/app.css?inline';
 import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
-import almarai700 from '~/assets/fonts/almarai-700.woff2?url';
+import almarai300 from '~/assets/fonts/almarai-300.woff2?url';
+import almarai800 from '~/assets/fonts/almarai-800.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
@@ -93,10 +94,17 @@ export function links() {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
     },
-    {
-      rel: 'preconnect',
-      href: 'https://shop.app',
-    },
+    // No `preconnect` to shop.app. It was here for Shop Pay, but the only Shop
+    // Pay surface in this app is the installments banner on the product page,
+    // and that loads shop-js from cdn.shopify.com — the origin preconnected
+    // above. Nothing on any route requests shop.app, so the hint spent a DNS +
+    // TCP + TLS handshake on an origin never used, on every page, and Lighthouse
+    // flagged it as an unused preconnect. Browsers cap parallel connections
+    // during load, so a dead one is not free: it takes a slot the LCP image
+    // could have had. Add it back only alongside something that actually
+    // requests it (a Shop Pay checkout button, say).
+    //
+    // See SHOP_PAY_TERMS_SCRIPT in routes/products.$handle.tsx.
     // Almarai is self-hosted (@font-face in app.css) — no fonts.googleapis.com
     // stylesheet in the critical path, no second origin to connect to. Preload
     // the body weight so it starts downloading before the parser reaches the
@@ -109,31 +117,39 @@ export function links() {
       href: almarai400,
       crossOrigin: 'anonymous',
     },
-    // The 700 weight, which is the face the page is mostly SET in — not 800,
-    // which this used to preload.
+    // 300 and 800: the two faces that render ABOVE THE FOLD.
     //
-    // Almarai ships 300/400/700/800 and nothing between. app.css asks for
-    // `font-weight: 600` 93 times and `500` 30 times, and neither face exists,
-    // so CSS font matching resolves 600 -> 700 and 500 -> 400. That makes 700
-    // the single most-rendered face on the page (127 declarations once the 600s
-    // are counted) while 800 is reached by 5 — all of them the intro overlay,
-    // which shows once per session.
+    // Pick these by what paints first, NOT by how many rules mention a weight —
+    // counting declarations is what got this wrong once already. Almarai ships
+    // 300/400/700/800 and nothing between, and app.css asks for `600` 93 times
+    // and `500` 30 times, so CSS matching resolves 600 -> 700 and 500 -> 400.
+    // That makes 700 the most-DECLARED face by a wide margin. It is also almost
+    // entirely below the fold, so preloading it bought nothing and measurably
+    // displaced the two faces that do paint immediately:
     //
-    // So the old pair preloaded one face the page barely draws and missed the
-    // one it draws most; the network trace showed 700 being fetched late, on
-    // discovery, behind everything else. Preloading the two the body copy and
-    // headings actually resolve to is what this pair is for.
+    //   .hero-heading  font-weight: 300  <- the words on the hero banner
+    //   .intro-text    font-weight: 800  <- the first-load intro overlay
     //
-    // Cost of the swap: on the FIRST load of a session the intro's word can now
-    // swap mid-draw, since 800 arrives on discovery. That is a once-per-session
-    // cosmetic wobble on an overlay, traded for every heading on every page
-    // painting sooner. Preloading all three was the other option and was worse —
-    // a third font in front of the LCP image on a phone.
+    // Lighthouse's critical request chain names exactly those two, at 643 ms and
+    // 633 ms, discovered late because neither was preloaded. 400 stays because
+    // it is the body face and `font-weight: 500` resolves onto it.
+    //
+    // Three preloads was the alternative and is the wrong trade on a phone: a
+    // third font competes with the LCP image for the same early bandwidth. If
+    // the intro is ever shortened or dropped, 800 stops being above-the-fold and
+    // this should become 300 + 400.
     {
       rel: 'preload',
       as: 'font',
       type: 'font/woff2',
-      href: almarai700,
+      href: almarai300,
+      crossOrigin: 'anonymous',
+    },
+    {
+      rel: 'preload',
+      as: 'font',
+      type: 'font/woff2',
+      href: almarai800,
       crossOrigin: 'anonymous',
     },
     // Served from public/ at a fixed path rather than imported as a hashed
