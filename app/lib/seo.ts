@@ -29,25 +29,30 @@ export const SITE = {
     'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns, 1-year warranty.',
   logo: 'https://www.goldcustom.com/favicon.png',
   /**
-   * Fallback for any page with no image of its own — which was every share of
-   * the home page, and is why those previews came back blank.
+   * Fallback for any page with no image of its own.
+   *
+   * THE BRAND LOGO, deliberately — not a collection banner. This used to point
+   * at the Gold Jewelry collection's own banner, so every page that fell back
+   * published a share card advertising a category the link had nothing to do
+   * with: a /collections/crosses link came back showing gold bangles. A wrong
+   * category reads as a broken or spammy link; the logo reads as the brand,
+   * which is the honest thing to say about a page with no picture of its own.
    *
    * NOT `logo`: that is a 150x134 favicon, far under the 600x315 every platform
    * needs before it will render a large card, so it would have swapped a blank
-   * preview for a postage stamp. This one resolves to 1100x619.
+   * preview for a postage stamp. This one is 500x500 and pads to a true
+   * 1200x630 at ~75 KB — measured, comfortably inside OG_MAX_BYTES.
    *
    * Stored BARE, with no transform params. `socialImage` adds them, so the
    * fallback goes through exactly the same sizing as every other share image —
    * an already-sized value here got a second `&width=&quality=` appended and
    * shipped a URL with each param twice.
    *
-   * Swap this for a purpose-made 1200x630 banner the moment there is one — this
-   * is the one string to change.
+   * Swap this for a purpose-made 1200x630 brand banner the moment there is one
+   * — this is the one string to change.
    */
   ogImage:
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/collections/Gold_Jewelry-1-757994.webp?v=1770959624',
-  /** Known size of `ogImage`, so it is never mistaken for a too-small source. */
-  ogImageSize: {width: 1100, height: 619},
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/Gold_Custom_Logo.jpg?v=1774676842',
 } as const;
 
 type RootData = {
@@ -140,44 +145,47 @@ function firstMedia(
 }
 
 /**
- * Width requested for share images.
+ * The sizes a share image is tried at, largest first. `resolveShareImage` walks
+ * these and publishes the first one the CDN actually returns under the cap.
  *
- * 600, not the 1200 you would expect, and the reason is a hard CDN limitation:
+ * THIS LIST IS THE FIX FOR "every category link shows the wrong picture".
+ *
  * Shopify REFUSES to transcode an image that has an alpha channel. On a
  * transparent PNG, `format=jpg`, `format=webp`, `pad_color` and no format at
- * all return byte-identical PNG. Measured on the Stud Earrings banner, all four
- * came back as the same 1,171,966-byte file.
+ * all return byte-identical PNG — re-verified on the Rope Chains banner, where
+ * all eight transform variants came back `image/png`. `quality` is inert there
+ * too, being a lossy-codec setting applied to lossless output, so PIXEL COUNT
+ * IS THE ONLY LEVER LEFT.
  *
- * `quality` is equally inert there — it is a lossy-codec setting and PNG is
- * lossless — so pixel count is the ONLY lever left, and WhatsApp drops any
- * preview much past 300 KB. Measured across the three transparent collection
- * banners:
+ * A single 1200 width therefore priced most of the catalogue out of its own
+ * share card. Measured across all 125 collections against WhatsApp's ~300 KB
+ * ceiling: 47 of the 61 banners big enough to qualify came back as 557 KB to
+ * 1,075 KB of PNG at 1200, failed the probe, and fell back to the brand shot —
+ * which at the time was another collection's banner. That is the whole bug the
+ * merchant reported as "the wrong category image".
  *
- *              @1200px   @700px   @600px
- *   Rope Br.    ~712 KB   236 KB   172 KB
- *   Clover      ~1.08 MB  377 KB   280 KB
- *   Stud Earr.  ~1.17 MB  399 KB   292 KB
+ * At 600x315 every one of those 47 clears the cap, and all 67 collections that
+ * have an image at all now publish their own. 600x315 is exactly OG_MIN_WIDTH x
+ * OG_MIN_HEIGHT, so the card still renders as a large preview, not a thumbnail
+ * — a slightly softer picture of the RIGHT category beats a crisp picture of
+ * the wrong one.
  *
- * 600 is the only width where all three clear the cap, and it is exactly
- * OG_MIN_WIDTH, so the card still renders large rather than as a thumbnail.
+ * Flat sources are unaffected: they transcode to JPEG and win at 1200 on the
+ * first tier, so nothing that already worked gets shrunk.
  *
- * THAT REASONING STILL HOLDS FOR TRANSPARENT PNGs, and they are still caught —
- * by `resolveShareImage` below, which measures the actual response and drops
- * anything over the cap. What changed is that the width no longer has to be
- * set low enough for the WORST source: an image that cannot transcode now
- * fails the probe and falls back to the brand shot, instead of every image on
- * the site being shrunk to protect three banners.
- *
- * Re-measured on the flat fallback at 1200x630: 119 KB as JPEG, comfortably
- * under the 300 KB cap.
- *
- * THE REAL FIX IS STILL IN SHOPIFY. Re-save those three banners without
- * transparency and they stop falling back. Transparency is wrong for a share
- * image regardless — WhatsApp and Facebook composite alpha onto a background
- * you do not control, often black, which can render gold jewellery nearly
- * invisible even when it fits.
+ * THE REAL FIX IS STILL IN SHOPIFY. Re-save those banners without transparency
+ * and they serve at 1200. Transparency is wrong for a share image regardless —
+ * WhatsApp and Facebook composite alpha onto a background you do not control,
+ * often black, which can render gold jewellery nearly invisible even when it
+ * fits.
  */
-const OG_IMAGE_WIDTH = 1200;
+const OG_TIERS = [
+  {width: 1200, height: 630},
+  {width: 600, height: 315},
+] as const;
+
+/** The size a share image is published at when nothing has measured it. */
+const OG_IMAGE_WIDTH = OG_TIERS[0].width;
 
 /**
  * 1200x630 is the 1.91:1 card every platform lays out for; anything else gets
@@ -196,17 +204,13 @@ const OG_IMAGE_WIDTH = 1200;
  * White to match the storefront's own background, so the pad reads as the page
  * rather than as bars.
  */
-const OG_IMAGE_HEIGHT = 630;
+const OG_IMAGE_HEIGHT = OG_TIERS[0].height;
 const OG_PAD_COLOR = 'fff';
 
-/**
- * Smallest image every major platform will still render as a large card. Below
- * this you get a thumbnail, or nothing.
- */
-const OG_MIN_WIDTH = 600;
-const OG_MIN_HEIGHT = 315;
-
 type ImageSource = {url: string; width?: number | null; height?: number | null};
+
+/** A share image that has been sized and, where it mattered, measured. */
+export type ShareImage = {url: string; width: number; height: number};
 
 /**
  * Build the URL a social crawler is sent.
@@ -217,21 +221,25 @@ type ImageSource = {url: string; width?: number | null; height?: number | null};
  * that same banner to 161 KB. Desktop Facebook and LinkedIn will happily pull
  * 1.6 MB; WhatsApp and iMessage cap the preview near 300 KB and show nothing.
  *
- * It is a no-op on TRANSPARENT images — see OG_IMAGE_WIDTH, which is what
- * actually covers those. Both are kept: the format wins on flat images, the
- * width wins on the ones the CDN refuses to transcode.
+ * It is a no-op on TRANSPARENT images — see OG_TIERS, which is what actually
+ * covers those. Both are kept: the format wins on flat images, the size tier
+ * wins on the ones the CDN refuses to transcode.
  *
  * NOT `cdnWidth`: that helper feeds real page images, where WebP negotiation is
  * a win. Here it would be the bug — `format=jpg` must not leak into the
  * storefront's own <img> tags.
  *
- * No crop. A centre crop to 1.91:1 cuts the ends off a chain, and buys nothing
- * a crawler cares about: a square at OG_IMAGE_WIDTH already clears the
- * large-card threshold on every platform.
+ * No crop. A centre crop to 1.91:1 cuts the ends off a chain, and `pad_color`
+ * hits the exact box for any source shape — including sources SMALLER than the
+ * box, which the CDN upscales to fill it. Verified: the 325x325 Charms banner
+ * and the 400x363 Rings banner both come back a true 1200x630.
  */
-function socialImageUrl(url: string): string {
+function socialImageUrl(
+  url: string,
+  {width, height}: {width: number; height: number} = OG_TIERS[0],
+): string {
   const sep = url.includes('?') ? '&' : '?';
-  return `${url}${sep}width=${OG_IMAGE_WIDTH}&height=${OG_IMAGE_HEIGHT}&pad_color=${OG_PAD_COLOR}&quality=80&format=jpg`;
+  return `${url}${sep}width=${width}&height=${height}&pad_color=${OG_PAD_COLOR}&quality=80&format=jpg`;
 }
 
 /**
@@ -241,78 +249,87 @@ function socialImageUrl(url: string): string {
 const OG_MAX_BYTES = 300 * 1024;
 
 /**
- * Decide, by actually asking the CDN, whether a collection image can be used as
- * a share image — and fall back to the brand shot when it cannot.
+ * Find the largest OG_TIERS size at which this image is actually servable as a
+ * share card, by asking the CDN — or null when no tier fits, so callers fall
+ * back to the brand shot.
  *
  * This exists because the URL alone cannot tell you. Shopify refuses to
  * transcode any image carrying an alpha channel: on a transparent PNG,
  * `format=jpg`, `format=webp`, `pad_color` and no format at all return the
- * identical PNG. Measured across the collection banners, the ones that stay PNG
- * land at 261-605 KB even cropped to the bare 600x315 minimum — over WhatsApp's
- * cap, so the preview arrives with no image. Meanwhile plenty of other PNGs
- * here are flat and transcode to a 43 KB JPEG, so the file extension is not a
- * usable signal either. The only reliable test is the response itself.
+ * identical PNG. Meanwhile plenty of other PNGs here are flat and transcode to a
+ * 43 KB JPEG, so the file extension is not a usable signal either. The only
+ * reliable test is the response itself.
  *
- * One request per collection per cache period, and it is a loader-side check
- * because a `meta` function cannot await anything.
+ * IT WALKS THE TIERS RATHER THAN GIVING UP ON THE FIRST MISS. It used to probe
+ * a single 1200x630 and return null on failure, which cost 47 of this store's
+ * 61 usable collection banners their own share card — every one of them fits at
+ * 600x315. See OG_TIERS.
+ *
+ * Returns the TRANSFORMED url plus the exact size it was verified at, because
+ * only this function knows which tier won; `pageSeo` publishes it as-is and
+ * must not re-derive the transform, or a 600px winner would be republished at
+ * 1200 and be right back over the cap.
+ *
+ * At most one request per tier per collection per cache period, and it is a
+ * loader-side check because a `meta` function cannot await anything. In the
+ * common case the first tier wins and there is exactly one.
  *
  * Delete this the day those images are re-saved without transparency — see
- * OG_IMAGE_WIDTH.
+ * OG_TIERS.
  */
 export async function resolveShareImage(
   withCache: WithCache,
   imageUrl?: string | null,
-): Promise<string | null> {
+): Promise<ShareImage | null> {
   if (!imageUrl) return null;
-  const candidate = socialImageUrl(
-    imageUrl.startsWith('/') ? absoluteUrl(SITE.origin, imageUrl) : imageUrl,
-  );
+  const source = imageUrl.startsWith('/')
+    ? absoluteUrl(SITE.origin, imageUrl)
+    : imageUrl;
 
-  try {
-    const {response} = await withCache.fetch<null>(
-      candidate,
-      // `Accept: */*` on purpose: it is what WhatsApp and Facebook send, so
-      // this measures the exact bytes they will be served. Asking with a
-      // browser's Accept would get WebP back and quietly pass an image the
-      // crawlers still cannot use.
-      {method: 'GET', headers: {Accept: '*/*'}},
-      {
-        displayName: 'share image probe',
-        cacheKey: ['share-image', candidate],
-        shouldCacheResponse: () => true,
-      },
-    );
+  for (const tier of OG_TIERS) {
+    const candidate = socialImageUrl(source, tier);
+    try {
+      const {response} = await withCache.fetch<null>(
+        candidate,
+        // `Accept: */*` on purpose: it is what WhatsApp and Facebook send, so
+        // this measures the exact bytes they will be served. Asking with a
+        // browser's Accept would get WebP back and quietly pass an image the
+        // crawlers still cannot use.
+        //
+        // HEAD, not GET. Only the two headers below are ever read, and this
+        // runs on the collection loader's critical path — a GET made the page's
+        // TTFB wait on a full image download, and walking two tiers would have
+        // made that up to ~1.3 MB before a single byte of HTML. Verified on the
+        // Shopify CDN that HEAD returns byte-identical content-length and
+        // content-type (266,047 / image/png on the Rope Chains banner).
+        {method: 'HEAD', headers: {Accept: '*/*'}},
+        {
+          displayName: 'share image probe',
+          cacheKey: ['share-image', candidate],
+          shouldCacheResponse: () => true,
+        },
+      );
 
-    const type = response.headers.get('content-type') ?? '';
-    const length = Number(response.headers.get('content-length') ?? '0');
-    // Byte count is the gate; format gets no say. This was an OR —
-    // `type.includes('jpeg') || under cap` — so ANY response that came back
-    // JPEG passed no matter how heavy, which is the one thing the cap exists to
-    // stop. A PNG that fits is perfectly usable: WhatsApp renders PNG, it is the
-    // size it refuses. Content-length is always set by the Shopify CDN; if it
-    // ever is not, fall back to "is this an image at all" rather than dropping a
-    // collection's banner over a missing header.
-    const usable =
-      length > 0 ? length < OG_MAX_BYTES : type.startsWith('image/');
-    // The RAW url is returned, never `candidate`. pageSeo runs every image
-    // through socialImageUrl itself, so handing back the transformed one would
-    // append `&width=&quality=&format=` a second time — the same duplicated
-    // params the bare SITE.ogImage constant was fixed for. Probing the
-    // transformed URL and publishing the raw one is safe precisely because
-    // both sides derive it the same way.
-    return usable ? imageUrl : null;
-  } catch {
-    // A probe failure must never take a page down, and must never silently
-    // publish an image we could not verify.
-    return null;
+      const type = response.headers.get('content-type') ?? '';
+      const length = Number(response.headers.get('content-length') ?? '0');
+      // Byte count is the gate; format gets no say. This was an OR —
+      // `type.includes('jpeg') || under cap` — so ANY response that came back
+      // JPEG passed no matter how heavy, which is the one thing the cap exists
+      // to stop. A PNG that fits is perfectly usable: WhatsApp renders PNG, it
+      // is the size it refuses. Content-length is always set by the Shopify
+      // CDN; if it ever is not, fall back to "is this an image at all" rather
+      // than dropping a collection's banner over a missing header.
+      const usable =
+        length > 0 ? length < OG_MAX_BYTES : type.startsWith('image/');
+      if (usable) return {url: candidate, ...tier};
+    } catch {
+      // A probe failure must never take a page down, and must never silently
+      // publish an image we could not verify — but it is also no reason not to
+      // try the smaller tier, which is a different URL and may well succeed.
+    }
   }
-}
 
-/** True when a source is too small to render as a large card — and the CDN
- *  cannot help, because it refuses to upscale. */
-function tooSmallToShare({width, height}: ImageSource): boolean {
-  if (!width || !height) return false; // unknown: give it the benefit of the doubt
-  return width < OG_MIN_WIDTH || height < OG_MIN_HEIGHT;
+  return null;
 }
 
 function socialImage(media: ImageSource): {
@@ -393,9 +410,16 @@ export function pageSeo(
      * unparseable as a number.
      */
     price?: {amount: string; currencyCode: string} | null;
+    /**
+     * An image `resolveShareImage` has already sized AND measured against the
+     * CDN. Wins over `media`, and is published verbatim — no second transform,
+     * because the tier it won at is already baked into the url. Routes that
+     * have not measured anything keep passing `media` and get the default tier.
+     */
+    shareImage?: ShareImage | null;
   },
 ) {
-  const {noIndex, ogType = 'website', price, ...seo} = config;
+  const {noIndex, ogType = 'website', price, shareImage, ...seo} = config;
 
   // No brand suffix on titles, anywhere.
   //
@@ -426,16 +450,15 @@ export function pageSeo(
   const title =
     typeof seo.title === 'string' ? stripBrandSuffix(seo.title) : seo.title;
 
-  // A source too small to render as a large card is worse than the brand shot:
-  // the Rings collection banner is 400x363, and no transform saves it because
-  // Shopify's CDN will not upscale. Better a correct brand card than a broken
-  // thumbnail. Unknown dimensions pass through — only a measured miss falls back.
+  // Order: a measured image wins, then the route's own media, then the brand
+  // logo. There is deliberately NO size check on `media` any more — one used to
+  // reject any source under 600x315 on the belief that the CDN would not
+  // upscale it, which threw away the Rings (400x363) and Charms (325x325)
+  // banners in favour of another category's picture. `pad_color` upscales into
+  // the box: both come back a true 1200x630. See socialImageUrl.
   const routeMedia = firstMedia(seo.media);
-  const media =
-    routeMedia && !tooSmallToShare(routeMedia)
-      ? routeMedia
-      : {url: SITE.ogImage, ...SITE.ogImageSize};
-  const image = socialImage(media);
+  const image =
+    shareImage ?? socialImage(routeMedia ?? {url: SITE.ogImage});
 
   const tags =
     getSeoMeta({

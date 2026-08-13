@@ -504,7 +504,7 @@ export default function Product() {
               <p>
                 Solid gold is a soft precious metal. Store this piece
                 separately, keep it away from perfume and chlorine, and polish
-                it with a soft cloth. Custom or engraved pieces are crafted to
+                it with a soft cloth. Custom or engraved pieces are crafted to on the parent cell.
                 order and may add 5â€“7 business days before shipping.
               </p>
             </div>

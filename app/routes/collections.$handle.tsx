@@ -111,19 +111,14 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ),
     url: absoluteUrl(origin, `/collections/${collection.handle}`),
     // `data.shareImage`, not `collection.image` — the loader already asked the
-    // CDN whether this banner survives as a share image. Null means it does
-    // not (a transparent PNG the CDN will not transcode, so it stays megabytes
-    // and WhatsApp drops the preview), and pageSeo falls back to the brand
-    // shot. It hands back the RAW url, so pageSeo still applies its own
-    // transform exactly once.
-    media: data?.shareImage
-      ? {
-          type: 'image' as const,
-          url: data.shareImage,
-          width: collection.image?.width,
-          height: collection.image?.height,
-        }
-      : undefined,
+    // CDN which size this banner actually survives at, and hands back that
+    // exact url. Null means no tier fit (a transparent PNG the CDN will not
+    // transcode even at 600px), and pageSeo falls back to the brand logo.
+    //
+    // `shareImage`, not `media`: it is published verbatim. Routing it through
+    // `media` would send it back through socialImage and re-stamp it at the
+    // default 1200 tier, undoing the measurement.
+    shareImage: data?.shareImage,
     jsonLd: [
       breadcrumbJsonLd(origin, [
         {name: 'Home', path: '/'},
