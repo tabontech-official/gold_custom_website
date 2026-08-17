@@ -171,7 +171,17 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   // single homepage hit paid four live Storefront round-trips before a byte
   // went out — which is most of what made this page slow to start.
   // The featured-collection query stays on the default: it carries prices.
-  const cache = context.storefront.CacheLong();
+  //
+  // 5 minutes, not CacheLong's hour. CacheLong serves a hard-cached copy with
+  // no revalidation for 3600s, so editing a banner or category tile in the
+  // admin left the homepage visibly unchanged for an hour with no way to force
+  // it. A busy homepage still absorbs nearly every hit inside a 5-minute
+  // window, so this keeps the round-trip saving that motivated the cache.
+  const cache = context.storefront.CacheCustom({
+    mode: 'public',
+    maxAge: 300,
+    staleWhileRevalidate: 3600,
+  });
   const [
     {collections},
     categoryResponse,

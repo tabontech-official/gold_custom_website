@@ -1672,6 +1672,7 @@ export type CollectionByHandleQueryVariables = StorefrontAPI.Exact<{
 
 export type CollectionByHandleQuery = {
   collection?: StorefrontAPI.Maybe<{
+    image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
     products: {
       nodes: Array<
         Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
@@ -3117,7 +3118,7 @@ interface GeneratedQueryTypes {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
   };
-  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
+  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };

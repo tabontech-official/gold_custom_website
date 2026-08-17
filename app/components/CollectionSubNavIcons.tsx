@@ -4,6 +4,7 @@ import type {HeaderQuery} from 'storefrontapi.generated';
 import {DragScroller} from '~/components/DragScroller';
 import {
   getColumnItems,
+  getDepartmentItems,
   getMegaMenuDepartmentForHandle,
   MEGA_MENU,
   toRelativeUrl,
@@ -63,9 +64,12 @@ export function CollectionSubNavIcons({
       ),
     );
 
+  // getDepartmentItems, the same source the header dropdown renders from, so
+  // the circles carry identical labels. Building the list here from raw
+  // getColumnItems meant the strip missed the dropdown's dedupe and per-menu
+  // hides, and could show a category the dropdown had already dropped.
   const menuItems: IconItem[] = department
-    ? department.columns
-        .flatMap((column) => getColumnItems(header, column))
+    ? getDepartmentItems(header, department)
         .flatMap((item) => {
           if (!item.url) return [];
           const to = toRelativeUrl(
@@ -150,10 +154,13 @@ function useSubCategoryImages(handles: string[]) {
           const res = await fetch(
             `/api/collection-products?handle=${encodeURIComponent(handle)}`,
           );
-          const data = (await res.json()) as {products?: any[]};
-          const url = data?.products?.find(
-            (product: any) => product?.featuredImage?.url,
-          )?.featuredImage?.url;
+          const data = (await res.json()) as {products?: any[]; image?: any};
+          // Collection's own featured image first; first product image only as
+          // a fallback for collections that have no image set in Shopify.
+          const url =
+            data?.image?.url ??
+            data?.products?.find((product: any) => product?.featuredImage?.url)
+              ?.featuredImage?.url;
           return [handle, url ?? ''] as const;
         } catch {
           return [handle, ''] as const;

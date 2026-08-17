@@ -97,6 +97,10 @@ export async function loader({request, context}: any) {
 
       query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {
         collection(handle: $handle) {
+          image {
+            url
+            altText
+          }
           products(first: 48, filters: {available: true}) {
             nodes {
               ...ProductNode
@@ -111,8 +115,9 @@ export async function loader({request, context}: any) {
     });
 
     const products = result?.collection?.products?.nodes ?? [];
+    const image = result?.collection?.image ?? null;
 
-    return new Response(JSON.stringify({products}), {
+    return new Response(JSON.stringify({products, image}), {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err: any) {

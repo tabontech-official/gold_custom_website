@@ -13,8 +13,15 @@ export async function loader({params, context}: Route.LoaderArgs) {
   const {product} = await context.storefront.query(AJAX_PRODUCT_QUERY, {
     variables: {handle: params.handle},
     // Catalogue data, identical for every visitor. Prices move when the gold
-    // rate is repriced, not per request.
-    cache: context.storefront.CacheLong(),
+    // rate is repriced, not per request. 60s rather than CacheLong's 3600s:
+    // CacheLong blacks out admin edits for a full hour with no revalidation at
+    // all, and this endpoint is the only thing the TikTok widget reads. 60s
+    // still absorbs the ~50-request burst one homepage visit makes.
+    cache: context.storefront.CacheCustom({
+      mode: 'public',
+      maxAge: 60,
+      staleWhileRevalidate: 600,
+    }),
   });
 
   if (!product) {
@@ -23,9 +30,11 @@ export async function loader({params, context}: Route.LoaderArgs) {
 
   return Response.json(toAjaxProduct(product), {
     headers: {
-      // Public and shared — one origin query per handle per hour, then the CDN
-      // and the browser carry the other ~50 requests a homepage visit makes.
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
+      // Public and shared — the CDN and browser carry the other ~50 requests a
+      // homepage visit makes. Kept to 60s so an admin edit is not frozen in
+      // every visitor's browser cache for an hour, which no server-side or CDN
+      // purge can reach.
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=600',
     },
   });
 }

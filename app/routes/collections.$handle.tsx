@@ -213,12 +213,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // category against 0.88s on a department that skipped both. Overlapping it
   // with the main query costs whatever is left over, usually nothing.
   //
-  // Every hop is CacheLong and ends in a catch, so this promise always
+  // Every hop is cached and ends in a catch, so this promise always
   // resolves and never produces an unhandled rejection while it sits
   // un-awaited. `null` is an ordinary outcome, not an error: departments have
   // no parent, and most collections never read the result at all.
   const parentContent = storefront
-    .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheLong()})
+    .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheShort()})
     .catch(() => null)
     .then((menus) => {
       const menuItemHandles = menus
@@ -240,7 +240,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       return storefront
         .query(PARENT_COLLECTION_CONTENT_QUERY, {
           variables: {handle: parentHandle},
-          cache: storefront.CacheLong(),
+          cache: storefront.CacheShort(),
         })
         .then((data) => data.collection)
         .catch(() => null);
@@ -261,7 +261,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     // Backs the sidebar's category list. Cached and non-fatal: the page still
     // renders if it fails.
     storefront
-      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: storefront.CacheLong()})
+      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: storefront.CacheShort()})
       .then((data) => data.collections.nodes)
       .catch(() => []),
   ]);

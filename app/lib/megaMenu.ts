@@ -128,6 +128,21 @@ export const CATEGORY_MENU_HANDLES: Record<CategoryMenuKey, string> = {
 
 type MenuItems = NonNullable<HeaderQuery['braceletsMenu']>['items'];
 
+/**
+ * Collections to drop from one specific Shopify menu, when the same collection
+ * is linked from several and only one placement should survive.
+ *
+ * `clover-necklace` is linked from both the Chains menus and `necklacesMenu`,
+ * and the two links are worded differently ("Clover Necklaces" vs "Women
+ * Necklaces"), so it read as two separate categories under Chains. Keep the
+ * `necklacesMenu` link and drop the Chains-side duplicates.
+ */
+const HIDDEN_HANDLES_BY_MENU: Partial<Record<CategoryMenuKey, string[]>> = {
+  chainsGroup1: ['clover-necklace'],
+  chainsGroup2: ['clover-necklace'],
+  chainsGroup3: ['clover-necklace'],
+};
+
 export function getColumnItems(
   header: HeaderQuery,
   column: MegaMenuColumn,
@@ -141,7 +156,14 @@ export function getColumnItems(
   }
 
   return (column.menuKeys ?? [])
-    .flatMap((key) => header[key]?.items ?? [])
+    .flatMap((key) =>
+      (header[key]?.items ?? []).filter(
+        (item) =>
+          !(HIDDEN_HANDLES_BY_MENU[key] ?? []).some((handle: string) =>
+            item.url?.endsWith(`/collections/${handle}`),
+          ),
+      ),
+    )
     .filter((item) => {
       if (
         [MIAMI_CUBAN_HANDLE, ...MERGED_CUBAN_HANDLES].some((handle) =>
@@ -160,19 +182,14 @@ export function getColumnItems(
  * Every link in a department, across all its columns — deduplicated, and titled
  * from the collection rather than the menu link.
  *
- * Both corrections exist because of the same real breakage. The Chains
- * department is fed by four separate Shopify menus, and `clover-necklace` is
- * linked from more than one of them, so it rendered TWICE in one dropdown. The
- * two copies did not even agree: one menu item had been retitled to "Clover
- * Necklaces" and the other still read "Women Necklaces", because renaming a
- * collection in Shopify does not touch the hand-typed title on a menu link
- * pointing at it.
+ * The Chains department is fed by four separate Shopify menus, and
+ * `clover-necklace` is linked from more than one of them, so it rendered TWICE
+ * in one dropdown. Dedupe by collection HANDLE, the only thing that can tell
+ * two differently-typed links to the same collection apart.
  *
- * So:
- *  - the key is the collection HANDLE, which is the only thing that can tell
- *    two differently-typed links to the same collection apart;
- *  - the label prefers `resource.title`, the collection's live name, so a
- *    rename in Shopify shows up here without anyone editing a menu.
+ * The LABEL is the menu item's own title — the name typed on the menu link in
+ * Shopify — not `resource.title`, so merchants can word a nav entry
+ * differently from the collection it points at.
  *
  * First occurrence wins, keeping the column order authors set up.
  */
@@ -185,14 +202,6 @@ export function getDepartmentItems(
   return department.columns
     .flatMap((column) => getColumnItems(header, column))
     .filter((item) => item.url)
-    .map((item) => {
-      const resource = item.resource;
-      const title =
-        resource?.__typename === 'Collection' && resource.title
-          ? resource.title
-          : item.title;
-      return title === item.title ? item : {...item, title};
-    })
     .filter((item) => {
       const resource = item.resource;
       // Handle first; fall back to the URL path so non-collection links (pages,
