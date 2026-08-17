@@ -10,7 +10,8 @@ type CategoryMenuKey =
   | 'chainWithPendantMenu'
   | 'necklacesMenu'
   | 'diamondMenu'
-  | 'engagementRingsMenu';
+  | 'engagementRingsMenu'
+  | 'ringsMenu';
 
 export type MegaMenuColumn = {
   title?: string;
@@ -83,16 +84,15 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     label: 'Rings',
     to: '/collections/rings',
     // Engagement rings are their own department, so they stay out of here.
-    columns: [
-      {
-        items: [
-          {title: "Men's Gold Rings", handle: 'men-rings'},
-          {title: "Women's Gold Rings", handle: 'womens-rings'},
-          {title: "Men's Diamond Rings", handle: 'mens-diamond-rings'},
-          {title: "Women's Diamond Rings", handle: 'womens-diamond-ring'},
-        ],
-      },
-    ],
+    //
+    // Sourced from the Shopify `rings` menu rather than a hardcoded list. The
+    // hardcoded version drifted: its "Women's Gold Rings" pointed at
+    // `womens-rings` ("Women's 10K & 14K Gold Rings"), a different collection
+    // overlapping the intended one by 1 product of 250, and nothing in Shopify
+    // could correct it. Adding or retargeting a ring category is now an edit to
+    // the `rings` menu in the admin, and empty collections drop out on their
+    // own via getColumnItems.
+    columns: [{menuKeys: ['ringsMenu']}],
   },
   {
     id: 'engagement-rings',
@@ -124,6 +124,7 @@ export const CATEGORY_MENU_HANDLES: Record<CategoryMenuKey, string> = {
   necklacesMenu: 'necklaces',
   diamondMenu: 'diamond',
   engagementRingsMenu: 'engagement-rings',
+  ringsMenu: 'rings',
 };
 
 type MenuItems = NonNullable<HeaderQuery['braceletsMenu']>['items'];

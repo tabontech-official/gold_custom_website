@@ -804,6 +804,7 @@ const CATEGORY_MENUS_QUERY = `#graphql
     necklacesMenu: menu(handle: "necklaces") { ...MenuHandles }
     diamondMenu: menu(handle: "diamond") { ...MenuHandles }
     engagementRingsMenu: menu(handle: "engagement-rings") { ...MenuHandles }
+    ringsMenu: menu(handle: "rings") { ...MenuHandles }
   }
 ` as const;
 

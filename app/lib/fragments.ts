@@ -274,6 +274,9 @@ export const HEADER_QUERY = `#graphql
     engagementRingsMenu: menu(handle: "engagement-rings") {
       ...Menu
     }
+    ringsMenu: menu(handle: "rings") {
+      ...Menu
+    }
   }
   ${MENU_FRAGMENT}
 ` as const;
