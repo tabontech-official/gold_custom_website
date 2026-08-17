@@ -982,7 +982,10 @@ button.announcement-link {
 
 .header-logo-img {
   flex: none;
-  height: clamp(2.8rem, 5vw, 3.8rem);
+  /* Down from clamp(2.8rem, 5vw, 3.8rem). A 3.8rem mark forced a tall header
+     band and pushed the product stage below the fold; a restrained wordmark is
+     what makes the header read as premium rather than shouty. */
+  height: clamp(2.2rem, 3.4vw, 2.8rem);
   width: auto;
 }
 
@@ -3475,13 +3478,24 @@ button.announcement-link {
   width: 100%;
 }
 
+/* --section-pad is the page gutter. Anything that deliberately bleeds past
+   .section-inner (the collection toolbar) cancels it with a negative margin,
+   so it has to read the same value rather than re-typing 1.5rem and silently
+   breaking at the 48em step up to 3rem. */
+:root {
+  --section-pad: 1.5rem;
+}
+
+@media (min-width: 48em) {
+  :root {
+    --section-pad: 3rem;
+  }
+}
+
 .section-inner {
   margin: 0 auto;
   max-width: var(--content-max-width);
-  padding: 0 1.5rem;
-  @media (min-width: 48em) {
-    padding: 0 3rem;
-  }
+  padding: 0 var(--section-pad);
 }
 
 .home-section {
@@ -5988,8 +6002,13 @@ button.announcement-link {
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
-  margin: 1.5rem -1.5rem 1rem;
-  padding: 0.75rem 1.5rem;
+  /* Bleeds to the edges of .section-inner by cancelling its side padding, so
+     the negative margin and the inner padding must BOTH track that padding.
+     They were pinned at 1.5rem while .section-inner goes to 3rem at 48em, so
+     from tablet up the bar hung 1.5rem past the content on each side and its
+     buttons sat flush against the viewport edge. */
+  margin: 1.5rem calc(-1 * var(--section-pad)) 1rem;
+  padding: 0.75rem var(--section-pad);
   position: sticky;
   /* Must clear the only pinned tier, .header-primary. Mobile uses the shorter
      --header-height; desktop swaps in the taller primary row below, otherwise
@@ -6941,7 +6960,10 @@ button.announcement-link {
 /* Product media — vertical thumbnail rail + large main image (luxury layout).
    The rail matches the stage height; thumbs flex to fill it. */
 .product-grid-gallery {
-  --pgg-rail-w: 8rem;
+  /* Thumbnails are an index, not a second gallery — small enough that the
+     stage stays the only thing competing for attention. Kept deliberately
+     small (premium PDPs treat the rail as a quiet index, not a filmstrip). */
+  --pgg-rail-w: 3.5rem;
   position: relative;
   display: flex;
   align-items: stretch;
@@ -6980,21 +7002,26 @@ button.announcement-link {
   overflow: hidden;
   padding: 0;
   background: var(--color-bg-soft);
-  border: 1px solid rgba(17, 17, 17, 0.14);
+  border: 1px solid rgba(17, 17, 17, 0.09);
   border-radius: 0;
   cursor: pointer;
+  opacity: 0.72;
   transition:
     border-color 140ms ease,
     box-shadow 140ms ease;
 }
 
 .pgg-thumb:hover {
-  border-color: rgba(17, 17, 17, 0.4);
+  border-color: rgba(17, 17, 17, 0.28);
+  opacity: 1;
 }
 
+/* Selection is carried by clarity, not by a glow: the chosen thumb is the only
+   one at full opacity, with a single ink hairline. The old gold 2px halo read
+   as a highlighter mark once the rail shrank. */
 .pgg-thumb.is-selected {
-  border-color: var(--color-gold);
-  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.28);
+  border-color: var(--color-ink);
+  opacity: 1;
 }
 
 .pgg-thumb:focus-visible {
@@ -7190,9 +7217,13 @@ button.announcement-link {
   flex-direction: column;
   gap: 1.05rem;
   padding: 1.5rem 1.25rem 0;
+  /* No top padding on desktop: the gallery column starts at the grid's top
+     edge, so any offset here drops the title below the first image and the two
+     columns no longer share a baseline. The 1.05rem column gap handles the
+     breathing room the padding used to. */
   @media (min-width: 48em) {
     max-width: 48rem;
-    padding: 1.9rem 3rem 0 0;
+    padding: 0 3rem 0 0;
   }
 }
 
@@ -7359,19 +7390,27 @@ button.announcement-link {
 .product-spec-item {
   display: flex;
   align-items: center;
-  gap: 0.8rem;
-  font-size: 1.05rem;
-  font-weight: 600;
+  gap: 0.7rem;
+  font-size: 0.92rem;
+  font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--color-ink);
 }
 
-.product-spec-svg {
-  width: 1.85rem;
-  height: 1.85rem;
+/* Each icon sits in its own bounded rectangle rather than floating loose
+   against the label, so the specs read as a set of chips instead of four
+   free-floating glyphs of differing visual weight. Wider padding than tall is
+   what makes the box read as a rectangle rather than a square. */
+.product-spec-item .product-spec-svg {
+  box-sizing: content-box;
+  width: 1.875rem;
+  height: 1.875rem;
+  padding: 0.4rem 0.7rem;
   flex-shrink: 0;
-  stroke-width: 2;
+  stroke-width: 1.6;
   color: var(--color-gold-dark);
+  border: 1px solid var(--color-ink);
+  background: var(--color-bg-soft);
 }
 
 /* Metal-tone tint for the ingot icon. */
@@ -7394,9 +7433,12 @@ button.announcement-link {
     font-size: 0.82rem;
   }
 
-  .product-spec-svg {
-    width: 1.3rem;
-    height: 1.3rem;
+  /* Specificity must match the framed rule above, or that one wins here and
+     phones render the icons at their full desktop size. */
+  .product-spec-item .product-spec-svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.3rem 0.55rem;
   }
 }
 
@@ -7558,23 +7600,26 @@ button.announcement-link {
   color: var(--color-ink-soft);
 }
 
-/* Financing partner logos, under the price/monthly estimate. The heading sits
-   outside this box, so it carries the margin the box used to. */
+/* Financing partner logos, under the price/monthly estimate. A soft filled
+   panel rather than an outlined card: the tint alone groups the lenders, so
+   the block reads as one quiet unit without a border competing with the
+   buttons directly below it. */
 .product-financing {
   margin: 0;
-  padding: 0.8rem 0.5rem;
-  border: 1px solid var(--color-border);
-  /* Square, matching .product-note and the buttons in this column. */
+  padding: 1rem 1.25rem 1.1rem;
+  border: 0;
   border-radius: 0;
+  background: var(--color-bg-soft);
+  text-align: center;
 }
 
 .product-financing-label {
-  /* Tight to both neighbours: a small breath off the monthly line above, and
-     sitting directly on the box below. */
-  margin-bottom: 1rem;
-  font-size: 1rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  color: var(--color-ink);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
 }
 
 /**
@@ -7594,10 +7639,22 @@ button.announcement-link {
 .product-financing-list {
   display: flex;
   align-items: center;
-  gap: clamp(0.5rem, 1.8vw, 1.25rem);
+  /* The weights make width the only size control (see FINANCING_PARTNERS), so
+     capping the row is what scales all four marks down together — roughly half
+     the previous height — while keeping them at equal optical weight. Left
+     aligned, not centred: it hangs off the same edge as everything else in the
+     column instead of floating as its own centred block. */
+  justify-content: center;
+  gap: clamp(0.9rem, 2.6vw, 1.4rem);
   list-style: none;
+  /* `auto` side margins centre the strip in the panel — the cap below means
+     the row is narrower than its container, so without this it would hang off
+     the left edge. */
   margin: 0 auto;
-  max-width: 42rem;
+  /* Width is the only size control here (the weights turn it into height), so
+     this cap is what scales all four marks. Full colour, readable size — a
+     lender mark nobody can read is worth nothing as reassurance. */
+  max-width: 28rem;
   padding: 0;
 }
 
@@ -7621,15 +7678,16 @@ button.announcement-link {
 }
 
 @media (max-width: 48em) {
+  /* Keeps the panel, just tighter — the fill is what groups the lenders, so
+     dropping it on phones would break the block apart at the width where it
+     matters most. */
   .product-financing {
-    padding: 0.35rem 0.5rem;
+    padding: 0.85rem 0.9rem 0.95rem;
   }
 
-  /* The marks split whatever the gaps leave over, so on this row the gap IS
-     the size control: widen it and the logos shrink to fit, with the row still
-     spanning the box edge to edge. That beats capping the row's width — which
-     shrank the marks but left dead space at both ends instead of putting it
-     between them. `vw` keeps the rhythm even across phone widths. */
+  /* Phone columns are already narrow, so the row runs full width here and the
+     gap does the shrinking — the desktop cap would leave the marks
+     hairline-thin on a 360px screen. */
   .product-financing-list {
     gap: clamp(1.1rem, 6vw, 1.75rem);
     max-width: 100%;
@@ -11127,40 +11185,44 @@ button.announcement-link {
 }
 
 /* ===== Book Private Consultation — button + modal ===== */
-/* "Trusty green" premium CTA. --cta variant (the on-page trigger) carries an
-   animated side arrow + a sheen sweep on hover; the in-modal Done/submit
-   buttons share the green fill without the arrow. */
+/* Secondary action, so it is drawn rather than filled: a transparent ghost
+   button under the solid "Add to bag". Two filled buttons stacked made the
+   page read as two equally urgent choices, and the green was the only colour
+   on the storefront that belonged to no other element. */
 .product-book-consult {
-  --consult-green: #1f7a4d;
-  --consult-green-deep: #185f3c;
   width: 100%;
   min-height: 3.5rem; /* match .product-atc (Add to bag) */
   margin: 0;
-  background: var(--consult-green);
-  color: #fff;
-  border: 1px solid var(--consult-green);
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
   border-radius: 0; /* sharp, edgy corners like Add to bag */
-  font-size: 0.92rem;
+  font-size: 0.82rem;
   letter-spacing: 0.14em;
-  text-transform: none;
+  text-transform: uppercase;
   cursor: pointer;
   transition:
     background 200ms ease,
-    border-color 200ms ease,
-    box-shadow 200ms ease,
-    transform 200ms ease;
+    color 200ms ease,
+    border-color 200ms ease;
 }
 
+/* Fills to ink on hover — the inverse of its rest state, so the pair reads as
+   one control rather than a colour change. */
 .product-book-consult:hover:not(:disabled) {
-  background: var(--consult-green-deep);
-  border-color: var(--consult-green-deep);
-  box-shadow: 0 8px 22px rgba(24, 95, 60, 0.28);
-  transform: translateY(-1px);
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
 }
 
 .product-book-consult:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: 0 3px 10px rgba(24, 95, 60, 0.25);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.product-book-consult:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
 }
 
 .product-book-consult:disabled {
@@ -11190,36 +11252,16 @@ button.announcement-link {
   transform: translateX(6px);
 }
 
-/* Diagonal sheen that sweeps across on hover. */
-.product-book-consult--cta::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -60%;
-  width: 45%;
-  height: 100%;
-  background: linear-gradient(
-    100deg,
-    transparent,
-    rgba(255, 255, 255, 0.28),
-    transparent
-  );
-  transform: skewX(-18deg);
-  transition: left 620ms ease;
-  pointer-events: none;
-}
-
-.product-book-consult--cta:hover:not(:disabled)::before {
-  left: 130%;
-}
+/* The white sheen sweep is gone with the green fill — it was lighting up a
+   surface that no longer exists, and a gloss pass is the opposite of the quiet
+   this column is going for. The arrow's nudge is the only motion left. */
 
 @media (prefers-reduced-motion: reduce) {
   .product-book-consult,
-  .product-book-consult--cta::after,
-  .product-book-consult--cta::before {
+  .product-book-consult--cta::after {
     transition: none;
   }
-  .product-book-consult:hover:not(:disabled) {
+  .product-book-consult--cta:hover:not(:disabled)::after {
     transform: none;
   }
 }
@@ -11369,8 +11411,21 @@ button.announcement-link {
   color: var(--color-sale);
 }
 
-.appt-submit {
+/* Inside the modal the consult button IS the primary action, so it keeps a
+   solid fill while the on-page trigger stays a ghost. Same rule covers the
+   "Done" button on the confirmation panel. */
+.appt-submit,
+.appt-success .product-book-consult {
   margin-top: 0.3rem;
+  background: var(--color-ink);
+  color: #fff;
+  border-color: var(--color-ink);
+}
+
+.appt-submit:hover:not(:disabled),
+.appt-success .product-book-consult:hover:not(:disabled) {
+  background: #000;
+  border-color: #000;
 }
 
 .appt-fineprint {

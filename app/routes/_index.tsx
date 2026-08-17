@@ -95,7 +95,7 @@ function heroPreloadTags(hero: HeroContent | null) {
       // srcset/sizes disagree with the element's is not a head start, it is a
       // second download of a different resize on the connection least able to
       // afford one.
-      // camelCase for these two, lowercase for `fetchpriority` — the split is
+       // camelCase for these two, lowercase for `fetchpriority` — the split is
       // not a style choice, it is which names React 18 actually knows.
       //
       // `imageSrcSet` and `imageSizes` ARE in React's property list: it maps
