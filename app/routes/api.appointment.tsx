@@ -104,8 +104,10 @@ async function sendEmails(env: Env, d: Details): Promise<void> {
   }
   const from =
     ((env as any).RESEND_FROM as string) || 'Gold Custom <onboarding@resend.dev>';
-  const notify =
-    ((env as any).NOTIFY_EMAIL as string) || '2038tabonech@mail.com';
+  const notify = (env as any).NOTIFY_EMAIL as string | undefined;
+  if (!notify) {
+    console.warn('[appointment] NOTIFY_EMAIL unset — store alert skipped');
+  }
   const storeUrl = `https://goldcustom.com/products/${d.productHandle}`;
   const when = prettyDate(d.date);
 
@@ -128,18 +130,36 @@ async function sendEmails(env: Env, d: Details): Promise<void> {
        </div>`
     : '';
 
-  await send(
-    notify,
-    'New Jewelry Appointment Alert',
-    shell(
-      'New Consultation Request',
-      `<p style="margin:0 0 18px;color:#4a463f">A customer has requested a private consultation.</p>
+  // Only the store alert depends on NOTIFY_EMAIL; the customer confirmation
+  // below is addressed to the booker, so it must still send when this is unset.
+  if (notify) {
+    await send(
+      notify,
+      'New Jewelry Appointment Alert',
+      shell(
+        'New Consultation Request',
+        `<p style="margin:0 0 18px;color:#4a463f">A customer has requested a private consultation.</p>
        ${row('Customer', d.name)}${row('Email', d.email)}${row('Appointment', when)}
        ${row('Product', d.productTitle)}${d.variantInfo ? row('Variant', d.variantInfo) : ''}
        ${messageBlock}
        <p style="margin:18px 0 0"><a href="${escapeHtml(storeUrl)}" style="color:#b6893f">View product &rarr;</a></p>`,
-    ),
-  );
+      ),
+    );
+  }
+
+  // Customer confirmation — opt-in, because it needs a VERIFIED SENDING DOMAIN.
+  //
+  // Resend's shared `onboarding@resend.dev` sender may only deliver to the
+  // account owner's own address; every other recipient is rejected 403. The
+  // store alert above is fine (it goes to the owner), but this one is addressed
+  // to whoever booked, so on a sandbox account it fails 100% of the time and
+  // just fills the log with rejections.
+  //
+  // To turn it on: verify goldcustom.com at resend.com/domains, point
+  // RESEND_FROM at an address on that domain, then set
+  // SEND_CUSTOMER_EMAILS="true". Until then the booker sees the on-screen
+  // confirmation only, which is what the modal already shows.
+  if (String((env as any).SEND_CUSTOMER_EMAILS) !== 'true') return;
 
   await send(
     d.email,
