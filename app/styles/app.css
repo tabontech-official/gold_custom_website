@@ -6573,25 +6573,23 @@ button.announcement-link {
 }
 
 /* Search page */
+/* No top padding: the breadcrumb already carries the gap below the sticky
+   menu, exactly as on the collection pages this page mirrors. */
 .search-page {
-  padding: 1.5rem 0 4rem;
-}
-
-.search-page-header {
-  max-width: 40rem;
-  margin: 0.5rem 0 2.5rem;
-}
-
-.search-page-title {
-  font-family: var(--font-display);
-  font-size: clamp(1.9rem, 4vw, 3rem);
-  margin: 0.25rem 0 0.5rem;
+  padding: 0 0 4rem;
 }
 
 .search-page-summary {
-  margin: 1rem 0 0;
+  margin: 0;
   font-size: 0.85rem;
   color: var(--color-ink-soft);
+}
+
+/* The category pages sit their icon nav in this gap, so 3.6rem reads as
+   deliberate there. Search has nothing between the heading and the filter bar,
+   which left the top of the page looking empty. */
+.search-page .home-section {
+  padding-top: 1.25rem;
 }
 
 .search-page-error {

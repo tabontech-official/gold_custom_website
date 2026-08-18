@@ -1,4 +1,4 @@
-import {Link, useLoaderData} from 'react-router';
+import {Link, redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/search';
 import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
 import {SearchResults} from '~/components/SearchResults';
@@ -33,6 +33,34 @@ export const meta: Route.MetaFunction = () =>
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
   const isPredictive = url.searchParams.has('predictive');
+
+  // A term that names a category outright is answered by the category itself.
+  // Searching "women diamond ring" means the 23 pieces in `womens-diamond-ring`,
+  // and Shopify's OR-matching cannot produce that set — it returns a thousand
+  // things that are a ring OR a diamond. The collection page already has the
+  // filters, sort and pagination this one would otherwise have to reimplement,
+  // so hand over to it. `filter`/`sort` params use the same vocabulary on both
+  // routes (see collectionFilter.ts), so they survive the hop.
+  if (!isPredictive) {
+    const term = String(url.searchParams.get('q') || '').trim();
+    const tag = tagFromSearchTerm(term);
+    if (term && !tag) {
+      const {collections} = await context.storefront.query(
+        COLLECTION_INDEX_QUERY,
+        {cache: context.storefront.CacheLong()},
+      );
+      const match = mostRelatedCollection(term, collections?.nodes ?? []);
+      if (match?.exact) {
+        const params = new URLSearchParams(url.searchParams);
+        params.delete('q');
+        const query = params.toString();
+        return redirect(
+          `/collections/${match.collection.handle}${query ? `?${query}` : ''}`,
+        );
+      }
+    }
+  }
+
   const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
     isPredictive
       ? predictiveSearch({request, context})
@@ -79,11 +107,10 @@ export default function SearchPage() {
     <SearchResults.Empty />
   ) : (
     <SearchResults result={result} term={term}>
-      {({articles, pages, products, term}) => (
+      {({pages, products, term}) => (
         <div className="search-page-sections">
           <SearchResults.Products products={products} term={term} />
           <SearchResults.Pages pages={pages} term={term} />
-          <SearchResults.Articles articles={articles} term={term} />
         </div>
       )}
     </SearchResults>
@@ -110,25 +137,27 @@ export default function SearchPage() {
           because on those visits it, not the word "Search", is what the page
           is about.
         */}
-        <div className="search-page-header">
-          <h1 className="search-page-title">{browsedTag ?? 'Search'}</h1>
-          {browsedTag ? (
+        {/* Same title row the collection pages use — search shares their filter
+            rail and grid, so it should share their masthead too. */}
+        <div className="collection-title-row">
+          <h1>{browsedTag ?? 'Search'}</h1>
+        </div>
+        {browsedTag ? (
+          <p className="search-page-summary">
+            {result?.total
+              ? `Every ${browsedTag.toLowerCase()} piece we carry.`
+              : `Nothing tagged ${browsedTag} right now.`}{' '}
+            <Link to="/collections/shop-all">Shop all →</Link>
+          </p>
+        ) : (
+          term && (
             <p className="search-page-summary">
               {result?.total
-                ? `Every ${browsedTag.toLowerCase()} piece we carry.`
-                : `Nothing tagged ${browsedTag} right now.`}{' '}
-              <Link to="/collections/shop-all">Shop all →</Link>
+                ? `Results for "${term}"`
+                : `No results for "${term}"`}
             </p>
-          ) : (
-            term && (
-              <p className="search-page-summary">
-                {result?.total
-                  ? `Results for "${term}"`
-                  : `No results for "${term}"`}
-              </p>
-            )
-          )}
-        </div>
+          )
+        )}
 
         {error && <p className="search-page-error">{error}</p>}
       </div>
@@ -232,16 +261,6 @@ const SEARCH_PAGE_FRAGMENT = `#graphql
   }
 ` as const;
 
-const SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment SearchArticle on Article {
-    __typename
-    handle
-    id
-    title
-    trackingParameters
-  }
-` as const;
-
 const PAGE_INFO_FRAGMENT = `#graphql
   fragment PageInfoFragment on PageInfo {
     hasNextPage
@@ -265,17 +284,6 @@ export const SEARCH_QUERY = `#graphql
     $sortKey: SearchSortKeys
     $reverse: Boolean
   ) @inContext(country: $country, language: $language) {
-    articles: search(
-      query: $term,
-      types: [ARTICLE],
-      first: $first,
-    ) {
-      nodes {
-        ...on Article {
-          ...SearchArticle
-        }
-      }
-    }
     pages: search(
       query: $term,
       types: [PAGE],
@@ -324,7 +332,6 @@ export const SEARCH_QUERY = `#graphql
   }
   ${SEARCH_PRODUCT_FRAGMENT}
   ${SEARCH_PAGE_FRAGMENT}
-  ${SEARCH_ARTICLE_FRAGMENT}
   ${PAGE_INFO_FRAGMENT}
 ` as const;
 
@@ -340,7 +347,10 @@ async function regularSearch({
 >): Promise<RegularSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  const variables = getPaginationVariables(request, {pageBy: 8});
+  // Fetched per page, before filtering. Shopify ORs the query words together,
+  // so a page of 8 could arrive as 2 once the loose matches are dropped — the
+  // page has to be big enough that a filtered one still fills the grid.
+  const variables = getPaginationVariables(request, {pageBy: 48});
   const term = String(url.searchParams.get('q') || '');
   // Same `filter` and `sort` params the collection rail writes, so the sidebar
   // component works here unchanged. No `{available: true}` filter is added —
@@ -348,7 +358,8 @@ async function regularSearch({
   const productFilters = getFiltersFromParam(url.searchParams);
   const sort = getSearchSortFromParam(url.searchParams.get('sort'));
 
-  // Search articles, pages, and products for the `q` term
+  // Search pages and products for the `q` term — blog articles are deliberately
+  // not searched here; someone searching the shop is looking for things to buy.
   const {
     errors,
     ...items
@@ -367,7 +378,19 @@ async function regularSearch({
     throw new Error('No search data returned from Shopify API');
   }
 
-  const total = Object.values(items).reduce(
+  // Same relevance rule the dropdown uses: every word of the term has to be in
+  // the title or product type. Without it "18 inch chain" returns 629 results of
+  // which four in the first forty are actually 18 inches long. `pageInfo` is
+  // left untouched so "load more" still walks Shopify's cursors.
+  const filtered = {
+    ...items,
+    products: {
+      ...items.products,
+      nodes: productsMatchingTerm(term, items.products.nodes),
+    },
+  };
+
+  const total = Object.values(filtered).reduce(
     (acc: number, {nodes}: {nodes: Array<unknown>}) => acc + nodes.length,
     0,
   );
@@ -376,7 +399,7 @@ async function regularSearch({
     ? errors.map(({message}: {message: string}) => message).join(', ')
     : undefined;
 
-  return {type: 'regular', term, error, result: {total, items}};
+  return {type: 'regular', term, error, result: {total, items: filtered}};
 }
 
 /**
