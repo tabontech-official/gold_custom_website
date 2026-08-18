@@ -7,8 +7,10 @@ import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
+  mostRelatedCollection,
+  productsMatchingTerm,
 } from '~/lib/search';
-import type {RegularSearchQuery, PredictiveSearchQuery} from 'storefrontapi.generated';
+import type {RegularSearchQuery} from 'storefrontapi.generated';
 import {SITE, pageSeo} from '~/lib/seo';
 import {tagFromSearchTerm} from '~/lib/browseTags';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
@@ -347,15 +349,19 @@ async function regularSearch({
   const sort = getSearchSortFromParam(url.searchParams.get('sort'));
 
   // Search articles, pages, and products for the `q` term
-  const {errors, ...items}: {errors?: Array<{message: string}>} & RegularSearchQuery = await storefront.query(SEARCH_QUERY, {
-    variables: {
-      ...variables,
-      term,
-      productFilters,
-      sortKey: sort.sortKey,
-      reverse: sort.reverse,
-    },
-  });
+  const {
+    errors,
+    ...items
+  }: {errors?: Array<{message: string}>} & RegularSearchQuery =
+    await storefront.query(SEARCH_QUERY, {
+      variables: {
+        ...variables,
+        term,
+        productFilters,
+        sortKey: sort.sortKey,
+        reverse: sort.reverse,
+      },
+    });
 
   if (!items) {
     throw new Error('No search data returned from Shopify API');
@@ -377,61 +383,6 @@ async function regularSearch({
  * Predictive search query and fragments
  * (adjust as needed)
  */
-const PREDICTIVE_SEARCH_ARTICLE_FRAGMENT = `#graphql
-  fragment PredictiveArticle on Article {
-    __typename
-    id
-    title
-    handle
-    blog {
-      handle
-    }
-    image {
-      url
-      altText
-      width
-      height
-    }
-    trackingParameters
-  }
-` as const;
-
-const PREDICTIVE_SEARCH_COLLECTION_FRAGMENT = `#graphql
-  fragment PredictiveCollection on Collection {
-    __typename
-    id
-    title
-    handle
-    image {
-      url
-      altText
-      width
-      height
-    }
-    # Existence check, not a listing. Predictive search matches a collection on
-    # its title alone and will happily suggest one with nothing in it, so the
-    # caller needs some way to tell a real category from a dead link. The
-    # Storefront API has no productCount on Collection — asking for a single
-    # node is the cheapest signal available.
-    products(first: 1) {
-      nodes {
-        id
-      }
-    }
-    trackingParameters
-  }
-` as const;
-
-const PREDICTIVE_SEARCH_PAGE_FRAGMENT = `#graphql
-  fragment PredictivePage on Page {
-    __typename
-    id
-    title
-    handle
-    trackingParameters
-  }
-` as const;
-
 const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
   fragment PredictiveProduct on Product {
     __typename
@@ -475,42 +426,129 @@ const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
   }
 ` as const;
 
-// NOTE: https://shopify.dev/docs/api/storefront/latest/queries/predictiveSearch
-const PREDICTIVE_SEARCH_QUERY = `#graphql
-  query PredictiveSearch(
+// Every collection, so a search term is scored against the whole catalogue
+// rather than the ten guesses predictiveSearch happens to return. Titles and
+// handles change a few times a year, so this is cached hard and shared by every
+// keystroke of every shopper.
+const COLLECTION_INDEX_QUERY = `#graphql
+  query CollectionIndex($country: CountryCode, $language: LanguageCode)
+    @inContext(country: $country, language: $language) {
+    collections(first: 250) {
+      nodes {
+        id
+        title
+        handle
+        image {
+          url
+          altText
+          width
+          height
+        }
+        # Existence check, not a listing — a suggestion that opens onto "no
+        # products" is worse than no suggestion.
+        products(first: 1) {
+          nodes {
+            id
+          }
+        }
+      }
+    }
+  }
+` as const;
+
+// A matched collection's products, which ARE the answer when the term names a
+// category: "women diamond ring" means the 23 in `womens-diamond-ring`, not the
+// 100 loosely-related rings Shopify's OR-matching returns for those words.
+const COLLECTION_PRODUCTS_QUERY = `#graphql
+  query CollectionSearchProducts(
     $country: CountryCode
     $language: LanguageCode
-    $limit: Int!
-    $limitScope: PredictiveSearchLimitScope!
-    $term: String!
-    $types: [PredictiveSearchType!]
+    $handle: String!
+    $productCount: Int!
   ) @inContext(country: $country, language: $language) {
-    predictiveSearch(
-      limit: $limit,
-      limitScope: $limitScope,
+    collection(handle: $handle) {
+      products(first: $productCount) {
+        nodes {
+          ...PredictiveProduct
+        }
+      }
+    }
+  }
+  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
+` as const;
+
+// Ceiling, not a target. A matched collection returns exactly what it holds —
+// 23 for `womens-diamond-ring` — and only the unmatched fallback ever fills this.
+const MAX_DROPDOWN_PRODUCTS = 100;
+
+// The fallback pool searched before filtering. Shopify's OR-matching means the
+// genuine hits are scattered through the results rather than sitting at the top
+// ("18 inch chain": 4 real matches in the first 40, 60 in the first 250), so the
+// net has to be cast wider than the number we intend to show.
+const FALLBACK_SEARCH_POOL = 250;
+
+/**
+ * "ova" → "ova*", so the word still being typed matches as a prefix.
+ *
+ * Only the last word: wildcarding the rest widens the OR-matching this code
+ * spends its time undoing.
+ */
+function withTrailingWildcard(term: string) {
+  const words = term.trim().split(/\s+/);
+  if (!words[0]) return term;
+  return [...words.slice(0, -1), `${words[words.length - 1]}*`].join(' ');
+}
+
+// Fallback for terms that name no category. Products come from the REGULAR
+// search connection, not `predictiveSearch`, which caps `limit` at 10 per type —
+// the API rejects anything higher, so it can never answer "show me what matches".
+const QUICK_SEARCH_QUERY = `#graphql
+  query QuickSearch(
+    $country: CountryCode
+    $language: LanguageCode
+    $term: String!
+    $partialTerm: String!
+    $productCount: Int!
+  ) @inContext(country: $country, language: $language) {
+    products: search(
       query: $term,
-      types: $types,
+      types: [PRODUCT],
+      first: $productCount,
+      unavailableProducts: LAST,
     ) {
-      articles {
-        ...PredictiveArticle
+      totalCount
+      nodes {
+        ...on Product {
+          ...PredictiveProduct
+        }
       }
-      collections {
-        ...PredictiveCollection
+    }
+    # Same search with the in-progress word wildcarded. Shopify matches whole
+    # tokens, so a shopper on their way to "oval" gets exactly zero results for
+    # "ova" — this alias is what keeps the list alive mid-word.
+    partial: search(
+      query: $partialTerm,
+      types: [PRODUCT],
+      first: $productCount,
+      unavailableProducts: LAST,
+    ) {
+      nodes {
+        ...on Product {
+          ...PredictiveProduct
+        }
       }
-      pages {
-        ...PredictivePage
-      }
-      products {
-        ...PredictiveProduct
-      }
+    }
+    predictiveSearch(
+      limit: 10,
+      limitScope: EACH,
+      query: $term,
+      types: [QUERY],
+    ) {
       queries {
         ...PredictiveQuery
       }
     }
   }
-  ${PREDICTIVE_SEARCH_ARTICLE_FRAGMENT}
-  ${PREDICTIVE_SEARCH_COLLECTION_FRAGMENT}
-  ${PREDICTIVE_SEARCH_PAGE_FRAGMENT}
   ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
   ${PREDICTIVE_SEARCH_QUERY_FRAGMENT}
 ` as const;
@@ -528,23 +566,56 @@ async function predictiveSearch({
   const {storefront} = context;
   const url = new URL(request.url);
   const term = String(url.searchParams.get('q') || '').trim();
-  const limit = Number(url.searchParams.get('limit') || 10);
   const type = 'predictive';
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
 
-  // Predictively search articles, collections, pages, products, and queries (suggestions)
-  const {predictiveSearch: items, errors}: PredictiveSearchQuery & {errors?: Array<{message: string}>} = await storefront.query(
-    PREDICTIVE_SEARCH_QUERY,
-    {
+  const {collections} = await storefront.query(COLLECTION_INDEX_QUERY, {
+    cache: storefront.CacheLong(),
+  });
+
+  const match = mostRelatedCollection(term, collections?.nodes ?? []);
+
+  // When the term names a category, that category IS the result set — precise,
+  // and as long as it actually is. Shopify's search ORs the words together, so
+  // "women diamond ring" comes back as 1000 things that are merely a ring OR a
+  // diamond; filtering that afterwards can't recover the answer either, because
+  // "women" is a tag on virtually every ring. Only the collection knows.
+  if (match?.exact) {
+    const {collection} = await storefront.query(COLLECTION_PRODUCTS_QUERY, {
       variables: {
-        // customize search options as needed
-        limit,
-        limitScope: 'EACH',
-        term,
+        handle: match.collection.handle,
+        productCount: MAX_DROPDOWN_PRODUCTS,
       },
+    });
+    const products = collection?.products.nodes ?? [];
+    if (products.length) {
+      return {
+        type,
+        term,
+        result: {
+          total: products.length + 1,
+          totalCount: products.length,
+          collection: match.collection,
+          items: {products, queries: []},
+        },
+      };
+    }
+  }
+
+  // No category matched — fall back to relevance-ordered search.
+  const {
+    products,
+    partial,
+    predictiveSearch: suggestions,
+    errors,
+  } = await storefront.query(QUICK_SEARCH_QUERY, {
+    variables: {
+      term,
+      partialTerm: withTrailingWildcard(term),
+      productCount: FALLBACK_SEARCH_POOL,
     },
-  );
+  });
 
   if (errors) {
     throw new Error(
@@ -552,27 +623,30 @@ async function predictiveSearch({
     );
   }
 
-  if (!items) {
-    throw new Error('No predictive search data returned from Shopify API');
+  if (!products) {
+    throw new Error('No search data returned from Shopify API');
   }
 
-  // Drop collections that have nothing in them. Shopify matches a collection
-  // on its title, so searching "ring" surfaced empty categories alongside real
-  // ones and every click landed on a page reading "no products". Filtered here
-  // rather than in the component so the count below stays truthful — a `total`
-  // that includes suggestions the UI then hides is what makes an "empty"
-  // result render as a non-empty one.
-  const filtered = {
-    ...items,
-    collections: (items.collections ?? []).filter(
-      (collection) => collection.products.nodes.length > 0,
-    ),
-  };
-
-  const total = Object.values(filtered).reduce(
-    (acc: number, item: Array<unknown>) => acc + item.length,
+  // Whole-word hits first — they rank better — then anything only the
+  // wildcarded pass found, deduped.
+  const seen = new Set(products.nodes.map((product) => product.id));
+  const pool = [
+    ...products.nodes,
+    ...(partial?.nodes ?? []).filter((product) => !seen.has(product.id)),
+  ];
+  const matching = productsMatchingTerm(term, pool).slice(
     0,
+    MAX_DROPDOWN_PRODUCTS,
   );
 
-  return {type, term, result: {items: filtered, total}};
+  return {
+    type,
+    term,
+    result: {
+      total: matching.length + (match ? 1 : 0),
+      totalCount: matching.length,
+      collection: match?.collection ?? null,
+      items: {products: matching, queries: suggestions?.queries ?? []},
+    },
+  };
 }

@@ -6,6 +6,7 @@ import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
   type PredictiveSearchReturn,
+  type SearchCollection,
 } from '~/lib/search';
 import {useAside} from './Aside';
 import {productCanonicalPath} from '~/lib/categories';
@@ -15,6 +16,7 @@ type PredictiveSearchItems = PredictiveSearchReturn['result']['items'];
 type UsePredictiveSearchReturn = {
   term: React.MutableRefObject<string>;
   total: number;
+  collection: SearchCollection | null | undefined;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
   items: PredictiveSearchItems;
   fetcher: Fetcher<PredictiveSearchReturn>;
@@ -24,6 +26,7 @@ type SearchResultsPredictiveArgs = Pick<
   UsePredictiveSearchReturn,
   'term' | 'total' | 'inputRef' | 'items'
 > & {
+  collection: SearchCollection | null | undefined;
   state: Fetcher['state'];
   closeSearch: () => void;
 };
@@ -45,7 +48,8 @@ export function SearchResultsPredictive({
   children,
 }: SearchResultsPredictiveProps) {
   const aside = useAside();
-  const {term, inputRef, fetcher, total, items} = usePredictiveSearch();
+  const {term, inputRef, fetcher, total, items, collection} =
+    usePredictiveSearch();
 
   /*
    * Utility that resets the search input
@@ -67,6 +71,7 @@ export function SearchResultsPredictive({
 
   return children({
     items,
+    collection,
     closeSearch,
     inputRef,
     state: fetcher.state,
@@ -75,130 +80,41 @@ export function SearchResultsPredictive({
   });
 }
 
-SearchResultsPredictive.Articles = SearchResultsPredictiveArticles;
-SearchResultsPredictive.Collections = SearchResultsPredictiveCollections;
-SearchResultsPredictive.Pages = SearchResultsPredictivePages;
+SearchResultsPredictive.Collection = SearchResultsPredictiveCollection;
 SearchResultsPredictive.Products = SearchResultsPredictiveProducts;
 SearchResultsPredictive.Queries = SearchResultsPredictiveQueries;
 SearchResultsPredictive.Empty = SearchResultsPredictiveEmpty;
 
-function SearchResultsPredictiveArticles({
+function SearchResultsPredictiveCollection({
   term,
-  articles,
+  collection,
   closeSearch,
-}: PartialPredictiveSearchResult<'articles'>) {
-  if (!articles.length) return null;
+}: Pick<SearchResultsPredictiveArgs, 'term' | 'closeSearch'> & {
+  collection: SearchCollection | null | undefined;
+}) {
+  // Scored server-side against every collection — see mostRelatedCollection.
+  if (!collection) return null;
 
   return (
-    <div className="predictive-search-result" key="articles">
-      <h5>Articles</h5>
-      <ul>
-        {articles.map((article) => {
-          const articleUrl = urlWithTrackingParams({
-            baseUrl: `/blogs/${article.handle}`,
-            trackingParams: article.trackingParameters,
-            term: term.current ?? '',
-          });
-
-          return (
-            <li className="predictive-search-result-item" key={article.id}>
-              <Link onClick={closeSearch} to={articleUrl}>
-                {article.image?.url && (
-                  <Image
-                    loader={cdnLoader}
-                    alt={article.image.altText ?? ''}
-                    src={article.image.url}
-                    width={50}
-                    height={50}
-                  />
-                )}
-                <div>
-                  <span>{article.title}</span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="predictive-search-collection" key="collection">
+      <Link onClick={closeSearch} to={`/collections/${collection.handle}`}>
+        {collection.image?.url && (
+          <Image
+            loader={cdnLoader}
+            alt={collection.image.altText ?? ''}
+            src={collection.image.url}
+            width={50}
+            height={50}
+          />
+        )}
+        <div>
+          <small>Collection</small>
+          <span>{collection.title}</span>
+        </div>
+      </Link>
     </div>
   );
 }
-
-function SearchResultsPredictiveCollections({
-  term,
-  collections,
-  closeSearch,
-}: PartialPredictiveSearchResult<'collections'>) {
-  if (!collections.length) return null;
-
-  return (
-    <div className="predictive-search-result" key="collections">
-      <h5>Collections</h5>
-      <ul>
-        {collections.map((collection) => {
-          const collectionUrl = urlWithTrackingParams({
-            baseUrl: `/collections/${collection.handle}`,
-            trackingParams: collection.trackingParameters,
-            term: term.current,
-          });
-
-          return (
-            <li className="predictive-search-result-item" key={collection.id}>
-              <Link onClick={closeSearch} to={collectionUrl}>
-                {collection.image?.url && (
-                  <Image
-                    loader={cdnLoader}
-                    alt={collection.image.altText ?? ''}
-                    src={collection.image.url}
-                    width={50}
-                    height={50}
-                  />
-                )}
-                <div>
-                  <span>{collection.title}</span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
-function SearchResultsPredictivePages({
-  term,
-  pages,
-  closeSearch,
-}: PartialPredictiveSearchResult<'pages'>) {
-  if (!pages.length) return null;
-
-  return (
-    <div className="predictive-search-result" key="pages">
-      <h5>Pages</h5>
-      <ul>
-        {pages.map((page) => {
-          const pageUrl = urlWithTrackingParams({
-            baseUrl: `/pages/${page.handle}`,
-            trackingParams: page.trackingParameters,
-            term: term.current,
-          });
-
-          return (
-            <li className="predictive-search-result-item" key={page.id}>
-              <Link onClick={closeSearch} to={pageUrl}>
-                <div>
-                  <span>{page.title}</span>
-                </div>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
-
 function SearchResultsPredictiveProducts({
   term,
   products,
@@ -302,8 +218,8 @@ function usePredictiveSearch(): UsePredictiveSearchReturn {
     }
   }, []);
 
-  const {items, total} =
+  const {items, total, collection} =
     fetcher?.data?.result ?? getEmptyPredictiveSearchResult();
 
-  return {items, total, inputRef, term, fetcher};
+  return {items, total, collection, inputRef, term, fetcher};
 }

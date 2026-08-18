@@ -171,19 +171,34 @@ function HeaderSearchBar() {
   const [term, setTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const {items, total} =
+  const {items, total, collection} =
     fetcher.data?.result ?? getEmptyPredictiveSearchResult();
   const showResults = isOpen && term.length > 0;
+
+  // Typing "rope chain" fired ten requests, and their replies could land out of
+  // order — a slow answer for "ro" overwriting a fast one for "rope" looks
+  // exactly like the search returning the wrong products.
+  useEffect(
+    () => () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    },
+    [],
+  );
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const value = event.target.value;
     setTerm(value);
     setIsOpen(true);
-    void fetcher.submit(
-      {q: value, limit: 6, predictive: true},
-      {method: 'GET', action: SEARCH_ENDPOINT},
-    );
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    if (!value.trim()) return;
+    debounceRef.current = setTimeout(() => {
+      void fetcher.submit(
+        {q: value, predictive: true},
+        {method: 'GET', action: SEARCH_ENDPOINT},
+      );
+    }, 180);
   }
 
   function closeResults() {
@@ -229,6 +244,21 @@ function HeaderSearchBar() {
             </p>
           ) : (
             <>
+              {collection && (
+                <Link
+                  className="header-search-collection"
+                  onClick={closeResults}
+                  to={`/collections/${collection.handle}`}
+                >
+                  <span className="header-search-result-info">
+                    <small>Collection</small>
+                    <span className="header-search-result-title">
+                      {collection.title}
+                    </span>
+                  </span>
+                  <span aria-hidden="true">&rarr;</span>
+                </Link>
+              )}
               <ul>
                 {items.products.map((product) => {
                   const image = product.selectedOrFirstAvailableVariant?.image;
@@ -247,6 +277,9 @@ function HeaderSearchBar() {
                             data={image}
                             width={44}
                             height={44}
+                            /* 100 rows render at once; the browser only
+                               fetches the handful actually scrolled into. */
+                            loading="lazy"
                           />
                         )}
                         <span className="header-search-result-info">
@@ -263,29 +296,7 @@ function HeaderSearchBar() {
                     </li>
                   );
                 })}
-                {items.collections.map((collection) => (
-                  <li key={collection.id}>
-                    <Link
-                      onClick={closeResults}
-                      to={`/collections/${collection.handle}`}
-                    >
-                      <span className="header-search-result-info">
-                        <span className="header-search-result-title">
-                          {collection.title}
-                        </span>
-                        <small>Collection</small>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
               </ul>
-              <Link
-                className="header-search-viewall"
-                onClick={closeResults}
-                to={`${SEARCH_ENDPOINT}?q=${term}`}
-              >
-                View all results for &ldquo;{term}&rdquo; &rarr;
-              </Link>
             </>
           )}
         </div>

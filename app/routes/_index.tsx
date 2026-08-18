@@ -1017,7 +1017,7 @@ function FeaturedProducts({
 }: {
   collection: any;
   bestSelling: Promise<{
-    collection: {handle: string; products: {nodes: any[]}} | null;
+    collection?: {handle: string; products: {nodes: any[]}} | null;
   } | null>;
 }) {
   const [tab, setTab] = useState<'featured' | 'best'>('featured');
