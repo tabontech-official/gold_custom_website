@@ -125,6 +125,15 @@ export function Footer({
                   <h4>Customers</h4>
                   <ul>
                     <li>
+                      <Link to="/showroom">Showroom</Link>
+                    </li>
+                    <li>
+                      <Link to="/custom-jewelry">Custom Jewelry</Link>
+                    </li>
+                    <li>
+                      <Link to="/repairs">Repairs</Link>
+                    </li>
+                    <li>
                       <Link to="/policies">Policies</Link>
                     </li>
                     <li>

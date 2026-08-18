@@ -3585,174 +3585,6 @@ button.announcement-link {
   contain-intrinsic-size: auto 600px;
 }
 
-/* Contact page */
-.contact-page {
-  padding-bottom: clamp(3rem, 7vw, 6rem);
-}
-
-.contact-hero {
-  background:
-    radial-gradient(
-      circle at 85% 10%,
-      rgba(212, 175, 55, 0.32),
-      transparent 28rem
-    ),
-    linear-gradient(130deg, #17120b, #2e2112);
-  color: #fffdf8;
-  padding: clamp(3.5rem, 8vw, 7rem) 0;
-}
-
-.contact-hero .section-inner {
-  max-width: 76rem;
-}
-
-.contact-kicker {
-  color: var(--color-gold, #d4af37);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.15em;
-  margin: 0 0 0.8rem;
-  text-transform: uppercase;
-}
-
-.contact-hero h1 {
-  font-family: var(--font-display);
-  font-size: clamp(2.8rem, 7vw, 6rem);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 0.92;
-  margin: 0;
-  max-width: 12ch;
-}
-
-.contact-hero p:last-child {
-  color: rgba(255, 253, 248, 0.75);
-  font-size: clamp(1rem, 1.6vw, 1.18rem);
-  line-height: 1.65;
-  margin: 1.35rem 0 0;
-  max-width: 37rem;
-}
-
-.contact-content {
-  display: grid;
-  gap: clamp(2rem, 6vw, 6rem);
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  padding-top: clamp(3rem, 7vw, 6rem);
-}
-
-.contact-details-heading h2 {
-  font-family: var(--font-display);
-  font-size: clamp(2.1rem, 4vw, 3.8rem);
-  font-weight: 500;
-  letter-spacing: -0.04em;
-  line-height: 0.98;
-  margin: 0;
-}
-
-.contact-cards {
-  border-top: 1px solid rgba(36, 29, 19, 0.18);
-  margin-top: 2rem;
-}
-
-.contact-card {
-  border-bottom: 1px solid rgba(36, 29, 19, 0.18);
-  display: grid;
-  gap: 0.36rem;
-  padding: 1.1rem 0;
-  text-decoration: none;
-  transition:
-    color 180ms ease,
-    padding 180ms ease;
-}
-
-.contact-card:hover {
-  color: var(--color-gold-dark);
-  padding-left: 0.35rem;
-  text-decoration: none;
-}
-
-.contact-card-label {
-  color: var(--color-gold-dark);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.contact-card strong {
-  font-size: clamp(1rem, 1.5vw, 1.2rem);
-  font-weight: 700;
-}
-
-.contact-card > span:last-child {
-  color: var(--color-ink-soft);
-  font-size: 0.9rem;
-  line-height: 1.45;
-}
-
-.contact-home-link {
-  display: inline-flex;
-  margin-top: 1.7rem;
-  border: 1px solid #1b1712;
-  background: #1b1712;
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  padding: 0.9rem 1.15rem;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.contact-home-link:hover {
-  background: var(--color-gold, #d4af37);
-  border-color: var(--color-gold, #d4af37);
-  color: #17120b;
-  text-decoration: none;
-}
-
-.contact-map-wrap {
-  min-height: clamp(28rem, 52vw, 42rem);
-  position: relative;
-}
-
-.contact-map {
-  border: 0;
-  display: block;
-  height: 100%;
-  min-height: inherit;
-  width: 100%;
-}
-
-.contact-map-caption {
-  background: #fff;
-  bottom: 1rem;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 0.85rem 1rem;
-  position: absolute;
-  right: 1rem;
-  text-decoration: none;
-  text-transform: uppercase;
-}
-
-.contact-map-caption:hover {
-  color: var(--color-gold-dark);
-  text-decoration: none;
-}
-
-@media (max-width: 59.99em) {
-  .contact-content {
-    grid-template-columns: 1fr;
-  }
-
-  .contact-map-wrap {
-    min-height: 24rem;
-  }
-}
-
 /* Policies directory and individual policy pages */
 .policies-page,
 .policy-page {
@@ -12008,4 +11840,774 @@ html[data-intro='seen'] .intro {
   justify-items: inline block;
   padding-top: 30px;
   align-items: centre;
+}
+
+/* ---------------------------------------------------------------------------
+   Customer pages — /showroom, /custom-jewelry, /repairs, /contact.
+   Monochrome: black type on white, hairline rules, one inverted closing band.
+   No accent colour — structure and type carry the hierarchy instead.
+   One namespace shared by all four; the pages differ in content, not chrome.
+   --------------------------------------------------------------------------- */
+.svc-page {
+  --svc-rule: rgba(0, 0, 0, 0.14);
+  --svc-muted: rgba(0, 0, 0, 0.56);
+  background: #fff;
+  color: #000;
+}
+
+/* Breadcrumb sits above the hero band, on white, same as /policies. */
+.svc-crumb {
+  padding-bottom: 1rem;
+  padding-top: 1rem;
+}
+
+/* Tinted band, matching .policies-hero — neutral grey here rather than the
+   policies page's cream, since these pages carry no accent colour. */
+.svc-hero {
+  background: #f7f7f7;
+  border-bottom: 1px solid var(--svc-rule);
+  padding: clamp(3rem, 7vw, 6rem) 0;
+}
+
+/* Split hero: copy left, photograph right. The media slot holds its space
+   whether or not a photo is set, so adding one later does not reflow. */
+.svc-hero-inner {
+  align-items: center;
+  display: grid;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  max-width: 84rem;
+}
+
+.svc-hero-media {
+  aspect-ratio: 1 / 1;
+  background: #ebebeb;
+  overflow: hidden;
+}
+
+.svc-hero-media img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.svc-kicker {
+  color: var(--svc-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+.svc-hero h1 {
+  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin: 0;
+  max-width: 14ch;
+}
+
+.svc-hero-lede {
+  color: var(--svc-muted);
+  font-size: clamp(1rem, 1.4vw, 1.1rem);
+  line-height: 1.65;
+  margin: 1.25rem 0 0;
+  max-width: 38rem;
+}
+
+.svc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.svc-actions-tight {
+  margin-top: 1.5rem;
+}
+
+/* The page ships one filled button and one outlined button, both black.
+   Overrides .btn-primary's gold on these pages only. */
+.svc-cta {
+  border-radius: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.95rem 1.75rem;
+  text-transform: uppercase;
+}
+
+.svc-page .btn-primary.svc-cta,
+.svc-band .btn-primary.svc-cta {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+}
+
+.svc-page .btn-primary.svc-cta:hover {
+  background: #333;
+  border-color: #333;
+}
+
+.svc-cta-ghost,
+.svc-cta-dark {
+  background: transparent;
+  border-color: #000;
+  color: #000;
+}
+
+.svc-cta-ghost:hover,
+.svc-cta-dark:hover {
+  background: #000;
+  color: #fff;
+}
+
+.svc-facts {
+  border-top: 1px solid var(--svc-rule);
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  list-style: none;
+  margin: clamp(2.25rem, 5vw, 3.5rem) 0 0;
+  padding: 1.5rem 0 0;
+}
+
+.svc-facts li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.svc-facts strong {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.svc-facts span {
+  color: var(--svc-muted);
+  font-size: 0.8rem;
+}
+
+.svc-section {
+  padding: clamp(3rem, 6vw, 5.5rem) var(--section-pad);
+}
+
+.svc-section-head {
+  margin-bottom: clamp(1.75rem, 3.5vw, 2.75rem);
+  max-width: 44rem;
+}
+
+.svc-section-head h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.svc-body {
+  color: var(--svc-muted);
+  font-size: 1rem;
+  line-height: 1.7;
+  margin: 1.25rem 0 0;
+  max-width: 38rem;
+}
+
+/* Cards are separated by hairlines only — no borders around each cell, no
+   fills. The 1px grid gap over a black background draws the rules. */
+.svc-grid {
+  background: var(--svc-rule);
+  border-top: 1px solid var(--svc-rule);
+  display: grid;
+  gap: 1px;
+  grid-template-columns: repeat(auto-fit, minmax(min(17rem, 100%), 1fr));
+}
+
+.svc-card {
+  background: #fff;
+  display: block;
+  padding: clamp(1.4rem, 2.4vw, 2rem);
+}
+
+.svc-card h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 0.55rem;
+}
+
+.svc-card p {
+  color: var(--svc-muted);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Navigation cards use the /policies directory pattern: number, large title,
+   action label, and the whole cell inverting on hover. */
+.svc-nav-grid {
+  border-top: 1px solid #000;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.svc-nav-card {
+  border-bottom: 1px solid var(--svc-rule);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: auto 1fr auto;
+  min-height: 10rem;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  transition:
+    background 180ms ease,
+    color 180ms ease;
+}
+
+.svc-nav-card:nth-child(odd) {
+  border-right: 1px solid var(--svc-rule);
+}
+
+.svc-nav-card:hover {
+  background: #000;
+  color: #fff;
+  text-decoration: none;
+}
+
+.svc-nav-num {
+  color: var(--svc-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.svc-nav-card:hover .svc-nav-num,
+.svc-nav-card:hover .svc-nav-action {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.svc-nav-title {
+  align-self: center;
+  font-size: clamp(1.2rem, 2.2vw, 1.8rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+
+.svc-nav-action {
+  align-self: end;
+  color: var(--svc-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+@media (max-width: 48em) {
+  .svc-nav-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .svc-nav-card:nth-child(odd) {
+    border-right: 0;
+  }
+}
+
+/* Process runs on the same white ground as everything else. The numbers and
+   the hairlines are the structure; an inverted block here would be noise. */
+.svc-process {
+  padding: clamp(3rem, 6vw, 5.5rem) var(--section-pad);
+}
+
+.svc-steps {
+  display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.svc-step {
+  border-top: 1px solid var(--svc-rule);
+  display: grid;
+  gap: clamp(1rem, 3vw, 2.5rem);
+  grid-template-columns: minmax(0, 4rem) minmax(0, 1fr);
+  padding: clamp(1.4rem, 2.5vw, 2rem) 0;
+}
+
+.svc-step:last-child {
+  border-bottom: 1px solid var(--svc-rule);
+}
+
+.svc-step-num {
+  color: var(--svc-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+}
+
+.svc-step-body h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5rem;
+}
+
+.svc-step-body p {
+  color: var(--svc-muted);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  margin: 0;
+  max-width: 44rem;
+}
+
+.svc-step-meta {
+  color: var(--svc-muted);
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  margin-top: 0.85rem;
+  text-transform: uppercase;
+}
+
+.svc-split {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.svc-split h2 {
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.svc-specs,
+.svc-hours {
+  border-top: 1px solid var(--svc-rule);
+  margin: 1.5rem 0 0;
+}
+
+.svc-specs > div,
+.svc-hours > div {
+  border-bottom: 1px solid var(--svc-rule);
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 9rem) minmax(0, 1fr);
+  padding: 0.9rem 0;
+}
+
+.svc-specs dt,
+.svc-hours dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.svc-specs dd,
+.svc-hours dd {
+  color: var(--svc-muted);
+  font-size: 0.94rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.svc-inline-link {
+  align-items: center;
+  border-bottom: 1px solid #000;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 700;
+  gap: 0.4rem;
+  letter-spacing: 0.1em;
+  margin-top: 1.5rem;
+  padding-bottom: 0.2rem;
+  text-transform: uppercase;
+}
+
+.svc-inline-link:hover {
+  text-decoration: none;
+}
+
+.svc-repair-groups {
+  display: grid;
+  gap: clamp(1.5rem, 3.5vw, 3rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+}
+
+.svc-repair-group h3 {
+  border-bottom: 1px solid #000;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.5rem;
+  padding-bottom: 0.7rem;
+  text-transform: uppercase;
+}
+
+.svc-repair-group ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.svc-repair-group li {
+  align-items: baseline;
+  border-bottom: 1px solid var(--svc-rule);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+}
+
+.svc-repair-group li > span:first-child {
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+/* Turnaround, set as plain tabular text rather than a pill — the value is
+   data in a two-column list, and a badge would fight the hairlines. */
+.svc-chip {
+  color: var(--svc-muted);
+  flex: none;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.svc-note {
+  color: var(--svc-muted);
+  font-size: 0.85rem;
+  line-height: 1.6;
+  margin: clamp(1.5rem, 3vw, 2.25rem) 0 0;
+  max-width: 42rem;
+}
+
+.svc-address {
+  align-self: start;
+  border: 1px solid var(--svc-rule);
+  font-size: 0.98rem;
+  font-style: normal;
+  line-height: 1.85;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.svc-address strong {
+  display: block;
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+
+.svc-address a {
+  border-bottom: 1px solid var(--svc-rule);
+}
+
+.svc-map-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.svc-map {
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--svc-rule);
+  width: 100%;
+}
+
+.svc-map-caption {
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.svc-faq {
+  border-top: 1px solid var(--svc-rule);
+  max-width: 52rem;
+}
+
+.svc-faq-item {
+  border-bottom: 1px solid var(--svc-rule);
+}
+
+.svc-faq-item summary {
+  cursor: pointer;
+  font-size: 0.98rem;
+  font-weight: 700;
+  list-style: none;
+  padding: 1.1rem 2.5rem 1.1rem 0;
+  position: relative;
+}
+
+.svc-faq-item summary::-webkit-details-marker {
+  display: none;
+}
+
+.svc-faq-item summary::after {
+  content: '+';
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.svc-faq-item[open] summary::after {
+  content: '–';
+}
+
+.svc-faq-item p {
+  color: var(--svc-muted);
+  font-size: 0.94rem;
+  line-height: 1.7;
+  margin: 0;
+  padding: 0 2.5rem 1.4rem 0;
+}
+
+/* The one inverted block on the page, and the only place the eye is asked to
+   stop. Left-aligned like everything else — a centred band reads as a banner. */
+.svc-band {
+  background: #000;
+  color: #fff;
+  padding: clamp(3rem, 6vw, 5rem) var(--section-pad);
+}
+
+.svc-band h2 {
+  font-size: clamp(1.7rem, 3.2vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0;
+  max-width: 20ch;
+}
+
+.svc-band p {
+  color: rgba(255, 255, 255, 0.62);
+  line-height: 1.65;
+  margin: 1rem 0 0;
+  max-width: 34rem;
+}
+
+.svc-band .btn-primary.svc-cta {
+  background: #fff;
+  border-color: #fff;
+  color: #000;
+}
+
+.svc-band .btn-primary.svc-cta:hover {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.85);
+}
+
+.svc-band .svc-cta-ghost {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: #fff;
+}
+
+.svc-band .svc-cta-ghost:hover {
+  background: #fff;
+  color: #000;
+}
+
+@media (max-width: 60em) {
+  .svc-hero-inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .svc-hero-media {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 48em) {
+  .svc-split,
+  .svc-step {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .svc-specs > div,
+  .svc-hours > div {
+    gap: 0.3rem;
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   /contact — same monochrome system. It reuses .svc-hero-inner and
+   .svc-hero-media for the split hero; only the copy column is styled here.
+   --------------------------------------------------------------------------- */
+.contact-page {
+  --svc-rule: rgba(0, 0, 0, 0.14);
+  --svc-muted: rgba(0, 0, 0, 0.56);
+  background: #fff;
+  color: #000;
+}
+
+.contact-hero {
+  background: #f7f7f7;
+  border-bottom: 1px solid var(--svc-rule);
+  padding: clamp(3rem, 7vw, 6rem) 0;
+}
+
+.contact-kicker {
+  color: var(--svc-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  margin: 0 0 1rem;
+  text-transform: uppercase;
+}
+
+.contact-hero h1 {
+  font-size: clamp(2.4rem, 5.5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1;
+  margin: 0;
+  max-width: 14ch;
+}
+
+.contact-hero .svc-hero-content > p:last-child {
+  color: var(--svc-muted);
+  font-size: clamp(1rem, 1.4vw, 1.1rem);
+  line-height: 1.65;
+  margin: 1.25rem 0 0;
+  max-width: 38rem;
+}
+
+.contact-content {
+  display: grid;
+  gap: clamp(2rem, 5vw, 4.5rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding-bottom: clamp(3rem, 6vw, 5.5rem);
+  padding-top: clamp(3rem, 6vw, 5.5rem);
+}
+
+.contact-details-heading h2,
+.contact-help-title {
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin: 0;
+}
+
+.contact-cards {
+  border-top: 1px solid var(--svc-rule);
+  margin-top: 1.75rem;
+}
+
+.contact-card {
+  border-bottom: 1px solid var(--svc-rule);
+  display: grid;
+  gap: 0.3rem;
+  padding: 1.1rem 0;
+  transition: padding 160ms ease;
+}
+
+.contact-card:hover {
+  padding-left: 0.35rem;
+  text-decoration: none;
+}
+
+.contact-card-label {
+  color: var(--svc-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.contact-card strong {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.contact-card > span:last-child {
+  color: var(--svc-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.contact-visit-note {
+  color: var(--svc-muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin-top: 1.5rem;
+}
+
+.contact-visit-note a {
+  border-bottom: 1px solid #000;
+  font-weight: 700;
+}
+
+.contact-home-link {
+  background: #000;
+  border: 1px solid #000;
+  color: #fff;
+  display: inline-flex;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  margin-top: 1.75rem;
+  padding: 0.95rem 1.75rem;
+  text-transform: uppercase;
+}
+
+.contact-home-link:hover {
+  background: #333;
+  border-color: #333;
+  text-decoration: none;
+}
+
+.contact-help {
+  align-self: start;
+}
+
+.contact-help-list {
+  border-top: 1px solid var(--svc-rule);
+  list-style: none;
+  margin: 1.75rem 0 0;
+  padding: 0;
+}
+
+.contact-help-list li {
+  border-bottom: 1px solid var(--svc-rule);
+}
+
+.contact-help-list a {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem 0;
+  transition: padding 160ms ease;
+}
+
+.contact-help-list a:hover {
+  padding-left: 0.35rem;
+  text-decoration: none;
+}
+
+.contact-help-list strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.contact-help-list span {
+  color: var(--svc-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 60em) {
+  .contact-content {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
