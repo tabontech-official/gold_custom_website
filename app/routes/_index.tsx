@@ -95,7 +95,7 @@ function heroPreloadTags(hero: HeroContent | null) {
       // srcset/sizes disagree with the element's is not a head start, it is a
       // second download of a different resize on the connection least able to
       // afford one.
-       // camelCase for these two, lowercase for `fetchpriority` — the split is
+      // camelCase for these two, lowercase for `fetchpriority` — the split is
       // not a style choice, it is which names React 18 actually knows.
       //
       // `imageSrcSet` and `imageSizes` ARE in React's property list: it maps
@@ -1016,11 +1016,20 @@ function FeaturedProducts({
   bestSelling,
 }: {
   collection: any;
-  bestSelling: Promise<{products: {nodes: any[]}} | null>;
+  bestSelling: Promise<{
+    collection: {handle: string; products: {nodes: any[]}} | null;
+  } | null>;
 }) {
   const [tab, setTab] = useState<'featured' | 'best'>('featured');
   if (!collection) return null;
   const featuredNodes = collection.products?.nodes ?? [];
+  // `collection` is whichever collection was edited last (see the loader), so
+  // linking to it sends shoppers somewhere unrelated to the rail they're
+  // looking at. Featured falls back to /collections/all; Best Selling goes to
+  // the real "Best-Selling Solid Gold Jewelry" collection the rail is built
+  // from, so View All shows exactly those products and nothing else.
+  const viewAllHref =
+    tab === 'best' ? '/collections/best-sellers' : '/collections/all';
 
   return (
     <section className="home-section featured-split">
@@ -1055,10 +1064,7 @@ function FeaturedProducts({
               Best Selling
             </button>
           </div>
-          <Link
-            className="editorial-viewall split-viewall"
-            to={`/collections/${collection.handle}`}
-          >
+          <Link className="editorial-viewall split-viewall" to={viewAllHref}>
             View All &rarr;
           </Link>
 
@@ -1074,9 +1080,10 @@ function FeaturedProducts({
               <Await resolve={bestSelling}>
                 {(response) => (
                   <ProductRail
-                    products={response?.products.nodes ?? []}
+                    products={response?.collection?.products.nodes ?? []}
                     ariaLabel="best selling products"
                     emptyMessage="Best sellers are loading right now."
+                    collectionHandle={response?.collection?.handle}
                   />
                 )}
               </Await>
@@ -1133,10 +1140,10 @@ function RecommendedProducts({
   const [tab, setTab] = useState<'all' | 'women' | 'men'>('all');
   const viewAllHref =
     tab === 'women'
-      ? '/collections/womens'
+      ? '/collections/womens?sort=date-desc'
       : tab === 'men'
-        ? '/collections/mens'
-        : '/collections/all';
+        ? '/collections/mens?sort=date-desc'
+        : '/collections/all?sort=date-desc';
 
   return (
     <section className="home-section new-arrivals">
@@ -1504,9 +1511,12 @@ const BEST_SELLING_PRODUCTS_QUERY = `#graphql
   }
   query BestSellingProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 24, sortKey: BEST_SELLING) {
-      nodes {
-        ...BestSellingProduct
+    collection(handle: "best-sellers") {
+      handle
+      products(first: 24) {
+        nodes {
+          ...BestSellingProduct
+        }
       }
     }
   }

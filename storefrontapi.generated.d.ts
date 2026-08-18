@@ -1518,30 +1518,37 @@ export type BestSellingProductsQueryVariables = StorefrontAPI.Exact<{
 }>;
 
 export type BestSellingProductsQuery = {
-  products: {
-    nodes: Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'productType'> & {
-        category?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-        >;
-        priceRange: {
-          minVariantPrice: Pick<
-            StorefrontAPI.MoneyV2,
-            'amount' | 'currencyCode'
-          >;
-        };
-        featuredImage?: StorefrontAPI.Maybe<
+  collection?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
           Pick<
-            StorefrontAPI.Image,
-            'id' | 'url' | 'altText' | 'width' | 'height'
-          >
+            StorefrontAPI.Product,
+            'id' | 'title' | 'handle' | 'productType'
+          > & {
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'url' | 'altText' | 'width' | 'height'
+              >
+            >;
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+            >;
+          }
         >;
-        selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
-        >;
-      }
-    >;
-  };
+      };
+    }
+  >;
 };
 
 export type GenderArrivalProductFragment = Pick<
@@ -3157,7 +3164,7 @@ interface GeneratedQueryTypes {
     return: RecommendedProductsQuery;
     variables: RecommendedProductsQueryVariables;
   };
-  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 24, sortKey: BEST_SELLING) {\n      nodes {\n        ...BestSellingProduct\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "best-sellers") {\n      handle\n      products(first: 24) {\n        nodes {\n          ...BestSellingProduct\n        }\n      }\n    }\n  }\n': {
     return: BestSellingProductsQuery;
     variables: BestSellingProductsQueryVariables;
   };
