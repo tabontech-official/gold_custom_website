@@ -21,6 +21,7 @@ import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
 import {
   MEGA_MENU,
+  getDepartmentColumns,
   getDepartmentItems,
   hasDepartmentItems,
   toRelativeUrl,
@@ -380,6 +381,13 @@ type FeaturedProduct = {
   } | null;
 };
 
+/** One column, or two balanced ones once the list runs past `max` items. */
+function splitInHalf<T>(items: T[], max: number): T[][] {
+  if (items.length <= max) return [items];
+  const half = Math.ceil(items.length / 2);
+  return [items.slice(0, half), items.slice(half)];
+}
+
 function MegaMenuItem({
   department,
   header,
@@ -427,16 +435,18 @@ function MegaMenuItem({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetcher.data]);
-  // getDepartmentItems, not a raw flatMap over the columns: it dedupes by
-  // collection handle and titles each link from the collection itself. Chains
-  // is fed by four Shopify menus and was rendering `clover-necklace` twice —
-  // once as "Clover Necklaces", once as the stale "Women Necklaces".
-  const menuItems = getDepartmentItems(header, department);
-  // Short menus read best as one deliberate list. Chains retains two columns
-  // regardless, as that department has enough breadth to warrant the denser
-  // scanning pattern.
-  const linkColumnCount =
-    department.id === 'chains' || menuItems.length > 6 ? 2 : 1;
+  // Grouped BY COLUMN, not one flat list: Chains is fed by three Shopify menus
+  // ("Chains 1/2/3") and each one is its own column here, in its own order, so
+  // the dropdown matches the admin exactly. getDepartmentColumns also dedupes
+  // across the menus and drops empty collections.
+  const departmentColumns = getDepartmentColumns(header, department);
+  // Departments backed by a single menu still split into two columns once the
+  // list gets long — split in half so it reads top-to-bottom, left column then
+  // right, rather than zig-zagging across rows.
+  const linkGroups =
+    departmentColumns.length > 1
+      ? departmentColumns
+      : splitInHalf(departmentColumns[0] ?? [], 6);
   // The featured pane has room for three consistently sized cards. Products
   // always come from the active department's collection, including Chains and
   // Necklaces, so every panel feels balanced without unrelated recommendations.
@@ -475,24 +485,23 @@ function MegaMenuItem({
       <div className="mega-menu-panel">
         <div className="mega-menu-inner">
           <div className="mega-menu-links-panel">
-            <ul
-              className="mega-menu-link-list"
-              style={
-                {'--mega-link-columns': linkColumnCount} as React.CSSProperties
-              }
-            >
-              {menuItems.map((item) => (
-                <li key={item.id}>
-                  <NavLink
-                    onClick={closeMegaMenu}
-                    prefetch="intent"
-                    to={relativeUrl(item.url ?? '')}
-                  >
-                    {item.title}
-                  </NavLink>
-                </li>
+            <div className="mega-menu-link-columns">
+              {linkGroups.map((group, groupIndex) => (
+                <ul className="mega-menu-link-list" key={groupIndex}>
+                  {group.map((item) => (
+                    <li key={item.id}>
+                      <NavLink
+                        onClick={closeMegaMenu}
+                        prefetch="intent"
+                        to={relativeUrl(item.url ?? '')}
+                      >
+                        {item.title}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
               ))}
-            </ul>
+            </div>
             <NavLink
               className="mega-menu-shop-button"
               onClick={closeMegaMenu}

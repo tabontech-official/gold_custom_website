@@ -265,9 +265,6 @@ export const HEADER_QUERY = `#graphql
     chainWithPendantMenu: menu(handle: "chain-with-pendant") {
       ...Menu
     }
-    necklacesMenu: menu(handle: "necklaces") {
-      ...Menu
-    }
     diamondMenu: menu(handle: "diamond") {
       ...Menu
     }

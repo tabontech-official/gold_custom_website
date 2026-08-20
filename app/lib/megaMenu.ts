@@ -8,7 +8,6 @@ type CategoryMenuKey =
   | 'earringsMenu'
   | 'pendantsMenu'
   | 'chainWithPendantMenu'
-  | 'necklacesMenu'
   | 'diamondMenu'
   | 'engagementRingsMenu'
   | 'ringsMenu';
@@ -53,12 +52,12 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     id: 'chains',
     label: 'Chains',
     to: '/collections/chains',
+    // One column per Shopify menu ("Chains 1/2/3"), in menu order — the
+    // dropdown mirrors the admin's own three-way split exactly.
     columns: [
-      {items: [{title: 'Miami Cuban Chains', handle: MIAMI_CUBAN_HANDLE}]},
       {menuKeys: ['chainsGroup1']},
       {menuKeys: ['chainsGroup2']},
       {menuKeys: ['chainsGroup3']},
-      {menuKeys: ['necklacesMenu']},
     ],
   },
   {
@@ -121,28 +120,12 @@ export const CATEGORY_MENU_HANDLES: Record<CategoryMenuKey, string> = {
   earringsMenu: 'earrings',
   pendantsMenu: 'pendants',
   chainWithPendantMenu: 'chain-with-pendant',
-  necklacesMenu: 'necklaces',
   diamondMenu: 'diamond',
   engagementRingsMenu: 'engagement-rings',
   ringsMenu: 'rings',
 };
 
 type MenuItems = NonNullable<HeaderQuery['braceletsMenu']>['items'];
-
-/**
- * Collections to drop from one specific Shopify menu, when the same collection
- * is linked from several and only one placement should survive.
- *
- * `clover-necklace` is linked from both the Chains menus and `necklacesMenu`,
- * and the two links are worded differently ("Clover Necklaces" vs "Women
- * Necklaces"), so it read as two separate categories under Chains. Keep the
- * `necklacesMenu` link and drop the Chains-side duplicates.
- */
-const HIDDEN_HANDLES_BY_MENU: Partial<Record<CategoryMenuKey, string[]>> = {
-  chainsGroup1: ['clover-necklace'],
-  chainsGroup2: ['clover-necklace'],
-  chainsGroup3: ['clover-necklace'],
-};
 
 export function getColumnItems(
   header: HeaderQuery,
@@ -157,17 +140,10 @@ export function getColumnItems(
   }
 
   return (column.menuKeys ?? [])
-    .flatMap((key) =>
-      (header[key]?.items ?? []).filter(
-        (item) =>
-          !(HIDDEN_HANDLES_BY_MENU[key] ?? []).some((handle: string) =>
-            item.url?.endsWith(`/collections/${handle}`),
-          ),
-      ),
-    )
+    .flatMap((key) => header[key]?.items ?? [])
     .filter((item) => {
       if (
-        [MIAMI_CUBAN_HANDLE, ...MERGED_CUBAN_HANDLES].some((handle) =>
+        MERGED_CUBAN_HANDLES.some((handle) =>
           item.url?.endsWith(`/collections/${handle}`),
         )
       )
@@ -180,13 +156,13 @@ export function getColumnItems(
 }
 
 /**
- * Every link in a department, across all its columns — deduplicated, and titled
- * from the collection rather than the menu link.
+ * Every link in a department, grouped BY COLUMN — one entry per
+ * `department.columns`, deduplicated across all of them.
  *
- * The Chains department is fed by four separate Shopify menus, and
- * `clover-necklace` is linked from more than one of them, so it rendered TWICE
- * in one dropdown. Dedupe by collection HANDLE, the only thing that can tell
- * two differently-typed links to the same collection apart.
+ * A department can be fed by more than one Shopify menu, and the same
+ * collection may be linked from several of them under different wordings, so
+ * dedupe by collection HANDLE — the only thing that can tell two
+ * differently-typed links to the same collection apart.
  *
  * The LABEL is the menu item's own title — the name typed on the menu link in
  * Shopify — not `resource.title`, so merchants can word a nav entry
@@ -194,27 +170,37 @@ export function getColumnItems(
  *
  * First occurrence wins, keeping the column order authors set up.
  */
+export function getDepartmentColumns(
+  header: HeaderQuery,
+  department: MegaMenuDepartment,
+): MenuItems[] {
+  const seen = new Set<string>();
+
+  return department.columns.map((column) =>
+    getColumnItems(header, column)
+      .filter((item) => item.url)
+      .filter((item) => {
+        const resource = item.resource;
+        // Handle first; fall back to the URL path so non-collection links
+        // (pages, external URLs) still dedupe sensibly instead of all
+        // collapsing to one.
+        const key =
+          resource?.__typename === 'Collection' && resource.handle
+            ? `collection:${resource.handle}`
+            : `url:${item.url}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      }),
+  );
+}
+
+/** The same links, flattened — for consumers that render one plain list. */
 export function getDepartmentItems(
   header: HeaderQuery,
   department: MegaMenuDepartment,
 ): MenuItems {
-  const seen = new Set<string>();
-
-  return department.columns
-    .flatMap((column) => getColumnItems(header, column))
-    .filter((item) => item.url)
-    .filter((item) => {
-      const resource = item.resource;
-      // Handle first; fall back to the URL path so non-collection links (pages,
-      // external URLs) still dedupe sensibly instead of all collapsing to one.
-      const key =
-        resource?.__typename === 'Collection' && resource.handle
-          ? `collection:${resource.handle}`
-          : `url:${item.url}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  return getDepartmentColumns(header, department).flat();
 }
 
 /** Whether a department still has at least one product-backed submenu link. */

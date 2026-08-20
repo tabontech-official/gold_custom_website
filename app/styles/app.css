@@ -1247,46 +1247,29 @@ button.announcement-link {
   max-width: 100%;
 }
 
-.mega-menu-link-list {
-  display: grid;
-  /* Row gap a little deeper than it was (0.75rem): now that a very long name
-     may run to a second line, the extra breathing room keeps the list reading
-     as separate entries rather than a block of text. */
-  gap: 0.9rem 2rem;
-  /*
-    Columns sized to the LONGEST NAME IN THIS DEPARTMENT, not to an equal
-    split of the panel.
-
-    `1fr` divides the space evenly and takes no account of what is in it, so
-    every two-column department sized its tracks identically — and measured at
-    six viewport widths from 1220 to 1920, the widest link came out pinned to
-    the track width every single time (280/280, 284/284.5, 290/290.4 ...).
-    "Luxury Emerald-Cut Diamond Engagement Rings" does not fit a half-panel
-    column at ANY width. It was only staying inside because `overflow-wrap:
-    anywhere` on the link broke it mid-word, and any nudge — browser zoom, the
-    fallback face during font swap, sub-pixel rounding — pushed it over the
-    gap and into the column beside it.
-
-    `max-content` is the fix and it is the thing being asked for: the track
-    becomes exactly as wide as the longest item it holds, so the gap below is
-    always real whitespace rather than whatever happens to be left. `minmax(0,
-    max-content)` keeps it able to shrink if the panel is genuinely too narrow,
-    so a very long name still wraps instead of overflowing the panel.
-
-    `fit-content(100%)` was the other candidate and is worse here: it resolves
-    against the panel width, so on a narrow panel it reintroduces exactly the
-    squeeze this is removing.
-  */
-  grid-template-columns: repeat(
-    var(--mega-link-columns, 1),
-    minmax(0, max-content)
-  );
-  /* The tracks no longer fill the panel, so say what happens to the slack:
-     it goes to the right, keeping the list left-aligned under the heading. */
-  justify-content: start;
+.mega-menu-link-columns {
+  display: flex;
+  /* Columns are as wide as their longest link (see the note that used to live
+     on the grid below), so the slack goes to the right and the lists stay
+     left-aligned under the heading. */
+  align-items: flex-start;
+  gap: 2rem;
   margin: 0 0 1.75rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.18);
+  min-width: 0;
+}
+
+/* One <ul> per column, each carrying a Shopify menu's items in menu order —
+   so column 1/2/3 of the Chains dropdown are "Chains 1/2/3" from the admin. */
+.mega-menu-link-list {
+  display: grid;
+  /* Row gap a little deeper than a tight list: a very long name may run to a
+     second line, and the extra room keeps entries reading as separate items. */
+  gap: 0.9rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
   min-width: 0;
 }
 
@@ -1495,13 +1478,20 @@ button.announcement-link {
     gap: 2rem;
   }
 
+  /* One column from here down. Two columns at this width leave ~252px each,
+     and the longest collection names need ~273px — so the choice is a single
+     roomy list or two that keep breaking. It reads better as one anyway; the
+     lists stack, keeping menu 1 above menu 2 above menu 3. */
+  .mega-menu-link-columns {
+    display: block;
+  }
+
   .mega-menu-link-list {
-    gap: 1rem 1.4rem;
-    /* One column from here down, overriding the --mega-link-columns the header
-       sets. Two columns at this width leave ~252px each, and the longest
-       collection names need ~273px — so the choice is a single roomy list or
-       two that keep breaking. The list reads better as one column anyway. */
-    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .mega-menu-link-list + .mega-menu-link-list {
+    margin-top: 1rem;
   }
 
   .mega-menu-featured h3 {
@@ -9792,6 +9782,9 @@ button.announcement-link {
 }
 
 .subnav-icons .dragscroll-track {
+  /* flex-start, not the default stretch: a two-line label used to make its
+     whole tile taller than the rest, and the circle stretched with it. */
+  align-items: flex-start;
   gap: clamp(0.75rem, 2vw, 1.5rem);
   padding: 1.25rem 0 0.4rem;
 }
@@ -9849,7 +9842,10 @@ button.announcement-link {
 .subnav-icon-circle {
   align-items: center;
   aspect-ratio: 1;
-  background: var(--color-bg-soft, #f4f4f4);
+  /* Never grow or shrink with the tile: the circle is exactly the tile width
+     square, so every circle in the strip is the same size. */
+  flex: 0 0 auto;
+  background: #fff;
   border: 2px solid var(--color-border);
   border-radius: 50%;
   display: flex;
@@ -9862,8 +9858,19 @@ button.announcement-link {
 }
 
 .subnav-icon-circle img {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-sizing: border-box;
+  display: block;
   height: 100%;
-  object-fit: cover;
+  /* contain, not cover: source images crop differently (wide chain shots got
+     zoomed edge-to-edge, square ones sat small), so the products looked like
+     different sizes. contain + a fixed inset scales every product to the same
+     inner box. */
+  object-fit: contain;
+  /* No inset: the source shots already carry their own whitespace margin, so
+     padding on top of that shrank every product. */
+  padding: 0;
   width: 100%;
 }
 
@@ -9880,6 +9887,9 @@ button.announcement-link {
   line-height: 1.25;
   overflow: hidden;
   text-transform: uppercase;
+  /* Reserve both lines so one- and two-word labels leave the same gap below
+     the circle and the strip keeps a flat baseline. */
+  min-height: calc(2 * 1.25em);
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }

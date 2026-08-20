@@ -801,7 +801,6 @@ const CATEGORY_MENUS_QUERY = `#graphql
     earringsMenu: menu(handle: "earrings") { ...MenuHandles }
     pendantsMenu: menu(handle: "pendants") { ...MenuHandles }
     chainWithPendantMenu: menu(handle: "chain-with-pendant") { ...MenuHandles }
-    necklacesMenu: menu(handle: "necklaces") { ...MenuHandles }
     diamondMenu: menu(handle: "diamond") { ...MenuHandles }
     engagementRingsMenu: menu(handle: "engagement-rings") { ...MenuHandles }
     ringsMenu: menu(handle: "rings") { ...MenuHandles }

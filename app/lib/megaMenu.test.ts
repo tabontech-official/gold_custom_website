@@ -10,12 +10,19 @@ import {
   MIAMI_CUBAN_HANDLE,
 } from './megaMenu.ts';
 
-// Curated children resolve to their department.
-assert.equal(getMegaMenuParentHandle('men-rings'), 'rings');
-assert.equal(getMegaMenuParentHandle('womens-diamond-ring'), 'rings');
-assert.equal(getMegaMenuParentHandle(MIAMI_CUBAN_HANDLE), 'chains');
-
-assert.equal(getMegaMenuParentHandle('Men-Rings'), 'rings', 'case-insensitive');
+// Every department now sources its children from a Shopify menu, so the
+// lookup needs those handles passed in.
+assert.equal(
+  getMegaMenuParentHandle(MIAMI_CUBAN_HANDLE, {
+    chainsGroup1: [MIAMI_CUBAN_HANDLE],
+  }),
+  'chains',
+);
+assert.equal(
+  getMegaMenuParentHandle('Men-Rings', {ringsMenu: ['men-rings']}),
+  'rings',
+  'case-insensitive',
+);
 
 // Menu-sourced children: the majority of departments, and the case that was
 // silently returning undefined before menuItemHandles was threaded through.
@@ -29,7 +36,7 @@ assert.equal(
   'bracelets',
 );
 assert.equal(
-  getMegaMenuParentHandle('rope-chain', {chainsGroup2: ['rope-chain']}),
+  getMegaMenuParentHandle('rope-chain', {chainsGroup1: ['rope-chain']}),
   'chains',
 );
 assert.equal(
