@@ -12,7 +12,6 @@ import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {SearchFormPredictive} from '~/components/SearchFormPredictive';
 import {SearchResultsPredictive} from '~/components/SearchResultsPredictive';
-import {WelcomePopup} from '~/components/WelcomePopup';
 import {RouteProgressBar, RouteTransition} from '~/components/RouteTransition';
 
 interface PageLayoutProps {
@@ -37,7 +36,6 @@ export function PageLayout({
       <CartAside cart={cart} />
       <SearchAside />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
-      <WelcomePopup />
       <div className="page-wrapper">
         {header && (
           <Header

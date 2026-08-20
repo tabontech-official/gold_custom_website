@@ -1,11 +1,27 @@
-import {ReactLenis, type LenisRef} from 'lenis/react';
 import {useCallback, useEffect, useRef, useState, type ReactNode} from 'react';
 import {enableDragScroll} from '~/lib/dragScroll';
 
 /**
- * Horizontal scroller powered by Lenis for smooth wheel / trackpad scrolling on
- * desktop and native momentum on touch. Renders overlay prev / next buttons that
- * page through the content. Item widths come from the caller's item className.
+ * Horizontal scroller on native overflow, with mouse click-drag and overlay
+ * prev / next buttons that page through. Item widths come from the caller's
+ * item className.
+ *
+ * This used to be driven by Lenis. Lenis works by cancelling the browser's own
+ * scroll and re-driving the position from a `requestAnimationFrame` loop — so
+ * every instance held a callback running on the main thread every frame, for
+ * the whole life of the page, whether or not anyone was scrolling. On the
+ * product page that is two of them, competing with React, the image decode and
+ * the third-party widgets for the same 16ms.
+ *
+ * Native overflow scrolling runs on the compositor instead, off the main
+ * thread, so it keeps its frame rate even while the main thread is busy — which
+ * is the situation that actually makes a page feel like it stutters. It is also
+ * what every other rail in this codebase already uses (see DragScroller), so
+ * the two no longer behave differently on the same gesture.
+ *
+ * What was given up: eased wheel scrolling on desktop. Touch was already native
+ * (`syncTouch: false`), and the paging buttons still animate via
+ * `scroll-behavior: smooth` on the viewport.
  */
 export function HorizontalCarousel({
   children,
@@ -18,12 +34,13 @@ export function HorizontalCarousel({
   ariaLabel?: string;
   showButtons?: boolean;
 }) {
-  const lenisRef = useRef<LenisRef>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
 
   const update = useCallback(() => {
-    const wrapper = lenisRef.current?.wrapper;
+    const wrapper = viewportRef.current;
     if (!wrapper) return;
     const {scrollLeft, scrollWidth, clientWidth} = wrapper;
     setCanPrev(scrollLeft > 4);
@@ -31,14 +48,13 @@ export function HorizontalCarousel({
   }, []);
 
   useEffect(() => {
-    const wrapper = lenisRef.current?.wrapper;
-    const content = lenisRef.current?.content;
+    const wrapper = viewportRef.current;
     if (!wrapper) return;
     update();
     wrapper.addEventListener('scroll', update, {passive: true});
     const observer = new ResizeObserver(update);
     observer.observe(wrapper);
-    if (content) observer.observe(content);
+    if (trackRef.current) observer.observe(trackRef.current);
     const disableDrag = enableDragScroll(wrapper);
     return () => {
       wrapper.removeEventListener('scroll', update);
@@ -48,30 +64,19 @@ export function HorizontalCarousel({
   }, [update]);
 
   const scrollByPage = useCallback((direction: 1 | -1) => {
-    const wrapper = lenisRef.current?.wrapper;
+    const wrapper = viewportRef.current;
     if (!wrapper) return;
     const amount = direction * Math.min(wrapper.clientWidth * 0.85, 640);
-    const target = wrapper.scrollLeft + amount;
-    const lenis = lenisRef.current?.lenis;
-    if (lenis) lenis.scrollTo(target);
-    else wrapper.scrollTo({left: target, behavior: 'smooth'});
+    wrapper.scrollBy({left: amount, behavior: 'smooth'});
   }, []);
 
   return (
     <div className={`hcarousel ${className}`.trim()}>
-      <ReactLenis
-        ref={lenisRef}
-        className="hcarousel-viewport"
-        options={{
-          orientation: 'horizontal',
-          gestureOrientation: 'horizontal',
-          smoothWheel: true,
-          syncTouch: false,
-          duration: 0.9,
-        }}
-      >
-        <div className="hcarousel-track">{children}</div>
-      </ReactLenis>
+      <div className="hcarousel-viewport" ref={viewportRef}>
+        <div className="hcarousel-track" ref={trackRef}>
+          {children}
+        </div>
+      </div>
 
       {showButtons && (
         <>

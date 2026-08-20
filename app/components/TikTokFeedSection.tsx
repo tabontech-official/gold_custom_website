@@ -78,10 +78,12 @@ export function TikTokFeedSection() {
   return (
     <section className="home-section tiktok-feed-section">
       <div className="section-inner">
-        {/* Heads the feed AND the social bar that follows it — the two are one
-            block, so one heading covers both rather than each carrying its
-            own. SocialFollow is deliberately headless for this reason. */}
-        <div className="editorial-heading">
+        {/* Heads the feed AND the social bar under it — one heading for the
+            whole block, which is why SocialFollow carries none of its own.
+            Reputon's header sits below this with the account handle and follow
+            button; the two are spaced tight so they read as one unit rather
+            than two headings. */}
+        <div className="editorial-heading tiktok-feed-heading">
           <h2 className="editorial-title">Our Media</h2>
         </div>
         <div
@@ -92,9 +94,10 @@ export function TikTokFeedSection() {
           data-autoplay="off"
           data-type="carousel"
           data-theme="light"
-          /* Off: the widget draws its own title bar, which landed between our
-             "Our Media" heading and the carousel and read as two headings. */
-          data-show-header="false"
+          /* On: Reputon's own title bar is the section's heading — it carries
+             the account handle and follow button, which a plain <h2> can't. The
+             section has no heading of its own precisely so these don't stack. */
+          data-show-header="true"
         />
       </div>
     </section>

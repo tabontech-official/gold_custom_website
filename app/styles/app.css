@@ -53,6 +53,32 @@
    --------------------------------------------------------------------------- */
 html {
   overflow-x: hidden;
+
+  /*
+    Smooth scrolling for anchor jumps and every programmatic `scrollTo` on the
+    site — the "back to top" control, the filter links that jump to the grid,
+    the FAQ accordion. Wheel and touch scrolling are untouched: the browser's
+    own inertia is already the smoothest thing available and any JS that
+    "improves" it (Lenis, Locomotive) does so by taking scroll off the
+    compositor and re-driving it from the main thread, which is exactly how a
+    site starts stuttering on a mid-range phone.
+
+    `scroll-padding-top` keeps a jump target from landing underneath the sticky
+    header + announcement bar instead of below them.
+  */
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+/*
+  A motion-sensitive visitor asked for no animation, and a page that slides
+  hundreds of pixels under them is the most nauseating thing on the site.
+  `auto` restores the instant jump.
+*/
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -1872,106 +1898,10 @@ button.announcement-link {
 
 /* Tidio's chat launcher sits bottom-right with an inline `z-index: 999999999`,
    which is exactly where the cart drawer opens — so it floats over the bag.
-   Pin it just under the 2000 that the cart/search overlay and the welcome
-   popup share, keeping it above ordinary page content but beneath anything
-   modal. `!important` is required: the value is inline on Tidio's own node. */
+   Pin it just under the 2000 the cart/search overlay uses, keeping it above
+   ordinary page content but beneath anything modal. `!important` is required: the value is inline on Tidio's own node. */
 #tidio-chat {
   z-index: 1999 !important;
-}
-
-/* Welcome offer popup */
-.welcome-popup-overlay {
-  align-items: center;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: 1rem;
-  position: fixed;
-  /* Above the sticky header (900) and mega-menu (1200/1201) — matches the
-     cart/search overlay's z-index: 2000 so the whole page, header included,
-     dims behind any modal popup. */
-  z-index: 2000;
-}
-
-.welcome-popup {
-  background: #fff;
-  border-top: 3px solid var(--cg-champagne);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  max-width: 26rem;
-  padding: 2.4rem 2rem 1.6rem;
-  position: relative;
-  text-align: center;
-  width: 100%;
-}
-
-.welcome-popup h2 {
-  font-family: var(--font-display);
-  font-size: 1.9rem;
-  line-height: 1.1;
-  margin: 0;
-}
-
-.welcome-popup p {
-  color: var(--color-ink-soft);
-  margin: 0;
-}
-
-.welcome-popup-eyebrow {
-  color: var(--cg-champagne);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.welcome-popup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-
-.welcome-popup-form input {
-  border: 1px solid var(--color-border);
-  border-radius: 2px;
-  font-family: var(--font-body);
-  padding: 0.75rem 1rem;
-}
-
-/* Replaces .welcome-popup-code, which is gone with the on-screen discount —
-   the code is emailed now, so the popup has a spam-folder nudge here instead. */
-.welcome-popup-hint {
-  color: var(--color-ink-soft);
-  font-size: 0.85rem;
-}
-
-.welcome-popup-close {
-  background: none;
-  border: none;
-  color: var(--color-ink-soft);
-  cursor: pointer;
-  font-size: 1.6rem;
-  line-height: 1;
-  position: absolute;
-  right: 0.9rem;
-  top: 0.7rem;
-}
-
-.welcome-popup-dismiss {
-  background: none;
-  border: none;
-  color: var(--color-ink-soft);
-  cursor: pointer;
-  font-size: 0.8rem;
-  text-decoration: underline;
-}
-
-.welcome-popup-error {
-  color: #c0392b;
-  font-size: 0.85rem;
 }
 
 .footer-col h4 {
@@ -5154,9 +5084,13 @@ button.announcement-link {
   height: 1.9rem;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop-filter. A blurred backdrop is re-snapshotted and re-blurred
+     every frame the content behind it moves — so on a 1.9rem button sitting
+     over a scrolling rail, the browser paid for a blur on every frame of both
+     the rail's scroll and the page's. There are two of these per rail and
+     several rails per page. At this size a 10px blur through a near-opaque
+     white disc is invisible, so the alpha carries the effect instead. */
+  background: rgba(255, 255, 255, 0.93);
   color: rgba(0, 0, 0, 0.58);
   font-size: 1.05rem;
   line-height: 1;
@@ -5313,9 +5247,13 @@ button.announcement-link {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop-filter. A blurred backdrop is re-snapshotted and re-blurred
+     every frame the content behind it moves — so on a 1.9rem button sitting
+     over a scrolling rail, the browser paid for a blur on every frame of both
+     the rail's scroll and the page's. There are two of these per rail and
+     several rails per page. At this size a 10px blur through a near-opaque
+     white disc is invisible, so the alpha carries the effect instead. */
+  background: rgba(255, 255, 255, 0.93);
   color: rgba(0, 0, 0, 0.58);
   border: 1px solid rgba(0, 0, 0, 0.12);
   width: 1.9rem;
@@ -6389,12 +6327,13 @@ button.announcement-link {
 
 .product-item:hover,
 .product-item:focus-within {
-  background: rgba(255, 255, 255, 0.58);
+  /* Opaque rather than 58% + a blur: this fired on every hover across a grid
+     of cards, and each one promoted the whole card to its own blurred layer. */
+  background: #fff;
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.82) inset,
     0 18px 34px rgba(17, 17, 17, 0.12);
   transform: translateY(-3px) scale(1.012);
-  backdrop-filter: blur(10px);
 }
 
 .product-image-wrap {
@@ -9716,22 +9655,59 @@ button.announcement-link {
 /* Keep collection browsing dense on phones: the category strip should lead
    directly into the products instead of leaving a large visual gap. */
 @media (max-width: 47.99em) {
-  .subnav-icons .dragscroll-track {
-    padding: 0.55rem 0 0.15rem;
+  /* No progress rail on phones. It duplicates a gesture touch already makes
+     obvious — you can see the circles move under your thumb — and it was
+     eating a row of height plus its own margin under an already dense strip. */
+  .subnav-icons .dragscroll-bar {
+    display: none;
   }
 
-  .subnav-icons .dragscroll-bar {
-    margin-top: 0;
+  /* Edge to edge. Same bleed pattern .collection-toolbar uses: cancel
+     .section-inner's gutter with a negative margin, and give it back as the
+     scroller's own inline padding so the first and last circles still clear
+     the screen edge when the rail is parked at either end. Without that
+     padding the row would scroll to a hard stop with a circle half off. */
+  .subnav-icons {
+    margin-inline: calc(-1 * var(--section-pad));
+  }
+
+  .subnav-icons .dragscroll-track {
+    /* One shorthand, not `padding` then `padding-inline`: the block values and
+       the gutter give-back have to be set together or whichever lands second
+       resets the other axis. */
+    padding: 0.55rem var(--section-pad) 0.15rem;
   }
 
   .collection > .section-inner:has(.subnav-icons) + .home-section {
-    margin-top: -1.75rem;
+    /* Was -1.75rem, which closed the gap so far that the category circles and
+       the filter bar read as one control. Still negative — `home-section`'s own
+       2.2rem on top of the strip's padding is more than this needs — just not
+       flush any more. */
+    margin-top: -0.6rem;
     padding-top: 0;
   }
 
   .subnav-icon-label {
     font-size: 0.72rem;
     letter-spacing: 0.01em;
+  }
+}
+
+/* Breathing room between the category circles and the filter bar.
+
+   Scoped to `:has(.subnav-icons)` rather than raising `.collection-toolbar`'s
+   own margin: that margin is shared with collection pages that have no strip
+   above them, and search results, where the extra space would just be a gap
+   under the title. */
+.collection > .section-inner:has(.subnav-icons) + .home-section
+  .collection-toolbar {
+  margin-top: 2.6rem;
+}
+
+@media (max-width: 47.99em) {
+  .collection > .section-inner:has(.subnav-icons) + .home-section
+    .collection-toolbar {
+    margin-top: 1.6rem;
   }
 }
 
@@ -9873,9 +9849,13 @@ button.announcement-link {
   align-items: center;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop-filter. A blurred backdrop is re-snapshotted and re-blurred
+     every frame the content behind it moves — so on a 1.9rem button sitting
+     over a scrolling rail, the browser paid for a blur on every frame of both
+     the rail's scroll and the page's. There are two of these per rail and
+     several rails per page. At this size a 10px blur through a near-opaque
+     white disc is invisible, so the alpha carries the effect instead. */
+  background: rgba(255, 255, 255, 0.93);
   color: rgba(0, 0, 0, 0.58);
   display: flex;
   height: 1.9rem;
@@ -9910,6 +9890,22 @@ button.announcement-link {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
+  cursor: grab;
+  /* Drives the paging buttons now that Lenis no longer eases them. */
+  scroll-behavior: smooth;
+  /* NOT pan-x: that permits horizontal panning ONLY, so a vertical swipe
+     starting on the rail scrolls nothing and the page feels frozen.
+     `pan-x pan-y` lets the browser arbitrate by gesture direction. Same
+     reasoning as .dragscroll-viewport. */
+  touch-action: pan-x pan-y pinch-zoom;
+}
+
+/* Instant while dragging — a smooth scroll fighting the pointer lags the rail
+   behind the cursor. Mirrors .dragscroll-viewport.is-dragging. */
+.hcarousel-viewport.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  user-select: none;
 }
 
 .hcarousel-viewport::-webkit-scrollbar {
@@ -9921,8 +9917,8 @@ button.announcement-link {
   width: max-content;
 }
 
-/* On touch devices Lenis defers to native momentum, so let CSS snapping help
-   and hide the overlay buttons — swiping is the natural interaction there. */
+/* Touch scrolling is native, so let CSS snapping help and hide the overlay
+   buttons — swiping is the natural interaction there. */
 @media (hover: none) {
   .hcarousel-viewport {
     scroll-snap-type: x proximity;
@@ -9944,9 +9940,13 @@ button.announcement-link {
   height: 1.9rem;
   border-radius: 999px;
   border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.74);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop-filter. A blurred backdrop is re-snapshotted and re-blurred
+     every frame the content behind it moves — so on a 1.9rem button sitting
+     over a scrolling rail, the browser paid for a blur on every frame of both
+     the rail's scroll and the page's. There are two of these per rail and
+     several rails per page. At this size a 10px blur through a near-opaque
+     white disc is invisible, so the alpha carries the effect instead. */
+  background: rgba(255, 255, 255, 0.93);
   color: rgba(0, 0, 0, 0.58);
   font-size: 1.05rem;
   line-height: 1;
@@ -10226,9 +10226,13 @@ button.announcement-link {
   height: 1.9rem;
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  /* No backdrop-filter. A blurred backdrop is re-snapshotted and re-blurred
+     every frame the content behind it moves — so on a 1.9rem button sitting
+     over a scrolling rail, the browser paid for a blur on every frame of both
+     the rail's scroll and the page's. There are two of these per rail and
+     several rails per page. At this size a 10px blur through a near-opaque
+     white disc is invisible, so the alpha carries the effect instead. */
+  background: rgba(255, 255, 255, 0.93);
   color: rgba(0, 0, 0, 0.58);
   font-size: 1.05rem;
   line-height: 1;
@@ -11530,234 +11534,6 @@ button.announcement-link {
   }
 }
 
-/*
-* --------------------------------------------------
-* First-load intro — branded, once per session
-* --------------------------------------------------
-*/
-
-/*
-   The pre-paint script in root.tsx stamps this on the second and later loads
-   of a session, so a returning visitor never sees a single frame. `display:
-   none` (not opacity/visibility) so the element costs nothing to lay out and
-   its animation never starts.
-*/
-html[data-intro='seen'] .intro {
-  display: none;
-}
-
-.intro {
-  position: fixed;
-  inset: 0;
-  /* Above the cart/search overlays (2000), below Tidio's inline launcher. */
-  z-index: 3000;
-  display: grid;
-  place-items: center;
-  background: var(--color-bg);
-  /* Never eats a tap, not even mid-animation. An intro that swallows the
-     first click of a session is worse than showing no intro at all. */
-  pointer-events: none;
-  /*
-    1.5s total. Draw to 0.8s, ink settles at 0.88s, a short rest, then the
-    word rushes the camera: it scales up past the frame while the veil
-    dissolves behind it, so the homepage is arriving through the letterforms
-    rather than from behind a curtain.
-
-    The veil fades here rather than sliding. Against a zoom, a slide fights
-    it — two directions at once — whereas a dissolve lets the growing word own
-    the movement and simply stops standing in front of the page.
-
-    This total is set by Speed Index, not taste. SI scores how much of the
-    page is visible over time, sampled frame by frame — an opaque veil holds
-    that at zero for as long as it is up, and it does so no matter how cheap
-    the animation on top is. At 3.2s SI measured 2.7s and cost ~6 points of
-    the Lighthouse score on its own. Every 100ms added here comes straight
-    off SI, so treat this as a performance budget.
-  */
-  animation: intro-veil 1.5s linear forwards;
-  /* Opacity, not transform: the veil now dissolves rather than travels. */
-  will-change: opacity;
-}
-
-.intro-svg {
-  /* Scaled as a whole rather than by raising font-size: the viewBox geometry
-     and the dash length below are in viewBox units, so growing the element
-     enlarges the word and its stroke together and neither needs re-tuning. */
-  width: min(92vw, 34rem);
-  height: auto;
-  /* One track for the word's whole life: a barely-there push toward the
-     viewer while it draws, the rest on the finished word, then the zoom out
-     through the frame. Kept as a single animation because two competing
-     `transform` animations on one element would overwrite each other. */
-  animation: intro-zoom 1.5s forwards;
-  /* Desktop gets the full statement size. Capped in rem rather than left at a
-     bare vw so it stops growing on an ultrawide instead of running to the
-     screen edges. */
-  @media (min-width: 48em) {
-    width: min(86vw, 64rem);
-  }
-  /* The stroke sits outside the glyph box; without this the outer edge of the
-     W and the descender get clipped by the viewBox. */
-  overflow: visible;
-}
-
-.intro-text {
-  font-family: var(--font-display);
-  font-size: 118px;
-  /*
-    800 is a separate file from the body weight, so root.tsx preloads it
-    alongside almarai-400 — otherwise it lands after first paint and
-    `font-display: swap` re-renders the word mid-draw.
-
-    A heavy face traces as two near-parallel contours per stem rather than one
-    line, so the stroke is thinner here than it was at 400: at 1.15 the two
-    edges of each stem nearly touch and the letterform fills in muddy while
-    it is still drawing.
-  */
-  font-weight: 800;
-  letter-spacing: -2px;
-  fill: var(--cg-champagne);
-  stroke: var(--cg-champagne);
-  stroke-width: 0.9;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  /*
-    The draw. Every glyph outline is its own closed subpath, and a dash
-    pattern restarts on each one — so a single length longer than the biggest
-    glyph's perimeter traces every letter of both lines at once, no per-letter
-    or per-line markup and no stagger needed. Adding words costs nothing here;
-    only changing font-size would, since perimeter scales with it.
-
-    Tuning knob: too low and the letters finish tracing before the timeline
-    ends (they pop); too high and they crawl. Re-tune if the font-size above
-    changes, since perimeter scales with it.
-  */
-  /*
-    Raised from 560 with the jump to weight 800: a heavier glyph has a longer
-    contour, and this value must stay ABOVE the longest glyph's perimeter or
-    that letter never finishes drawing — it stalls part-formed. Overshooting
-    is the safe direction; it only costs a beat of stillness at the end.
-  */
-  stroke-dasharray: 700;
-  stroke-dashoffset: 700;
-  /* Outline first, then the gold floods in behind it. */
-  fill-opacity: 0;
-  /*
-    `linear` on the draw, deliberately. An eased curve spends its middle
-    slowing down, which on a trace reads as the pen hesitating half way
-    through the word — constant speed is what makes it feel like one
-    continuous stroke from W to the final e.
-
-    The ink overlaps the last third of the draw rather than waiting for it, so
-    there is never a frame where nothing is moving.
-  */
-  animation:
-    intro-draw 0.8s linear forwards,
-    intro-ink 0.3s ease-out 0.58s forwards;
-}
-
-@keyframes intro-draw {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes intro-ink {
-  to {
-    fill-opacity: 1;
-  }
-}
-
-/*
-  Per-keyframe easing, because the two halves want opposite curves: the settle
-  decelerates into its rest, and the zoom accelerates away. A single easing
-  across the whole track would make the word swell evenly, which reads as a
-  slow push-in rather than something rushing past the camera.
-
-  75% = 1.13s, the end of the rest. The word starts growing here, a beat
-  BEFORE the veil begins to dissolve at 80%, so the movement leads and the
-  reveal follows it.
-*/
-@keyframes intro-zoom {
-  0% {
-    transform: scale(0.975);
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-  70%,
-  75% {
-    opacity: 1;
-    transform: scale(1);
-    /* Hard ease-in: barely moves at first, then rushes. */
-    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
-  }
-  /* Holds most of its weight while it is still legible, so the word is not
-     already ghost-like by the time it is large. Transform is deliberately
-     absent here — it interpolates straight from 75% to 100% regardless. */
-  90% {
-    opacity: 0.72;
-  }
-  100% {
-    /* 5.5, not more: past roughly this the rasterised layer visibly softens
-       as it is scaled, and the extra travel buys nothing once the word is
-       already wider than the viewport. */
-    opacity: 0;
-    transform: scale(5.5);
-  }
-}
-
-/*
-  Holds solid through the draw and the rest, then dissolves from 80% (1.2s of
-  1.5s) while the word is already growing over it — the page resolves behind
-  the zoom instead of being uncovered by it.
-
-  `linear` on this one: an eased fade spends its middle hovering around half
-  opacity, which shows the page as a wash behind a translucent sheet. A
-  constant fade passes through that state instead of sitting in it.
-
-  `visibility` at the end so a finished overlay is out of the a11y tree
-  rather than merely transparent and still hit-testable.
-
-  Which metrics this actually touches, measured rather than assumed:
-
-  LCP — unaffected. Chrome's LCP ignores occlusion, so the hero is recorded
-  when it paints regardless of the veil, and a background-colour div is not
-  itself a candidate. Measured 1.2s with the intro at 3.2s.
-
-  FCP — helped. The word paints almost immediately, ahead of the hero.
-
-  SPEED INDEX — this is the one that pays. SI samples visual completeness
-  over time, so an opaque veil pins it near zero for its whole duration. At
-  3.2s SI measured 2.7s; the duration is the only lever that moves it.
-
-  So: length is cheap for LCP and expensive for SI. Budget against SI.
-*/
-@keyframes intro-veil {
-  0%,
-  80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    visibility: hidden;
-  }
-}
-
-/*
-  The page itself is deliberately NOT animated. It has already rendered and
-  settled underneath while the word was drawing, so the veil sliding off is
-  the entire reveal — the homepage is simply there. Moving it as well would
-  re-animate content the visitor has, as far as the browser is concerned,
-  already been shown, and would put a transform on .page-wrapper that makes
-  it the containing block for every `position: fixed` descendant inside it.
-*/
-
-/* A full-screen animation on arrival is exactly the motion that triggers
-   vestibular discomfort. Skip it outright rather than shortening it. */
-@media (prefers-reduced-motion: reduce) {
-  .intro {
-    display: none;
-  }
-}
 .form-content {
   justify-content: center;
   justify-items: inline block;
@@ -12736,22 +12512,41 @@ html[data-intro='seen'] .intro {
   display: none;
 }
 
+/* The feed and the icon bar are one block, so they are spaced as one: 2rem
+   above the feed, and the bar below carries the block's bottom padding.
+
+   The section ABOVE has its bottom padding zeroed rather than this one taking
+   a negative margin. Every `home-section` pads both sides, so the seam is the
+   sum of two paddings — 4.4rem on mobile, 7.2rem on desktop. Cancelling one
+   side and setting the other makes the gap exactly 2rem at every width, with
+   no magic number that has to track `home-section` if it ever changes. */
+.home-section:has(+ .tiktok-feed-section) {
+  padding-bottom: 0;
+}
+
+.tiktok-feed-section {
+  padding-top: 2rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Reputon draws its own header directly below this one — the account handle,
+   counts and follow button. Both are wanted, so the only job here is to stop
+   them reading as two separate headings: `.editorial-heading`'s own 0.65rem
+   plus its 0.25rem bottom padding put a visible band between them. */
+.tiktok-feed-heading {
+  padding-bottom: 0;
+  margin-bottom: 0.15rem;
+}
+
 @media (max-width: 63.99em) {
   .social-follow {
     display: block;
-    /* The bar is the tail of the TikTok section above it, not a section of its
-       own. `home-section`'s 2.2rem was stacking on the feed's own bottom
-       padding and opening a dead band between the carousel and the icons. */
     padding-top: 0;
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
   }
-}
 
-/* Same reason from the other side: the feed's bottom padding was spacing it
-   away from a bar that is meant to read as part of it. */
-@media (max-width: 63.99em) {
   .tiktok-feed-section {
-    padding-bottom: 0.75rem;
+    padding-bottom: 0.35rem;
   }
 }
 

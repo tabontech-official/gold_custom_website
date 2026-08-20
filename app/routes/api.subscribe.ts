@@ -43,8 +43,8 @@ export async function action({request, context}: Route.ActionArgs) {
       return {error: error.message};
     }
 
-    // `email` echoed back so the popup can say where it went — the fetcher's
-    // own formData is cleared by then. See WelcomePopup.
+    // `email` echoed back so the caller can say where it went — a fetcher's
+    // own formData is cleared by the time its result renders.
     return {success: true, email};
   } catch (error) {
     console.error(error);

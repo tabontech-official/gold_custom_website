@@ -13,12 +13,10 @@ import {
 import type {Route} from './+types/root';
 import {FOOTER_QUERY, HEADER_QUERY} from '~/lib/fragments';
 import {getWishlist} from '~/lib/wishlist';
-import {introGateScript} from '~/lib/introGate';
 import appStyles from '~/styles/app.css?url';
 import appStylesInline from '~/styles/app.css?inline';
 import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
 import almarai300 from '~/assets/fonts/almarai-300.woff2?url';
-import almarai800 from '~/assets/fonts/almarai-800.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
 import {WishlistToast} from './components/WishlistToast';
@@ -146,28 +144,20 @@ export function links() {
     // displaced the two faces that do paint immediately:
     //
     //   .hero-heading  font-weight: 300  <- the words on the hero banner
-    //   .intro-text    font-weight: 800  <- the first-load intro overlay
     //
-    // Lighthouse's critical request chain names exactly those two, at 643 ms and
-    // 633 ms, discovered late because neither was preloaded. 400 stays because
-    // it is the body face and `font-weight: 500` resolves onto it.
+    // Lighthouse's critical request chain named it at 643 ms, discovered late
+    // because it was not preloaded. 400 stays because it is the body face and
+    // `font-weight: 500` resolves onto it.
     //
-    // Three preloads was the alternative and is the wrong trade on a phone: a
-    // third font competes with the LCP image for the same early bandwidth. If
-    // the intro is ever shortened or dropped, 800 stops being above-the-fold and
-    // this should become 300 + 400.
+    // 800 used to be here too, for the first-load intro overlay's `.intro-text`.
+    // That overlay is gone, so 800 is no longer above the fold and the preload
+    // came out with it — a third font competes with the LCP image for the same
+    // early bandwidth, which is the wrong trade on a phone.
     {
       rel: 'preload',
       as: 'font',
       type: 'font/woff2',
       href: almarai300,
-      crossOrigin: 'anonymous',
-    },
-    {
-      rel: 'preload',
-      as: 'font',
-      type: 'font/woff2',
-      href: almarai800,
       crossOrigin: 'anonymous',
     },
     // Served from public/ at a fixed path rather than imported as a hashed
@@ -379,24 +369,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
           }}
         />
         {/*
-          Decides the first-load intro BEFORE the first paint.
-
-          `sessionStorage` is client-only, so the server cannot know whether
-          this visitor has already seen the intro — render it unconditionally
-          and let React decide later, and every page change in the session
-          flashes the overlay for a frame before the effect tears it down.
-          This runs synchronously in `<head>`, ahead of any paint, so the
-          stamped attribute is already on `<html>` when the body first draws.
-
-          A throwing/blocked storage (private mode, sandboxed iframe) lands in
-          the catch and marks it seen: failing to a silent page is right, since
-          the alternative is an intro on literally every navigation.
-        */}
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{__html: introGateScript()}}
-        />
-        {/*
           GA4 + Meta pixel — the queue stubs only, no vendor `<script src>`.
 
           This has to run early: it creates `dataLayer` and `fbq` as queues, so
@@ -417,47 +389,6 @@ export function Layout({children}: {children?: React.ReactNode}) {
       </head>
       <body>
         {children}
-        {/*
-          Branded first-load intro. Deliberately markup + CSS only: no state,
-          no timer, no effect. The animation ends itself (`forwards`) and the
-          overlay never captures input, so there is nothing to unmount and no
-          way for it to strand a visitor if JS is slow or dead. The script
-          above is what limits it to once per session.
-
-          AFTER `{children}`, not before. It is `position: fixed` at z-index
-          3000, so document order changes nothing about how it looks — but
-          sitting first, its markup was one more thing the parser had to get
-          through before it reached the hero image. Later in the DOM is also
-          strictly safer for the stacking: nothing after it can now paint over
-          it by source order alone.
-        */}
-        <div className="intro" aria-hidden="true">
-          {/*
-            Two lines, not one. "Welcome to Gold Custom" is three times the
-            width of "Welcome", and on one line the viewBox has to grow wide
-            enough that `min(92vw, 34rem)` scales the whole thing down to a
-            thin strip — the letterforms end up smaller than the body copy
-            behind them on a phone. Breaking after "to" keeps the type at a
-            size worth animating.
-
-            The viewBox grew with the word rather than the font-size shrinking:
-            the draw below is tuned to glyph perimeter, which scales with
-            font-size, so leaving 118px alone means `stroke-dasharray` still
-            clears the longest glyph and needs no re-tuning.
-          */}
-          <svg
-            className="intro-svg"
-            viewBox="0 0 820 330"
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <text className="intro-text" x="410" y="135" textAnchor="middle">
-              Welcome to
-            </text>
-            <text className="intro-text" x="410" y="262" textAnchor="middle">
-              Gold Custom
-            </text>
-          </svg>
-        </div>
         <WishlistToast />
         <ScrollRestoration nonce={nonce} />
         <Scripts nonce={nonce} />
