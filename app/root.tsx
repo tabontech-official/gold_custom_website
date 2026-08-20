@@ -94,6 +94,24 @@ export function links() {
       rel: 'preconnect',
       href: 'https://cdn.shopify.com',
     },
+    /**
+     * The two homepage widgets — the Reputon TikTok carousel and the Elfsight
+     * reviews grid — are both third-party scripts injected on scroll, so the
+     * browser only learns their origins at the moment it needs them and pays a
+     * cold DNS + TCP + TLS handshake before a byte of either arrives.
+     *
+     * `dns-prefetch`, not `preconnect`: a preconnect holds an open socket, and
+     * browsers cap parallel connections during load, so four of them would take
+     * slots the LCP image wants. These resolve DNS early and cost nothing if
+     * the shopper never scrolls that far.
+     *
+     * Kept in sync with REPUTON_SCRIPT_SRC (components/TikTokFeedSection.tsx)
+     * and ELFSIGHT_SCRIPT_SRC (components/GoogleReviewsSection.tsx).
+     */
+    {rel: 'dns-prefetch', href: 'https://cdn.ttw.reputon.com'},
+    {rel: 'dns-prefetch', href: 'https://ttw.reputon.com'},
+    {rel: 'dns-prefetch', href: 'https://elfsightcdn.com'},
+    {rel: 'dns-prefetch', href: 'https://static.elfsight.com'},
     // No `preconnect` to shop.app. It was here for Shop Pay, but the only Shop
     // Pay surface in this app is the installments banner on the product page,
     // and that loads shop-js from cdn.shopify.com — the origin preconnected

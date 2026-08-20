@@ -2134,102 +2134,6 @@ button.announcement-link {
   color: #a33b2f;
 }
 
-.footer-social {
-  display: flex;
-  gap: 0.85rem;
-  margin-top: 0.55rem;
-}
-
-.footer-social a {
-  align-items: center;
-  border: 1px solid var(--color-border);
-  border-radius: 50%;
-  display: flex;
-  height: 2.6rem;
-  width: 2.6rem;
-  justify-content: center;
-  transition:
-    border-color 200ms ease,
-    background-color 200ms ease,
-    color 200ms ease;
-  color: var(--color-ink);
-  background: transparent;
-}
-
-/*
-  Hover fills the button with the network's OWN brand colour and knocks the
-  glyph out in white. The generic ink fill is kept as the base so a network
-  added to SOCIAL_LINKS without a rule below still has a sane hover rather than
-  none at all.
-
-  Hex values are the official ones published by each brand (via Simple Icons,
-  same source as the glyph paths in Footer.tsx) — not eyeballed off a
-  screenshot, which is how brand colours usually end up subtly wrong.
-*/
-.footer-social a:hover {
-  border-color: var(--color-ink);
-  background: var(--color-ink);
-  color: #fff;
-}
-/* Instagram has no single brand colour — the mark is defined as a gradient,
-   anchored bottom-left, and a flat pink is a substitute for it rather than the
-   real thing. `border-color` still needs a solid, so it takes the magenta the
-   gradient passes through at the midpoint. */
-.footer-social a[data-social='instagram']:hover {
-  border-color: #d6249f;
-  background: radial-gradient(
-    circle at 30% 107%,
-    #fdf497 0%,
-    #fdf497 5%,
-    #fd5949 45%,
-    #d6249f 60%,
-    #285aeb 90%
-  );
-}
-.footer-social a[data-social='facebook']:hover {
-  border-color: #0866ff;
-  background: #0866ff;
-}
-.footer-social a[data-social='youtube']:hover {
-  border-color: #ff0000;
-  background: #ff0000;
-}
-/*
-  TikTok's official colour IS #000 — which is also --color-ink, so a plain fill
-  would make its hover identical to the fallback above and read as "nothing
-  happened". What actually identifies the mark is the chromatic split: cyan
-  offset one way, magenta the other. Two drop-shadows on the glyph reproduce it
-  exactly, and because they follow the alpha channel they trace the letterform
-  rather than boxing it.
-*/
-.footer-social a[data-social='tiktok']:hover {
-  border-color: #000000;
-  background: #000000;
-}
-.footer-social a[data-social='tiktok']:hover svg {
-  filter: drop-shadow(-1px -1px 0 #25f4ee) drop-shadow(1px 1px 0 #fe2c55);
-}
-
-.footer-social svg {
-  /* 1rem inside a 2.6rem button. The brand marks are full-bleed on their 24x24
-     grid — unlike the padded glyphs they replaced — so the same pixel size
-     reads noticeably heavier; this keeps the optical weight where it was. */
-  width: 1rem;
-  height: 1rem;
-  color: inherit;
-  fill: currentColor;
-  /*
-    NOT `stroke: currentColor`, which is what this was.
-
-    Every social mark is a solid filled path, so a stroke did not outline them,
-    it FATTENED them: SVG's default stroke-width is 1 on a 24-unit grid, laid
-    half outside and half inside every edge. That closed up the counters — the
-    notch in YouTube's play triangle, the gap in TikTok's note, the ring in
-    Instagram's lens — and is why the row looked like blobs at small size.
-  */
-  stroke: none;
-}
-
 .footer-bottom {
   align-items: center;
   border-top: 1px solid var(--color-border);
@@ -12647,12 +12551,20 @@ html[data-intro='seen'] .intro {
 .social-rail {
   position: fixed;
   top: 50%;
-  left: 0.75rem;
+  /* Flush to the viewport edge — the pills read as attached to the screen
+     rather than floating in a gutter, so their left corners are square too. */
+  left: 0;
   transform: translateY(-50%);
   /* Above the page, below the header dropdowns / cart aside / popup. */
   z-index: 40;
   display: flex;
   flex-direction: column;
+  /* NOT the default `stretch`. A flex column stretches every item to the
+     width of the widest one, so once the pills became `width: auto` the
+     container grew with whichever pill was open and dragged all four out with
+     it — hovering one appeared to expand them all. `flex-start` lets each pill
+     size to its own content. */
+  align-items: flex-start;
   row-gap: 0.5rem;
   margin: 0;
   padding: 0;
@@ -12667,43 +12579,39 @@ html[data-intro='seen'] .intro {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  width: 44px;
+  /* Square on the left so it meets the screen edge, rounded on the right.
+     The extra left padding buys back the gutter the rail used to sit in, so
+     the glyph stays where it was on screen. */
+  border-radius: 0 6px 6px 0;
+  width: auto;
   height: 44px;
-  padding: 0 0.6rem;
-  border-radius: 6px;
+  padding: 0 0.7rem 0 1.2rem;
   color: #fff;
   font-weight: 700;
   font-size: 0.74rem;
   letter-spacing: 0.01em;
   box-shadow: 0 2px 10px rgb(0 0 0 / 12%);
-  /* Overshoot-free ease-out: the pill decelerates into its open width instead
-     of stopping dead, which is most of what reads as "smooth". */
-  transition: width 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 .social-rail a:hover,
 .social-rail a:focus-visible {
-  width: 168px;
   text-decoration: none;
   color: #fff;
 }
 
+/* Anchored to the pill's RIGHT edge rather than a hardcoded `left`, so it
+   travels with the pill as the handle opens. The old version had to name the
+   open width twice — once here and once on the pill — and any handle shorter
+   than that width left the diamond stranded in dead space. */
 .social-rail a::before {
   content: '';
   position: absolute;
   z-index: -1;
   top: 50%;
-  left: 30px;
+  right: -9px;
   width: 20px;
   height: 20px;
   transform: translateY(-50%) rotate(45deg);
-  transition: left 300ms cubic-bezier(0.22, 0.61, 0.36, 1);
-}
-
-.social-rail a:hover::before,
-.social-rail a:focus-visible::before {
-  left: 152px;
 }
 
 .social-rail a svg {
@@ -12715,25 +12623,38 @@ html[data-intro='seen'] .intro {
   color: inherit;
 }
 
+/* The handle is what widens, and the pill (width: auto) simply follows it —
+   so the open pill is exactly as wide as the handle needs and never a fixed
+   size with slack on the end. Collapsed it contributes nothing: no width, no
+   margin, no border. */
 .social-rail-handle {
   display: inline-flex;
-  transform-origin: left;
-  transform: scaleX(0);
+  max-width: 0;
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0 solid rgb(255 255 255 / 55%);
   opacity: 0;
-  padding-left: 0.45rem;
-  border-left: 2px solid rgb(255 255 255 / 55%);
+  overflow: hidden;
   white-space: nowrap;
-  transition: all 80ms ease;
+  transition:
+    max-width 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    margin-left 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    padding-left 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    border-left-width 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    opacity 140ms ease;
 }
 
-/* Delayed: the label wipes in as the pill finishes widening, otherwise it
-   reads as text spilling out of a box that hasn't made room for it. */
+/* 9rem clears the longest handle in SOCIAL_LINKS with a little room; keeping it
+   near the real text width matters because max-width animates toward the value
+   named here, so an oversized ceiling makes the reveal finish early and stall. */
 .social-rail a:hover .social-rail-handle,
 .social-rail a:focus-visible .social-rail-handle {
-  transform: scaleX(1);
+  max-width: 9rem;
+  margin-left: 0.5rem;
+  padding-left: 0.45rem;
+  border-left-width: 2px;
   opacity: 1;
-  transition-duration: 160ms;
-  transition-delay: 170ms;
+  transition-delay: 0ms, 0ms, 0ms, 0ms, 120ms;
 }
 
 /* Per-brand fill and diamond, at the brands' real published colours — the same
@@ -12818,10 +12739,19 @@ html[data-intro='seen'] .intro {
 @media (max-width: 63.99em) {
   .social-follow {
     display: block;
-    /* No top padding: the bar is the tail of the TikTok section above it, not
-       a section of its own, and `home-section`'s own padding would open a gap
-       that breaks them apart. */
+    /* The bar is the tail of the TikTok section above it, not a section of its
+       own. `home-section`'s 2.2rem was stacking on the feed's own bottom
+       padding and opening a dead band between the carousel and the icons. */
     padding-top: 0;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* Same reason from the other side: the feed's bottom padding was spacing it
+   away from a bar that is meant to read as part of it. */
+@media (max-width: 63.99em) {
+  .tiktok-feed-section {
+    padding-bottom: 0.75rem;
   }
 }
 
@@ -12834,7 +12764,7 @@ html[data-intro='seen'] .intro {
   justify-content: space-between;
   width: 100%;
   margin: 0;
-  padding: 0.7rem clamp(1rem, 6vw, 2.5rem);
+  padding: 0.45rem clamp(1rem, 6vw, 2.5rem);
   border: 1px solid var(--color-border);
   border-radius: 999px;
   background: var(--color-bg-soft);
@@ -12857,8 +12787,8 @@ html[data-intro='seen'] .intro {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   border: 1px solid var(--color-border);
   background: var(--color-bg);
@@ -12869,8 +12799,11 @@ html[data-intro='seen'] .intro {
 }
 
 .social-follow-link svg {
-  width: 24px;
-  height: 24px;
+  /* Held at 22px while the circle came down from 48px: the marks were the one
+     thing that wasn't too big, and shrinking them with everything else would
+     have made the bar shorter AND harder to read. */
+  width: 22px;
+  height: 22px;
   color: inherit;
 }
 

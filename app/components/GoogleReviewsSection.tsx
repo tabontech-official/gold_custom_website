@@ -47,13 +47,29 @@ export function GoogleReviewsSection() {
     return () => observer.disconnect();
   }, []);
 
+  /**
+   * Elfsight renders its own "Google Reviews" heading, which duplicates the
+   * one this page already has. There is no config for it and no stable class
+   * to target, so it is found by its text.
+   *
+   * The scan is coalesced into one animation frame. It used to run on EVERY
+   * mutation, and each run was `querySelectorAll('*')` plus a `textContent`
+   * read over the whole subtree — an O(nodes) walk. Elfsight mounts several
+   * hundred nodes and then keeps mutating them (lazy avatars, carousel
+   * transforms, star fills), so the observer was re-walking the entire widget
+   * dozens of times per second on the main thread. That is most of why the
+   * section felt slow to appear: the work was ours, not theirs.
+   */
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
     const section = document.querySelector('.google-reviews-section');
     if (!section) return;
 
+    let frame = 0;
+
     const applyReviewLayout = () => {
+      frame = 0;
       section.querySelectorAll<HTMLElement>('*').forEach((element) => {
         const text = element.textContent?.trim();
         if (text === 'Google Reviews' || text === 'What Our Customers Say') {
@@ -62,12 +78,20 @@ export function GoogleReviewsSection() {
       });
     };
 
+    const scheduleScan = () => {
+      if (frame) return;
+      frame = requestAnimationFrame(applyReviewLayout);
+    };
+
     applyReviewLayout();
 
-    const observer = new MutationObserver(applyReviewLayout);
+    const observer = new MutationObserver(scheduleScan);
     observer.observe(section, {childList: true, subtree: true});
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
   }, []);
 
   return (
