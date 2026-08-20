@@ -78,6 +78,17 @@ export function enableDragScroll(el: HTMLElement): () => void {
     else down = false;
   }
 
+  /**
+   * Native HTML5 drag steals the gesture. Press on a child <img> or <a> and
+   * the browser starts its own drag-and-drop: it renders a ghost of the image
+   * under the cursor and stops delivering `pointermove`, so the rail freezes
+   * part-way through the scroll and only unsticks on the next click. Killing
+   * `dragstart` at the rail leaves nothing for the browser to pick up.
+   */
+  function onDragStart(event: DragEvent) {
+    event.preventDefault();
+  }
+
   function onClickCapture(event: MouseEvent) {
     if (moved) {
       event.preventDefault();
@@ -102,6 +113,7 @@ export function enableDragScroll(el: HTMLElement): () => void {
   el.addEventListener('pointercancel', onPointerUp);
   window.addEventListener('pointercancel', onPointerUp);
   window.addEventListener('blur', onWindowBlur);
+  el.addEventListener('dragstart', onDragStart);
   el.addEventListener('click', onClickCapture, true);
 
   return () => {
@@ -112,6 +124,7 @@ export function enableDragScroll(el: HTMLElement): () => void {
     el.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('pointercancel', onPointerUp);
     window.removeEventListener('blur', onWindowBlur);
+    el.removeEventListener('dragstart', onDragStart);
     el.removeEventListener('click', onClickCapture, true);
   };
 }

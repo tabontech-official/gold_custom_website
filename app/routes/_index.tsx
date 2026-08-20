@@ -10,6 +10,7 @@ import {MarketBar} from '~/components/MarketBar';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
 import {cdnWidth} from '~/lib/cdnImage';
+import {collectionLabel} from '~/lib/categories';
 /**
  * Imported as Vite assets, NOT referenced as `/purity.webp` out of `public/`.
  *
@@ -929,7 +930,12 @@ export function ShopByCategory({
         <CoverflowCarousel
           items={categories.map((category) => ({
             id: category.id,
-            title: category.title,
+            // The card's name comes from the category label, not the Shopify
+            // collection title: those titles are SEO copy ("Luxury Engagement
+            // Rings", "Solid Gold Cuban Link Chains") and overflowed the card.
+            // collectionLabel falls back to a title-cased handle for a
+            // collection CATEGORIES doesn't list.
+            title: collectionLabel(category.handle),
             handle: category.handle,
             image: category.image?.url ?? undefined,
           }))}

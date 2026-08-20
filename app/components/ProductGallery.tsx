@@ -298,19 +298,45 @@ function GalleryTile({
   /** Stage tiles are all mounted; only the active one is visible and hoverable. */
   active?: boolean;
 }) {
-  // Hover-to-zoom on the featured image: pan the transform-origin to the
-  // cursor so the shopper can inspect detail without any forced crop at rest.
+  // Click-to-zoom on the featured image. It used to zoom on hover, which meant
+  // the photo blew up to 1.9x the moment the cursor crossed it — every casual
+  // pass over the gallery left the shopper looking at a blurry crop they never
+  // asked for. Now the zoom is opt-in: click to magnify, move to pan the
+  // transform-origin under the cursor, click again (or leave) to drop back.
   const [zoom, setZoom] = useState(false);
   const [origin, setOrigin] = useState('50% 50%');
   const isZoomable = featured && m.kind === 'image' && !!m.image;
 
+  // A tile that stops being the visible one must not come back still zoomed.
+  useEffect(() => {
+    if (!active) setZoom(false);
+  }, [active]);
+
   const onMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isZoomable) return;
+    if (!isZoomable || !zoom) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * 100;
     const y = ((e.clientY - rect.top) / rect.height) * 100;
     setOrigin(`${x}% ${y}%`);
   };
+
+  const zoomProps = isZoomable
+    ? {
+        role: 'button' as const,
+        tabIndex: 0,
+        'aria-pressed': zoom,
+        'aria-label': zoom ? 'Zoom out of image' : 'Zoom into image',
+        onClick: () => setZoom((on) => !on),
+        onKeyDown: (e: React.KeyboardEvent<HTMLDivElement>) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setZoom((on) => !on);
+          }
+        },
+        onMouseLeave: () => setZoom(false),
+        onMouseMove: onMove,
+      }
+    : {};
 
   return (
     <div
@@ -331,9 +357,7 @@ function GalleryTile({
       className={`${featured ? 'pgg-feature' : 'pgg-tile'}${
         zoom ? ' is-zoomed' : ''
       }${active ? ' is-active' : ''}`}
-      onMouseEnter={isZoomable ? () => setZoom(true) : undefined}
-      onMouseLeave={isZoomable ? () => setZoom(false) : undefined}
-      onMouseMove={onMove}
+      {...zoomProps}
     >
       {m.kind === 'image' && m.image ? (
         <Image

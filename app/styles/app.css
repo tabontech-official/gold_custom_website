@@ -7001,8 +7001,17 @@ button.announcement-link {
   will-change: transform;
 }
 
+/* Zoom is click-to-toggle, so advertise it the way a magnifier reads. */
+.pgg-feature[role='button'] {
+  cursor: zoom-in;
+}
+
+.pgg-feature.is-zoomed {
+  cursor: zoom-out;
+}
+
 .pgg-feature.is-zoomed img {
-  /* Hover magnifier — origin follows the cursor via inline transform-origin. */
+  /* Origin follows the cursor via inline transform-origin while zoomed. */
   transform: scale(1.9);
   transition: transform 60ms ease-out;
 }

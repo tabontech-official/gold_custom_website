@@ -86,14 +86,11 @@ export function CollectionSubNavIcons({
   const supplementalItems =
     SUPPLEMENTAL_SUBCATEGORIES[supplementalParentHandle ?? ''] ?? [];
   const seenHandles = new Set(menuItems.map((item) => item.handle));
+  // No leading "All <Department>" circle: the department landing page is
+  // already where the strip is shown from, so it was a circle linking to the
+  // page you are standing on.
   const items: IconItem[] = department
     ? [
-        {
-          key: department.id,
-          title: `All ${department.label}`,
-          to: department.to,
-          handle: collectionHandleFromPath(department.to) ?? '',
-        },
         ...menuItems,
         ...supplementalItems
           .filter((item) => !seenHandles.has(item.handle))
