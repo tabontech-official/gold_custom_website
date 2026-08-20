@@ -3,6 +3,11 @@ import {
 } from 'react-router';
 import type {Route} from './+types/pages.$handle';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {
+  TrustPromise,
+  parseTrustBadges,
+  TRUST_BADGES_QUERY,
+} from '~/components/TrustPromise';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {absoluteUrl, metaDescription, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
@@ -39,13 +44,32 @@ async function loadCriticalData({
     throw new Error('Missing page handle');
   }
 
-  const [{page}] = await Promise.all([
+  // Our Core Values lives on About Us and nowhere else, so its metaobject is
+  // only fetched for that one handle — every other page would pay a round trip
+  // for a section it never renders. Same 5-minute cache the homepage used when
+  // the section lived there: authored content that changes a few times a year.
+  const wantsTrustBadges = params.handle === TRUST_BADGES_PAGE_HANDLE;
+
+  const [{page}, trustBadgesResponse] = await Promise.all([
     context.storefront.query(PAGE_QUERY, {
       variables: {
         handle: params.handle,
       },
     }),
-    // Add other queries here, so that they are loaded in parallel
+    wantsTrustBadges
+      ? context.storefront
+          .query(TRUST_BADGES_QUERY, {
+            cache: context.storefront.CacheCustom({
+              mode: 'public',
+              maxAge: 300,
+              staleWhileRevalidate: 3600,
+            }),
+          })
+          .catch((error: Error) => {
+            console.error(error);
+            return null;
+          })
+      : null,
   ]);
 
   if (!page) {
@@ -56,6 +80,9 @@ async function loadCriticalData({
 
   return {
     page,
+    // null, not [], when the section isn't wanted — the component is skipped
+    // entirely rather than rendering an empty Core Values block.
+    trustBadges: wantsTrustBadges ? parseTrustBadges(trustBadgesResponse) : null,
   };
 }
 
@@ -69,7 +96,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Page() {
-  const {page} = useLoaderData<typeof loader>();
+  const {page, trustBadges} = useLoaderData<typeof loader>();
 
   return (
     <div className="page">
@@ -78,9 +105,13 @@ export default function Page() {
         <h1>{page.title}</h1>
       </header>
       <main dangerouslySetInnerHTML={{__html: page.body}} />
+      {trustBadges && <TrustPromise badges={trustBadges} />}
     </div>
   );
 }
+
+/** The one page Our Core Values renders on. */
+const TRUST_BADGES_PAGE_HANDLE = 'about-us';
 
 const PAGE_QUERY = `#graphql
   query Page(

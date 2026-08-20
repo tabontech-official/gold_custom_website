@@ -12,16 +12,6 @@ import {
 
 type IconItem = {key: string; title: string; to: string; handle: string};
 
-// Add a collection here only when it belongs to a parent department but is
-// absent from that department's Shopify navigation menu. This keeps one
-// controlled extension point for future product groups and avoids duplicates.
-const SUPPLEMENTAL_SUBCATEGORIES: Record<
-  string,
-  Array<{title: string; handle: string}>
-> = {
-  pendants: [{title: 'Religious Pendants', handle: 'religious-pendants'}],
-};
-
 function collectionHandleFromPath(path: string): string | null {
   const match = path.match(/\/collections\/([^/?#]+)/);
   return match ? match[1] : null;
@@ -43,15 +33,8 @@ export function CollectionSubNavIcons({
 }) {
   const primaryDomainUrl = header.shop.primaryDomain.url;
   const currentPath = `/collections/${handle}`;
-  const supplementalParentHandle = Object.entries(
-    SUPPLEMENTAL_SUBCATEGORIES,
-  ).find(
-    ([parentHandle, subcategories]) =>
-      parentHandle === handle ||
-      subcategories.some((subcategory) => subcategory.handle === handle),
-  )?.[0];
   const department =
-    getMegaMenuDepartmentForHandle(supplementalParentHandle ?? handle) ??
+    getMegaMenuDepartmentForHandle(handle) ??
     MEGA_MENU.find((menuDepartment) =>
       menuDepartment.columns.some((column) =>
         getColumnItems(header, column).some((item) => {
@@ -83,25 +66,15 @@ export function CollectionSubNavIcons({
             : [];
         })
     : [];
-  const supplementalItems =
-    SUPPLEMENTAL_SUBCATEGORIES[supplementalParentHandle ?? ''] ?? [];
-  const seenHandles = new Set(menuItems.map((item) => item.handle));
-  // No leading "All <Department>" circle: the department landing page is
-  // already where the strip is shown from, so it was a circle linking to the
-  // page you are standing on.
-  const items: IconItem[] = department
-    ? [
-        ...menuItems,
-        ...supplementalItems
-          .filter((item) => !seenHandles.has(item.handle))
-          .map((item) => ({
-            key: item.handle,
-            title: item.title,
-            to: `/collections/${item.handle}`,
-            handle: item.handle,
-          })),
-      ]
-    : [];
+  // The Shopify menu is the ONLY source. A second hardcoded list used to graft
+  // extra circles on (Religious Pendants under Pendants), and it keyed off the
+  // page you were standing on — so the same department showed a different set
+  // of circles depending on which sub-page you opened it from. Add a category
+  // to the Shopify navigation menu instead and it appears here everywhere.
+  //
+  // No leading "All <Department>" circle either: it linked to the page you are
+  // already on.
+  const items: IconItem[] = menuItems;
 
   const images = useSubCategoryImages(items.map((item) => item.handle));
   if (!items.length) return null;

@@ -78,6 +78,12 @@ export function TikTokFeedSection() {
   return (
     <section className="home-section tiktok-feed-section">
       <div className="section-inner">
+        {/* Heads the feed AND the social bar that follows it — the two are one
+            block, so one heading covers both rather than each carrying its
+            own. SocialFollow is deliberately headless for this reason. */}
+        <div className="editorial-heading">
+          <h2 className="editorial-title">Our Media</h2>
+        </div>
         <div
           ref={stage}
           className="reputon-tiktok-widget"
@@ -86,7 +92,9 @@ export function TikTokFeedSection() {
           data-autoplay="off"
           data-type="carousel"
           data-theme="light"
-          data-show-header="true"
+          /* Off: the widget draws its own title bar, which landed between our
+             "Our Media" heading and the carousel and read as two headings. */
+          data-show-header="false"
         />
       </div>
     </section>

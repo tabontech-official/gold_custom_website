@@ -7,6 +7,7 @@ import type {
 } from 'storefrontapi.generated';
 import {Aside} from '~/components/Aside';
 import {Footer} from '~/components/Footer';
+import {SocialRail} from '~/components/SocialRail';
 import {Header, HeaderMenu} from '~/components/Header';
 import {CartMain} from '~/components/CartMain';
 import {SearchFormPredictive} from '~/components/SearchFormPredictive';
@@ -52,6 +53,7 @@ export function PageLayout({
           identical on every route, so re-skeletoning them would throw away
           the one part of the page that never needed to reload.
         */}
+        <SocialRail />
         <main className="page-body">
           <RouteTransition>{children}</RouteTransition>
         </main>

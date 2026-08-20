@@ -3,6 +3,17 @@
 /* eslint-disable */
 import type * as StorefrontAPI from '@shopify/hydrogen/storefront-api-types';
 
+export type TrustBadgesQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type TrustBadgesQuery = {
+  metaobject?: StorefrontAPI.Maybe<{
+    fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+  }>;
+};
+
 export type FaqsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -1272,17 +1283,6 @@ export type ShopByCategoriesQuery = {
       image?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Image, 'url' | 'altText'>>;
     }
   >;
-};
-
-export type TrustBadgesQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type TrustBadgesQuery = {
-  metaobject?: StorefrontAPI.Maybe<{
-    fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
-  }>;
 };
 
 export type HeroFieldsFragment = {
@@ -3069,6 +3069,10 @@ export type WishlistProductQuery = {
 };
 
 interface GeneratedQueryTypes {
+  '#graphql\n  query TrustBadges($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    metaobject(\n      handle: {\n        type: "trust_badges_data"\n        handle: "trust-badges-data-qgta9zi1"\n      }\n    ) {\n      fields {\n        key\n        value\n      }\n    }\n  }\n': {
+    return: TrustBadgesQuery;
+    variables: TrustBadgesQueryVariables;
+  };
   '#graphql\n  query Faqs($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    metaobjects(type: "pages_faqs", first: 100) {\n      nodes {\n        handle\n        fields {\n          key\n          value\n        }\n      }\n    }\n  }\n': {
     return: FaqsQuery;
     variables: FaqsQueryVariables;
@@ -3104,10 +3108,6 @@ interface GeneratedQueryTypes {
   '#graphql\n  fragment CategoryCollection on Collection {\n    id\n    title\n    handle\n    image {\n      url\n      altText\n    }\n  }\n  query ShopByCategories($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    rings: collection(handle: "rings") {\n      ...CategoryCollection\n    }\n    chains: collection(handle: "chains") {\n      ...CategoryCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...CategoryCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...CategoryCollection\n    }\n    pendants: collection(handle: "pendants") {\n      ...CategoryCollection\n    }\n    necklaces: collection(handle: "necklaces") {\n      ...CategoryCollection\n    }\n    charms: collection(handle: "charms") {\n      ...CategoryCollection\n    }\n    diamond: collection(handle: "diamond") {\n      ...CategoryCollection\n    }\n    engagementRings: collection(handle: "engagement-rings") {\n      ...CategoryCollection\n    }\n  }\n': {
     return: ShopByCategoriesQuery;
     variables: ShopByCategoriesQueryVariables;
-  };
-  '#graphql\n  query TrustBadges($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    metaobject(\n      handle: {\n        type: "trust_badges_data"\n        handle: "trust-badges-data-qgta9zi1"\n      }\n    ) {\n      fields {\n        key\n        value\n      }\n    }\n  }\n': {
-    return: TrustBadgesQuery;
-    variables: TrustBadgesQueryVariables;
   };
   '#graphql\n  query HeroContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    desktop: metaobject(\n      handle: {type: "web_hero_section", handle: "web-hero-section-ogaqzqnu"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    # Same container shape as desktop, pointing at the portrait (1400x2000)\n    # variants of the same four slides.\n    mobile: metaobject(\n      handle: {type: "web_hero_section", handle: "mobile_hero_section"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    # The banners moved to web_hero_section, but this older entry still supplies\n    # the standalone image DiamondValueSection renders further down the page.\n    cover: metaobject(\n      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}\n    ) {\n      ...HeroFields\n    }\n  }\n  #graphql\n  fragment HeroSlide on Metaobject {\n    handle\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n  #graphql\n  fragment HeroFields on Metaobject {\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n': {
     return: HeroContentQuery;
