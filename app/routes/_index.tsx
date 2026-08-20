@@ -182,7 +182,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     staleWhileRevalidate: 3600,
   });
   const [
-    {collections},
+    {collection: featuredCollection},
     categoryResponse,
     heroResponse,
     faqsResponse,
@@ -204,14 +204,16 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
   ]);
 
   return {
-    // "Featured" is the most recently updated collection, so editing ANY
-    // collection in the admin re-points this rail. Empty collections exist
-    // (Baby Earrings, Chino Links…), and landing on one blanked the homepage
-    // showcase — hence scanning for the first one that actually has products
-    // instead of blindly taking nodes[0].
-    featuredCollection:
-      collections.nodes.find((node) => node.products?.nodes?.length) ??
-      collections.nodes[0],
+    // The "All" collection, in the order it is arranged in the admin — the
+    // same sequence /collections/all shows, which is where this rail's
+    // "View All" already points.
+    //
+    // This used to be `collections(first: 10, sortKey: UPDATED_AT, reverse:
+    // true)` picking the first one with products, i.e. whichever collection
+    // anyone had edited most recently. Saving an unrelated collection silently
+    // re-pointed the homepage rail, and the order inside it was never anything
+    // the store had chosen.
+    featuredCollection,
     categories: [
       categoryResponse.rings,
       categoryResponse.chains,
@@ -1141,7 +1143,14 @@ const FEATURED_COLLECTION_QUERY = `#graphql
       height
     }
     handle
-    products(first: 12) {
+    # No sortKey: the default is COLLECTION_DEFAULT, which is the collection's
+    # OWN order — the manual arrangement set in the admin. Naming MANUAL here
+    # instead would break the rail the day someone switches "All" to sort by
+    # best-selling or price, because MANUAL returns nothing then.
+    #
+    # 24, not 12: the rail reveals RAIL_BATCH (8) at a time as you scroll, so
+    # 12 ran dry after a single reveal.
+    products(first: 24) {
       nodes {
         id
         title
@@ -1168,10 +1177,8 @@ const FEATURED_COLLECTION_QUERY = `#graphql
   }
   query FeaturedCollection($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    collections(first: 10, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...FeaturedCollection
-      }
+    collection(handle: "all") {
+      ...FeaturedCollection
     }
   }
 ` as const;
