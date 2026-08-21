@@ -6227,7 +6227,10 @@ button.announcement-link {
 }
 
 .search-page-empty {
-  padding: 4rem 0;
+  /* Was 4rem top and bottom — with no term the h1 sits directly above this
+     with nothing else on the page, so 8rem of padding read as a gap under the
+     heading rather than as breathing room around a message. */
+  padding: 1.5rem 0 3rem;
   text-align: center;
   color: var(--color-ink-soft);
   font-size: 1rem;
