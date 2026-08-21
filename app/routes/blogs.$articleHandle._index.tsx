@@ -12,6 +12,7 @@ import {
   rootDataFrom,
   siteOrigin,
 } from '~/lib/seo';
+import {CacheContent} from '~/lib/cache';
 
 /**
  * Articles live one level under /blogs — the Shopify blog ("News") is not part
@@ -81,6 +82,7 @@ async function loadCriticalData({context, params}: Route.LoaderArgs) {
   // would need this to search across blogs.
   const [{blogs}] = await Promise.all([
     context.storefront.query(ARTICLE_QUERY, {
+      cache: CacheContent(),
       variables: {articleHandle},
     }),
     // Add other queries here, so that they are loaded in parallel

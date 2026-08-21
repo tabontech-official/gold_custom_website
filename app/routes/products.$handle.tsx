@@ -11,6 +11,7 @@ import {
   useAnalytics,
 } from '@shopify/hydrogen';
 import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
+import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -220,12 +221,17 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const [{product}, installments] = await Promise.all([
     storefront.query(PRODUCT_QUERY, {
       variables: {handle, selectedOptions: getSelectedProductOptions(request)},
+      // This query carries price and availableForSale — the two fields a
+      // customer actually acts on. Omitting `cache` does NOT keep them fresh:
+      // Hydrogen's default is maxAge 1 + SWR 86399, so the price on this page
+      // could be a full day old. CachePrice is the 3-minute tier.
+      cache: CachePrice(),
     }),
     // Shop config, so cache it hard. Errors when the storefront token is
     // missing the `unauthenticated_read_shop_pay_installments_pricing` scope —
     // the banner falls back to FALLBACK_PRICING rather than taking the page down.
     storefront
-      .query(SHOP_PAY_INSTALLMENTS_QUERY, {cache: storefront.CacheLong()})
+      .query(SHOP_PAY_INSTALLMENTS_QUERY, {cache: CacheStatic()})
       .catch(() => null),
     // Add other queries here, so that they are loaded in parallel
   ]);
@@ -285,6 +291,8 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
       // NOT `params.handle` — see productHandleFromParams. On the canonical
       // `/collections/<c>/products/<h>` URL that is the collection.
       variables: {productHandle: productHandleFromParams(params)},
+      // A browsing rail below the fold, not the buy box: the catalog tier.
+      cache: CacheCatalog(),
     })
     .catch((error: Error) => {
       console.error(error);

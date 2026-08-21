@@ -1,6 +1,7 @@
 import type {Route} from './+types/[llms.txt]';
 import {CATEGORIES, productCanonicalPath} from '~/lib/categories';
 import {siteOrigin} from '~/lib/seo';
+import {CacheCatalog, CacheStatic} from '~/lib/cache';
 
 /**
  * /llms.txt — a machine-readable store summary for LLM agents.
@@ -16,12 +17,14 @@ import {siteOrigin} from '~/lib/seo';
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
   const [{shop}, topProducts] = await Promise.all([
-    context.storefront.query(LLMS_SHOP_QUERY),
+    context.storefront.query(LLMS_SHOP_QUERY, {cache: CacheStatic()}),
     // Best sellers are the one product list worth inlining: an agent that
     // fetches this file and stops would otherwise leave knowing the store's
     // shape but not a single thing it sells. Failure here must not 500 the
     // file — the rest of the document is still useful without it.
-    context.storefront.query(LLMS_PRODUCTS_QUERY).catch((error: Error) => {
+    context.storefront
+      .query(LLMS_PRODUCTS_QUERY, {cache: CacheCatalog()})
+      .catch((error: Error) => {
       console.error(error);
       return null;
     }),

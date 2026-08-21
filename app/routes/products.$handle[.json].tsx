@@ -1,5 +1,6 @@
 import type {Route} from './+types/products.$handle[.json]';
 import {toAjaxProduct} from '~/lib/ajaxProduct';
+import {CachePrice} from '~/lib/cache';
 
 /**
  * Shopify's product JSON endpoint, which Liquid storefronts serve and Hydrogen
@@ -12,16 +13,11 @@ import {toAjaxProduct} from '~/lib/ajaxProduct';
 export async function loader({params, context}: Route.LoaderArgs) {
   const {product} = await context.storefront.query(AJAX_PRODUCT_QUERY, {
     variables: {handle: params.handle},
-    // Catalogue data, identical for every visitor. Prices move when the gold
-    // rate is repriced, not per request. 60s rather than CacheLong's 3600s:
-    // CacheLong blacks out admin edits for a full hour with no revalidation at
-    // all, and this endpoint is the only thing the TikTok widget reads. 60s
-    // still absorbs the ~50-request burst one homepage visit makes.
-    cache: context.storefront.CacheCustom({
-      mode: 'public',
-      maxAge: 60,
-      staleWhileRevalidate: 600,
-    }),
+    // Carries prices, so the price tier. maxAge 60 is what absorbs the
+    // ~50-request burst one homepage visit makes (they all land within
+    // seconds); the SWR tail is tightened to 120s so a repriced product is
+    // never more than 3 minutes stale here, matching the PDP.
+    cache: CachePrice(),
   });
 
   if (!product) {
@@ -34,7 +30,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
       // homepage visit makes. Kept to 60s so an admin edit is not frozen in
       // every visitor's browser cache for an hour, which no server-side or CDN
       // purge can reach.
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=600',
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
     },
   });
 }

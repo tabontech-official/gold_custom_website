@@ -19,6 +19,7 @@ import {
   getFiltersFromParam,
   getSearchSortFromParam,
 } from '~/lib/collectionFilter';
+import {CacheCatalog} from '~/lib/cache';
 
 // Result pages are thin/duplicative and would burn crawl budget across every
 // query permutation, so the route is noindex — but still followable so
@@ -365,6 +366,7 @@ async function regularSearch({
     ...items
   }: {errors?: Array<{message: string}>} & RegularSearchQuery =
     await storefront.query(SEARCH_QUERY, {
+      cache: CacheCatalog(),
       variables: {
         ...variables,
         term,
@@ -606,6 +608,7 @@ async function predictiveSearch({
   // "women" is a tag on virtually every ring. Only the collection knows.
   if (match?.exact) {
     const {collection} = await storefront.query(COLLECTION_PRODUCTS_QUERY, {
+      cache: CacheCatalog(),
       variables: {
         handle: match.collection.handle,
         productCount: MAX_DROPDOWN_PRODUCTS,
@@ -633,6 +636,7 @@ async function predictiveSearch({
     predictiveSearch: suggestions,
     errors,
   } = await storefront.query(QUICK_SEARCH_QUERY, {
+    cache: CacheCatalog(),
     variables: {
       term,
       partialTerm: withTrailingWildcard(term),

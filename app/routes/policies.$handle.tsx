@@ -3,6 +3,7 @@ import type {Route} from './+types/policies.$handle';
 import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 import {PolicyDocument} from '~/components/PolicyDocument';
 import {SITE, absoluteUrl, metaDescription, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {CacheStatic} from '~/lib/cache';
 
 type SelectedPolicies = keyof Pick<
   Shop,
@@ -33,6 +34,7 @@ export async function loader({params, context}: Route.LoaderArgs) {
   ) as SelectedPolicies;
 
   const data = await context.storefront.query(POLICY_CONTENT_QUERY, {
+    cache: CacheStatic(),
     variables: {
       privacyPolicy: false,
       shippingPolicy: false,

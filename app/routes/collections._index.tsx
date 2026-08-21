@@ -6,6 +6,7 @@ import type {CollectionFragment} from 'storefrontapi.generated';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {CacheCatalog} from '~/lib/cache';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -35,6 +36,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
 
   const [{collections}] = await Promise.all([
     context.storefront.query(COLLECTIONS_QUERY, {
+      cache: CacheCatalog(),
       variables: paginationVariables,
     }),
     // Add other queries here, so that they are loaded in parallel

@@ -6,6 +6,7 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {CacheContent} from '~/lib/cache';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -38,6 +39,7 @@ async function loadCriticalData({context, request}: Route.LoaderArgs) {
   // Add a second blog and this has to merge both feeds (or list blogs again).
   const [{blogs}] = await Promise.all([
     context.storefront.query(BLOG_ARTICLES_QUERY, {
+      cache: CacheContent(),
       variables: {
         ...paginationVariables,
       },

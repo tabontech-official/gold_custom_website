@@ -3,6 +3,7 @@ import type {Route} from './+types/policies._index';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {PoliciesQuery, PolicyItemFragment} from 'storefrontapi.generated';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {CacheStatic} from '~/lib/cache';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -13,7 +14,9 @@ export const meta: Route.MetaFunction = ({matches}) =>
 
 
 export async function loader({context}: Route.LoaderArgs) {
-  const data: PoliciesQuery = await context.storefront.query(POLICIES_QUERY);
+  const data: PoliciesQuery = await context.storefront.query(POLICIES_QUERY, {
+    cache: CacheStatic(),
+  });
 
   const shopPolicies = data.shop;
   const policies: PolicyItemFragment[] = [

@@ -33,6 +33,7 @@ import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
 import {getGoldRates} from '~/lib/goldRates';
 import {TikTokFeedSection} from '~/components/TikTokFeedSection';
+import {CacheCatalog, CacheContent} from '~/lib/cache';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
@@ -166,21 +167,13 @@ export async function loader(args: Route.LoaderArgs) {
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
   // Banners, category tiles, badges and FAQs are authored content that changes
-  // a few times a year, but on the storefront default (CacheShort: 1s) every
-  // single homepage hit paid four live Storefront round-trips before a byte
-  // went out — which is most of what made this page slow to start.
-  // The featured-collection query stays on the default: it carries prices.
+  // a few times a year — CacheContent (5 min fresh, 65 min worst case).
   //
-  // 5 minutes, not CacheLong's hour. CacheLong serves a hard-cached copy with
-  // no revalidation for 3600s, so editing a banner or category tile in the
-  // admin left the homepage visibly unchanged for an hour with no way to force
-  // it. A busy homepage still absorbs nearly every hit inside a 5-minute
-  // window, so this keeps the round-trip saving that motivated the cache.
-  const cache = context.storefront.CacheCustom({
-    mode: 'public',
-    maxAge: 300,
-    staleWhileRevalidate: 3600,
-  });
+  // CORRECTION to the note that used to sit here: the storefront default is
+  // NOT "CacheShort: 1s". It is CacheDefault — maxAge 1 + SWR 86399, a ONE DAY
+  // stale window. So leaving the featured-collection query on the default to
+  // keep its prices fresh did the exact opposite: it was the single stalest
+  // price on the site. It now uses CacheCatalog like every other product rail.
   const [
     {collection: featuredCollection},
     categoryResponse,
@@ -188,18 +181,24 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     faqsResponse,
     goldRates,
   ] = await Promise.all([
-    context.storefront.query(FEATURED_COLLECTION_QUERY),
-    context.storefront.query(SHOP_BY_CATEGORIES_QUERY, {cache}),
+    context.storefront.query(FEATURED_COLLECTION_QUERY, {
+      cache: CacheCatalog(),
+    }),
+    context.storefront.query(SHOP_BY_CATEGORIES_QUERY, {
+      cache: CacheContent(),
+    }),
     context.storefront
-      .query(HERO_CONTENT_QUERY, {cache})
+      .query(HERO_CONTENT_QUERY, {cache: CacheContent()})
       .catch((error: Error) => {
         console.error(error);
         return null;
       }),
-    context.storefront.query(FAQS_QUERY, {cache}).catch((error: Error) => {
-      console.error(error);
-      return null;
-    }),
+    context.storefront
+      .query(FAQS_QUERY, {cache: CacheContent()})
+      .catch((error: Error) => {
+        console.error(error);
+        return null;
+      }),
     getGoldRates(context.withCache, context.env),
   ]);
 
@@ -346,8 +345,10 @@ function parseHeroContent(response: any): HeroContent | null {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context}: Route.LoaderArgs) {
+  // All four were on the 24h default. The three product rails carry prices, so
+  // they take the catalog tier; the journal rail is authored content.
   const recommendedProducts = context.storefront
-    .query(RECOMMENDED_PRODUCTS_QUERY)
+    .query(RECOMMENDED_PRODUCTS_QUERY, {cache: CacheCatalog()})
     .catch((error: Error) => {
       // Log query errors, but don't throw them so the page can still render
       console.error(error);
@@ -355,21 +356,21 @@ function loadDeferredData({context}: Route.LoaderArgs) {
     });
 
   const bestSellingProducts = context.storefront
-    .query(BEST_SELLING_PRODUCTS_QUERY)
+    .query(BEST_SELLING_PRODUCTS_QUERY, {cache: CacheCatalog()})
     .catch((error: Error) => {
       console.error(error);
       return null;
     });
 
   const genderNewArrivals = context.storefront
-    .query(NEW_ARRIVALS_BY_GENDER_QUERY)
+    .query(NEW_ARRIVALS_BY_GENDER_QUERY, {cache: CacheCatalog()})
     .catch((error: Error) => {
       console.error(error);
       return null;
     });
 
   const journalArticles = context.storefront
-    .query(HOME_ARTICLES_QUERY)
+    .query(HOME_ARTICLES_QUERY, {cache: CacheContent()})
     .catch((error: Error) => {
       console.error(error);
       return null;

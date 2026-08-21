@@ -1,3 +1,4 @@
+import {CacheCatalog} from '~/lib/cache';
 export async function loader({request, context}: any) {
   try {
     const url = new URL(request.url);
@@ -55,6 +56,7 @@ export async function loader({request, context}: any) {
 
       const result = await context.storefront.query(queryWithTag, {
         variables: {q},
+        cache: CacheCatalog(),
       });
 
       const products = result?.products?.nodes ?? [];
@@ -112,6 +114,7 @@ export async function loader({request, context}: any) {
 
     const result = await context.storefront.query(collectionQuery, {
       variables: {handle},
+      cache: CacheCatalog(),
     });
 
     const products = result?.collection?.products?.nodes ?? [];

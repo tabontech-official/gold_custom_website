@@ -3,6 +3,7 @@ import type {Route} from './+types/wishlist';
 import {getWishlist, toggleWishlist} from '~/lib/wishlist';
 import {ProductItem} from '~/components/ProductItem';
 import {pageSeo} from '~/lib/seo';
+import {CachePrice} from '~/lib/cache';
 
 // Contents are per-visitor (session cookie), so there is nothing stable to index.
 export const meta: Route.MetaFunction = () =>
@@ -37,6 +38,7 @@ export async function loader({context}: Route.LoaderArgs) {
   const products = await Promise.all(
     handles.map(async (handle) => {
       const data = await context.storefront.query(WISHLIST_PRODUCT_QUERY, {
+      cache: CachePrice(),
         variables: {handle},
       });
       return data.product;

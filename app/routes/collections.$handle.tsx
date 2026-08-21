@@ -42,6 +42,7 @@ import {
   parseFaqMetafield,
   type Faq,
 } from '~/lib/faqs';
+import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
 
 type CollectionCoverPhoto = {
   image: string;
@@ -218,7 +219,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // un-awaited. `null` is an ordinary outcome, not an error: departments have
   // no parent, and most collections never read the result at all.
   const parentContent = storefront
-    .query(CATEGORY_MENUS_QUERY, {cache: storefront.CacheShort()})
+    .query(CATEGORY_MENUS_QUERY, {cache: CacheNav()})
     .catch(() => null)
     .then((menus) => {
       const menuItemHandles = menus
@@ -240,7 +241,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       return storefront
         .query(PARENT_COLLECTION_CONTENT_QUERY, {
           variables: {handle: parentHandle},
-          cache: storefront.CacheShort(),
+          cache: CacheContent(),
         })
         .then((data) => data.collection)
         .catch(() => null);
@@ -256,12 +257,15 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
         reverse: sort.reverse,
         ...paginationVariables,
       },
-      // Add other queries here, so that they are loaded in parallel
+      // The grid: 24 products with prices. Was on the 24h default, which meant
+      // a price edit or a product added to this collection could stay
+      // invisible for a day. Catalog tier = 5 min fresh, 20 min worst case.
+      cache: CacheCatalog(),
     }),
     // Backs the sidebar's category list. Cached and non-fatal: the page still
     // renders if it fails.
     storefront
-      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: storefront.CacheShort()})
+      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: CacheNav()})
       .then((data) => data.collections.nodes)
       .catch(() => []),
   ]);

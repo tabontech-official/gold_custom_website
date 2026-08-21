@@ -31,6 +31,7 @@ import {
   siteOrigin,
   websiteJsonLd,
 } from '~/lib/seo';
+import {CacheNav} from '~/lib/cache';
 
 export type RootLoader = typeof loader;
 
@@ -210,13 +211,12 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 
   const [header] = await Promise.all([
     storefront.query(HEADER_QUERY, {
-      // CacheShort, NOT CacheLong. CacheLong is maxAge 3600 + SWR 82800 — a
-      // 24-hour stale window, and stale-while-revalidate SERVES the stale copy
-      // to the visitor who triggers the refresh, so a menu edit in the Shopify
-      // admin took an hour plus two page loads to show up. This query carries
-      // every nav menu and the collection titles in them, which is exactly the
-      // content merchants edit and expect to see live.
-      cache: storefront.CacheShort(),
+      // The nav tier: 2 min fresh, 12 min worst case. Not CacheLong (24h
+      // stale window — a menu edit took an hour plus two page loads to show
+      // up), and not CacheShort either: this runs in the ROOT loader on every
+      // single page, so a 10-second window puts a blocking Storefront
+      // round-trip in front of most page views on a quiet store.
+      cache: CacheNav(),
       variables: {
         headerMenuHandle: 'main-menu', // Adjust to your header menu handle
       },
@@ -238,7 +238,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
   // defer the footer query (below the fold)
   const footer = storefront
     .query(FOOTER_QUERY, {
-      cache: storefront.CacheShort(),
+      cache: CacheNav(),
       variables: {
         footerMenuHandle: 'footer', // Adjust to your footer menu handle
       },
