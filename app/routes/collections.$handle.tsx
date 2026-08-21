@@ -46,47 +46,9 @@ import {
 } from '~/lib/faqs';
 import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
 
-type CollectionCoverPhoto = {
-  image: string;
-  alt?: string | null;
-  align: 'left' | 'right';
-};
-
-type CoverPhotoField = {
-  key?: string | null;
-  value?: string | null;
-  reference?: {
-    url?: string | null;
-    image?: {
-      url?: string | null;
-      altText?: string | null;
-    } | null;
-  } | null;
-  references?: {
-    nodes?: Array<{
-      url?: string | null;
-      image?: {
-        url?: string | null;
-        altText?: string | null;
-      } | null;
-    }>;
-  } | null;
-};
-
 function displayTitle(collection?: {handle: string; title: string} | null) {
   if (!collection) return '';
   return collection.handle === 'all' ? 'All Products' : collection.title;
-}
-
-function CollectionProductBreak({item}: {item: CollectionCoverPhoto}) {
-  return (
-    <div
-      className={`collection-product-break is-${item.align}`}
-      style={{backgroundImage: `url("${item.image}")`}}
-      role="img"
-      aria-label={item.alt || 'Collection cover photo'}
-    />
-  );
 }
 
 /** The FAQs this page renders: metafield first, description block as fallback. */
@@ -393,21 +355,19 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
 
-  // These metaobjects are assigned in Shopify on each individual collection.
-  // Never search or fall back to general site-wide FAQ/cover data here; the only
+  // This metaobject is assigned in Shopify on each individual collection.
+  // Never search or fall back to general site-wide FAQ data here; the only
   // permitted fallback is the collection's own parent department (below).
-  let coverSource = collection.collectionCenterImages?.reference ?? null;
   let faqs = readFaqMetafield(collection.collectionFaqs);
 
-  // A child category with neither of its own inherits both from its parent, so
-  // merchants only fill these in once per department. Both lookups are cached
-  // and non-fatal: worst case the child page renders without FAQs/covers.
-  if (!coverSource && !faqs.length) {
+  // A child category with none of its own inherits its parent's, so merchants
+  // only fill these in once per department. Cached and non-fatal: worst case
+  // the child page renders without FAQs.
+  if (!faqs.length) {
     // Started before the query above, so by now it has usually already
     // resolved and this awaits nothing.
     const parent = await parentContent;
     if (parent) {
-      coverSource = parent.collectionCenterImages?.reference ?? null;
       faqs = readFaqMetafield(parent.collectionFaqs);
     }
   }
@@ -415,11 +375,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   return {
     collection,
     allCollections,
-    coverPhotos: getCoverPhotos(
-      {metaobjects: {nodes: coverSource ? [coverSource] : []}},
-      handle,
-      false,
-    ),
     faqs,
     // Resolved here, not in `meta`, because deciding it needs one look at what
     // the CDN actually returns and a meta function cannot await. Null means the
@@ -458,96 +413,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
   return {};
 }
 
-function getCoverPhotos(
-  response: any,
-  collectionHandle: string,
-  requireSectionMatch = true,
-): CollectionCoverPhoto[] {
-  const nodes = response?.metaobjects?.nodes as any[] | undefined;
-  if (!Array.isArray(nodes)) return [];
-  const normalizedHandle = collectionHandle.toLowerCase();
-  const seenImages = new Set<string>();
-  const photos: CollectionCoverPhoto[] = [];
-
-  nodes.forEach((rawNode) => {
-    const node = rawNode as any;
-    const nodeHandle = String(node?.handle ?? '').toLowerCase();
-    const metaobject = node as {fields?: CoverPhotoField[]};
-    const fields: CoverPhotoField[] = Array.isArray(metaobject.fields)
-      ? metaobject.fields
-      : [];
-    const belongsToCollection =
-      nodeHandle === normalizedHandle ||
-      nodeHandle.startsWith(`${normalizedHandle}-`) ||
-      nodeHandle.endsWith(`-${normalizedHandle}`) ||
-      fields.some((field) => {
-        const key = String(field?.key ?? '')
-          .toLowerCase()
-          .replace(/[_\s]+/g, '-');
-        const value = String(field?.value ?? '')
-          .toLowerCase()
-          .replace(/[_\s]+/g, '-');
-        return (
-          [
-            'section',
-            'section-handle',
-            'collection',
-            'collection-handle',
-            'category',
-            'category-handle',
-            'handle',
-          ].includes(key) && value === normalizedHandle
-        );
-      });
-    if (requireSectionMatch && !belongsToCollection) return;
-    const altField = fields.find((field) => {
-      const key = String(field?.key ?? '').toLowerCase();
-      return key === 'alt' || key === 'alt_text' || key === 'title';
-    });
-
-    fields.forEach((field) => {
-      const key = String(field?.key ?? '').toLowerCase();
-      const isPhotoField =
-        key.includes('image') || key.includes('photo') || key.includes('cover');
-      const candidates = [
-        {
-          image: field.reference?.image?.url ?? field.reference?.url ?? null,
-          alt: field.reference?.image?.altText ?? altField?.value ?? null,
-        },
-        ...(field.references?.nodes ?? []).map((reference) => ({
-          image: reference.image?.url ?? reference.url ?? null,
-          alt: reference.image?.altText ?? altField?.value ?? null,
-        })),
-        {
-          image:
-            field.value &&
-            (isPhotoField ||
-              /\.(avif|gif|jpe?g|png|webp)(?:\?|$)/i.test(field.value)) &&
-            /^https?:\/\//i.test(field.value)
-              ? field.value
-              : null,
-          alt: altField?.value ?? null,
-        },
-      ];
-
-      candidates.forEach((candidate) => {
-        if (!candidate.image || seenImages.has(candidate.image)) return;
-        seenImages.add(candidate.image);
-        photos.push({
-          image: candidate.image,
-          alt: candidate.alt,
-          align: photos.length % 2 === 0 ? 'left' : 'right',
-        });
-      });
-    });
-  });
-
-  return photos;
-}
-
 export default function Collection() {
-  const {collection, allCollections, coverPhotos, faqs} =
-    useLoaderData<typeof loader>();
+  const {collection, allCollections, faqs} = useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
   // The metafield JSON is the source of truth. Any FAQ block still sitting in
@@ -668,12 +535,6 @@ export default function Collection() {
                               ))}
                             </div>
 
-                            {rowIndex < productRows.length - 1 &&
-                              rowIndex < coverPhotos.length && (
-                                <CollectionProductBreak
-                                  item={coverPhotos[rowIndex]}
-                                />
-                              )}
                           </div>
                         ))}
                       </>
@@ -832,8 +693,8 @@ const SIDEBAR_COLLECTIONS_QUERY = `#graphql
   }
 ` as const;
 
-// The FAQ and cover-image metaobjects, shared by the collection query and the
-// parent-department lookup that child pages fall back to.
+// The FAQ metaobject, shared by the collection query and the parent-department
+// lookup that child pages fall back to.
 const COLLECTION_CONTENT_FRAGMENT = `#graphql
   fragment CollectionContent on Collection {
     collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {
@@ -847,41 +708,6 @@ const COLLECTION_CONTENT_FRAGMENT = `#graphql
           fields {
             key
             value
-          }
-        }
-      }
-    }
-    collectionCenterImages: metafield(namespace: "custom", key: "collection_center_images") {
-      reference {
-        ... on Metaobject {
-          handle
-          fields {
-            key
-            value
-            reference {
-              ... on MediaImage {
-                image {
-                  url
-                  altText
-                }
-              }
-              ... on GenericFile {
-                url
-              }
-            }
-            references(first: 20) {
-              nodes {
-                ... on MediaImage {
-                  image {
-                    url
-                    altText
-                  }
-                }
-                ... on GenericFile {
-                  url
-                }
-              }
-            }
           }
         }
       }

@@ -6189,41 +6189,6 @@ button.announcement-link {
   margin-top: 1.35rem;
 }
 
-.collection-product-break {
-  position: relative;
-  /* 16:9 frame to match how the cover photos are shot, but capped: at full
-     content width a true 16:9 runs ~530px tall and swamps the product rows it
-     sits between. Past the cap the frame just goes wider than 16:9 and
-     `background-size: cover` trims the top and bottom. */
-  aspect-ratio: 16 / 9;
-  max-height: clamp(14rem, 31vw, 27rem);
-  /* Explicit, because `aspect-ratio` + `max-height` otherwise lets the box
-     derive its width from the capped height and it collapses to ~58%. */
-  width: 100%;
-  margin: 1.8rem 0;
-  overflow: hidden;
-  background-color: #f5f6f7;
-  /* Vertical anchor at 80%, not centre: the extra height added by the taller
-     cap is revealed at the BOTTOM of the photo while the existing top crop
-     stays put. Centre would have opened the frame up equally both ways. */
-  background-position: center 80%;
-  background-size: cover;
-  border: 1px solid rgba(212, 175, 55, 0.24);
-}
-
-.collection-product-break.is-left {
-  background-position: 58% 80%;
-}
-
-.collection-product-break.is-right {
-  background-position: 38% 80%;
-}
-
-/* Shares the 16:9 frame — only its crop anchor differs. */
-.collection-product-break.is-cover4 {
-  background-position: 40% 80%;
-}
-
 .collection-empty {
   padding: 3rem 0;
   text-align: center;
