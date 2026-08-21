@@ -250,7 +250,11 @@ function ProductGrid({
   return children({
     nodes,
     isLoading,
-    hasNextPage: connection.pageInfo?.hasNextPage ?? false,
+    // Real pageInfo AND under the ceiling — otherwise a 500-product collection
+    // offers a "Load More" at 240 that would fetch exactly the same page again.
+    hasNextPage:
+      (connection.pageInfo?.hasNextPage ?? false) &&
+      nodes.length < MAX_PRODUCTS,
     LoadMoreLink,
   });
 }
