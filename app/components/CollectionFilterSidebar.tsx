@@ -32,6 +32,10 @@ function normalize(input: string) {
 }
 
 function stripPagination(params: URLSearchParams) {
+  // `page` is the live one — see productsToShow() in collections.$handle.
+  // cursor/direction are the retired cursor scheme, deleted so any old
+  // bookmark or inbound link carrying them cannot pin the grid to one page.
+  params.delete('page');
   params.delete('cursor');
   params.delete('direction');
 }

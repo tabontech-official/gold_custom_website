@@ -1,12 +1,14 @@
 import {
+  Link,
   redirect,
   useLoaderData,
+  useNavigation,
   useRouteLoaderData,
   useSearchParams,
 } from 'react-router';
 import type {Route} from './+types/collections.$handle';
 import type {HeaderQuery} from 'storefrontapi.generated';
-import {getPaginationVariables, Analytics, Pagination} from '@shopify/hydrogen';
+import {Analytics} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {productCanonicalPath} from '~/lib/categories';
 import {analyticsProduct} from '~/lib/analytics';
@@ -182,15 +184,123 @@ export async function loader(args: Route.LoaderArgs) {
 }
 
 /**
+ * Stands in for Hydrogen's `<Pagination>`, which this page no longer uses.
+ *
+ * Same render-prop shape, minus `PreviousLink`/`hasPreviousPage` — there is no
+ * "previous" any more, because page N renders products 1..N*24 rather than
+ * just page N. `nodes` therefore comes straight from the loader instead of
+ * being stitched together from `location.state`, which is what used to be lost
+ * on a reload.
+ *
+ * "Load More" is a real `<Link>` to `?page=N+1`, so it works without
+ * JavaScript, is crawlable, and restores correctly on back/forward.
+ * `preventScrollReset` keeps the viewport where it is while the next batch
+ * appends, and `replace` keeps 10 clicks from becoming 10 history entries.
+ */
+function ProductGrid({
+  connection,
+  children,
+}: {
+  connection: {nodes: any[]; pageInfo: {hasNextPage: boolean}};
+  children: (props: {
+    nodes: any[];
+    isLoading: boolean;
+    hasNextPage: boolean;
+    LoadMoreLink: (props: {
+      className?: string;
+      children: React.ReactNode;
+    }) => React.ReactElement;
+  }) => React.ReactElement;
+}) {
+  const [searchParams] = useSearchParams();
+  const navigation = useNavigation();
+  const nodes = connection.nodes ?? [];
+
+  const currentPage = Math.max(
+    1,
+    Math.floor(Number(searchParams.get('page')) || 1),
+  );
+  // Only true while THIS page's next batch is loading — not while an unrelated
+  // navigation (a filter, a product click) is in flight.
+  const isLoading =
+    navigation.state === 'loading' &&
+    navigation.location?.search.includes(`page=${currentPage + 1}`) === true;
+
+  const LoadMoreLink = ({
+    className,
+    children: label,
+  }: {
+    className?: string;
+    children: React.ReactNode;
+  }) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(currentPage + 1));
+    return (
+      <Link
+        className={className}
+        to={`?${params.toString()}`}
+        replace
+        preventScrollReset
+      >
+        {label}
+      </Link>
+    );
+  };
+
+  return children({
+    nodes,
+    isLoading,
+    hasNextPage: connection.pageInfo?.hasNextPage ?? false,
+    LoadMoreLink,
+  });
+}
+
+/** Products per "Load More" click. */
+export const PAGE_SIZE = 24;
+
+/**
+ * Hard ceiling on how many products one page renders.
+ *
+ * ponytail: 240 = 10 pages in ONE Storefront query (the API caps a connection
+ * at 250). Past that, "Load More" stops and the empty-state copy points at the
+ * filters. Raising it means looping cursor queries and shipping >240 product
+ * cards in one document, which costs more than deep browsing is worth — the
+ * sitemap and search are how the far end of a 5,000-product catalogue gets
+ * found, not 200 clicks of Load More.
+ */
+export const MAX_PRODUCTS = 240;
+
+/**
+ * How many products this request should render: `?page=N` means "everything
+ * from the first product through page N", not "page N".
+ *
+ * That is the whole fix for products vanishing on the way back up. The cursor
+ * pagination this replaces put `?direction=next&cursor=…` in the URL and kept
+ * the earlier products only in `location.state` — browser memory. Any render
+ * the server did at that URL (a reload, the back button, a restored tab, a
+ * shared link) saw one page and put a "Load previous" button where the first
+ * batch had been. Verified in production before the change:
+ * /collections/chains served 24 products and no "Load previous"; the same URL
+ * with ?direction=next&cursor=… served a different 24 and did show one.
+ *
+ * A page number survives all of that because it is not a pointer into a
+ * result set, it is a count. Nothing to lose and nothing to restore.
+ */
+function productsToShow(request: Request): number {
+  const raw = Number(new URL(request.url).searchParams.get('page'));
+  // Non-numeric, zero, negative and NaN all collapse to page 1.
+  const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
+  return Math.min(page * PAGE_SIZE, MAX_PRODUCTS);
+}
+
+/**
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 24,
-  });
+  const paginationVariables = {first: productsToShow(request), last: null};
   const url = new URL(request.url);
   // Only show in-stock products in category listings
   const filters = [{available: true}, ...getFiltersFromParam(url.searchParams)];
@@ -516,15 +626,8 @@ export default function Collection() {
                 names the region: an agent looking for the products on a
                 collection page had only an unlabelled <div> to go on. */}
             <h2 className="visually-hidden">Products</h2>
-            <Pagination connection={collection.products}>
-              {({
-                nodes,
-                isLoading,
-                PreviousLink,
-                NextLink,
-                hasNextPage,
-                hasPreviousPage,
-              }) => {
+            <ProductGrid connection={collection.products}>
+              {({nodes, isLoading, LoadMoreLink, hasNextPage}) => {
                 const productRows = [];
                 for (let index = 0; index < nodes.length; index += 8) {
                   productRows.push(nodes.slice(index, index + 8));
@@ -532,14 +635,9 @@ export default function Collection() {
 
                 return (
                   <div className="load-more">
-                    {hasPreviousPage && (
-                      <div className="load-more-bar">
-                        <PreviousLink className="load-more-btn is-ghost">
-                          {isLoading ? 'Loading…' : '↑ Load previous'}
-                        </PreviousLink>
-                      </div>
-                    )}
-
+                    {/* No "Load previous". Every product from the first one
+                        through the current page is already on screen — see
+                        productsToShow(). */}
                     {nodes.length === 0 ? (
                       <p className="collection-empty">
                         No pieces match these filters. Try clearing a filter.
@@ -602,13 +700,15 @@ export default function Collection() {
                         {nodes.length} pieces shown
                       </span>
                       {hasNextPage ? (
-                        <NextLink className="load-more-btn">
+                        <LoadMoreLink className="load-more-btn">
                           {isLoading ? 'Loading…' : 'Load More'}
-                        </NextLink>
+                        </LoadMoreLink>
                       ) : (
                         nodes.length > 0 && (
                           <span className="load-more-end">
-                            That&rsquo;s the whole collection
+                            {nodes.length >= MAX_PRODUCTS
+                              ? 'Showing the first 240 — use the filters to narrow this down'
+                              : 'That’s the whole collection'}
                           </span>
                         )
                       )}
@@ -616,7 +716,7 @@ export default function Collection() {
                   </div>
                 );
               }}
-            </Pagination>
+            </ProductGrid>
           </div>
         </div>
       </section>
@@ -839,8 +939,6 @@ const COLLECTION_QUERY = `#graphql
     $reverse: Boolean
     $first: Int
     $last: Int
-    $startCursor: String
-    $endCursor: String
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -870,8 +968,6 @@ const COLLECTION_QUERY = `#graphql
       products(
         first: $first,
         last: $last,
-        before: $startCursor,
-        after: $endCursor,
         filters: $filters,
         sortKey: $sortKey,
         reverse: $reverse
