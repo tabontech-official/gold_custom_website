@@ -4874,7 +4874,7 @@ button.announcement-link {
 
 .coverflow-stage {
   position: relative;
-  height: clamp(445px, 53vw, 625px);
+  height: clamp(300px, 36vw, 425px);
   perspective: 2200px;
   touch-action: pan-y;
 }
@@ -4884,7 +4884,12 @@ button.announcement-link {
   top: 50%;
   left: 50%;
   width: clamp(340px, 36vw, 495px);
-  height: clamp(425px, 48vw, 582px);
+  /* 4:5 of the width (not the old ~0.85:1) — the category photos in Shopify
+     are landscape, ~5:4 (700x560, 400x366...), so a taller box forced
+     object-fit: cover to crop most of the frame away and blow the remainder
+     up to fill it. This ratio keeps the whole photo, with just enough spare
+     height at the bottom for the title gradient to sit on. */
+  height: clamp(272px, 28.8vw, 396px);
   /* Softened corners — enough to take the hard edge off without going back to
      the old 26px pill. `::before` and `-card-media` use `border-radius:
      inherit`, so this one value shapes the whole card including its image. */
@@ -5148,12 +5153,13 @@ button.announcement-link {
   .coverflow-stage {
     /* Just a hair taller than the card so it never overflows onto the dots,
        without leaving a big dead gap below. */
-    height: clamp(375px, 98vw, 480px);
+    height: clamp(245px, 65vw, 320px);
   }
 
   .coverflow-card {
     width: clamp(275px, 78vw, 375px);
-    height: clamp(365px, 97vw, 475px);
+    /* Same 4:5-of-width ratio as desktop — see the note above .coverflow-card. */
+    height: clamp(220px, 62.4vw, 300px);
   }
 
   .coverflow-card-body {
