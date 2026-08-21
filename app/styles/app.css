@@ -12375,21 +12375,6 @@ button.announcement-link {
   color: #fff;
 }
 
-/* Anchored to the pill's RIGHT edge rather than a hardcoded `left`, so it
-   travels with the pill as the handle opens. The old version had to name the
-   open width twice — once here and once on the pill — and any handle shorter
-   than that width left the diamond stranded in dead space. */
-.social-rail a::before {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  top: 50%;
-  right: -9px;
-  width: 20px;
-  height: 20px;
-  transform: translateY(-50%) rotate(45deg);
-}
-
 .social-rail a svg {
   /* shrink-0: the flex row is narrower than its content until the pill opens,
      so without this the glyph is squashed for the whole transition. */
@@ -12440,8 +12425,7 @@ button.announcement-link {
 
 /* Instagram publishes no single colour: the mark is defined as this gradient,
    anchored bottom-left. A flat pink is a substitute for it, not the real
-   thing — so the pill carries the actual gradient and only the diamond takes
-   the magenta the gradient passes through at its midpoint. */
+   thing — so the pill carries the actual gradient. */
 .social-rail a[data-social='instagram'] {
   background: radial-gradient(
     circle at 30% 107%,
@@ -12452,32 +12436,17 @@ button.announcement-link {
     #285aeb 90%
   );
 }
-.social-rail a[data-social='instagram']::before {
-  background: #d6249f;
-}
-
 .social-rail a[data-social='facebook'] {
   background: #0866ff;
 }
-.social-rail a[data-social='facebook']::before {
-  background: #0b52cc;
-}
-
 .social-rail a[data-social='youtube'] {
   background: #ff0000;
 }
-.social-rail a[data-social='youtube']::before {
-  background: #cc0000;
-}
-
 /* TikTok's official colour IS #000. What identifies the mark is the chromatic
    split — cyan offset one way, magenta the other — so the glyph keeps the
-   footer row's two drop-shadows and the diamond takes the brand magenta. */
+   footer row's two drop-shadows. */
 .social-rail a[data-social='tiktok'] {
   background: #000;
-}
-.social-rail a[data-social='tiktok']::before {
-  background: #fe2c55;
 }
 .social-rail a[data-social='tiktok'] svg {
   filter: drop-shadow(-1px -1px 0 #25f4ee) drop-shadow(1px 1px 0 #fe2c55);
@@ -12485,7 +12454,6 @@ button.announcement-link {
 
 @media (prefers-reduced-motion: reduce) {
   .social-rail a,
-  .social-rail a::before,
   .social-rail-handle {
     transition: none;
   }

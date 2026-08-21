@@ -268,6 +268,8 @@ export function Layout({children}: {children?: React.ReactNode}) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <meta name="p:domain_verify" content="bbfd42b4b5e9f2776205497daf00759f"/>
+ 
         {/*
           Google Search Console ownership. Rendered in the shell rather than a
           route `meta` export for the same reason as the JSON-LD below: a child
