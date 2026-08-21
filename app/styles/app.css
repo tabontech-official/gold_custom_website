@@ -4874,7 +4874,7 @@ button.announcement-link {
 
 .coverflow-stage {
   position: relative;
-  height: clamp(300px, 36vw, 425px);
+  height: clamp(400px, 36vw, 425px);
   perspective: 2200px;
   touch-action: pan-y;
 }
@@ -4889,7 +4889,7 @@ button.announcement-link {
      object-fit: cover to crop most of the frame away and blow the remainder
      up to fill it. This ratio keeps the whole photo, with just enough spare
      height at the bottom for the title gradient to sit on. */
-  height: clamp(272px, 28.8vw, 396px);
+  height: clamp(372px, 32.8vw, 436px);
   /* Softened corners — enough to take the hard edge off without going back to
      the old 26px pill. `::before` and `-card-media` use `border-radius:
      inherit`, so this one value shapes the whole card including its image. */
