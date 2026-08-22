@@ -55,7 +55,6 @@ function getInitialCardStyle(index: number, total: number): CSSProperties {
 
   return {
     opacity,
-    pointerEvents: distance <= 1.5 ? 'auto' : 'none',
     transform: `translate(-50%, -50%) translateX(${offset * CARD_SPACING}%) rotateY(${offset * -12}deg) scale(${Math.max(0.4, 1 - distance * 0.12)})`,
     visibility: opacity > 0 ? 'visible' : 'hidden',
     zIndex: 1000 - Math.round(distance * 100),
@@ -85,6 +84,9 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
     axis: 'h' | 'v' | null;
   } | null>(null);
   const cardRefs = useRef<(HTMLElement | null)[]>([]);
+  // Set once a pointer travels past the slop threshold, so the click that ends
+  // a drag doesn't navigate. Cleared on the next pointerdown.
+  const dragged = useRef(false);
 
   // Wrap a float offset into [-n/2, n/2] so cards flow around infinitely.
   const wrap = useCallback(
@@ -124,7 +126,6 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
       // a phone is the difference between compositing and re-styling.
       if (opacity <= 0 && el.style.visibility === 'hidden') continue;
       el.style.opacity = opacity.toFixed(3);
-      el.style.pointerEvents = abs <= 1.5 ? 'auto' : 'none';
       el.style.zIndex = String(1000 - Math.round(abs * 100));
       el.style.visibility = opacity > 0 ? 'visible' : 'hidden';
       // Same transform shape as the old CSS, now fed a continuous float.
@@ -221,6 +222,7 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
   }
 
   function onPointerDown(event: React.PointerEvent) {
+    dragged.current = false;
     drag.current = {
       startX: event.clientX,
       startY: event.clientY,
@@ -228,7 +230,12 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
       // A mouse has no scroll gesture to compete with, so it drags immediately.
       axis: event.pointerType === 'touch' ? null : 'h',
     };
-    (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    // NO setPointerCapture here. With the stage holding a mouse pointer,
+    // pointerdown still targets the card <a> but pointerup targets the stage,
+    // so the browser fires click on their common ancestor — the stage — and
+    // the anchor never sees it. Releasing in the pointerup handler is too late:
+    // that event's target was resolved before the handler ran. Capture is taken
+    // in onPointerMove once the gesture is provably a drag instead.
   }
 
   function onPointerMove(event: React.PointerEvent) {
@@ -249,11 +256,26 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
         return;
       }
     }
+    // Past the slop threshold this gesture is a drag, not a tap — checked on
+    // the raw distance because the mouse path locks axis 'h' up front and
+    // never runs the 8px test above.
+    if (Math.abs(dx) >= 8 && !dragged.current) {
+      dragged.current = true;
+      // Now it is a drag, not a click, so capturing costs no navigation and
+      // buys tracking that survives the cursor leaving the stage.
+      (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+    }
     scroll.current.target = d.startTarget - dx * DRAG_SPEED;
     kick();
   }
 
-  function onPointerUp() {
+  function onPointerUp(event: React.PointerEvent) {
+    // Release the capture a drag took, if any. Implicit release happens anyway,
+    // but doing it here keeps hasPointerCapture honest for the next gesture.
+    const stage = event.currentTarget as HTMLElement;
+    if (stage.hasPointerCapture(event.pointerId)) {
+      stage.releasePointerCapture(event.pointerId);
+    }
     if (!drag.current) return;
     drag.current = null;
     snap();
@@ -288,14 +310,31 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
         onPointerCancel={onPointerUp}
       >
         {items.map((item, index) => (
-          <article
+          <Link
             key={item.id}
             ref={(el) => {
               cardRefs.current[index] = el;
             }}
             className="coverflow-card"
             style={getInitialCardStyle(index, n)}
-            onClick={() => index !== active && scrollTo(index)}
+            /* NOT "render": nine collection loaders fired the moment the
+               homepage painted, competing with its own images for the
+               connection. "intent" covers hover and touchstart. */
+            prefetch="intent"
+            to={`/collections/${item.handle}`}
+            /* An <a> is natively draggable: pressing one starts the browser's
+               link-drag, which fires pointercancel and killed the carousel's
+               own drag on the first mousedown. */
+            draggable={false}
+            onDragStart={(event) => event.preventDefault()}
+            onClick={(event) => {
+              // Every card navigates — centred or not. The href does the work;
+              // the only reason to intercept is a click that is really the tail
+              // of a drag. Earlier versions also swallowed clicks on off-centre
+              // cards to re-centre them, which is why only the middle card ever
+              // reached its collection page.
+              if (dragged.current) event.preventDefault();
+            }}
           >
             <div className="coverflow-card-media">
               {item.image ? (
@@ -320,39 +359,13 @@ export function CoverflowCarousel({items}: {items: CoverflowItem[]}) {
               )}
             </div>
             <div className="coverflow-card-body">
+              {/* The span is the underline's target — it hugs the text, while
+                  the h3 is a full-width flex column. */}
               <h3 className="coverflow-card-title">
-                {/* The title links to the same place as Shop Now, so the card's
-                    heading is a target too and not just the button. It needs the
-                    same three stopPropagation handlers: the <article> owns a
-                    click that re-centres an off-centre card and pointer handlers
-                    that drive the drag, and without these a tap on the heading
-                    would be swallowed by the carousel instead of navigating. */}
-                <Link
-                  prefetch="intent"
-                  to={`/collections/${item.handle}`}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onPointerUp={(event) => event.stopPropagation()}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  {item.title}
-                </Link>
+                <span>{item.title}</span>
               </h3>
-              <div className="coverflow-card-links">
-                <Link
-                  /* NOT "render": nine collection loaders fired the moment the
-                     homepage painted, competing with its own images for the
-                     connection. "intent" covers hover and touchstart. */
-                  prefetch="intent"
-                  to={`/collections/${item.handle}`}
-                  onPointerDown={(event) => event.stopPropagation()}
-                  onPointerUp={(event) => event.stopPropagation()}
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  Shop Now
-                </Link>
-              </div>
             </div>
-          </article>
+          </Link>
         ))}
       </div>
 

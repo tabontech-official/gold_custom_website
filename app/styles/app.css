@@ -4874,8 +4874,13 @@ button.announcement-link {
   touch-action: pan-y;
 }
 
+/* The whole card is the link — an <a>, so it needs the block display and the
+   decoration/colour resets an <article> got for free. */
 .coverflow-card {
   position: absolute;
+  display: block;
+  color: inherit;
+  text-decoration: none;
   top: 50%;
   left: 50%;
   width: clamp(340px, 36vw, 495px);
@@ -4924,7 +4929,6 @@ button.announcement-link {
 }
 
 .coverflow-card.is-active {
-  cursor: default;
   filter: none;
   box-shadow:
     0 22px 42px rgba(0, 0, 0, 0.18),
@@ -4985,20 +4989,15 @@ button.announcement-link {
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1;
-  margin: 0 0 0.75rem;
+  margin: 0;
   text-shadow: 0 2px 16px rgba(0, 0, 0, 0.42);
 }
 
-/* Global `a` sets its own colour and underlines on hover; both would repaint
-   the card heading, so inherit the h3's colour and draw the affordance here.
-
-   `inline-block` so the rule below can size itself against the text rather
-   than the flex column, which is full-card width. */
-.coverflow-card-title a {
-  color: inherit;
+/* `inline-block` so the rule below sizes itself against the text rather than
+   the flex column, which is full-card width. */
+.coverflow-card-title span {
   display: inline-block;
   position: relative;
-  text-decoration: none;
 }
 
 /*
@@ -5008,9 +5007,10 @@ button.announcement-link {
   what was reading as cheap.
 
   Hairline and set off the baseline so it reads as a rule under the word
-  rather than a link decoration.
+  rather than a link decoration. Driven by the card's hover now that the whole
+  card is the link, not a nested anchor around the heading.
 */
-.coverflow-card-title a::after {
+.coverflow-card-title span::after {
   background: currentColor;
   bottom: -0.14em;
   content: '';
@@ -5026,52 +5026,16 @@ button.announcement-link {
   transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.coverflow-card-title a:hover::after,
-.coverflow-card-title a:focus-visible::after {
+.coverflow-card:hover .coverflow-card-title span::after,
+.coverflow-card:focus-visible .coverflow-card-title span::after {
   transform: scaleX(1);
   transform-origin: left center;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .coverflow-card-title a::after {
+  .coverflow-card-title span::after {
     transition: none;
   }
-}
-
-.coverflow-card-links {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.55rem;
-  opacity: 1;
-  transform: none;
-}
-
-.coverflow-card-links a {
-  align-items: center;
-  background: rgba(0, 0, 0, 0.58);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 0;
-  color: #fff;
-  display: inline-flex;
-  font-size: 0.95rem;
-  font-weight: 600;
-  justify-content: center;
-  letter-spacing: 0.05em;
-  min-height: 2.65rem;
-  min-width: 6.2rem;
-  padding: 0.62rem 1.05rem;
-  text-transform: uppercase;
-  transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.coverflow-card-links a:hover {
-  background: var(--color-gold);
-  border-color: var(--color-gold);
-  color: #000;
-  text-decoration: none;
 }
 
 .coverflow-arrow {
@@ -5164,13 +5128,6 @@ button.announcement-link {
 
   .coverflow-card-title {
     font-size: clamp(1.65rem, 8vw, 2.15rem);
-  }
-
-  .coverflow-card-links a {
-    font-size: 0.78rem;
-    min-height: 2.25rem;
-    min-width: 4.6rem;
-    padding: 0.46rem 0.72rem;
   }
 
   /* Small, even gap below the cards. */
