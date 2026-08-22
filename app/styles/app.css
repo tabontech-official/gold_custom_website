@@ -224,11 +224,6 @@ code {
      Re-measure if that padding or .header-logo-img height changes. */
   --mobile-header-height: 4.1rem;
   --utility-bar-height: 36px;
-  /* Rendered height of .collection-toolbar (0.75rem padding x2 + ~20px content
-     + 2 hairline borders). Only the sticky filter rail's top offset reads this;
-     the toolbar sizes itself from its own padding. Re-measure if that padding
-     or font-size changes. */
-  --collection-toolbar-height: 45px;
   --color-dark: #000;
   --content-max-width: 1700px;
   --color-light: #fff;
@@ -5639,77 +5634,23 @@ button.announcement-link {
   font-family: var(--font-body);
 }
 
-@media (min-width: 60em) {
-  /* rail + products: the rail is sticky INSIDE this section, so it locks
-     while products scroll and is pushed away at the section end — it can
-     never sit on top of the footer */
-  .collection-layout {
-    display: grid;
-    grid-template-columns: 16rem minmax(0, 1fr);
-    column-gap: 5rem;
-    row-gap: 0;
-    align-items: start; /* required — a stretched grid item can't stick */
-  }
-
-  .collection-sidebar {
-    grid-column: 1;
-    grid-row: 2;
-    margin-top: 1rem;
-    position: sticky;
-    /* Clears the pinned header AND the sticky toolbar resting beneath it, plus
-       a 2rem breathing gap so the "PRICE" heading sits clear of the toolbar
-       rule. The mega-menu bar is not in this sum; it scrolls away. */
-    top: calc(
-      var(--desktop-header-primary-height) + var(--collection-toolbar-height) +
-        2rem
-    );
-    height: calc(
-      100vh - var(--desktop-header-primary-height) -
-        var(--collection-toolbar-height) - 4rem
-    );
-    overflow-y: auto;
-    /* Right inset keeps the facet counts (20, 92, 185…) off the scrollbar —
-       they sit hard against the rail's right edge and were colliding with it.
-       The mobile drawer sets its own 1.4rem and is left alone. */
-    padding: 0 0.85rem 2rem 0;
-    /* The filter list begins at the top; it scrolls independently from the
-       product page when its content is taller than the available viewport. */
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    overscroll-behavior: contain;
-    /* Scrollbar styling lives with the other filter scrollers, near
-       .sidebar-categories — it applies at every breakpoint, not just here. */
-  }
-
-  .collection-toolbar {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .collection-main {
-    grid-column: 2;
-    grid-row: 2;
-  }
-
-  .collection-sidebar .sidebar-head {
-    display: none;
-  }
-
-  /* Scrollbar styling is not repeated here: it lives with the other filter
-     scrollers near .sidebar-categories and applies at every breakpoint. This
-     copy set the same 3px but was overridden anyway. */
-}
+/* The rail is a drawer at EVERY width — products get the full column and the
+   toolbar's "Filters" button is the only way in. The old desktop layout kept
+   a permanent 16rem grid column; the drawer rules below now apply throughout,
+   so nothing here overrides them. */
 
 .collection-main {
   min-width: 0;
 }
 
-/* Denser cards next to the sidebar — the global 355px min leaves 3 giant columns.
-   Desktop only: on mobile the global 2-per-row rule must win. */
+/* Denser cards on catalogue pages — the global 355px min leaves 3 giant
+   columns. Desktop only: on mobile the global 2-per-row rule must win.
+   auto-FIT, not auto-fill: auto-fill keeps empty phantom columns, so a final
+   row of 3 sat left-aligned against two blank slots. auto-fit collapses them
+   and the cards share the full width. */
 @media (min-width: 60em) {
   .collection-layout .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
   }
 }
 
@@ -5718,8 +5659,8 @@ button.announcement-link {
 .collection-toolbar {
   align-items: center;
   background: #fff;
-  border-bottom: 1px solid var(--color-border);
-  border-top: 1px solid var(--color-border);
+  border-bottom: 2px solid var(--color-border);
+  border-top: 2px solid var(--color-border);
   box-sizing: border-box;
   display: flex;
   justify-content: space-between;
@@ -5728,8 +5669,8 @@ button.announcement-link {
      They were pinned at 1.5rem while .section-inner goes to 3rem at 48em, so
      from tablet up the bar hung 1.5rem past the content on each side and its
      buttons sat flush against the viewport edge. */
-  margin: 1.5rem calc(-1 * var(--section-pad)) 1rem;
-  padding: 0.75rem var(--section-pad);
+  margin: 0.5rem calc(-1 * var(--section-pad)) 2rem;
+  padding: 0.6rem var(--section-pad);
   position: sticky;
   /* Must clear the only pinned tier, .header-primary. Mobile uses the shorter
      --header-height; desktop swaps in the taller primary row below, otherwise
@@ -5783,40 +5724,23 @@ button.announcement-link {
   top: 0.55rem;
 }
 
-/* Mobile: the sidebar becomes an off-canvas drawer */
-@media (max-width: 59.99em) {
-  .collection-sidebar {
-    background: #fff;
-    bottom: 0;
-    left: 0;
-    overflow-y: auto;
-    padding: 0.9rem 1.4rem 2rem;
-    position: fixed;
-    top: 0;
-    transform: translateX(-100%);
-    transition: transform 240ms ease;
-    width: min(20rem, 85vw);
-    z-index: 1300;
-  }
-
-  .collection-sidebar.is-open {
-    transform: translateX(0);
-  }
-
-  /* Sort drawer: only the sort group. Filters drawer: everything but sort. */
-  .collection-sidebar.mode-sort .sidebar-head,
-  .collection-sidebar.mode-sort .sidebar-clear,
-  .collection-sidebar.mode-sort .sidebar-group:not(.sidebar-group-sort),
-  .collection-sidebar.mode-filters .sidebar-group-sort {
-    display: none;
-  }
+/* Off-canvas drawer at every width — closed until the toolbar opens it. */
+.collection-sidebar {
+  background: #fff;
+  bottom: 0;
+  left: 0;
+  overflow-y: auto;
+  padding: 0.9rem 1.4rem 2rem;
+  position: fixed;
+  top: 0;
+  transform: translateX(-100%);
+  transition: transform 240ms ease;
+  width: min(22rem, 85vw);
+  z-index: 1300;
 }
 
-@media (min-width: 60em) {
-  .collection-drawer-backdrop,
-  .sidebar-close {
-    display: none;
-  }
+.collection-sidebar.is-open {
+  transform: translateX(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -6191,10 +6115,6 @@ button.announcement-link {
   margin: 0;
 }
 
-.collection-product-row + .collection-product-row {
-  margin-top: 1.35rem;
-}
-
 .collection-empty {
   padding: 3rem 0;
   text-align: center;
@@ -6323,9 +6243,13 @@ button.announcement-link {
   position: relative;
 }
 
+/* Fills the square .product-image-link box rather than taking its own natural
+   height. With `height: auto` a portrait shot made a taller card than a
+   landscape one beside it, so grid rows staggered and left gaps. */
 .product-image {
-  height: auto;
+  height: 100%;
   width: 100%;
+  object-fit: contain;
   display: block;
   position: relative;
   z-index: 1;
@@ -6394,11 +6318,15 @@ button.announcement-link {
   }
 }
 
+/* Body takes the leftover height and pushes the price to the bottom, so
+   prices line up across a row regardless of title length. */
 .product-card-body {
   padding: 0;
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.7rem;
+  justify-content: space-between;
 }
 
 .product-item-copy,
@@ -9326,46 +9254,36 @@ button.announcement-link {
   justify-content: space-between;
 }
 
+/* Flat text controls — no pills, no boxes. The bar's own hairline borders are
+   the only chrome; the two labels read as plain uppercase type. */
 .collection-filter-trigger,
 .collection-sort-trigger {
   align-items: center;
-  background: #fff;
-  border: 1px solid rgba(28, 28, 30, 0.14);
-  border-radius: 0;
+  background: none;
+  border: 0;
   color: #1c1c1e;
   cursor: pointer;
   display: inline-flex;
   font: inherit;
   font-family: var(--font-classic);
-  font-size: 0.86rem;
-  font-weight: 500;
-  gap: 0.55rem;
-  min-height: 2.65rem;
-  padding: 0.55rem 1.05rem 0.55rem 1.15rem;
-  box-shadow: 0 1px 2px rgba(21, 21, 22, 0.05);
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    box-shadow 160ms ease;
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  letter-spacing: 0.09em;
+  padding: 0.25rem 0;
+  text-transform: uppercase;
+  transition: color 160ms ease;
 }
 
 .collection-filter-trigger:hover,
-.collection-sort-trigger:hover {
-  border-color: rgba(28, 28, 30, 0.34);
-  box-shadow: 0 4px 14px rgba(21, 21, 22, 0.09);
-}
-
-/* Open state reads as "engaged" — gold hairline instead of a heavier border,
-   so the pill doesn't jump in weight when the panel appears. */
+.collection-sort-trigger:hover,
 .collection-sort-trigger[aria-expanded='true'] {
-  border-color: var(--color-gold-dark);
-  box-shadow: 0 0 0 3px var(--color-gold-soft);
+  color: var(--color-gold-deep);
 }
 
 .collection-sort-trigger:focus-visible {
-  outline: none;
-  border-color: var(--color-gold-dark);
-  box-shadow: 0 0 0 3px var(--color-gold-soft);
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
 }
 
 .collection-filter-count {
@@ -9374,10 +9292,11 @@ button.announcement-link {
   border-radius: 0;
   color: #fff;
   display: inline-flex;
-  font-size: 0.68rem;
-  height: 1.15rem;
+  font-size: 0.65rem;
+  height: 1.1rem;
   justify-content: center;
-  min-width: 1.15rem;
+  letter-spacing: 0;
+  min-width: 1.1rem;
 }
 
 .collection-sort-select {
@@ -9386,22 +9305,6 @@ button.announcement-link {
 }
 
 .collection-sort-label {
-  align-items: center;
-  color: rgba(28, 28, 30, 0.55);
-  display: inline-flex;
-  font-size: 0.72rem;
-  gap: 0.4rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-/* Thin divider between the "SORT" label and the current value, so the pill
-   reads as label + value rather than three loose words. */
-.collection-sort-value {
-  color: #1c1c1e;
-  font-weight: 600;
-  padding-left: 0.55rem;
-  border-left: 1px solid rgba(28, 28, 30, 0.14);
   white-space: nowrap;
 }
 
@@ -9409,13 +9312,11 @@ button.announcement-link {
   width: 1rem;
   height: 1rem;
   flex: none;
-  color: rgba(28, 28, 30, 0.45);
   transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .collection-sort-trigger[aria-expanded='true'] .collection-sort-caret {
   transform: rotate(180deg);
-  color: var(--color-gold-deep);
 }
 
 .collection-sort-popover {
@@ -9582,16 +9483,6 @@ button.announcement-link {
   outline-offset: 2px;
 }
 
-@media (max-width: 59.99em) {
-  .collection-sort-trigger {
-    min-height: 2.2rem;
-    padding: 0.4rem 0.85rem;
-  }
-
-  .collection-sort-label span:last-child {
-    display: none;
-  }
-}
 
 /* Collection category pages use the same custom progress rail as New
    Arrivals—not the browser's native scrollbar. */
@@ -9612,30 +9503,19 @@ button.announcement-link {
      whole tile taller than the rest, and the circle stretched with it. */
   align-items: flex-start;
   gap: clamp(0.75rem, 2vw, 1.5rem);
-  padding: 1.25rem 0 0.4rem;
+  padding: 1.25rem 0 0;
 }
 
+/* No progress rail under the category strip at any width. It duplicated a
+   gesture the moving circles already make obvious, and it was eating a row of
+   height between the strip and the filter bar. */
 .subnav-icons .dragscroll-bar {
-  background: rgba(0, 0, 0, 0.1);
-  height: 2px;
-  margin: 0.15rem auto 0;
-  width: min(360px, calc(90vw - 5.25rem));
-}
-
-.subnav-icons .dragscroll-bar-thumb {
-  background: rgba(0, 0, 0, 0.3);
+  display: none;
 }
 
 /* Keep collection browsing dense on phones: the category strip should lead
    directly into the products instead of leaving a large visual gap. */
 @media (max-width: 47.99em) {
-  /* No progress rail on phones. It duplicates a gesture touch already makes
-     obvious — you can see the circles move under your thumb — and it was
-     eating a row of height plus its own margin under an already dense strip. */
-  .subnav-icons .dragscroll-bar {
-    display: none;
-  }
-
   /* Edge to edge. Same bleed pattern .collection-toolbar uses: cancel
      .section-inner's gutter with a negative margin, and give it back as the
      scroller's own inline padding so the first and last circles still clear
@@ -9652,37 +9532,24 @@ button.announcement-link {
     padding: 0.55rem var(--section-pad) 0.15rem;
   }
 
-  .collection > .section-inner:has(.subnav-icons) + .home-section {
-    /* Was -1.75rem, which closed the gap so far that the category circles and
-       the filter bar read as one control. Still negative — `home-section`'s own
-       2.2rem on top of the strip's padding is more than this needs — just not
-       flush any more. */
-    margin-top: -0.6rem;
-    padding-top: 0;
-  }
-
   .subnav-icon-label {
     font-size: 0.72rem;
     letter-spacing: 0.01em;
   }
 }
 
-/* Breathing room between the category circles and the filter bar.
-
-   Scoped to `:has(.subnav-icons)` rather than raising `.collection-toolbar`'s
-   own margin: that margin is shared with collection pages that have no strip
-   above them, and search results, where the extra space would just be a gap
-   under the title. */
-.collection > .section-inner:has(.subnav-icons) + .home-section
-  .collection-toolbar {
-  margin-top: 2.6rem;
+/* The products section directly follows the category strip, so its stock
+   3.6rem top padding is dead space between the strip and the filter bar.
+   Zero it and let the toolbar's own small margin be the gap.
+   Scoped to `:has(.subnav-icons)` because the padding is correct on pages
+   with no strip above them. */
+.collection > .section-inner:has(.subnav-icons) + .home-section {
+  padding-top: 4px;
 }
 
-@media (max-width: 47.99em) {
-  .collection > .section-inner:has(.subnav-icons) + .home-section
-    .collection-toolbar {
-    margin-top: 1.6rem;
-  }
+.collection > .section-inner:has(.subnav-icons) + .home-section
+  .collection-toolbar {
+  margin-top: 0.8rem;
 }
 
 .subnav-icon {
@@ -10884,11 +10751,13 @@ button.announcement-link {
   z-index: 3;
 }
 
-/* Professional collection catalogue controls. */
+/* View switcher lives inside the filter drawer — the toolbar carries only
+   Filters and Sort by, so the two glyphs get labels and room here instead. */
 .collection-view-switcher {
-  align-items: center;
-  display: inline-flex;
-  gap: 0.2rem;
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 1.25rem;
 }
 
 .collection-view-switcher a {
@@ -10897,13 +10766,18 @@ button.announcement-link {
   border-radius: 0;
   color: #8b8a86;
   display: inline-flex;
-  height: 2.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  gap: 0.45rem;
+  height: 2.4rem;
   justify-content: center;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  text-transform: uppercase;
   transition:
     color 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease;
-  width: 2.2rem;
 }
 
 .collection-view-switcher a:hover,
@@ -10941,6 +10815,7 @@ button.announcement-link {
 .collection-main.is-list-view .product-card-body {
   align-items: flex-end;
   gap: 0.65rem;
+  justify-content: center;
   /* shrink before the image does, so long titles wrap instead of squeezing it */
   min-width: 0;
 }
@@ -10952,18 +10827,6 @@ button.announcement-link {
 
 .collection-main.is-list-view .product-item-copy h3 {
   min-height: 0;
-}
-
-/* Desktop: toolbar sits above the grid as one row — Filters, view switcher,
-   and Sort all inline-flex, evenly spaced, no fighting overrides. */
-@media (min-width: 60em) {
-  .collection-toolbar {
-    background: #fbfaf7;
-    border: 1px solid #e3ded5;
-    border-radius: 0;
-    margin: 1.75rem 0 1.1rem;
-    padding: 0.65rem 1rem;
-  }
 }
 
 /* ===== Book Private Consultation — button + modal ===== */

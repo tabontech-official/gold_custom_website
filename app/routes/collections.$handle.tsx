@@ -499,11 +499,6 @@ export default function Collection() {
             <h2 className="visually-hidden">Products</h2>
             <ProductGrid connection={collection.products}>
               {({nodes, isLoading, LoadMoreLink, hasNextPage}) => {
-                const productRows = [];
-                for (let index = 0; index < nodes.length; index += 8) {
-                  productRows.push(nodes.slice(index, index + 8));
-                }
-
                 return (
                   <div className="load-more">
                     {/* No "Load previous". Every product from the first one
@@ -514,30 +509,22 @@ export default function Collection() {
                         No pieces match these filters. Try clearing a filter.
                       </p>
                     ) : (
-                      <>
-                        {productRows.map((row, rowIndex) => (
-                          <div
-                            className="collection-product-row"
-                            key={row[0]?.id ?? rowIndex}
-                          >
-                            <div className="products-grid">
-                              {row.map((product, productIndex) => (
-                                <ProductItem
-                                  key={product.id}
-                                  product={product}
-                                  collectionHandle={collection.handle}
-                                  loading={
-                                    rowIndex === 0 && productIndex < 8
-                                      ? 'eager'
-                                      : 'lazy'
-                                  }
-                                />
-                              ))}
-                            </div>
-
-                          </div>
+                      /* One grid for every product. It used to be chunked into
+                         separate 8-item grids so cover-photo banners could sit
+                         between them; the banners are gone, and each chunk was
+                         laying out independently — at 5 columns every grid
+                         rendered 5 then 3, leaving a ragged half-empty row
+                         after every eighth card. */
+                      <div className="products-grid">
+                        {nodes.map((product, index) => (
+                          <ProductItem
+                            key={product.id}
+                            product={product}
+                            collectionHandle={collection.handle}
+                            loading={index < 8 ? 'eager' : 'lazy'}
+                          />
                         ))}
-                      </>
+                      </div>
                     )}
 
                     {isLoading && (

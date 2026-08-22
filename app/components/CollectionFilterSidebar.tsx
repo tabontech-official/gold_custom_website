@@ -227,26 +227,6 @@ export function CollectionFilterSidebar({
             </span>
           )}
         </button>
-        <div className="collection-view-switcher" aria-label="Product view">
-          <Link
-            aria-label="Grid view"
-            aria-pressed={view === 'grid'}
-            className={view === 'grid' ? 'is-active' : ''}
-            preventScrollReset
-            to={viewHref('grid')}
-          >
-            <GridIcon />
-          </Link>
-          <Link
-            aria-label="List view"
-            aria-pressed={view === 'list'}
-            className={view === 'list' ? 'is-active' : ''}
-            preventScrollReset
-            to={viewHref('list')}
-          >
-            <ListIcon />
-          </Link>
-        </div>
         {activeFilterParams.length > 0 && (
           <Link
             aria-label={`Clear all filters (${activeFilterParams.length})`}
@@ -267,11 +247,7 @@ export function CollectionFilterSidebar({
             onClick={() => setSortOpen((open) => !open)}
             type="button"
           >
-            <span className="collection-sort-label">
-              <SortIcon />
-              <span>Sort</span>
-            </span>
-            <span className="collection-sort-value">{activeSort.label}</span>
+            <span className="collection-sort-label">Sort by</span>
             <ChevronIcon />
           </button>
           {sortOpen && (
@@ -341,6 +317,29 @@ export function CollectionFilterSidebar({
         <div className="sidebar-head">
           <FilterIcon />
           <span>Filter</span>
+        </div>
+
+        <div className="collection-view-switcher" aria-label="Product view">
+          <Link
+            aria-label="Grid view"
+            aria-pressed={view === 'grid'}
+            className={view === 'grid' ? 'is-active' : ''}
+            preventScrollReset
+            to={viewHref('grid')}
+          >
+            <GridIcon />
+            <span>Grid</span>
+          </Link>
+          <Link
+            aria-label="List view"
+            aria-pressed={view === 'list'}
+            className={view === 'list' ? 'is-active' : ''}
+            preventScrollReset
+            to={viewHref('list')}
+          >
+            <ListIcon />
+            <span>List</span>
+          </Link>
         </div>
 
         {priceBounds && (
@@ -614,21 +613,6 @@ function FilterIcon() {
         <circle cx="15" cy="12" r="2.3" />
         <circle cx="8" cy="18" r="2.3" />
       </g>
-    </svg>
-  );
-}
-
-function SortIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M7 4v15m0 0-3-3m3 3 3-3M17 20V5m0 0-3 3m3-3 3 3"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.5"
-      />
     </svg>
   );
 }
