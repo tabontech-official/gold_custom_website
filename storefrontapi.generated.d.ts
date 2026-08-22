@@ -1666,6 +1666,36 @@ export type CollectionProductsQuery = {
   };
 };
 
+export type MenuDisplayProductsQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type MenuDisplayProductsQuery = {
+  collection?: StorefrontAPI.Maybe<{
+    products: {
+      nodes: Array<
+        Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
+          priceRange: {
+            minVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+          };
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'url' | 'altText' | 'width' | 'height'
+            >
+          >;
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
+        }
+      >;
+    };
+  }>;
+};
+
 export type CollectionByHandleQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -3037,6 +3067,10 @@ interface GeneratedQueryTypes {
   '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
+  };
+  '#graphql\n        query MenuDisplayProducts($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          collection(handle: $handle) {\n            products(first: 100) {\n              nodes {\n                id\n                title\n                handle\n                priceRange {\n                  minVariantPrice {\n                    amount\n                    currencyCode\n                  }\n                }\n                featuredImage {\n                  id\n                  url\n                  altText\n                  width\n                  height\n                }\n                collections(first: 50) {\n                  nodes {\n                    handle\n                  }\n                }\n              }\n            }\n          }\n        }\n      ': {
+    return: MenuDisplayProductsQuery;
+    variables: MenuDisplayProductsQueryVariables;
   };
   '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
     return: CollectionByHandleQuery;

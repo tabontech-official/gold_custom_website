@@ -65,6 +65,57 @@ export async function loader({request, context}: any) {
       });
     }
 
+    // The header mega menu asks for ONE collection ("Display Products"), which
+    // the merchant curates and orders by hand, and then shows the pieces in it
+    // that belong to whichever department is hovered. That per-department split
+    // needs each product's collection memberships, which the two queries below
+    // deliberately do not carry: this endpoint also feeds the collection-page
+    // icon strip, and adding 50 collection handles to all 48 products there
+    // would be pure payload for a consumer that only wants one image.
+    if (url.searchParams.get('withCollections') === '1') {
+      const menuQuery = `#graphql
+        query MenuDisplayProducts($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {
+          collection(handle: $handle) {
+            products(first: 100) {
+              nodes {
+                id
+                title
+                handle
+                priceRange {
+                  minVariantPrice {
+                    amount
+                    currencyCode
+                  }
+                }
+                featuredImage {
+                  id
+                  url
+                  altText
+                  width
+                  height
+                }
+                collections(first: 50) {
+                  nodes {
+                    handle
+                  }
+                }
+              }
+            }
+          }
+        }
+      `;
+
+      const menuResult = await context.storefront.query(menuQuery, {
+        variables: {handle},
+        cache: CacheCatalog(),
+      });
+
+      return new Response(
+        JSON.stringify({products: menuResult?.collection?.products?.nodes ?? []}),
+        {headers: {'Content-Type': 'application/json'}},
+      );
+    }
+
     // No tag — fetch the collection directly to avoid cross-collection matches
     const collectionQuery = `#graphql
       fragment ProductNode on Product {

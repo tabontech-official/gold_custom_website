@@ -23,6 +23,7 @@ import {
   MEGA_MENU,
   getDepartmentColumns,
   getDepartmentItems,
+  getDepartmentSubCollectionHandles,
   hasDepartmentItems,
   toRelativeUrl,
 } from '~/lib/megaMenu';
@@ -324,8 +325,20 @@ export function HeaderMenu({
   // Single source of truth for which department's panel is open — one panel
   // can ever render, so a close-delay on one item can't overlap the next.
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // ONE fetch for the whole bar, not one per department: every panel's cards
+  // come from the same curated collection, so eight fetchers would be the same
+  // request eight times. Fires on the first hover, so page loads stay clean.
+  const displayFetcher = useFetcher<{products: FeaturedProduct[]}>();
+  const displayProducts = displayFetcher.data?.products ?? [];
+
   function openMenu(id: string) {
     setOpenId(id);
+    if (!displayFetcher.data && displayFetcher.state === 'idle') {
+      displayFetcher.load(
+        `/api/collection-products?handle=${DISPLAY_PRODUCTS_HANDLE}&withCollections=1`,
+      );
+    }
   }
 
   function closeMenu() {
@@ -345,12 +358,14 @@ export function HeaderMenu({
         ).map((department) => (
           <MegaMenuItem
             department={department}
+            displayProducts={displayProducts}
             header={header}
             isOpen={openId === department.id}
             key={department.id}
             onClose={closeMenu}
             onOpen={() => openMenu(department.id)}
             onScheduleClose={scheduleCloseMenu}
+            publicStoreDomain={publicStoreDomain}
             relativeUrl={relativeUrl}
           />
         ))}
@@ -362,6 +377,14 @@ export function HeaderMenu({
     <MobileMenu header={header} relativeUrl={relativeUrl} onNavigate={close} />
   );
 }
+
+/**
+ * The one collection the mega menu's product cards come from. The merchant
+ * curates it and drags it into the order they want; the menu shows, for each
+ * department, the pieces in here that also belong to that department, in this
+ * collection's order.
+ */
+const DISPLAY_PRODUCTS_HANDLE = 'display-products';
 
 type FeaturedProduct = {
   id: string;
@@ -379,6 +402,8 @@ type FeaturedProduct = {
     width: number;
     height: number;
   } | null;
+  /** Only present on the curated "Display Products" payload. */
+  collections?: {nodes: Array<{handle: string}>} | null;
 };
 
 /** One column, or two balanced ones once the list runs past `max` items. */
@@ -390,19 +415,24 @@ function splitInHalf<T>(items: T[], max: number): T[][] {
 
 function MegaMenuItem({
   department,
+  displayProducts,
   header,
   isOpen,
   onClose,
   onOpen,
   onScheduleClose,
+  publicStoreDomain,
   relativeUrl,
 }: {
   department: (typeof MEGA_MENU)[number];
+  /** The curated "Display Products" collection, in the merchant's order. */
+  displayProducts: FeaturedProduct[];
   header: HeaderProps['header'];
   isOpen: boolean;
   onClose: () => void;
   onOpen: () => void;
   onScheduleClose: () => void;
+  publicStoreDomain: HeaderProps['publicStoreDomain'];
   relativeUrl: (url: string) => string;
 }) {
   const fetcher = useFetcher<{products: FeaturedProduct[]}>();
@@ -415,8 +445,48 @@ function MegaMenuItem({
     fetcher.load(`/api/collection-products?handle=${handle}`);
   }
 
-  const products = fetcher.data?.products ?? [];
+  // SPECIFIC FIRST: a curated piece is claimed by a department through one of
+  // that department's sub-categories (`cuban-bracelets`, `diamond-rings`)
+  // rather than through the department's own collection, because `rings` and
+  // `diamond` are catch-alls holding half the catalog...
+  const subHandles = getDepartmentSubCollectionHandles(
+    header,
+    department,
+    publicStoreDomain,
+  );
+  const featuredProductCount = 3;
+  const specific = displayProducts.filter((product) =>
+    product.collections?.nodes?.some((node) => subHandles.has(node.handle)),
+  );
+  // ...THEN TOP UP FROM THE GENERAL COLLECTION. Sub-categories alone left
+  // Diamond on two, so the department's own handle fills the remaining slots —
+  // but only the remaining ones. A department that already found three specific
+  // pieces never reaches this list, which is what stopped `rings` and `diamond`
+  // flooding their panels with six and five.
+  const chosen = new Set<string>();
+  for (const product of specific) {
+    if (chosen.size < featuredProductCount) chosen.add(product.id);
+  }
+  if (chosen.size < featuredProductCount) {
+    for (const product of displayProducts) {
+      if (chosen.size >= featuredProductCount) break;
+      if (product.collections?.nodes?.some((node) => node.handle === handle)) {
+        chosen.add(product.id);
+      }
+    }
+  }
+  // Read back off displayProducts rather than out of the two lists above, so
+  // the three cards stay in the merchant's collection order. Specific matches
+  // win a SLOT; they do not reorder what fills it.
+  const curated = displayProducts.filter((product) => chosen.has(product.id));
   const isLoading = fetcher.state === 'loading' || !fetcher.data;
+  // Three cards. The department's own collection is the fallback for a
+  // department with nothing curated yet, so a panel still shows cards instead
+  // of an empty pane — sliced too, since that one returns the whole collection.
+  const featuredProducts = curated.length
+    ? curated
+    : (fetcher.data?.products ?? []).slice(0, featuredProductCount);
+  const productGridCount = featuredProducts.length || featuredProductCount;
 
   // Warm the actual image bytes into the browser cache as soon as the product
   // data lands, so the shown images render instantly on hover — no wait. Match
@@ -424,7 +494,7 @@ function MegaMenuItem({
   // exact cache hit; Shopify's CDN honours these query params.
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    for (const product of products.slice(0, 3)) {
+    for (const product of featuredProducts) {
       const url = product.featuredImage?.url;
       if (!url) continue;
       const sized = new URL(url);
@@ -434,7 +504,7 @@ function MegaMenuItem({
       new window.Image().src = sized.toString();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fetcher.data]);
+  }, [fetcher.data, displayProducts]);
   // Grouped BY COLUMN, not one flat list: Chains is fed by three Shopify menus
   // ("Chains 1/2/3") and each one is its own column here, in its own order, so
   // the dropdown matches the admin exactly. getDepartmentColumns also dedupes
@@ -447,12 +517,6 @@ function MegaMenuItem({
     departmentColumns.length > 1
       ? departmentColumns
       : splitInHalf(departmentColumns[0] ?? [], 6);
-  // The featured pane has room for three consistently sized cards. Products
-  // always come from the active department's collection, including Chains and
-  // Necklaces, so every panel feels balanced without unrelated recommendations.
-  const featuredProductCount = 3;
-  const featuredProducts = products.slice(0, featuredProductCount);
-  const productGridCount = featuredProducts.length || featuredProductCount;
 
   function closeMegaMenu() {
     onClose();

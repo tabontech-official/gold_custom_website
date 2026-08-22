@@ -212,6 +212,36 @@ export function hasDepartmentItems(
 }
 
 /**
+ * A department's SUB-category collection handles — its submenu links, and
+ * deliberately NOT its own handle.
+ *
+ * Both halves of that matter when deciding which department a product belongs
+ * to. The submenus are needed because a department collection is not a superset
+ * of them in Shopify: a product can sit in `cuban-bracelets` without ever being
+ * added to `bracelets`. The department's own handle is left out because it is
+ * the opposite problem — `rings` and `diamond` are catch-alls that hold half
+ * the catalog, so matching on them pulled pieces curated for one department
+ * into another's panel.
+ */
+export function getDepartmentSubCollectionHandles(
+  header: HeaderQuery,
+  department: MegaMenuDepartment,
+  publicStoreDomain: string,
+): Set<string> {
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+  const handles = new Set<string>();
+
+  for (const item of getDepartmentItems(header, department)) {
+    if (!item.url) continue;
+    const path = toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain);
+    const match = path.match(/\/collections\/([^/?#]+)/);
+    if (match) handles.add(match[1]);
+  }
+
+  return handles;
+}
+
+/**
  * Every collection handle already reachable from the header nav (departments
  * plus their submenu links). Used to show only the *rest* of the catalog's
  * collections in the collection-page sidebar.
