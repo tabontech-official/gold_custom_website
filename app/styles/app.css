@@ -8950,6 +8950,13 @@ button.announcement-link {
   border: 0;
 }
 
+/* No heading, so no top padding: `.home-section` pads 2.2rem (3.6rem on
+   desktop) to separate stacked sections, and with the heading block gone that
+   padding was simply a gap under the page's own H1. */
+.homepage-faq-section.is-headless {
+  padding-top: 0;
+}
+
 .account-search-button,
 .account-primary-link {
   display: inline-flex;

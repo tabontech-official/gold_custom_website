@@ -1205,9 +1205,90 @@ function buildProductJsonLd({
   // that advertises two different URLs splits its own ranking signals.
   const url = absoluteUrl(origin, productCanonicalPath(product));
 
+  // Every variant the page already holds, deduped by id. The query fetches
+  // `selectedOrFirstAvailableVariant`, `adjacentVariants` and one
+  // `firstSelectableVariant` per option value — Hydrogen deliberately does NOT
+  // fetch the full variants() connection, so this is the complete set available
+  // without a second round-trip. Each entry is a real variant with a real SKU
+  // and price; nothing here is synthesised from option names.
+  const variantById = new Map<string, any>();
+  for (const variant of [
+    selectedVariant,
+    ...(product.adjacentVariants ?? []),
+    ...(product.options ?? []).flatMap((option: any) =>
+      (option.optionValues ?? []).map(
+        (value: any) => value.firstSelectableVariant,
+      ),
+    ),
+  ]) {
+    if (variant?.id && !variantById.has(variant.id)) {
+      variantById.set(variant.id, variant);
+    }
+  }
+
+  // schema.org URLs for the option axes this product actually varies by, so
+  // `variesBy` describes THIS product rather than a fixed guess. Anything with
+  // no sensible schema.org property is left out rather than mapped to a
+  // near-miss — an option Google cannot interpret is better absent than wrong.
+  const VARIES_BY: Record<string, string> = {
+    karat: 'https://schema.org/material',
+    material: 'https://schema.org/material',
+    metal: 'https://schema.org/material',
+    color: 'https://schema.org/color',
+    colour: 'https://schema.org/color',
+    size: 'https://schema.org/size',
+    length: 'https://schema.org/size',
+    width: 'https://schema.org/width',
+  };
+  const variesBy = (product.options ?? [])
+    .map((option: any) => VARIES_BY[String(option?.name ?? '').toLowerCase()])
+    .filter(
+      (value: string | undefined, index: number, all: (string | undefined)[]) =>
+        value && all.indexOf(value) === index,
+    );
+
+  const hasVariant = [...variantById.values()].map((variant) => ({
+    '@type': 'Product',
+    // The variant's own option wording ('10K / 20"'), not the parent title —
+    // `hasVariant` entries that all share one name describe nothing.
+    name: variant.title && variant.title !== 'Default Title'
+      ? `${product.title} — ${variant.title}`
+      : product.title,
+    sku: variant.sku || undefined,
+    mpn: variant.sku || undefined,
+    image: variant.image?.url || undefined,
+    offers: variant.price
+      ? {
+          '@type': 'Offer',
+          url,
+          price: Number(variant.price.amount).toFixed(2),
+          priceCurrency: variant.price.currencyCode,
+          priceValidUntil,
+          availability: variant.availableForSale
+            ? 'https://schema.org/InStock'
+            : 'https://schema.org/OutOfStock',
+          itemCondition: 'https://schema.org/NewCondition',
+          seller: {'@id': `${origin}/#organization`},
+          shippingDetails: offerShippingDetails(variant.price),
+          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
+        }
+      : undefined,
+  }));
+
   return {
     '@context': 'https://schema.org',
-    '@type': 'Product',
+    // ProductGroup, not Product: these pieces vary by karat and size, and a
+    // single Product node could only ever advertise the selected variant's
+    // price. The parent keeps its own `offers` as well, so the canonical
+    // price/availability signal that was already indexed does not disappear.
+    '@type': hasVariant.length > 1 ? 'ProductGroup' : 'Product',
+    ...(hasVariant.length > 1
+      ? {
+          productGroupID: product.id,
+          ...(variesBy.length ? {variesBy} : {}),
+          hasVariant,
+        }
+      : {}),
     // Stable node id so the Offer and the sitewide Organization resolve into
     // one graph rather than three unrelated fragments. Retrieval-based AI
     // engines follow these references; without them the price, the seller and

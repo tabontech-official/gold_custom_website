@@ -62,7 +62,8 @@ function collectionFaqs(data: {
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const collection = data?.collection;
-  const origin = siteOrigin(rootDataFrom(matches));
+  const rootData = rootDataFrom(matches);
+  const origin = siteOrigin(rootData);
   const title = displayTitle(collection);
 
   if (!collection) {
@@ -85,8 +86,14 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     // default 1200 tier, undoing the measurement.
     shareImage: data?.shareImage,
     jsonLd: [
+      collectionPageJsonLd(origin, collection, title),
+      // The SAME department crumb the page renders (see getMegaMenuParentCrumb
+      // in the component below). Without it a sub-category's markup claimed
+      // Home / Religious Pendants while the visible trail read Home / Pendants
+      // / Religious Pendants — two different trails for one page.
       breadcrumbJsonLd(origin, [
         {name: 'Home', path: '/'},
+        ...collectionParentCrumb(collection, rootData),
         {name: title, path: `/collections/${collection.handle}`},
       ]),
       collectionItemListJsonLd(origin, collection),
@@ -100,6 +107,58 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ],
   });
 };
+
+/**
+ * The department crumb between Home and this collection, as `[{name, path}]`
+ * ready to splice into a crumb list — empty for a department itself, and empty
+ * whenever the header has not loaded.
+ *
+ * Resolves through the same helper the visible <Breadcrumb> uses, so the two
+ * cannot disagree.
+ */
+function collectionParentCrumb(
+  collection: {handle: string},
+  rootData: ReturnType<typeof rootDataFrom>,
+): {name: string; path: string}[] {
+  const parent = getMegaMenuParentCrumb({
+    handle: collection.handle,
+    header: (rootData as any)?.header,
+    publicStoreDomain: (rootData as any)?.publicStoreDomain,
+  });
+  return parent ? [{name: parent.label, path: parent.to}] : [];
+}
+
+/**
+ * CollectionPage node for the category itself.
+ *
+ * The page already published a BreadcrumbList and an ItemList, which describe
+ * the trail and the grid but never say what the PAGE is. `isPartOf` points at
+ * the sitewide #website node from seo.ts so this resolves into one graph
+ * instead of a loose fragment.
+ */
+function collectionPageJsonLd(
+  origin: string,
+  collection: any,
+  title: string,
+) {
+  const url = absoluteUrl(origin, `/collections/${collection.handle}`);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    '@id': `${url}#collection`,
+    url,
+    name: collection.seo?.title || title,
+    description:
+      metaDescription(collection.seo?.description || collection.description) ||
+      undefined,
+    isPartOf: {'@id': `${origin}/#website`},
+    // The plain-language subject, distinct from the SEO title. `about` is what
+    // a retrieval engine reads to decide the page is about gold chains rather
+    // than matching the title string.
+    about: {'@type': 'Thing', name: title},
+    mainEntity: {'@id': `${url}#products`},
+  };
+}
 
 /**
  * ItemList naming the products on this page, in the order they are rendered.
