@@ -455,30 +455,69 @@ function MegaMenuItem({
     publicStoreDomain,
   );
   const featuredProductCount = 3;
-  const specific = displayProducts.filter((product) =>
-    product.collections?.nodes?.some((node) => subHandles.has(node.handle)),
+  // ...AND THE SUB-CATEGORIES DRIVE THE SEQUENCE. One card per sub-category, in
+  // the order the sub-categories are listed in the Shopify menu: card 1 is the
+  // first curated piece from the department's first sub-category, card 2 from
+  // the second, and so on. `subHandles` is a Set built by walking
+  // getDepartmentItems, and a Set iterates in insertion order — so it already
+  // carries the menu's own sequence and nothing here has to re-sort.
+  //
+  // Two passes, because one card per sub-category is the SHAPE, not a hard
+  // rule: three sub-categories that only hold two curated pieces between them
+  // would otherwise leave a gap.
+  const curated: FeaturedProduct[] = [];
+  const taken = new Set<string>();
+  const claim = (product: FeaturedProduct) => {
+    if (curated.length >= featuredProductCount || taken.has(product.id)) return;
+    taken.add(product.id);
+    curated.push(product);
+  };
+  const isIn = (product: FeaturedProduct, collectionHandle: string) =>
+    product.collections?.nodes?.some((node) => node.handle === collectionHandle);
+  // Owned by a department this one yields to — see `yieldsTo` in megaMenu.ts.
+  //
+  // ONE-WAY, deliberately. An "is it more specific elsewhere?" test that looked
+  // at every department was symmetric: Rings dropped the diamond rings and
+  // Diamond dropped them right back, because `rings` and `diamond` both list
+  // the shared sub-category. A declared winner is the only thing that resolves
+  // that, and it is a fact about the departments rather than about a product.
+  const ownedElsewhere = (product: FeaturedProduct) =>
+    (department.yieldsTo ?? []).some((otherId) => {
+      const other = MEGA_MENU.find((entry) => entry.id === otherId);
+      if (!other) return false;
+      const otherHandle = other.to.replace('/collections/', '');
+      return (
+        isIn(product, otherHandle) ||
+        [
+          ...getDepartmentSubCollectionHandles(header, other, publicStoreDomain),
+        ].some((subHandle) => isIn(product, subHandle))
+      );
+    });
+  // Every pass runs through this, not just the catch-all: a diamond ring was
+  // reaching the Rings panel as a sub-category match, before the catch-all was
+  // ever consulted.
+  const eligible = displayProducts.filter(
+    (product) => !ownedElsewhere(product),
   );
-  // ...THEN TOP UP FROM THE GENERAL COLLECTION. Sub-categories alone left
-  // Diamond on two, so the department's own handle fills the remaining slots —
-  // but only the remaining ones. A department that already found three specific
-  // pieces never reaches this list, which is what stopped `rings` and `diamond`
-  // flooding their panels with six and five.
-  const chosen = new Set<string>();
-  for (const product of specific) {
-    if (chosen.size < featuredProductCount) chosen.add(product.id);
+
+  // Pass 1 — one per sub-category, menu order.
+  for (const subHandle of subHandles) {
+    const first = eligible.find((product) => isIn(product, subHandle));
+    if (first) claim(first);
   }
-  if (chosen.size < featuredProductCount) {
-    for (const product of displayProducts) {
-      if (chosen.size >= featuredProductCount) break;
-      if (product.collections?.nodes?.some((node) => node.handle === handle)) {
-        chosen.add(product.id);
-      }
+  // Pass 2 — refill from any remaining curated piece in this department,
+  // sub-categories before the general collection. `rings` and `diamond` are
+  // catch-alls holding half the catalog, so they stay last: a department that
+  // already filled its three never reaches them, which is what stopped those
+  // two panels showing six and five.
+  for (const product of eligible) {
+    if ([...subHandles].some((subHandle) => isIn(product, subHandle))) {
+      claim(product);
     }
   }
-  // Read back off displayProducts rather than out of the two lists above, so
-  // the three cards stay in the merchant's collection order. Specific matches
-  // win a SLOT; they do not reorder what fills it.
-  const curated = displayProducts.filter((product) => chosen.has(product.id));
+  for (const product of eligible) {
+    if (isIn(product, handle)) claim(product);
+  }
   const isLoading = fetcher.state === 'loading' || !fetcher.data;
   // Three cards. The department's own collection is the fallback for a
   // department with nothing curated yet, so a panel still shows cards instead

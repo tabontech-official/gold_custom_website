@@ -33,6 +33,17 @@ export type MegaMenuDepartment = {
   label: string;
   to: string;
   columns: MegaMenuColumn[];
+  /**
+   * Departments that own a shared piece outright, most-specific first.
+   *
+   * The Shopify menus overlap on purpose: `rings` lists diamond ring
+   * sub-categories because a shopper browsing Rings wants to find them. That is
+   * right for the LINK LIST and wrong for the product cards, where a diamond
+   * ring showing under Rings both misrepresents the department and starves the
+   * Diamond panel of the piece it was curated for. Naming Diamond here means
+   * Rings' cards skip anything Diamond claims, while the links are untouched.
+   */
+  yieldsTo?: string[];
 };
 
 /**
@@ -82,6 +93,9 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     id: 'rings',
     label: 'Rings',
     to: '/collections/rings',
+    // "Rings" means gold rings. Diamond and engagement pieces have their own
+    // departments and their own panels; the `rings` collection holds all three.
+    yieldsTo: ['diamond', 'engagement-rings'],
     // Engagement rings are their own department, so they stay out of here.
     //
     // Sourced from the Shopify `rings` menu rather than a hardcoded list. The
