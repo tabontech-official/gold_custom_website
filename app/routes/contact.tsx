@@ -1,5 +1,5 @@
 import {Link} from 'react-router';
-import {Image} from '@shopify/hydrogen';
+import {Image, useAnalytics} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/contact';
@@ -49,6 +49,21 @@ const SELF_SERVE = [
 ];
 
 export default function Contact() {
+  const {publish} = useAnalytics();
+
+  // Same shape as the financing-partner and appointment tracking (see
+  // products.$handle.tsx / AppointmentModal): the click itself is the signal,
+  // there's no success response to gate on. GA4 event named for what it is
+  // rather than the generic `generate_lead` used elsewhere. `Contact` is
+  // Meta's own standard event for exactly this — a phone/email/chat contact
+  // with the business.
+  const trackContactClick = (method: 'phone' | 'email') => () =>
+    publish('custom_ga4', {
+      event: 'contact',
+      params: {method},
+      metaEvent: 'Contact',
+    });
+
   return (
     <main className="contact-page">
       <div className="section-inner svc-crumb">
@@ -84,12 +99,20 @@ export default function Contact() {
           </div>
 
           <div className="contact-cards">
-            <a className="contact-card" href="tel:+13236888837">
+            <a
+              className="contact-card"
+              href="tel:+13236888837"
+              onClick={trackContactClick('phone')}
+            >
               <span className="contact-card-label">Call us</span>
               <strong>+1 (323) 688-8837</strong>
               <span>Fastest for anything time-sensitive</span>
             </a>
-            <a className="contact-card" href="mailto:mr10k@goldcustom.com">
+            <a
+              className="contact-card"
+              href="mailto:mr10k@goldcustom.com"
+              onClick={trackContactClick('email')}
+            >
               <span className="contact-card-label">Email us</span>
               <strong>mr10k@goldcustom.com</strong>
               <span>

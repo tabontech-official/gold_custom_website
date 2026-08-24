@@ -1066,6 +1066,24 @@ const FINANCING_PARTNERS = [
 ];
 
 function FinancingPartners() {
+  const {publish} = useAnalytics();
+
+  // A click here sends the shopper to start a lease/financing application on
+  // the partner's own site — the same "shopper handed off to start something
+  // with intent" shape as the appointment form, so it's reported the same way
+  // (see AppointmentModal), just under its own name rather than the generic
+  // `generate_lead` GA4 uses elsewhere. `method` carries which partner,
+  // matching how useTrackConversion's newsletter/appointment events use
+  // `method` for their own surface. `SubmitApplication`, not `Lead` — Meta's
+  // own standard event for this exact case (a credit/lease application), not
+  // a generic inquiry.
+  const trackFinancingClick = (partner: string) => () =>
+    publish('custom_ga4', {
+      event: 'finance_link',
+      params: {method: partner},
+      metaEvent: 'SubmitApplication',
+    });
+
   return (
     <>
       {/* Heading sits outside the bordered box; `aria-labelledby` resolves by
@@ -1091,6 +1109,7 @@ function FinancingPartners() {
                 // link scheme or bleed ranking signal off the store.
                 rel="noopener noreferrer nofollow"
                 className="product-financing-link"
+                onClick={trackFinancingClick(partner.name)}
               >
                 <img
                   src={partner.src}
