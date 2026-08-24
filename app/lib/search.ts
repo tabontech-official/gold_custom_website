@@ -202,8 +202,13 @@ export function mostRelatedCollection<T extends RelatableCollection>(
  * not searched: they are so broadly applied here that matching against them
  * keeps 248 of any 250.
  *
- * If nothing survives, the caller keeps Shopify's order — a term that only
- * appears in descriptions still deserves its results.
+ * Genuinely empty if nothing survives — NOT Shopify's unfiltered order. This
+ * runs per fetched batch (regularSearch pages 48 at a time), and Shopify's OR
+ * ranking runs dry well before its cursor does: "oval" stays 100% on-title
+ * through two pages, then batch 4 has zero oval-titled products in it. Falling
+ * back to "show the batch anyway" there means the shopper searching oval rings
+ * gets served Figaro chains — the exact dishonesty this filter exists to
+ * prevent, just deferred to whichever batch runs out of real matches.
  */
 export function productsMatchingTerm<
   T extends {title: string; productType?: string | null},
@@ -211,7 +216,7 @@ export function productsMatchingTerm<
   const termWords = normalizeWords(term ?? '');
   if (!termWords.length) return products;
 
-  const matches = products.filter((product) => {
+  return products.filter((product) => {
     const words = new Set(
       normalizeWords(`${product.title} ${product.productType ?? ''}`),
     );
@@ -219,6 +224,4 @@ export function productsMatchingTerm<
       wordInHaystack(word, words, index === termWords.length - 1),
     );
   });
-
-  return matches.length ? matches : products;
 }

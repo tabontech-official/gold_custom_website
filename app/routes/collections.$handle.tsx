@@ -327,8 +327,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const paginationVariables = {first: productsToShow(request), last: null};
   const url = new URL(request.url);
-  // Only show in-stock products in category listings
-  const filters = [{available: true}, ...getFiltersFromParam(url.searchParams)];
+  // No hardcoded {available: true} — that silently dropped every out-of-stock
+  // product from the grid, so a collection with 40 products in the admin only
+  // ever rendered the in-stock subset. Availability is a filter the shopper
+  // opts into from the sidebar (getFiltersFromParam), same as any other facet.
+  const filters = getFiltersFromParam(url.searchParams);
   const sort = getSortFromParam(url.searchParams.get('sort'));
 
   if (!handle) {

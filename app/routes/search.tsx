@@ -337,6 +337,24 @@ export const SEARCH_QUERY = `#graphql
 ` as const;
 
 /**
+ * Applies the shopper's chosen sort AFTER relevance filtering, never before —
+ * the Shopify query itself always runs in RELEVANCE order (see regularSearch).
+ * "Most relevant" is already in that order, so this only has work to do for
+ * the two price options.
+ */
+function sortSearchProducts<
+  T extends {priceRange: {minVariantPrice: {amount: string}}},
+>(nodes: T[], sort: {sortKey: string; reverse: boolean}): T[] {
+  if (sort.sortKey !== 'PRICE') return nodes;
+  const sorted = [...nodes].sort(
+    (a, b) =>
+      Number(a.priceRange.minVariantPrice.amount) -
+      Number(b.priceRange.minVariantPrice.amount),
+  );
+  return sort.reverse ? sorted.reverse() : sorted;
+}
+
+/**
  * Regular search fetcher
  */
 async function regularSearch({
@@ -361,6 +379,13 @@ async function regularSearch({
 
   // Search pages and products for the `q` term — blog articles are deliberately
   // not searched here; someone searching the shop is looking for things to buy.
+  //
+  // Always fetched in RELEVANCE order, never `sort`'s own sortKey. Shopify's
+  // `search` ORs the term's words together, so "price low to high" doesn't sort
+  // the matches — it returns the 48 cheapest products that match ANY word,
+  // which productsMatchingTerm below then guts down to almost nothing. Fetching
+  // by relevance keeps the true matches in the batch; price ordering is applied
+  // after filtering, see sortSearchProducts.
   const {
     errors,
     ...items
@@ -371,8 +396,8 @@ async function regularSearch({
         ...variables,
         term,
         productFilters,
-        sortKey: sort.sortKey,
-        reverse: sort.reverse,
+        sortKey: 'RELEVANCE',
+        reverse: false,
       },
     });
 
@@ -388,7 +413,10 @@ async function regularSearch({
     ...items,
     products: {
       ...items.products,
-      nodes: productsMatchingTerm(term, items.products.nodes),
+      nodes: sortSearchProducts(
+        productsMatchingTerm(term, items.products.nodes),
+        sort,
+      ),
     },
   };
 
