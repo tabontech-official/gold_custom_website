@@ -55,7 +55,9 @@ ${productSection(origin, products)}
 - [Search](${origin}/search?q=) — append a query string
 - [Contact](${origin}/contact)
 - [Blog](${origin}/blogs)
-- [Policies](${origin}/policies) — shipping, returns, warranty
+- [Return & Refund Policy](${origin}/policies/refund-policy)
+- [Terms of Service](${origin}/policies/terms-of-service)
+- [Privacy Policy](${origin}/policies/privacy-policy)
 
 ## Machine-readable endpoints
 

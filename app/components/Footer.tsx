@@ -9,11 +9,7 @@ interface FooterProps {
   publicStoreDomain: string;
 }
 
-export function Footer({
-  footer: footerPromise,
-  header,
-  publicStoreDomain,
-}: FooterProps) {
+export function Footer({footer: footerPromise, header}: FooterProps) {
   const newsletter = useFetcher<{success?: boolean; error?: string}>();
   const newsletterBusy = newsletter.state !== 'idle';
 
@@ -107,25 +103,46 @@ export function Footer({
                 </div>
 
                 <div className="footer-col">
-                  <h4>Customers</h4>
+                  <h4>Services</h4>
                   <ul>
                     <li>
-                      <Link to="/showroom">Showroom</Link>
+                      <Link to="/repairs">Repair Jewelry</Link>
                     </li>
                     <li>
                       <Link to="/custom-jewelry">Custom Jewelry</Link>
                     </li>
                     <li>
-                      <Link to="/repairs">Repairs</Link>
+                      <Link to="/showroom">Showroom</Link>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="footer-col">
+                  <h4>Customers</h4>
+                  <ul>
+                    <li>
+                      <Link to="/policies/refund-policy">
+                        Return & Refund Policy
+                      </Link>
                     </li>
                     <li>
-                      <Link to="/policies">Policies</Link>
+                      <Link to="/policies/terms-of-service">
+                        Terms of Service
+                      </Link>
                     </li>
                     <li>
-                      <Link to="/contact">Contact Us</Link>
+                      <Link to="/policies/privacy-policy">Privacy Policy</Link>
+                    </li>
+                    <li>
+                      <Link to="/pages/data-sharing-opt-out">
+                        Customer Privacy
+                      </Link>
                     </li>
                     <li>
                       <Link to="/blogs">Blog</Link>
+                    </li>
+                    <li>
+                      <Link to="/contact">Contact Us</Link>
                     </li>
                   </ul>
                 </div>

@@ -1,6 +1,9 @@
+import {useState, type FormEvent} from 'react';
 import {
+  useFetcher,
   useLoaderData,
 } from 'react-router';
+import {PolicyDocument} from '~/components/PolicyDocument';
 import type {Route} from './+types/pages.$handle';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {
@@ -133,6 +136,18 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Page() {
   const {page, trustBadges, faqs} = useLoaderData<typeof loader>();
 
+  // The customer-privacy page gets the same treatment as /policies/* — hero,
+  // kicker, 52rem reading column — plus the opt-out controls its body refers
+  // to. Everything textual still comes from the backend page.
+  if (page.handle === OPT_OUT_PAGE_HANDLE) {
+    return (
+      <PolicyDocument title={page.title}>
+        <div dangerouslySetInnerHTML={{__html: page.body}} />
+        <DataSharingOptOut />
+      </PolicyDocument>
+    );
+  }
+
   return (
     <div className="page">
       <Breadcrumb items={[{label: 'Home', to: '/'}, {label: page.title}]} />
@@ -146,6 +161,126 @@ export default function Page() {
       {faqs.length > 0 && <FaqAccordion faqs={faqs} showHeading={false} />}
       {trustBadges && <TrustPromise badges={trustBadges} />}
     </div>
+  );
+}
+
+/** The Shopify-managed data-sharing page; its body is authored in the backend,
+    only the opt-out controls below are ours. */
+const OPT_OUT_PAGE_HANDLE = 'data-sharing-opt-out';
+
+/**
+ * The "instructions below" the page body refers to — same flow as Shopify's
+ * hosted version of this page:
+ *
+ * - "Opt out" always opts this browser out via the Customer Privacy API
+ *   (loaded on every page by Analytics.Provider; Hydrogen's wrapper injects
+ *   the checkout domain and token). AnalyticsBridge reads the same API, so
+ *   GA4/Meta go quiet on the next event.
+ * - The optional checkbox + email additionally opts out the customer RECORD
+ *   through /api/data-sale-opt-out (Admin API dataSaleOptOut). Shopify
+ *   validates the email against existing customers and its userError comes
+ *   back verbatim if there is no match.
+ */
+function DataSharingOptOut() {
+  const account = useFetcher<{success?: boolean; error?: string}>();
+  const [withAccount, setWithAccount] = useState(false);
+  const [browser, setBrowser] = useState<'idle' | 'busy' | 'done' | 'error'>(
+    'idle',
+  );
+
+  const accountBusy = withAccount && account.state !== 'idle';
+  const busy = browser === 'busy' || accountBusy;
+  const done =
+    browser === 'done' && (!withAccount || Boolean(account.data?.success));
+
+  function optOutBrowser() {
+    const shopify = (
+      window as unknown as {
+        Shopify?: {
+          customerPrivacy?: {
+            setTrackingConsent: (
+              consent: Record<string, boolean>,
+              callback: (result?: {error?: unknown}) => void,
+            ) => void;
+          };
+        };
+      }
+    ).Shopify;
+    const api = shopify?.customerPrivacy;
+    if (!api) {
+      // ponytail: the consent script loads at first idle; a click that beats
+      // it just asks for a retry instead of queueing.
+      setBrowser('error');
+      return;
+    }
+    setBrowser('busy');
+    api.setTrackingConsent(
+      {
+        marketing: false,
+        analytics: false,
+        preferences: false,
+        sale_of_data: false,
+      },
+      (result) => setBrowser(result?.error ? 'error' : 'done'),
+    );
+  }
+
+  // One submit drives both halves: the browser consent call always runs; the
+  // form only actually posts (account opt-out) when the checkbox is ticked.
+  function onSubmit(event: FormEvent<HTMLFormElement>) {
+    optOutBrowser();
+    if (!withAccount) event.preventDefault();
+  }
+
+  return (
+    <section className="page-optout">
+      {done ? (
+        <p role="status">
+          <strong>You have successfully opted out</strong>
+        </p>
+      ) : (
+        <account.Form
+          action="/api/data-sale-opt-out"
+          method="post"
+          onSubmit={onSubmit}
+        >
+          <label className="optout-check">
+            <input
+              checked={withAccount}
+              onChange={(event) => setWithAccount(event.target.checked)}
+              type="checkbox"
+            />
+            <span>Don&rsquo;t share data from my account (optional)</span>
+          </label>
+          {withAccount ? (
+            <label className="appt-field">
+              <span>Email address</span>
+              <input
+                autoComplete="email"
+                name="email"
+                placeholder="you@example.com"
+                required
+                type="email"
+              />
+            </label>
+          ) : null}
+          <button className="btn btn-primary" disabled={busy} type="submit">
+            {busy ? 'Opting out…' : 'Opt out'}
+          </button>
+        </account.Form>
+      )}
+      {browser === 'error' ? (
+        <p className="appt-error" role="alert">
+          The consent service hasn&rsquo;t finished loading — please try again
+          in a moment.
+        </p>
+      ) : null}
+      {account.data?.error ? (
+        <p className="appt-error" role="alert">
+          {account.data.error}
+        </p>
+      ) : null}
+    </section>
   );
 }
 

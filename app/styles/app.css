@@ -1869,7 +1869,7 @@ button.announcement-link {
 
 .footer-main {
   display: grid;
-  grid-template-columns: 4fr 2fr 2fr 2fr;
+  grid-template-columns: 4fr 2fr 2fr 2fr 2fr;
   column-gap: clamp(2rem, 4.8vw, 5.5rem);
   row-gap: 2rem;
   margin: 0 auto;
@@ -3752,6 +3752,38 @@ button.announcement-link {
   max-width: 72rem;
   padding: 1.25rem 0;
   color: var(--color-ink);
+}
+
+.page-optout {
+  margin-top: 1.75rem;
+}
+
+.page-optout .appt-field {
+  max-width: 24rem;
+}
+
+.page-optout .btn {
+  background: #000;
+  border-radius: 0;
+  color: #fff;
+}
+
+.page-optout .btn:hover {
+  background: #222;
+}
+
+.optout-check {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 0.55rem;
+  margin-bottom: 1.1rem;
+}
+
+.optout-check input {
+  accent-color: var(--color-gold);
+  height: 1.05rem;
+  width: 1.05rem;
 }
 
 .page h1 {

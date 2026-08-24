@@ -13,11 +13,7 @@ export function PolicyDocument({
     <main className="policy-page policy-document">
       <div className="section-inner policy-breadcrumb">
         <Breadcrumb
-          items={[
-            {label: 'Home', to: '/'},
-            {label: 'Policies', to: '/policies'},
-            {label: title},
-          ]}
+          items={[{label: 'Home', to: '/'}, {label: title}]}
         />
       </div>
       <section className="policy-hero">
@@ -28,8 +24,8 @@ export function PolicyDocument({
       </section>
       <article className="section-inner policy-rich-content">
         {children}
-        <Link className="policy-home-link" to="/policies">
-          Back to policies
+        <Link className="policy-home-link" to="/">
+          Back to home
         </Link>
       </article>
     </main>

@@ -30,5 +30,11 @@ declare global {
     PUBLIC_GA4_ID?: string;
     /** Meta (Facebook/Instagram) pixel ID — all digits. */
     PUBLIC_META_PIXEL_ID?: string;
+    /**
+     * Admin API token (custom app, write_customers scope) for the
+     * dataSaleOptOut mutation behind /pages/data-sharing-opt-out. Unset:
+     * browser-level opt-out still works, account-level returns an apology.
+     */
+    PRIVATE_ADMIN_API_TOKEN?: string;
   }
 }
