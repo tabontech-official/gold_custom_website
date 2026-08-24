@@ -5468,7 +5468,15 @@ button.announcement-link {
 .products-grid {
   display: grid;
   grid-gap: 1.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(var(--grid-item-width), 1fr));
+  /* Fixed max track width, not `1fr` — with `1fr` a grid short on items (a
+     collection with 2-3 products) stretches those few cards to fill the
+     whole row instead of staying card-sized. `auto-fill` keeps the same
+     column count either way; `justify-content: center` puts the leftover
+     space evenly on both sides of the row instead of piling it on the
+     right (`start` did that — a ragged left-aligned block whenever the
+     column count doesn't divide the row width evenly). */
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-item-width), 380px));
+  justify-content: center;
   margin-bottom: 2rem;
 }
 
@@ -5491,7 +5499,7 @@ button.announcement-link {
 @media (min-width: 48.01em) {
   .wishlist-page .products-grid {
     grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 270px));
-    justify-content: start;
+    justify-content: center;
   }
 }
 
@@ -5602,12 +5610,15 @@ button.announcement-link {
 
 /* Denser cards on catalogue pages — the global 355px min leaves 3 giant
    columns. Desktop only: on mobile the global 2-per-row rule must win.
-   auto-FIT, not auto-fill: auto-fill keeps empty phantom columns, so a final
-   row of 3 sat left-aligned against two blank slots. auto-fit collapses them
-   and the cards share the full width. */
+   Fixed 300px max + auto-fill + the base rule's `justify-content: center`,
+   same as .wishlist-page: a short last row (or a whole collection of 2-3
+   products) stays card-sized and centred as a block instead of stretching
+   to fill the row or piling up against the left edge. auto-fit + `1fr` used
+   to be here to avoid a gappy last row, but that traded it for the worse
+   bug — a small collection's cards ballooning to cover the page. */
 @media (min-width: 60em) {
   .collection-layout .products-grid {
-    grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 300px));
   }
 }
 
