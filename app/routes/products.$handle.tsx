@@ -50,8 +50,10 @@ import {
   SITE,
   absoluteUrl,
   breadcrumbJsonLd,
+  cleanSku,
   metaDescription,
   offerShippingDetails,
+  offerValidFromDate,
   pageSeo,
   priceValidUntilDate,
   rootDataFrom,
@@ -205,6 +207,9 @@ function buildVariantGroup(product: any): VariantGroup | null {
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {storefront} = context;
   const url = new URL(request.url);
+  // Shared by priceValidUntil and validFrom below — see the comment on that
+  // return value for why they must come from one instant.
+  const now = new Date();
   const routeParams = params as Route.LoaderArgs['params'] & {
     productHandle?: string;
   };
@@ -270,12 +275,15 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     installmentsPricing:
       installments?.shop?.shopPayInstallmentsPricing ?? FALLBACK_PRICING,
     /**
-     * Computed here, not at render time. `buildProductJsonLd` runs during
-     * hydration too, and a `new Date()` evaluated on both server and client
-     * can straddle a UTC midnight â€” that produces two different strings for
-     * the same markup and React reports a hydration mismatch.
+     * Computed here, not at render time, from one shared `now`. `buildProductJsonLd`
+     * runs during hydration too, and a `new Date()` evaluated separately on
+     * server and client can straddle a UTC midnight â€” that produces two
+     * different strings for the same markup and React reports a hydration
+     * mismatch. Both dates come from the same instant so they can't drift
+     * relative to each other either.
      */
-    priceValidUntil: priceValidUntilDate(),
+    priceValidUntil: priceValidUntilDate(now),
+    validFrom: offerValidFromDate(now),
   };
 }
 
@@ -308,6 +316,7 @@ export default function Product() {
     recommendedProducts,
     breadcrumbContext,
     priceValidUntil,
+    validFrom,
     installmentsPricing,
   } = useLoaderData<typeof loader>();
   const root = useRouteLoaderData<any>('root');
@@ -358,6 +367,7 @@ export default function Product() {
     mediaItems,
     origin: siteOrigin(root),
     priceValidUntil,
+    validFrom,
   });
   const rawCategory = product.category?.name || product.productType || '';
   const categoryName =
@@ -1190,12 +1200,14 @@ function buildProductJsonLd({
   mediaItems,
   origin,
   priceValidUntil,
+  validFrom,
 }: {
   product: any;
   selectedVariant: any;
   mediaItems: GalleryMedia[];
   origin: string;
   priceValidUntil: string;
+  validFrom: string;
 }) {
   const images = mediaItems
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
@@ -1254,8 +1266,8 @@ function buildProductJsonLd({
     name: variant.title && variant.title !== 'Default Title'
       ? `${product.title} — ${variant.title}`
       : product.title,
-    sku: variant.sku || undefined,
-    mpn: variant.sku || undefined,
+    sku: cleanSku(variant.sku),
+    mpn: cleanSku(variant.sku),
     image: variant.image?.url || undefined,
     offers: variant.price
       ? {
@@ -1264,6 +1276,7 @@ function buildProductJsonLd({
           price: Number(variant.price.amount).toFixed(2),
           priceCurrency: variant.price.currencyCode,
           priceValidUntil,
+          validFrom,
           availability: variant.availableForSale
             ? 'https://schema.org/InStock'
             : 'https://schema.org/OutOfStock',
@@ -1301,14 +1314,18 @@ function buildProductJsonLd({
       '@type': 'Brand',
       name: SITE.name,
     },
-    description: product.seo?.description || product.description || undefined,
+    // Falls back to the sitewide description (via metaDescription, same
+    // helper the <meta> tag uses) rather than `undefined` — a product with no
+    // authored description or SEO description would otherwise publish
+    // Product markup with no `description` field at all.
+    description: metaDescription(product.seo?.description || product.description),
     image: images.length ? images : undefined,
     // No `|| product.handle` fallback. A URL slug is not a manufacturer part
     // number, and inventing one publishes a fabricated identifier that Google
     // may try to match against real product feeds. Omitted is honest; `sku`
     // below already carries the real identifier when there is one.
-    mpn: selectedVariant?.sku || undefined,
-    sku: selectedVariant?.sku || undefined,
+    mpn: cleanSku(selectedVariant?.sku),
+    sku: cleanSku(selectedVariant?.sku),
     offers: price
       ? {
           '@type': 'Offer',
@@ -1319,6 +1336,7 @@ function buildProductJsonLd({
           price: Number(price.amount).toFixed(2),
           priceCurrency: price.currencyCode,
           priceValidUntil,
+          validFrom,
           availability: selectedVariant?.availableForSale
             ? 'https://schema.org/InStock'
             : 'https://schema.org/OutOfStock',

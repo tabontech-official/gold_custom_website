@@ -15,8 +15,10 @@ import assert from 'node:assert/strict';
 import {
   FREE_SHIPPING_THRESHOLD_USD,
   MERCHANT_RETURN_POLICY,
+  cleanSku,
   metaDescription,
   offerShippingDetails,
+  offerValidFromDate,
   priceValidUntilDate,
 } from './seo.ts';
 
@@ -66,6 +68,15 @@ assert.equal(atThreshold?.shippingRate.value, 0);
 assert.equal(atThreshold?.shippingDestination.addressCountry, 'US');
 assert.ok(offerShippingDetails({amount: '1375.0', currencyCode: 'USD'}));
 
+// deliveryTime rides along with every shippingDetails — required by Google's
+// structured data check, and must state both legs, not just a total.
+// Merchant-given figure: "2 or 3 days" door-to-door.
+assert.equal(atThreshold?.deliveryTime.handlingTime.minValue, 1);
+assert.equal(atThreshold?.deliveryTime.handlingTime.maxValue, 1);
+assert.equal(atThreshold?.deliveryTime.transitTime.minValue, 1);
+assert.equal(atThreshold?.deliveryTime.transitTime.maxValue, 2);
+assert.equal(atThreshold?.deliveryTime.handlingTime.unitCode, 'DAY');
+
 // Below it, free shipping depends on the rest of the cart, which this schema
 // cannot express — so claim nothing rather than something false.
 assert.equal(offerShippingDetails({amount: '98.99', currencyCode: 'USD'}), undefined);
@@ -91,8 +102,26 @@ assert.deepEqual(MERCHANT_RETURN_POLICY.refundType, [
   'https://schema.org/ExchangeRefund',
   'https://schema.org/StoreCreditRefund',
 ]);
-// Customer bears return shipping ("less shipping and handling charges").
-assert.equal(MERCHANT_RETURN_POLICY.returnFees, 'https://schema.org/ReturnShippingFees');
+// Customer bears return shipping ("less shipping and handling charges") but
+// the policy names no fixed amount — NOT ReturnShippingFees, which would
+// require one (and require inventing a number the policy doesn't give).
+assert.equal(
+  MERCHANT_RETURN_POLICY.returnFees,
+  'https://schema.org/ReturnFeesCustomerResponsibility',
+);
+
+// --- sku/mpn: whitespace must not survive as a "real" identifier -----------
+
+assert.equal(cleanSku('  GC-1042  '), 'GC-1042');
+assert.equal(cleanSku('   '), undefined);
+assert.equal(cleanSku(''), undefined);
+assert.equal(cleanSku(null), undefined);
+assert.equal(cleanSku(undefined), undefined);
+
+// --- validFrom --------------------------------------------------------------
+
+assert.equal(offerValidFromDate(new Date('2026-08-03T12:00:00Z')), '2026-08-03');
+assert.match(offerValidFromDate(), /^\d{4}-\d{2}-\d{2}$/);
 
 // --- priceValidUntil ------------------------------------------------------
 

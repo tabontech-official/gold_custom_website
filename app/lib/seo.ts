@@ -688,6 +688,16 @@ export function websiteJsonLd(origin: string): JsonLd {
  */
 export const FREE_SHIPPING_THRESHOLD_USD = 99;
 
+/**
+ * Handling + transit time for a standard (non-custom) US order, as given by
+ * the merchant: ships the next business day, arrives 1-2 days after that —
+ * "2 or 3 days" door-to-door domestic. Custom/engraved pieces run longer (see
+ * the PDP's "Important Note"), but schema.org has no way to express a
+ * per-item exception here, so this states the standard case.
+ */
+const STANDARD_HANDLING_DAYS = {minValue: 1, maxValue: 1} as const;
+const STANDARD_TRANSIT_DAYS = {minValue: 1, maxValue: 2} as const;
+
 export function offerShippingDetails(price: {
   amount: string;
   currencyCode: string;
@@ -703,7 +713,45 @@ export function offerShippingDetails(price: {
     '@type': 'OfferShippingDetails',
     shippingRate: {'@type': 'MonetaryAmount', value: 0, currency: 'USD'},
     shippingDestination: {'@type': 'DefinedRegion', addressCountry: 'US'},
+    deliveryTime: {
+      '@type': 'ShippingDeliveryTime',
+      handlingTime: {
+        '@type': 'QuantitativeValue',
+        unitCode: 'DAY',
+        ...STANDARD_HANDLING_DAYS,
+      },
+      transitTime: {
+        '@type': 'QuantitativeValue',
+        unitCode: 'DAY',
+        ...STANDARD_TRANSIT_DAYS,
+      },
+    },
   };
+}
+
+/**
+ * Trim a merchant-entered SKU/MPN and drop it if that leaves nothing.
+ *
+ * Without this, a whitespace-only SKU value from Shopify (`"   "`) survives
+ * `sku || undefined` — it's a non-empty string, so it's truthy — and gets
+ * published as a real identifier. Google's structured data report flags that
+ * as "Invalid value in field sku" rather than "missing". The on-page SKU
+ * label already trims for display; this applies the same rule to JSON-LD.
+ */
+export function cleanSku(value?: string | null): string | undefined {
+  const trimmed = value?.trim();
+  return trimmed || undefined;
+}
+
+/**
+ * `validFrom` on an Offer: the date the currently-quoted price took effect.
+ * This storefront has no price-change history to draw on, so "now" — the
+ * moment of render — is the only value that's actually true: the offer is
+ * valid as of today. Same hydration hazard as priceValidUntilDate (server and
+ * client must agree), so compute this once in a loader and pass it down.
+ */
+export function offerValidFromDate(now: Date = new Date()) {
+  return now.toISOString().slice(0, 10);
 }
 
 /**
@@ -713,6 +761,15 @@ export function offerShippingDetails(price: {
  *
  * Deliberately NOT `FullRefund` — advertising a cash refund the policy does
  * not honour is the kind of mismatch that costs a Merchant Center account.
+ *
+ * `returnFees` is deliberately NOT `ReturnShippingFees`: that value requires a
+ * fixed `returnShippingFeesAmount`, and the actual policy names no number —
+ * "less shipping and handling charges", decided case-by-case by customer
+ * service (and layaway cancellations carry a separate 10% restocking fee).
+ * Publishing an invented dollar figure would be exactly the kind of claim
+ * Google cross-checks against the policy page and finds unsupported.
+ * `ReturnFeesCustomerResponsibility` says the same true thing — the buyer
+ * pays — without a number attached, and carries no required amount field.
  */
 export const MERCHANT_RETURN_POLICY = {
   '@type': 'MerchantReturnPolicy',
@@ -720,7 +777,7 @@ export const MERCHANT_RETURN_POLICY = {
   returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
   merchantReturnDays: 14,
   returnMethod: 'https://schema.org/ReturnByMail',
-  returnFees: 'https://schema.org/ReturnShippingFees',
+  returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
   refundType: [
     'https://schema.org/ExchangeRefund',
     'https://schema.org/StoreCreditRefund',

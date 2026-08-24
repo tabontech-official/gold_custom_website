@@ -29,6 +29,17 @@ function robotsTxtData({url, shopId}: {shopId?: string; url?: string}) {
 User-agent: *
 ${generalDisallowRules({sitemapUrl, shopId})}
 
+# Googlebot and Googlebot-Image already inherit the "*" group above — a named
+# user-agent group is only needed when a bot should get DIFFERENT rules, and
+# neither does. These are declared anyway, explicitly allowing product pages
+# and images, because Merchant Center's crawlability check names both by
+# token and a naive implementation may not credit the wildcard fallback.
+User-agent: Googlebot
+${generalDisallowRules({sitemapUrl, shopId})}
+
+User-agent: Googlebot-Image
+${generalDisallowRules({sitemapUrl, shopId})}
+
 # Google adsbot ignores robots.txt unless specifically named!
 User-agent: adsbot-google
 Disallow: /checkouts/

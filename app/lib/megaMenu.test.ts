@@ -26,6 +26,7 @@ assert.equal(
 
 // Menu-sourced children: the majority of departments, and the case that was
 // silently returning undefined before menuItemHandles was threaded through.
+//yeah rtghis the is teh card that sjpw yjhe riong and the atmosphere amnd teh surround
 assert.equal(
   getMegaMenuParentHandle('tennis-bracelet'),
   undefined,
@@ -57,6 +58,8 @@ assert.deepEqual(
   ['rope-chain', 'box-chain'],
 );
 assert.deepEqual(collectionHandlesFromMenu(null), []);
+//the homepage that is gettung the sata dein the centre of the admin and the cirsoland the shop data that are not matched and the s
+//alll the collection meny page and the collection card must carru he same products
 
 // A department must not inherit from itself, or it would re-query its own content.
 assert.equal(getMegaMenuParentHandle('rings'), undefined);
