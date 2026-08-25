@@ -32,7 +32,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
-import {cdnLoader} from '~/lib/cdnImage';
+import {cdnLoader, cdnWidth} from '~/lib/cdnImage';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
 const HEADER_UTILITY_MESSAGES = [
@@ -77,6 +77,51 @@ function UtilityMessage() {
   );
 }
 
+/**
+ * True once the visitor has scrolled DOWN past `revealAt`; flips back to
+ * false the moment they scroll up at all, or whenever they're still within
+ * `revealAt` of the top (so the sticky row never hides on the small bounce
+ * scrolls a page load or an anchor jump can produce).
+ *
+ * rAF-throttled — the scroll listener itself never runs more than once per
+ * frame, however fast `scroll` events fire — and a small dead zone (4px)
+ * around zero delta absorbs trackpad/inertial jitter that would otherwise
+ * flicker the header hidden and shown on a scroll that isn't really moving.
+ */
+function useHideOnScrollDown(revealAt = 80) {
+  const [hidden, setHidden] = useState(false);
+
+  useEffect(() => {
+    let lastY = window.scrollY;
+    let ticking = false;
+
+    function measure() {
+      const y = window.scrollY;
+      const delta = y - lastY;
+      if (y < revealAt) {
+        setHidden(false);
+      } else if (delta > 4) {
+        setHidden(true);
+      } else if (delta < -4) {
+        setHidden(false);
+      }
+      lastY = y;
+      ticking = false;
+    }
+
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(measure);
+    }
+
+    window.addEventListener('scroll', onScroll, {passive: true});
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [revealAt]);
+
+  return hidden;
+}
+
 export function Header({
   header,
   isLoggedIn,
@@ -84,41 +129,21 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop} = header;
+  const hideStickyRow = useHideOnScrollDown();
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
   //
   // Named .webp, served as image/png — the CDN goes by the bytes, not the
-  // extension, so the transforms below still apply.
+  // extension, so the transform below still applies.
+  //
+  // Plain `cdnWidth`, not a crop: unlike the previous file (2103x748 with
+  // 22% transparent padding built in, needing a centre-crop to trim), this
+  // one is drawn edge to edge — its 2080x613 canvas IS the artwork, so
+  // resizing it is all that's needed.
   const logoSrc =
     shop.brand?.logo?.image?.url ??
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/logo.webp?v=1787633855';
-
-  /**
-   * A centre crop, not a plain resize.
-   *
-   * The lockup is exported on a 2103x748 canvas but the artwork only occupies
-   * the middle 1982x413 of it — 22% of the height above and below is
-   * transparent padding. Drawn as-is, the mark renders at ~55% of the box it
-   * is given, which on a header row that cannot grow is the whole reason it
-   * looked small. Asking the CDN for the artwork's own ~4.63:1 ratio trims
-   * that padding at the edge instead, so the same 50px of row height carries a
-   * mark half again as wide.
-   *
-   * The ratio has margin built in: the art clears every edge by 5-23px at 3x,
-   * verified against the CDN's actual output. It is deliberately looser than
-   * the artwork's true 4.80:1 for exactly that reason — a crop tight enough to
-   * touch the letterforms would shave them on rounding.
-   *
-   * If the file is ever re-exported trimmed, drop `height`/`crop` and go back
-   * to `cdnWidth`; the crop would then eat into the mark.
-   */
-  const logoUrl = (scale: number) =>
-    cdnLoader({
-      src: logoSrc,
-      width: 380 * scale,
-      height: 82 * scale,
-      crop: 'center',
-    });
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/LOGO.webp?v=1787656136';
+  const logoUrl = (scale: number) => cdnWidth(logoSrc, 360 * scale);
 
   return (
     <>
@@ -141,7 +166,9 @@ export function Header({
       </div>
 
       {/* Tier 2 — search + region | logo | account + cart */}
-      <div className="header-primary">
+      <div
+        className={`header-primary${hideStickyRow ? ' is-hidden' : ''}`}
+      >
         <div className="header-primary-left">
           <HeaderMenuMobileToggle />
           <HeaderSearchBar />
@@ -150,22 +177,21 @@ export function Header({
           <img
             className="header-logo-img"
             /**
-             * Asked for at the size it is actually drawn — max 4.9rem tall,
-             * which is ~363px wide at the cropped 4.63:1 ratio — with 2x/3x
-             * for dense screens. The source is a 585KB PNG, several times the
-             * whole header's byte budget if shipped raw; the CDN returns these
-             * as AVIF or WebP at a fraction of it.
+             * 360px covers the widest this renders at 1x (the desktop width
+             * clamp's 22.4rem ceiling — width and height are deliberately
+             * decoupled in CSS now, so this tracks the WIDTH clamp, not the
+             * source's own ratio), with 2x/3x for dense screens. The CDN
+             * returns these as AVIF/WebP at a fraction of the source's size.
              */
             src={logoUrl(1)}
             srcSet={`${logoUrl(1)} 1x, ${logoUrl(2)} 2x, ${logoUrl(3)} 3x`}
             /**
-             * The CROPPED dimensions, not the file's own: CSS sets the height
-             * and `width: auto`, so what these are for is the aspect ratio the
-             * browser reserves space with before the image lands. The source
-             * canvas is 2103x748, but 2103x748 is not what arrives.
+             * The file's own dimensions: CSS sets the height and `width:
+             * auto`, so what these are for is the aspect ratio the browser
+             * reserves space with before the image lands.
              */
-            width="380"
-            height="82"
+            width="2080"
+            height="613"
             /**
              * The lockup *is* the shop name set in gold, so this is the
              * store's only h1-adjacent naming — it can't be decorative. The

@@ -67,64 +67,77 @@ export function ProductForm({
       return {label: option.name, options};
     });
 
+  // A single-variant product with no ring sizing has nothing to put in a
+  // "Customize" card — render the card only when there's an actual choice
+  // to make, not an empty box with a label and nothing under it.
+  const hasSelectors =
+    optionSelects.length > 0 || Boolean(variantGroup) || Boolean(ringSize);
+
   return (
     <div className="product-form">
-      <div className="product-selectors">
-        {optionSelects.map((select) => (
-          <PremiumSelect
-            key={select.label}
-            label={select.label}
-            options={select.options}
-            onSelect={(picked) => {
-              const target = select.options.find((o) => o.key === picked.key);
-              if (target?.to) {
-                navigate(target.to, {preventScrollReset: true});
-              }
-            }}
-          />
-        ))}
+      {hasSelectors && (
+        <div className="pdp-card product-customize-card">
+          <p className="pdp-card-label">Customize</p>
+          <div className="product-selectors">
+            {optionSelects.map((select) => (
+              <PremiumSelect
+                key={select.label}
+                label={select.label}
+                options={select.options}
+                onSelect={(picked) => {
+                  const target = select.options.find(
+                    (o) => o.key === picked.key,
+                  );
+                  if (target?.to) {
+                    navigate(target.to, {preventScrollReset: true});
+                  }
+                }}
+              />
+            ))}
 
-        {variantGroup && (
-          <PremiumSelect
-            label={variantGroup.label}
-            options={variantGroup.options.map((o) => ({
-              key: o.handle,
-              name: o.name,
-              selected: o.selected,
-              available: o.available,
-            }))}
-            onSelect={(picked) => {
-              navigate(replaceProductHandleInPath(pathname, picked.key), {
-                preventScrollReset: true,
-              });
-            }}
-          />
-        )}
+            {variantGroup && (
+              <PremiumSelect
+                label={variantGroup.label}
+                options={variantGroup.options.map((o) => ({
+                  key: o.handle,
+                  name: o.name,
+                  selected: o.selected,
+                  available: o.available,
+                }))}
+                onSelect={(picked) => {
+                  navigate(replaceProductHandleInPath(pathname, picked.key), {
+                    preventScrollReset: true,
+                  });
+                }}
+              />
+            )}
 
-        {ringSize && (
-          <PremiumSelect
-            label="Size"
-            hint={
-              <a
-                className="ring-size-guide-link"
-                href={RING_SIZE_GUIDE_URL}
-                target="_blank"
-                rel="noreferrer"
-              >
-                <RulerIcon />
-                Find my ring size
-              </a>
-            }
-            options={RING_SIZES.map((size) => ({
-              key: size,
-              name: size,
-              selected: size === ringSize,
-              available: true,
-            }))}
-            onSelect={(picked) => onRingSizeChange?.(picked.key)}
-          />
-        )}
-      </div>
+            {ringSize && (
+              <PremiumSelect
+                label="Size"
+                hint={
+                  <a
+                    className="ring-size-guide-link"
+                    href={RING_SIZE_GUIDE_URL}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <RulerIcon />
+                    Find my ring size
+                  </a>
+                }
+                options={RING_SIZES.map((size) => ({
+                  key: size,
+                  name: size,
+                  selected: size === ringSize,
+                  available: true,
+                }))}
+                onSelect={(picked) => onRingSizeChange?.(picked.key)}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="product-purchase-grid">
         <div className="product-buy-row">

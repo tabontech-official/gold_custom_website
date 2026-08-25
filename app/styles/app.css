@@ -218,15 +218,16 @@ code {
   --cart-aside-summary-height: 250px;
   --grid-item-width: min(355px, 100%);
   --header-height: 64px;
-  /* Sized to the logo, not the other way round: 1.2rem of padding twice over
-     plus the 4.9rem lockup. Raised from 100px so the mark could grow ~50%
-     wider; anything that has to sit below the sticky row reads this token, so
-     the collection toolbar's offset follows on its own. */
-  --desktop-header-primary-height: 120px;
-  /* Rendered height of the sticky .header-primary row on mobile: 0.95rem
-     padding x2 + the 4rem logo image, which is the tallest item in the row.
-     Re-measure if that padding or .header-logo-img height changes. */
-  --mobile-header-height: 5.9rem;
+  /* No vertical padding left on .header-primary at this width, so the row
+     IS the logo — same clamp as .header-logo-img, not a fixed value, so
+     there's no slack at any viewport in the range, not just at the ceiling.
+     Anything that has to sit below the sticky row reads this token, so the
+     collection toolbar's offset follows on its own. */
+  --desktop-header-primary-height: clamp(4.4rem, 7.15vw, 5.5rem);
+  /* Rendered height of the sticky .header-primary row on mobile: no vertical
+     padding left here either, so this is just the 5.2rem logo image.
+     Re-measure if .header-logo-img's height at this breakpoint changes. */
+  --mobile-header-height: 5.2rem;
   --utility-bar-height: 36px;
   --color-dark: #000;
   /* `none`: a fixed px cap on the same box as a vw gutter double-counts
@@ -261,19 +262,20 @@ code {
   --cg-champagne: #d4af37;
   --cg-champagne-dark: #b89020;
 
-  /* Black header surface. All three header tiers - announcement bar, the
+  /* White header surface. All three header tiers - announcement bar, the
      sticky logo/search/cart row and the mega-menu bar - read from these
-     tokens, so the bar is recoloured here rather than in twenty rules.
-     Off-black, not #000: a pure-black band butted against a pure-white page
-     is a harsher edge than a thin gold wordmark can carry. */
-  --header-bg: #0c0c0c;
-  --header-fg: #f6f3ec;
-  --header-fg-soft: rgba(246, 243, 236, 0.62);
-  --header-line: rgba(255, 255, 255, 0.12);
-  /* #d4af37 on #0c0c0c measures 10.1:1 - the brand gold needs no lightening
-     to carry text here. The bright variant is for hover only. */
-  --header-accent: var(--cg-champagne);
-  --header-accent-bright: #f0d37a;
+     tokens, so the bar is recoloured here rather than in twenty rules. */
+  --header-bg: #fff;
+  --header-fg: #000;
+  --header-fg-soft: rgba(0, 0, 0, 0.62);
+  --header-line: var(--color-border);
+  /* --cg-champagne (#d4af37) reads weak on white — this is the same darker
+     gold the footer and mega-menu already use for legible gold-on-white.
+     One shade for both rest and hover: on black the hover step lightened
+     further (already near the ceiling); on white the rest state is already
+     the "reads on white" gold, so there's no second shade to step to. */
+  --header-accent: var(--cg-champagne-dark);
+  --header-accent-bright: var(--cg-champagne-dark);
 
   /* One stack everywhere — headings, body, descriptions stay consistent */
   /* Classic navigation font — shared across the entire storefront. */
@@ -821,8 +823,16 @@ button.reset:hover:not(:has(> *)) {
 /* Tier 1 — announcement micro-banner */
 .announcement-bar {
   align-items: center;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--header-line);
+  /* Its own gold, not --header-bg: header-primary and the nav bar underneath
+     stay white, only this top strip is gold. */
+  background: linear-gradient(
+    100deg,
+    #b89020 0%,
+    #d4af37 45%,
+    #f0d37a 50%,
+    #d4af37 55%,
+    #b89020 100%
+  );
   display: grid;
   gap: 1rem;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -841,17 +851,16 @@ button.reset:hover:not(:has(> *)) {
    not a grid item and the three-column layout above is untouched. */
 .announcement-bar::before {
   animation: goldShimmer 6s linear infinite;
-  /* Was an opaque gold gradient back when the bar itself was gold. On black
-     it is a travelling glint instead: same tile geometry, same GPU-only
-     transform, but low-alpha gold that lifts the black rather than
-     replacing it. */
+  /* A bright streak passing over the gold, not a gold-on-gold glint —
+     against an opaque gold base the same gold at any alpha barely shows.
+     Warm near-white so it reads as a catch of light, not a cold flash. */
   background-image: linear-gradient(
     100deg,
-    rgba(212, 175, 55, 0) 0%,
-    rgba(212, 175, 55, 0.05) 45%,
-    rgba(240, 211, 122, 0.15) 50%,
-    rgba(212, 175, 55, 0.05) 55%,
-    rgba(212, 175, 55, 0) 100%
+    rgba(255, 250, 235, 0) 0%,
+    rgba(255, 250, 235, 0) 45%,
+    rgba(255, 250, 235, 0.65) 50%,
+    rgba(255, 250, 235, 0) 55%,
+    rgba(255, 250, 235, 0) 100%
   );
   /* One gradient tile is 2.2x the bar's width, as before. The strip is a whole
      tile wider than the bar, so translating it by exactly one tile lands on an
@@ -874,7 +883,10 @@ button.reset:hover:not(:has(> *)) {
 }
 
 .announcement-link {
-  color: var(--header-accent);
+  /* Not --header-accent — that's the darker gold tuned to read on the WHITE
+     rest of the header. This tier is gold itself now, so its text is black,
+     same as the original gold-bar design. */
+  color: #000;
   font-size: clamp(0.66rem, 0.82vw, 0.78rem);
   font-weight: 600;
   letter-spacing: 0.13em;
@@ -914,7 +926,7 @@ button.announcement-link {
 }
 
 .announcement-text {
-  color: var(--header-fg-soft);
+  color: rgba(0, 0, 0, 0.7);
   display: inline-block;
   font-size: clamp(0.66rem, 0.82vw, 0.78rem);
   font-weight: 600;
@@ -980,14 +992,32 @@ button.announcement-link {
   grid-template-columns: 1fr auto 1fr;
   gap: 1rem;
   min-height: 0;
-  padding: 0.95rem var(--section-pad);
+  padding: 0 var(--section-pad);
   position: sticky;
   top: 0;
   width: 100%;
   z-index: 900;
+  /* Slides fully out of view on scroll-down, back in on scroll-up — see
+     useHideOnScrollDown in Header.tsx, which toggles .is-hidden. Transform,
+     not display/visibility: sticky positioning still holds the row's spot in
+     the layout, so the page never jumps, and the slide runs on the
+     compositor instead of costing layout every frame. */
+  transform: translateY(0);
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
   @media (min-width: 60em) {
     height: var(--desktop-header-primary-height);
-    padding: 1.2rem var(--section-pad);
+    padding: 0 var(--section-pad);
+  }
+}
+
+.header-primary.is-hidden {
+  transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-primary {
+    transition: none;
   }
 }
 
@@ -1005,6 +1035,7 @@ button.announcement-link {
   justify-self: end;
   min-width: 0;
 }
+F
 
 /* Image only since the wordmark moved into the artwork — the type
    declarations that used to set the "GOLD CUSTOM" text node beside it went
@@ -1020,21 +1051,19 @@ button.announcement-link {
 .header-logo-img {
   flex: none;
   /*
-    Height drives everything: `width: auto` against the 4.63:1 crop the
-    component requests, so 4.9rem of height is ~363px of width.
+    Height and width are deliberately DECOUPLED now, not `width: auto` against
+    the file's own 3.39:1 ratio. auto would cap out at ~296px at the 5.5rem
+    ceiling; this clamp is that same math x1.2, so the mark reads noticeably
+    wider at the same height — the crest and lettering both stretch instead
+    of neither growing. --desktop-header-primary-height stays keyed to
+    HEIGHT only (the row's vertical space doesn't care how wide the mark is).
 
-    The first 50% came free, out of the transparent padding the crop removes.
-    This second 50% did not — 78.4px of image does not fit the 61.6px content
-    box a 100px row leaves, so --desktop-header-primary-height went to 120px
-    to carry it. That is a deliberate reversal of the note this rule used to
-    end with, which argued a tall header band pushes the product stage below
-    the fold. It still does; the masthead was judged worth the 20px.
-
-    Change these and the crop ratio in Header.tsx together, or the mark starts
-    floating in its box again.
+    Change these and the width requested from the CDN in Header.tsx together,
+    or the mark starts upscaling.
   */
-  height: clamp(4rem, 6.3vw, 4.9rem);
-  width: auto;
+  height: clamp(4.4rem, 7.15vw, 5.5rem);
+  width: clamp(18rem, 29vw, 22.4rem);
+  padding: 6px 0;
   /* Nothing here can overflow onto a narrow phone: the img is `flex: none`, so
      without this the lockup would be clipped by .header-logo's `overflow:
      hidden` rather than scaled down between the burger and the CTA icons. */
@@ -1064,18 +1093,21 @@ button.announcement-link {
     height: 2.1rem;
   }
 
-  /* Keep in step with --mobile-header-height, which is 0.95rem of padding
-     twice over plus this. ~296px wide at the 4.63:1 crop. */
+  /* Keep in step with --mobile-header-height, which is just this now — no
+     padding left at this width. Width stretched the same x1.2 as the desktop
+     rule (5.2rem x 3.39 x 1.2), not left to inherit the desktop width clamp's
+     own vw term at a narrower viewport. */
   .header-logo-img {
-    height: 4rem;
+    height: 5.2rem;
+    width: 21.15rem;
   }
 }
 
 /* Region / currency label (single US / USD market) */
 .region-pill {
   align-items: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid var(--header-line);
+  background: var(--cg-silver);
+  border: 1px solid var(--cg-platinum);
   border-radius: 999px;
   color: var(--header-fg-soft);
   display: none;
@@ -1258,10 +1290,6 @@ button.announcement-link {
 .mega-menu-panel {
   background: #fff;
   border: 1px solid rgba(15, 15, 15, 0.1);
-  /* The panel stays white - it carries product photography shot on white and
-     twenty collection names, both of which fight a dark ground. This gold
-     hairline is what ties it back to the black bar it hangs from. */
-  border-top: 2px solid var(--cg-champagne);
   border-radius: 0 0 18px 18px;
   box-shadow: 0 28px 70px rgba(0, 0, 0, 0.14);
   left: 50%;
@@ -1654,8 +1682,8 @@ button.announcement-link {
 
 .header-search form {
   align-items: center;
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--cg-silver);
+  border: 1px solid var(--cg-platinum);
   border-radius: 999px;
   display: flex;
   width: 100%;
@@ -1682,7 +1710,7 @@ button.announcement-link {
 }
 
 .header-search input::placeholder {
-  color: rgba(246, 243, 236, 0.42);
+  color: rgba(0, 0, 0, 0.4);
 }
 
 .header-search form button {
@@ -4168,23 +4196,23 @@ button.announcement-link {
   .header-primary {
     display: flex;
     align-items: center;
-    /* Up from 4.5rem with the logo — 0.7rem of padding twice over plus the
-       2.8rem lockup, with a hair to spare. */
-    height: 4.6rem;
+    /* No vertical padding at this width, so the row is just the 3.65rem
+       lockup. */
+    height: 3.65rem;
     gap: 0.4rem;
     min-height: 0;
-    padding: 0.7rem var(--section-pad);
+    padding: 0 var(--section-pad);
   }
 
   /* The announcement bar (1.45rem here) plus the row above. Not the
      --mobile-header-height token: this breakpoint sets its own row height. */
   .overlay--mobile {
-    top: 6.05rem;
+    top: 5.1rem;
   }
 
   .overlay--mobile aside {
-    height: calc(100vh - 6.05rem);
-    top: 6.05rem;
+    height: calc(100vh - 5.1rem);
+    top: 5.1rem;
   }
 
   .header-primary-left,
@@ -4198,14 +4226,16 @@ button.announcement-link {
     overflow: hidden;
   }
 
-  /* The tightest the row ever gets. 2.8rem puts the lockup at ~207px, which
-     alongside the burger and three CTA icons needs ~365px — so a 360px phone
-     is already leaning on the `max-width: 100%` above to scale it down a few
-     px rather than clip it, and anything narrower leans on it harder. That is
-     the intended failure mode; the alternative is a mark too small to read.
-     The row grew to 4.6rem to carry this. */
+  /* Width stretched x1.2 same as the other breakpoints (3.65rem x 3.39 x 1.2),
+     which puts the natural (unclipped) lockup at ~238px — alongside the
+     burger and three CTA icons that needs ~470px, well past a 360px phone's
+     own viewport. `max-width: 100%` is doing real work here, not just
+     trimming a few px: the lockup scales down noticeably on every phone, and
+     the burger/icons crowd it on the narrowest ones. That is the intended
+     failure mode; the alternative is a mark too small to read. */
   .header-logo-img {
-    height: 2.8rem;
+    height: 3.65rem;
+    width: 14.85rem;
   }
 
   .header-ctas {
@@ -5601,7 +5631,10 @@ button.announcement-link {
      space evenly on both sides of the row instead of piling it on the
      right (`start` did that — a ragged left-aligned block whenever the
      column count doesn't divide the row width evenly). */
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-item-width), 380px));
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(var(--grid-item-width), 380px)
+  );
   justify-content: center;
   margin-bottom: 2rem;
 }
@@ -6604,6 +6637,24 @@ button.announcement-link {
   color: var(--color-ink-soft);
 }
 
+/* The PDP has no shared container of its own (see .product-layout's own
+   comment) — .breadcrumb has no horizontal padding by default because most
+   pages that use it DO have one. Only the horizontal inset changes here;
+   .breadcrumb's own vertical margin is untouched. */
+.breadcrumb--pdp {
+  width: 100%;
+  max-width: 120rem;
+  margin-inline: auto;
+  padding-inline: var(--section-pad);
+  box-sizing: border-box;
+  @media (min-width: 48em) {
+    display: grid;
+    grid-template-columns: minmax(0, 48rem) minmax(24rem, 40rem);
+    gap: clamp(1.25rem, 2.5vw, 2.5rem);
+    justify-content: center;
+  }
+}
+
 .breadcrumb-list {
   display: flex;
   flex-wrap: wrap;
@@ -6612,6 +6663,9 @@ button.announcement-link {
   margin: 0;
   padding: 0;
   list-style: none;
+  @media (min-width: 48em) {
+    grid-column: 1;
+  }
 }
 
 .breadcrumb-item {
@@ -6666,11 +6720,33 @@ button.announcement-link {
 .product-layout {
   display: grid;
   gap: 1.5rem;
+  /* .product-main/.product-heading carry their own right gutter (they sit
+     against the buy column's own edge, not the grid's), but nothing gave the
+     gallery — the grid's first column — a matching inset from the LEFT
+     screen edge. This is that: the whole layout (both columns, every
+     breakpoint) shifts in by the same --section-pad everything else on the
+     page uses. */
+  width: 100%;
+  max-width: 120rem;
+  margin-inline: auto;
+  padding-inline: var(--section-pad);
+  box-sizing: border-box;
   @media (min-width: 48em) {
-    grid-template-columns: minmax(0, 1.12fr) minmax(24rem, 0.8fr);
+    grid-template-columns: minmax(0, 48rem) minmax(24rem, 40rem);
     gap: clamp(1.25rem, 2.5vw, 2.5rem);
     align-items: start;
+    justify-content: center;
   }
+}
+
+.product-gallery-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 48rem;
+  justify-self: center;
 }
 
 .product-image img {
@@ -6691,6 +6767,11 @@ button.announcement-link {
   align-items: stretch;
   gap: 0.9rem;
   align-self: start;
+  /* Matches the buy column's own cap so neither side runs away from the
+     other on a wide screen — the gallery's grid track otherwise has no
+     ceiling of its own. */
+  max-width: 48rem;
+  width: 100%;
 }
 
 /* Left thumbnail column — exactly the stage's height, scrolls only if the
@@ -6822,9 +6903,9 @@ button.announcement-link {
 }
 
 .pgg-feature {
-  /* Portrait-leaning so the tall product shots fill the column instead of
-     leaving dead space below the gallery. */
-  aspect-ratio: 4 / 4.6;
+  /* Less portrait-leaning than before (was 4/4.6) — shorter, closer to
+     square, so the tile doesn't tower over the buy column beside it. */
+  aspect-ratio: 4 / 3.8;
   border: 1px solid rgba(17, 17, 17, 0.08);
 }
 
@@ -6922,7 +7003,7 @@ button.announcement-link {
 /* Style code line above the heading */
 .product-sku {
   margin: 0;
-  font-size: 0.72rem;
+  font-size: 0.66rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--color-ink-soft);
@@ -6937,37 +7018,109 @@ button.announcement-link {
     align-self: start;
     display: flex;
     flex-direction: column;
-    gap: 1.05rem;
+    gap: 0.85rem;
     position: sticky;
-    top: 8.5rem;
+    /* Was a hardcoded 8.5rem — stale the moment the header's own height
+       changes (it has, more than once). This tracks the real header token
+       instead of a number someone has to remember to revisit. */
+    top: calc(var(--desktop-header-primary-height) + 1rem);
   }
 }
 
+/* Now a .pdp-card (see that shared rule) — the box look (border, radius,
+   shadow, internal padding) lives there. What's still specific to THIS card
+   is the page-edge gutter, which moved from padding to margin: a card's own
+   padding is its content inset, not where it sits relative to the screen
+   edge, and conflating the two is what made every "make the gutter bigger"
+   pass this session have to touch this exact rule. */
 .product-heading {
   display: flex;
   flex-direction: column;
-  gap: 1.05rem;
-  padding: 1.5rem var(--section-pad) 0;
-  /* No top padding on desktop: the gallery column starts at the grid's top
-     edge, so any offset here drops the title below the first image and the two
-     columns no longer share a baseline. The 1.05rem column gap handles the
-     breathing room the padding used to. */
+  gap: 0.4rem;
+  margin-top: 1.25rem;
   @media (min-width: 48em) {
-    max-width: 48rem;
-    padding: 0 3rem 0 0;
+    /* Explicit calc(), not padding or margin-right — .pdp-card's own padding
+       shorthand (declared after this rule) clobbers any padding set here,
+       and a plain margin-right shrinks THIS box while .product-main's cards
+       get their inset from their WRAPPER's padding instead (box stays full
+       width, only the children move in) — two different mechanisms that
+       don't land on the same edge. This computes the exact width
+       .product-main's cards resolve to, directly, so there's nothing left
+       to get out of sync. Desktop only: mobile has its own margin rule
+       below this one (in the max-width: 48em block) that already handles
+       its inset differently — this doesn't touch that. */
+    width: calc(100% - var(--section-pad));
+    max-width: calc(48rem - var(--section-pad));
+    margin-top: 0;
   }
 }
 
 .product-main {
   align-self: start;
+  /* align-self: start means this shrinks to fit its content instead of
+     filling the column, unlike .product-heading (which has no align-self
+     override, so it stretches — the default for a column flex child). Two
+     cards that are supposed to line up edge to edge ended up different
+     widths purely from that mismatch. width: 100% forces the same stretched
+     width here without touching align-self, in case something else depends
+     on it. */
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 1.05rem;
+  gap: 0.85rem;
   padding: 0 var(--section-pad);
   @media (min-width: 48em) {
     max-width: 48rem;
     padding: 0 var(--section-pad) 0 0;
   }
+}
+
+.product-purchase-card,
+.product-details-card {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.product-purchase-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding-bottom: 0;
+}
+
+.product-details-card {
+  background: #f5f6f7;
+}
+
+.pdp-card {
+  background: #f5f6f7;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  /* The one deliberate softening on an otherwise square-cornered site — see
+     the note on .product-atc/.variant-select-trigger below, which pick up a
+     smaller version of the same radius so the buy column reads as one
+     considered system instead of a card floating over sharp-edged controls. */
+  border-radius: 10px;
+  box-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.04),
+    0 10px 28px rgba(17, 17, 17, 0.05);
+  padding: 1.15rem 1.3rem;
+}
+
+/* The identity card ends on the price — .pdp-card's own bottom padding read
+   as a gap trailing the number instead of framing it. Two classes, so this
+   wins over .pdp-card's shorthand regardless of source order. */
+.product-heading.pdp-card {
+  padding-bottom: 0.5rem;
+}
+
+.pdp-card-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-gold-dark);
 }
 
 /* Selector follows the h1, which now lives in .product-heading. Keeping the
@@ -6976,10 +7129,21 @@ button.announcement-link {
 .product-heading h1 {
   margin: 0;
   font-family: var(--font-body);
-  font-size: clamp(1.55rem, 2.1vw, 2rem);
+  /* Down from clamp(1.55rem,2.1vw,2rem) — smaller, but a step up in weight
+     and a hair of negative tracking keeps it reading as confident rather
+     than just shrunk. */
+  font-size: clamp(1.3rem, 1.7vw, 1.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.product-metal-label {
+  margin: 0.1rem 0 0;
+  color: var(--color-gold-dark);
+  font-size: 0.82rem;
   font-weight: 600;
-  line-height: 1.12;
-  letter-spacing: 0;
+  letter-spacing: 0.04em;
 }
 
 /* Below the two-column breakpoint the layout stacks. These rules must stay
@@ -7002,16 +7166,14 @@ button.announcement-link {
 
   .product-heading {
     order: 1;
-    /* The style code is a caption on the title, not a peer of it — 1.05rem
-       between them read as two unrelated lines. */
     gap: 0.3rem;
-    padding: 1.15rem 1.25rem 0.9rem;
+    margin: 1.1rem calc(2 * var(--section-pad)) 0.7rem var(--section-pad);
   }
 
   .product-main {
     order: 3;
-    gap: 0.85rem;
-    padding: 1.15rem 1.25rem 0;
+    gap: 0.7rem;
+    padding: 0 var(--section-pad) 1.15rem;
   }
 
   .product-trust-badges {
@@ -7111,18 +7273,18 @@ button.announcement-link {
 /* Product-spec highlights under the price — flat icon + label, two columns */
 .product-specs {
   list-style: none;
-  margin: 1rem 0 0;
+  margin: 0.85rem 0 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.85rem 1.75rem;
+  gap: 0.7rem 1.5rem;
 }
 
 .product-spec-item {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
-  font-size: 0.92rem;
+  gap: 0.6rem;
+  font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   color: var(--color-ink);
@@ -7134,13 +7296,14 @@ button.announcement-link {
    what makes the box read as a rectangle rather than a square. */
 .product-spec-item .product-spec-svg {
   box-sizing: content-box;
-  width: 1.875rem;
-  height: 1.875rem;
-  padding: 0.4rem 0.7rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0.3rem 0.55rem;
   flex-shrink: 0;
   stroke-width: 1.6;
   color: var(--color-gold-dark);
   border: 1px solid var(--color-ink);
+  border-radius: 5px;
   background: var(--color-bg-soft);
 }
 
@@ -7183,8 +7346,8 @@ button.announcement-link {
   justify-content: space-between;
   cursor: pointer;
   list-style: none;
-  padding: 1.05rem 0;
-  font-size: 1rem;
+  padding: 0.8rem 0;
+  font-size: 0.9rem;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: none;
@@ -7294,8 +7457,9 @@ button.announcement-link {
 }
 
 .product-price {
-  font-size: 1.85rem;
-  font-weight: 600;
+  font-size: 2.15rem;
+  font-weight: 800;
+  color: var(--color-ink);
   text-decoration: none;
 }
 
@@ -7303,8 +7467,9 @@ button.announcement-link {
   display: flex;
   align-items: center;
   grid-gap: 0.5rem;
-  font-size: 1.85rem;
-  font-weight: 600;
+  font-size: 2.15rem;
+  font-weight: 800;
+  color: var(--color-ink);
   text-decoration: none;
 }
 
@@ -7337,10 +7502,10 @@ button.announcement-link {
    buttons directly below it. */
 .product-financing {
   margin: 0;
-  padding: 1rem 1.25rem 1.1rem;
+  padding: 0.85rem 1.1rem 0.95rem;
   border: 0;
-  border-radius: 0;
-  background: var(--color-bg-soft);
+  border-radius: 8px;
+  background: #f5f6f7;
   text-align: center;
 }
 
@@ -7675,14 +7840,14 @@ button.announcement-link {
   justify-content: space-between;
   gap: 0.75rem;
   width: 100%;
-  min-height: 3.1rem;
-  padding: 0.7rem 1.05rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.85rem;
   background: #fff;
   border: 1px solid rgba(17, 17, 17, 0.2);
-  border-radius: 0;
+  border-radius: 6px;
   color: var(--color-ink);
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 500;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -7846,19 +8011,19 @@ button.announcement-link {
 
 .product-atc {
   width: 100%;
-  min-height: 3.5rem;
+  min-height: 2.85rem;
   margin: 0;
   background: var(--color-ink);
   border-color: var(--color-ink);
   color: #fff;
-  border-radius: 0;
-  font-size: 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .product-atc-price {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -8108,8 +8273,19 @@ button.announcement-link {
 .product-trust-badges {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.75rem, 2vw, 1.35rem);
-  padding: 2.25rem 0 0.6rem;
+  gap: clamp(0.5rem, 1.2vw, 0.85rem);
+  /* Same cap as .product-grid-gallery right above it in the same column —
+     neither has a container of its own that bounds them, so without this
+     the badges row (nothing else stopping it) stretched wider than the
+     image on a wide screen while the gallery stayed capped. */
+  max-width: 48rem;
+  width: 100%;
+  box-sizing: border-box;
+  /* .pdp-card's own uniform padding — this rule comes after it in the file,
+     so this wins outright; kept as its own value rather than the shared
+     1.15rem/1.3rem since four columns need the horizontal room a card's
+     usual side padding would eat into. */
+  padding: 1rem 0.85rem;
 }
 
 .product-trust-badge {
@@ -8124,8 +8300,8 @@ button.announcement-link {
 
 .product-trust-icon {
   display: block;
-  width: clamp(3rem, 5vw, 4.6rem);
-  margin-bottom: 0.35rem;
+  width: clamp(1.7rem, 2.6vw, 2.4rem);
+  margin-bottom: 0.25rem;
   color: #d4af37;
 }
 
@@ -8141,7 +8317,7 @@ button.announcement-link {
 }
 
 .product-trust-title {
-  font-size: clamp(0.78rem, 1.05vw, 0.95rem);
+  font-size: clamp(0.6rem, 0.75vw, 0.7rem);
   font-weight: 600;
   line-height: 1;
   text-transform: uppercase;
@@ -8150,7 +8326,7 @@ button.announcement-link {
 
 .product-trust-sub {
   color: var(--color-ink-soft);
-  font-size: clamp(0.68rem, 0.9vw, 0.8rem);
+  font-size: clamp(0.58rem, 0.72vw, 0.66rem);
   font-weight: 400;
   line-height: 1.2;
 }
@@ -8188,17 +8364,24 @@ button.announcement-link {
 }
 
 /* Important note — always visible, last in the detail column */
+/* Was `display: none` unconditionally — written, styled, and never once
+   shown. Care instructions for a soft precious metal are exactly the kind
+   of detail a premium buyer expects, so this is live now instead of dead
+   weight in the DOM. */
 .product-note {
+  /* Hidden again for now, per request — content and styling stay in place
+     to bring back later rather than deleting the work. */
   display: none;
   border: 1px solid var(--color-gold);
+  border-radius: 8px;
   background: var(--color-gold-soft);
-  padding: 1rem 1.15rem;
+  padding: 0.85rem 1rem;
 }
 
 .product-note h3 {
-  margin: 0 0 0.45rem;
+  margin: 0 0 0.4rem;
   font-family: var(--font-body);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -8207,7 +8390,7 @@ button.announcement-link {
 
 .product-note p {
   margin: 0;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   line-height: 1.6;
   color: var(--color-ink);
 }
@@ -8328,16 +8511,17 @@ button.announcement-link {
    --similar-edge keeps the arrows flush with the centered .section-inner
    even past the content max-width. */
 .pdp-similar {
+  margin-top: clamp(2rem, 4vw, 4rem);
   position: relative;
-  padding: 2.5rem 0 1.5rem;
+  padding: clamp(2.5rem, 4vw, 3.5rem) 0 clamp(2.5rem, 4vw, 3.5rem);
   --similar-edge: var(--section-pad);
   @media (min-width: 48em) {
-    padding: 3.5rem 0 2rem;
+    padding: clamp(3.5rem, 5vw, 5rem) 0 clamp(3rem, 4vw, 4rem);
   }
 }
 
 .pdp-similar-header {
-  margin-bottom: 1.5rem;
+  margin-bottom: clamp(1.25rem, 2vw, 2rem);
 }
 
 .pdp-similar-title {
@@ -8346,6 +8530,10 @@ button.announcement-link {
 
 .pdp-similar .hcarousel {
   position: static;
+}
+
+.pdp-similar .slider-carousel .hcarousel-track {
+  padding-inline: var(--section-pad);
 }
 
 .pdp-similar .hcarousel-btn {
@@ -9577,7 +9765,6 @@ button.announcement-link {
   outline-offset: 2px;
 }
 
-
 /* Collection category pages use the same custom progress rail as New
    Arrivals—not the browser's native scrollbar. */
 .dragscroll.subnav-icons {
@@ -9641,7 +9828,9 @@ button.announcement-link {
   padding-top: 4px;
 }
 
-.collection > .section-inner:has(.subnav-icons) + .home-section
+.collection
+  > .section-inner:has(.subnav-icons)
+  + .home-section
   .collection-toolbar {
   margin-top: 0.8rem;
 }

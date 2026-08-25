@@ -15,7 +15,6 @@ import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
-import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
@@ -111,7 +110,9 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ? {
         rel: 'preload',
         as: 'image',
-        href: image.url.startsWith('/') ? absoluteUrl(origin, image.url) : image.url,
+        href: image.url.startsWith('/')
+          ? absoluteUrl(origin, image.url)
+          : image.url,
       }
     : null;
 
@@ -375,6 +376,9 @@ export default function Product() {
       ? rawCategory
       : '';
   const sku = selectedVariant?.sku?.trim();
+  const metalLabel = parseKarat(
+    `${selectedVariant?.title ?? ''} ${title}`,
+  )?.label;
 
   const authoredFaqs = parseFaqMetafield(product.faqs?.value);
   const faqs =
@@ -459,7 +463,7 @@ export default function Product() {
         }}
       />
 
-      <Breadcrumb items={breadcrumbs} />
+      <Breadcrumb items={breadcrumbs} className="breadcrumb--pdp" />
 
       <div className="product-layout">
         <div className="product-gallery-column">
@@ -477,54 +481,56 @@ export default function Product() {
             On desktop it is the sticky right column, which is what
             .product-main used to be, so that layout is unchanged. */}
         <div className="product-buy-column">
-          <div className="product-heading">
+          <div className="product-heading pdp-card">
             {sku && <p className="product-sku">SKU : {sku}</p>}
             <h1>{title}</h1>
+            {metalLabel && (
+              <p className="product-metal-label">Solid {metalLabel}</p>
+            )}
           </div>
 
           <div className="product-main">
-            <div className="product-price-row">
-              <ProductPrice
+            <FinancingPartners />
+            <div className="product-purchase-card pdp-card">
+              <div className="product-price-row">
+                <ProductPrice
+                  price={selectedVariant?.price}
+                  compareAtPrice={selectedVariant?.compareAtPrice}
+                />
+              </div>
+              <ShopPayInstallments
                 price={selectedVariant?.price}
-                compareAtPrice={selectedVariant?.compareAtPrice}
+                variant={selectedVariant}
+                pricing={installmentsPricing}
+              />
+              <ProductForm
+                productOptions={productOptions}
+                selectedVariant={selectedVariant}
+                wishlistButton={
+                  <ProductWishlistButton handle={product.handle} />
+                }
+                variantGroup={buildVariantGroup(product)}
+                product={{
+                  id: product.id,
+                  title: product.title,
+                  handle: product.handle,
+                }}
+                ringSize={isRing ? ringSize : undefined}
+                onRingSizeChange={setRingSize}
               />
             </div>
-            <ShopPayInstallments
-              price={selectedVariant?.price}
-              variant={selectedVariant}
-              pricing={installmentsPricing}
-            />
-            <FinancingPartners />
-            <ProductSpecIcons
-              keyword={`${selectedVariant?.title ?? ''} ${title}`}
-              weight={selectedVariant?.weight}
-              weightUnit={selectedVariant?.weightUnit}
-            />
 
-            <ProductForm
-              productOptions={productOptions}
-              selectedVariant={selectedVariant}
-              wishlistButton={<ProductWishlistButton handle={product.handle} />}
-              variantGroup={buildVariantGroup(product)}
-              product={{
-                id: product.id,
-                title: product.title,
-                handle: product.handle,
-              }}
-              ringSize={isRing ? ringSize : undefined}
-              onRingSizeChange={setRingSize}
-            />
-
-            <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
-
-            <div className="product-note">
-              <h3>Important Note</h3>
-              <p>
-                Solid gold is a soft precious metal. Store this piece
-                separately, keep it away from perfume and chlorine, and polish
-                it with a soft cloth. Custom or engraved pieces are crafted to on the parent cell.
-                order and may add 5â€“7 business days before shipping.
-              </p>
+            <div className="product-details-card pdp-card">
+              <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
+              <div className="product-note">
+                <h3>Important Note</h3>
+                <p>
+                  Solid gold is a soft precious metal. Store this piece
+                  separately, keep it away from perfume and chlorine, and polish
+                  it with a soft cloth. Custom or engraved pieces are crafted to
+                  order and may add 5â€“7 business days before shipping.
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -536,8 +542,6 @@ export default function Product() {
         products={recommendedProducts}
         viewAllTo={similarCollectionTo}
       />
-
-      <GoogleReviewsSection />
 
       <Analytics.ProductView
         data={{
@@ -635,7 +639,10 @@ function ProductTrustBadges() {
   ];
 
   return (
-    <div className="product-trust-badges" aria-label="Product trust badges">
+    <div
+      className="product-trust-badges pdp-card"
+      aria-label="Product trust badges"
+    >
       {badges.map((badge) => (
         <div className="product-trust-badge" key={badge.title}>
           <span className="product-trust-icon">{badge.icon}</span>
@@ -1282,9 +1289,10 @@ function buildProductJsonLd({
     '@type': 'Product',
     // The variant's own option wording ('10K / 20"'), not the parent title —
     // `hasVariant` entries that all share one name describe nothing.
-    name: variant.title && variant.title !== 'Default Title'
-      ? `${product.title} — ${variant.title}`
-      : product.title,
+    name:
+      variant.title && variant.title !== 'Default Title'
+        ? `${product.title} — ${variant.title}`
+        : product.title,
     sku: cleanSku(variant.sku),
     mpn: cleanSku(variant.sku),
     image: variant.image?.url || undefined,
@@ -1337,7 +1345,9 @@ function buildProductJsonLd({
     // helper the <meta> tag uses) rather than `undefined` — a product with no
     // authored description or SEO description would otherwise publish
     // Product markup with no `description` field at all.
-    description: metaDescription(product.seo?.description || product.description),
+    description: metaDescription(
+      product.seo?.description || product.description,
+    ),
     image: images.length ? images : undefined,
     // No `|| product.handle` fallback. A URL slug is not a manufacturer part
     // number, and inventing one publishes a fabricated identifier that Google
