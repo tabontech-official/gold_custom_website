@@ -7154,9 +7154,11 @@ F
      Both wrappers dissolve so heading, gallery, buy panel and badges are all
      siblings of one flex column that `order` can sequence. */
   .product-layout {
+    --pdp-mobile-gap: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: var(--pdp-mobile-gap);
+    padding-inline: var(--section-pad);
   }
 
   .product-gallery-column,
@@ -7167,17 +7169,22 @@ F
   .product-heading {
     order: 1;
     gap: 0.3rem;
-    margin: 1.1rem calc(2 * var(--section-pad)) 0.7rem var(--section-pad);
+    margin: 0.35rem 0 0;
+  }
+
+  .product-heading.pdp-card {
+    padding: 0.5rem 0 0.5rem 0.6rem;
   }
 
   .product-main {
     order: 3;
-    gap: 0.7rem;
-    padding: 0 var(--section-pad) 1.15rem;
+    gap: var(--pdp-mobile-gap);
+    padding: 0;
   }
 
   .product-trust-badges {
     order: 4;
+    margin-inline: 0;
   }
 
   /* As a flex item of the stacked column, the gallery's cross-axis is width;
@@ -7252,8 +7259,20 @@ F
   }
 
   .product-heading h1 {
-    font-size: 1.45rem;
-    letter-spacing: -0.01em;
+    font-family: var(--font-classic);
+    font-size: clamp(0.82rem, 3.6vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0;
+    line-height: 1.16;
+    white-space: nowrap;
+  }
+
+  .product-price,
+  .product-price-on-sale {
+    font-family: var(--font-classic);
+    font-size: clamp(0.82rem, 3.6vw, 1rem);
+    font-weight: 700;
+    letter-spacing: 0;
     line-height: 1.16;
   }
 
@@ -8483,8 +8502,12 @@ F
 
 /* Mobile: smaller PDP FAQ text and less side inset so it uses more width. */
 @media (max-width: 48em) {
+  .pdp-faq-section .section-inner {
+    padding-inline: var(--section-pad);
+  }
+
   .pdp-faq-list {
-    padding: 0 0.4rem;
+    padding: 0;
   }
 
   .pdp-faq {
