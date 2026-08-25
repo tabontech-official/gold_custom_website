@@ -32,7 +32,7 @@ import {
   type PredictiveSearchReturn,
 } from '~/lib/search';
 import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
-import {cdnWidth, cdnLoader} from '~/lib/cdnImage';
+import {cdnLoader} from '~/lib/cdnImage';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
 const HEADER_UTILITY_MESSAGES = [
@@ -86,9 +86,39 @@ export function Header({
   const {shop} = header;
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
+  //
+  // Named .webp, served as image/png — the CDN goes by the bytes, not the
+  // extension, so the transforms below still apply.
   const logoSrc =
     shop.brand?.logo?.image?.url ??
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/Gold_Custom_Logo.jpg?v=1774676842';
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/logo.webp?v=1787633855';
+
+  /**
+   * A centre crop, not a plain resize.
+   *
+   * The lockup is exported on a 2103x748 canvas but the artwork only occupies
+   * the middle 1982x413 of it — 22% of the height above and below is
+   * transparent padding. Drawn as-is, the mark renders at ~55% of the box it
+   * is given, which on a header row that cannot grow is the whole reason it
+   * looked small. Asking the CDN for the artwork's own ~4.63:1 ratio trims
+   * that padding at the edge instead, so the same 50px of row height carries a
+   * mark half again as wide.
+   *
+   * The ratio has margin built in: the art clears every edge by 5-23px at 3x,
+   * verified against the CDN's actual output. It is deliberately looser than
+   * the artwork's true 4.80:1 for exactly that reason — a crop tight enough to
+   * touch the letterforms would shave them on rounding.
+   *
+   * If the file is ever re-exported trimmed, drop `height`/`crop` and go back
+   * to `cdnWidth`; the crop would then eat into the mark.
+   */
+  const logoUrl = (scale: number) =>
+    cdnLoader({
+      src: logoSrc,
+      width: 380 * scale,
+      height: 82 * scale,
+      crop: 'center',
+    });
 
   return (
     <>
@@ -120,22 +150,31 @@ export function Header({
           <img
             className="header-logo-img"
             /**
-             * Asked for at the size it is actually drawn (max 3.8rem tall),
-             * with 2x/3x for dense screens.
-             *
-             * The source is a 500x500 progressive JPEG. Squeezing that into a
-             * 35-61px box left the browser to do an ~11x downscale on
-             * fine gold lettering, which is why the mark read as soft — and it
-             * spent 62KB of the header's budget to look that way. Shopify's
-             * CDN resamples it properly and returns a few KB.
+             * Asked for at the size it is actually drawn — max 4.9rem tall,
+             * which is ~363px wide at the cropped 4.63:1 ratio — with 2x/3x
+             * for dense screens. The source is a 585KB PNG, several times the
+             * whole header's byte budget if shipped raw; the CDN returns these
+             * as AVIF or WebP at a fraction of it.
              */
-            src={cdnWidth(logoSrc, 76)}
-            srcSet={`${cdnWidth(logoSrc, 76)} 1x, ${cdnWidth(logoSrc, 152)} 2x, ${cdnWidth(logoSrc, 228)} 3x`}
-            alt=""
-            width="76"
-            height="76"
+            src={logoUrl(1)}
+            srcSet={`${logoUrl(1)} 1x, ${logoUrl(2)} 2x, ${logoUrl(3)} 3x`}
+            /**
+             * The CROPPED dimensions, not the file's own: CSS sets the height
+             * and `width: auto`, so what these are for is the aspect ratio the
+             * browser reserves space with before the image lands. The source
+             * canvas is 2103x748, but 2103x748 is not what arrives.
+             */
+            width="380"
+            height="82"
+            /**
+             * The lockup *is* the shop name set in gold, so this is the
+             * store's only h1-adjacent naming — it can't be decorative. The
+             * `{shop.name}` text node that used to sit beside it is gone for
+             * the same reason: the artwork already reads "GOLD CUSTOM", and
+             * rendering both printed it twice.
+             */
+            alt={shop.name}
           />
-          {shop.name}
         </NavLink>
         <div className="header-primary-right">
           <HeaderCtas cart={cart} isLoggedIn={isLoggedIn} />
