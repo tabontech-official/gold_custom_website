@@ -36,15 +36,21 @@ export function PageLayout({
       <CartAside cart={cart} />
       <SearchAside />
       <MobileMenuAside header={header} publicStoreDomain={publicStoreDomain} />
+      {/*
+        Header and Footer sit OUTSIDE .page-wrapper: the wrapper caps at
+        --content-max-width and clips, which boxed the black header and the
+        footer at 1700px on wider screens. Out here they span the viewport on
+        every route; their own inner containers keep the content centred.
+      */}
+      {header && (
+        <Header
+          header={header}
+          cart={cart}
+          isLoggedIn={isLoggedIn}
+          publicStoreDomain={publicStoreDomain}
+        />
+      )}
       <div className="page-wrapper">
-        {header && (
-          <Header
-            header={header}
-            cart={cart}
-            isLoggedIn={isLoggedIn}
-            publicStoreDomain={publicStoreDomain}
-          />
-        )}
         <RouteProgressBar />
         {/*
           Header and Footer sit OUTSIDE the transition on purpose: they are
@@ -55,12 +61,12 @@ export function PageLayout({
         <main className="page-body">
           <RouteTransition>{children}</RouteTransition>
         </main>
-        <Footer
-          footer={footer}
-          header={header}
-          publicStoreDomain={publicStoreDomain}
-        />
       </div>
+      <Footer
+        footer={footer}
+        header={header}
+        publicStoreDomain={publicStoreDomain}
+      />
     </Aside.Provider>
   );
 }

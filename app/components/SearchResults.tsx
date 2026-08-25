@@ -1,5 +1,4 @@
 import {Link} from 'react-router';
-import {Pagination} from '@shopify/hydrogen';
 import {urlWithTrackingParams, type RegularSearchReturn} from '~/lib/search';
 import {ProductItem} from '~/components/ProductItem';
 
@@ -67,34 +66,20 @@ function SearchResultsProducts({
     return null;
   }
 
+  // No <Pagination>/"Load more": the loader fetches every matching product in
+  // one request (see the note on SEARCH_QUERY), so what's here IS the
+  // complete result — there's nothing more to load.
   return (
     <div className="search-result-section">
-      <h2 className="search-result-heading">Products</h2>
-      <Pagination connection={products}>
-        {({nodes, isLoading, NextLink, PreviousLink, hasNextPage}) => (
-          <div>
-            <div className="load-more">
-              <PreviousLink className="load-more-btn is-ghost">
-                {isLoading ? 'Loading...' : <span>↑ Load previous</span>}
-              </PreviousLink>
-            </div>
-            <div className="products-grid">
-              {nodes.map((product, index) => (
-                <ProductItem
-                  key={product.id}
-                  product={product}
-                  loading={index < 8 ? 'eager' : undefined}
-                />
-              ))}
-            </div>
-            <div className="load-more-bar">
-              <NextLink className="load-more-btn">
-                {isLoading ? 'Loading...' : <span>Load more ↓</span>}
-              </NextLink>
-            </div>
-          </div>
-        )}
-      </Pagination>
+      <div className="products-grid">
+        {products.nodes.map((product, index) => (
+          <ProductItem
+            key={product.id}
+            product={product}
+            loading={index < 8 ? 'eager' : undefined}
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import {Link, redirect, useLoaderData} from 'react-router';
 import type {Route} from './+types/search';
-import {getPaginationVariables, Analytics} from '@shopify/hydrogen';
+import {Analytics} from '@shopify/hydrogen';
 import {SearchResults} from '~/components/SearchResults';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {
@@ -262,25 +262,13 @@ const SEARCH_PAGE_FRAGMENT = `#graphql
   }
 ` as const;
 
-const PAGE_INFO_FRAGMENT = `#graphql
-  fragment PageInfoFragment on PageInfo {
-    hasNextPage
-    hasPreviousPage
-    startCursor
-    endCursor
-  }
-` as const;
-
 // NOTE: https://shopify.dev/docs/api/storefront/latest/queries/search
 export const SEARCH_QUERY = `#graphql
   query RegularSearch(
     $country: CountryCode
-    $endCursor: String
     $first: Int
     $language: LanguageCode
-    $last: Int
     $term: String!
-    $startCursor: String
     $productFilters: [ProductFilter!]
     $sortKey: SearchSortKeys
     $reverse: Boolean
@@ -297,10 +285,7 @@ export const SEARCH_QUERY = `#graphql
       }
     }
     products: search(
-      after: $endCursor,
-      before: $startCursor,
       first: $first,
-      last: $last,
       query: $term,
       sortKey: $sortKey,
       reverse: $reverse,
@@ -326,14 +311,10 @@ export const SEARCH_QUERY = `#graphql
           input
         }
       }
-      pageInfo {
-        ...PageInfoFragment
-      }
     }
   }
   ${SEARCH_PRODUCT_FRAGMENT}
   ${SEARCH_PAGE_FRAGMENT}
-  ${PAGE_INFO_FRAGMENT}
 ` as const;
 
 /**
@@ -366,10 +347,6 @@ async function regularSearch({
 >): Promise<RegularSearchReturn> {
   const {storefront} = context;
   const url = new URL(request.url);
-  // Fetched per page, before filtering. Shopify ORs the query words together,
-  // so a page of 8 could arrive as 2 once the loose matches are dropped — the
-  // page has to be big enough that a filtered one still fills the grid.
-  const variables = getPaginationVariables(request, {pageBy: 48});
   const term = String(url.searchParams.get('q') || '');
   // Same `filter` and `sort` params the collection rail writes, so the sidebar
   // component works here unchanged. No `{available: true}` filter is added —
@@ -382,10 +359,19 @@ async function regularSearch({
   //
   // Always fetched in RELEVANCE order, never `sort`'s own sortKey. Shopify's
   // `search` ORs the term's words together, so "price low to high" doesn't sort
-  // the matches — it returns the 48 cheapest products that match ANY word,
-  // which productsMatchingTerm below then guts down to almost nothing. Fetching
+  // the true matches — it would sort the 250 cheapest products that match ANY
+  // word, most of which productsMatchingTerm below then throws out. Fetching
   // by relevance keeps the true matches in the batch; price ordering is applied
   // after filtering, see sortSearchProducts.
+  //
+  // No pagination: 250 is the Storefront API's own ceiling on `first`, fetched
+  // once, filtered, shown in full — no "Load more". There used to be a cursor
+  // walk here (pageBy: 48 + Hydrogen's <Pagination>), but Shopify's `pageInfo`
+  // describes the RAW, unfiltered connection: it has no idea productsMatchingTerm
+  // is about to throw most of a page away, so `hasNextPage` could point at a
+  // page with zero real matches after filtering — the shopper had results,
+  // clicked Load more, and the grid went blank. A single generous fetch has no
+  // "next page" to be wrong about: everything that matches is on screen already.
   const {
     errors,
     ...items
@@ -393,7 +379,7 @@ async function regularSearch({
     await storefront.query(SEARCH_QUERY, {
       cache: CacheCatalog(),
       variables: {
-        ...variables,
+        first: 250,
         term,
         productFilters,
         sortKey: 'RELEVANCE',
@@ -407,8 +393,7 @@ async function regularSearch({
 
   // Same relevance rule the dropdown uses: every word of the term has to be in
   // the title or product type. Without it "18 inch chain" returns 629 results of
-  // which four in the first forty are actually 18 inches long. `pageInfo` is
-  // left untouched so "load more" still walks Shopify's cursors.
+  // which four in the first forty are actually 18 inches long.
   const filtered = {
     ...items,
     products: {

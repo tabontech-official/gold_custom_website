@@ -146,7 +146,6 @@ type HeroSlide = {
 
 type HeroContent = {
   slides: HeroSlide[];
-  coverImage: string | null;
   /** Portrait slides for phones; empty falls back to the desktop `slides`. */
   mobileSlides: HeroSlide[];
 };
@@ -233,41 +232,6 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
 }
 
 // Pull ordered image URLs + heading out of one hero_content entry's fields.
-// Images sort by the numeric suffix in their key (image1, image2, …) so they
-// stay in author-defined order regardless of API field order.
-function extractHeroFields(fields: any): {
-  images: string[];
-  heading: string | null;
-} {
-  if (!Array.isArray(fields)) return {images: [], heading: null};
-
-  const imageFields: {order: number; url: string}[] = [];
-  let heading: string | null = null;
-  for (const field of fields as any[]) {
-    const url = field?.reference?.image?.url;
-    const rawKey = String(field?.key ?? '');
-    const key = rawKey.replace(/[-_\s]+/g, '').toLowerCase();
-    if (url) {
-      const order = Number(
-        rawKey.match(/(\d+)/)?.[1] ?? imageFields.length + 1,
-      );
-      imageFields.push({order, url});
-    }
-    if (
-      !heading &&
-      field?.value &&
-      /^(headline|heading|imageheading|herotext)$/.test(key)
-    ) {
-      heading = field.value;
-    }
-  }
-
-  return {
-    images: imageFields.sort((a, b) => a.order - b.order).map((f) => f.url),
-    heading,
-  };
-}
-
 // Flatten one `hero_section` entry into a slide. Field keys come straight from
 // the metaobject definition: image / image_text / text_position.
 function toHeroSlide(entry: any): HeroSlide | null {
@@ -329,12 +293,10 @@ function parseHeroSlides(container: any): HeroSlide[] {
 function parseHeroContent(response: any): HeroContent | null {
   const slides = parseHeroSlides(response?.desktop);
   const mobileSlides = parseHeroSlides(response?.mobile);
-  const cover = extractHeroFields(response?.cover?.fields);
   if (!slides.length && !mobileSlides.length) return null;
 
   return {
     slides,
-    coverImage: cover.images[4] ?? null,
     mobileSlides,
   };
 }
@@ -391,14 +353,13 @@ export default function Homepage() {
       <Hero content={data.hero} />
       <MarketBar rates={data.goldRates} />
       <ShopByCategory categories={data.categories} />
-      <TikTokFeedSection />
       {/* Phones and tablets only — the left rail covers 64em and up. */}
       <SocialFollow />
       <RecommendedProducts
         products={data.recommendedProducts}
         genderNewArrivals={data.genderNewArrivals}
       />
-      <DiamondValueSection image={data.hero?.coverImage ?? null} />
+      <TikTokFeedSection />
       <FeaturedProducts
         collection={data.featuredCollection}
         bestSelling={data.bestSellingProducts}
@@ -805,7 +766,7 @@ export function ShopByCategory({
   // Shopify now falls through to CoverflowCarousel's initial-letter card
   // rather than a 404'd <img>.
   return (
-    <section className="home-section">
+    <section className="home-section shop-by-category">
       <div className="section-inner">
         <div className="editorial-heading">
           <h2 className="editorial-title">Shop by Category</h2>
@@ -978,38 +939,6 @@ function FeaturedProducts({
               </Await>
             </Suspense>
           )}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/**
- * Cover banner that sits between New Arrivals and Complete the Look.
- *
- * Served from cdn.shopify.com rather than the storefront's own
- * /cdn/shop/files/ path — the CSP `img-src` allowlist covers cdn.shopify.com
- * only, so the storefront path is blocked in local dev.
- */
-const HOME_COVER_IMAGE =
-  'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/cover1.2.0.png?v=1783666437&width=1600';
-
-function DiamondValueSection({image}: {image: string | null}) {
-  // The hero metaobject can override the banner; otherwise the pinned asset
-  // above renders. Never falls back to a public/ placeholder.
-  const src = image ?? HOME_COVER_IMAGE;
-  if (!src) return null;
-
-  return (
-    <section className="home-section diamond-value-section">
-      <div className="section-inner">
-        <div className="diamond-value-visual">
-          <img
-            src={cdnWidth(src, 1400)}
-            alt="Diamond jewelry craftsmanship and value assurance"
-            loading="lazy"
-            decoding="async"
-          />
         </div>
       </div>
     </section>
@@ -1227,25 +1156,6 @@ export const SHOP_BY_CATEGORIES_QUERY = `#graphql
 ` as const;
 
 // Two hero_content entries by handle: `desktop` has the rotating banners +
-// heading; `mobile` holds a single portrait image shown on small screens.
-// Fetched by handle (not `first: 1`) so the two never get confused.
-const HERO_FIELDS_FRAGMENT = `#graphql
-  fragment HeroFields on Metaobject {
-    fields {
-      key
-      value
-      reference {
-        ... on MediaImage {
-          image {
-            url
-            altText
-          }
-        }
-      }
-    }
-  }
-`;
-
 // One `hero_section` entry per slide: the banner image, the words that sit on
 // it, and which side they sit on.
 const HERO_SLIDE_FRAGMENT = `#graphql
@@ -1305,16 +1215,8 @@ const HERO_CONTENT_QUERY = `#graphql
         }
       }
     }
-    # The banners moved to web_hero_section, but this older entry still supplies
-    # the standalone image DiamondValueSection renders further down the page.
-    cover: metaobject(
-      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}
-    ) {
-      ...HeroFields
-    }
   }
   ${HERO_SLIDE_FRAGMENT}
-  ${HERO_FIELDS_FRAGMENT}
 ` as const;
 
 const RECOMMENDED_PRODUCTS_QUERY = `#graphql
