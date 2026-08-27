@@ -1956,11 +1956,12 @@ F
 
 .footer-main {
   display: grid;
-  grid-template-columns: 4fr 2fr 2fr 2fr 2fr;
-  column-gap: clamp(2rem, 4.8vw, 5.5rem);
+  grid-template-columns: minmax(0, 2fr) repeat(4, minmax(0, 1fr));
+  column-gap: clamp(1.25rem, 2.5vw, 2.5rem);
   row-gap: 2rem;
   margin: 0 auto;
-  max-width: var(--content-max-width);
+  max-width: 90rem;
+  width: 100%;
   padding: clamp(2.7rem, 4vw, 3.7rem) var(--section-pad) 0;
 }
 
@@ -1976,6 +1977,11 @@ F
 
 .footer-mid .footer-col {
   min-width: 0;
+}
+
+.footer-contact-col {
+  min-width: 0;
+  margin-top: 0;
 }
 
 /* Tidio's chat launcher sits bottom-right with an inline `z-index: 999999999`,
@@ -2026,10 +2032,6 @@ F
 
 .footer-col a:hover {
   color: var(--color-gold-dark);
-}
-
-.footer-contact-col {
-  min-width: min(100%, 22rem);
 }
 
 /* Contact first, address stacked directly under it */
@@ -2112,7 +2114,7 @@ F
   align-items: center;
   background: transparent;
   border: 0;
-  color: var(--color-ink);
+  color: #2563eb;
   cursor: pointer;
   display: inline-flex;
   flex: 0 0 auto;
@@ -2122,6 +2124,10 @@ F
   letter-spacing: 0.08em;
   padding: 0;
   text-transform: uppercase;
+}
+
+.footer-newsletter button:hover:not(:disabled) {
+  color: #1d4ed8;
 }
 
 .footer-newsletter button:disabled {
@@ -2253,6 +2259,10 @@ F
   .footer-left {
     grid-column: 1 / -1;
   }
+
+  .footer-contact-col {
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 40em) {
@@ -2262,16 +2272,31 @@ F
     row-gap: 1.8rem;
   }
 
-  .footer-left,
-  .footer-contact-col {
+  .footer-left {
     grid-column: 1 / -1;
   }
 
-  /* Shop and Customers share one compact row; contact information stays
-     full width below rather than making the footer excessively tall. */
-  .footer-mid .footer-col:nth-child(1),
+  /* Mobile pairing: Shop + Customers on row one, Services + Stay Connected
+     on row two. The footer-mid uses display: contents, so these are direct
+     grid children of .footer-main. */
+  .footer-mid .footer-col:nth-child(1) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .footer-mid .footer-col:nth-child(3) {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
   .footer-mid .footer-col:nth-child(2) {
-    grid-column: auto;
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .footer-mid .footer-col:nth-child(4) {
+    grid-column: 2;
+    grid-row: 3;
   }
 
   .footer-bottom-left {
@@ -3982,9 +4007,9 @@ F
   background-position: right center;
   background-repeat: no-repeat;
   background-size: cover;
+  background-color: #0c0c0c;
   filter: contrast(1.08) saturate(1.04);
-  /* A hair of scale so the image breathes as it settles — subtle motion. */
-  transform: scale(1.001);
+  transform: none;
   /* Holds this slide's heading. The track is inset:0 over the hero's padding
      box, so mirror that padding here to keep the words where they used to sit. */
   display: flex;
@@ -4352,9 +4377,10 @@ F
     display: block;
     width: 100%;
     height: 100%;
-    /* Fills the reserved box; crops rather than letterboxes, so consistency
-       survives an odd-sized upload. */
+    /* Every mobile slide uses the same portrait frame and fills it uniformly,
+       so no slide appears smaller than its neighbours. */
     object-fit: cover;
+    background: #0c0c0c;
   }
 
   /* Hide the desktop background-slide track and ITS dots (direct children of
@@ -4995,6 +5021,11 @@ F
   padding: 0 2.5vw;
 }
 
+.shop-by-category .editorial-heading {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
 /* Category carousel */
 /*
 * --------------------------------------------------
@@ -5017,7 +5048,7 @@ F
      second, separate side padding on top of that stacked into 15%+ of dead
      space per side at wide viewports — .section-inner's 10vw is the ONLY
      horizontal gutter this section gets. */
-  padding: 1rem 0 1.5rem;
+  padding: 0 0 1.5rem;
 }
 
 .coverflow-stage {
@@ -5057,14 +5088,14 @@ F
   border-radius: 10px;
   overflow: hidden;
   background: var(--cg-white, #fff);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
+  box-shadow: none;
   transform-style: preserve-3d;
   transform-origin: center center;
   cursor: pointer;
   /* transform / opacity / filter are set inline every frame by the component's
      eased scroll loop — NO CSS transition here, or it would smear the per-frame
      updates and bring back the jank. */
-  transition: box-shadow 280ms ease;
+  transition: none;
   will-change: transform, opacity;
   backface-visibility: hidden;
   contain: layout paint;
@@ -5091,10 +5122,7 @@ F
 
 .coverflow-card.is-active {
   filter: none;
-  box-shadow:
-    0 22px 42px rgba(0, 0, 0, 0.18),
-    0 0 0 1px rgba(212, 175, 55, 0.35),
-    0 0 22px rgba(212, 175, 55, 0.14);
+  box-shadow: none;
 }
 
 .coverflow-card.is-active:hover::after,
@@ -5286,6 +5314,12 @@ F
     /* 4:5 of the width clamp just above (200*0.8, 64*0.8, 280*0.8) — see the
        note above .coverflow-card. */
     height: clamp(160px, 51.2vw, 224px);
+  }
+
+  /* Give the centered collection card a little more vertical presence while
+     keeping the neighbouring cards smaller for the coverflow depth effect. */
+  .coverflow-card.is-active {
+    height: clamp(190px, 58vw, 250px);
   }
 
   .coverflow-card-body {

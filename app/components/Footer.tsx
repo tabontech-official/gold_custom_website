@@ -81,7 +81,7 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                   <ul>
                     <li>
                       <Link to="/collections/diamond">
-                        Diamond & Engagement
+                        Diamond
                       </Link>
                     </li>
                     <li>
@@ -97,7 +97,7 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                       <Link to="/collections/earrings">Earrings</Link>
                     </li>
                     <li>
-                      <Link to="/collections/shop-all">Shop All</Link>
+                      <Link to="/collections/engagement-rings">Engagement</Link>
                     </li>
                   </ul>
                 </div>
@@ -148,51 +148,51 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                 </div>
 
                 <div className="footer-col footer-contact-col">
-                  <h4>Stay Connected</h4>
-                  <div className="footer-contact-grid">
-                    <div>
-                      <ul>
-                        <li>
-                          <a
-                            className="footer-contact-link"
-                            href="tel:+13236888837"
-                          >
-                            <PhoneIcon />
-                            <span>+1 (323) 688-8837</span>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            className="footer-contact-link"
-                            href="mailto:mr10k@goldcustom.com"
-                          >
-                            <MailIcon />
-                            <span>mr10k@goldcustom.com</span>
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                    <div>
-                      <ul>
-                        <li>
-                          <a
-                            className="footer-contact-link"
-                            href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <MapPinIcon />
-                            <span>
-                              550 S Hill St #660, Los Angeles, CA 90013, United
-                              States
-                            </span>
-                          </a>
-                        </li>
-                      </ul>
+                    <h4>Stay Connected</h4>
+                    <div className="footer-contact-grid">
+                      <div>
+                        <ul>
+                          <li>
+                            <a
+                              className="footer-contact-link"
+                              href="tel:+13236888837"
+                            >
+                              <PhoneIcon />
+                              <span>+1 (323) 688-8837</span>
+                            </a>
+                          </li>
+                          <li>
+                            <a
+                              className="footer-contact-link"
+                              href="mailto:mr10k@goldcustom.com"
+                            >
+                              <MailIcon />
+                              <span>mr10k@goldcustom.com</span>
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                      <div>
+                        <ul>
+                          <li>
+                            <a
+                              className="footer-contact-link"
+                              href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              <MapPinIcon />
+                              <span>
+                                550 S Hill St #660, Los Angeles, CA 90013,
+                                United States
+                              </span>
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
 
             {/* Giant wordmark, Cadence-style */}
