@@ -5026,6 +5026,16 @@ F
   padding-bottom: 0;
 }
 
+@media (min-width: 52em) {
+  .shop-by-category .editorial-heading {
+    margin-bottom: 0.65rem;
+  }
+
+  .shop-by-category .coverflow {
+    padding-top: 0.75rem;
+  }
+}
+
 /* Category carousel */
 /*
 * --------------------------------------------------
