@@ -262,20 +262,21 @@ code {
   --cg-champagne: #d4af37;
   --cg-champagne-dark: #b89020;
 
-  /* White header surface. All three header tiers - announcement bar, the
-     sticky logo/search/cart row and the mega-menu bar - read from these
-     tokens, so the bar is recoloured here rather than in twenty rules. */
-  --header-bg: #fff;
-  --header-fg: #000;
-  --header-fg-soft: rgba(0, 0, 0, 0.62);
-  --header-line: var(--color-border);
-  /* --cg-champagne (#d4af37) reads weak on white — this is the same darker
-     gold the footer and mega-menu already use for legible gold-on-white.
-     One shade for both rest and hover: on black the hover step lightened
-     further (already near the ceiling); on white the rest state is already
-     the "reads on white" gold, so there's no second shade to step to. */
-  --header-accent: var(--cg-champagne-dark);
-  --header-accent-bright: var(--cg-champagne-dark);
+  /* Black header surface. .header-primary and .header (the mega-menu bar)
+     read from these tokens, so the bar is recoloured here rather than in
+     twenty rules — the Tier 1 announcement strip is its own gold gradient,
+     not tied to --header-bg, and unaffected by this.
+     #0c0c0c, not #000: matches the logo artwork's own near-black backdrop
+     (sampled ~rgb(12,12,12)) almost exactly, so the row and the logo read as
+     one continuous black rather than two mismatched blacks butted together. */
+  --header-bg: #0c0c0c;
+  --header-fg: #f6f3ec;
+  --header-fg-soft: rgba(246, 243, 236, 0.62);
+  --header-line: rgba(255, 255, 255, 0.12);
+  /* #d4af37 on #0c0c0c measures 10.1:1 — the brand gold needs no darkening to
+     carry text here, unlike on white. Bright variant is for hover only. */
+  --header-accent: var(--cg-champagne);
+  --header-accent-bright: #f0d37a;
 
   /* One stack everywhere — headings, body, descriptions stay consistent */
   /* Classic navigation font — shared across the entire storefront. */
@@ -1109,7 +1110,9 @@ F
   background: var(--cg-silver);
   border: 1px solid var(--cg-platinum);
   border-radius: 999px;
-  color: var(--header-fg-soft);
+  /* Not var(--header-fg-soft): this pill is near-white regardless of the
+     header bar's own colour, so its text stays dark to match. */
+  color: rgba(0, 0, 0, 0.62);
   display: none;
   font-size: 0.74rem;
   font-weight: 600;
@@ -1699,7 +1702,9 @@ F
 .header-search input {
   background: transparent;
   border: none;
-  color: var(--header-fg);
+  /* Not var(--header-fg): the pill itself is --cg-silver (near-white) so its
+     own text stays dark regardless of the header bar's colour around it. */
+  color: rgba(0, 0, 0, 0.85);
   font-family: var(--font-body);
   font-size: 0.85rem;
   margin: 0;
@@ -1715,7 +1720,9 @@ F
 
 .header-search form button {
   align-items: center;
-  color: var(--header-fg-soft);
+  /* Same reasoning as the input above — dark on the light pill, not
+     var(--header-fg-soft). */
+  color: rgba(0, 0, 0, 0.62);
   display: flex;
   padding: 0.2rem;
 }
@@ -7379,7 +7386,10 @@ html.header-primary-hidden .collection-sticky-head {
     font-weight: 700;
     letter-spacing: 0;
     line-height: 1.16;
-    white-space: nowrap;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    white-space: normal;
   }
 
   .product-price,
@@ -8531,9 +8541,9 @@ html.header-primary-hidden .collection-sticky-head {
 
 /* FAQ section — centered on the page, each answer toggles */
 .pdp-faq-section {
-  padding: 2.5rem 0 1rem;
+  padding: 1.5rem 0 1rem;
   @media (min-width: 48em) {
-    padding: 3.5rem 0 1.5rem;
+    padding: 2.25rem 0 1.5rem;
   }
 }
 
@@ -8651,10 +8661,10 @@ html.header-primary-hidden .collection-sticky-head {
 .pdp-similar {
   margin-top: clamp(2rem, 4vw, 4rem);
   position: relative;
-  padding: clamp(2.5rem, 4vw, 3.5rem) 0 clamp(2.5rem, 4vw, 3.5rem);
+  padding: clamp(2.5rem, 4vw, 3.5rem) 0 1.25rem;
   --similar-edge: var(--section-pad);
   @media (min-width: 48em) {
-    padding: clamp(3.5rem, 5vw, 5rem) 0 clamp(3rem, 4vw, 4rem);
+    padding: clamp(3.5rem, 5vw, 5rem) 0 2rem;
   }
 }
 
@@ -8702,6 +8712,55 @@ html.header-primary-hidden .collection-sticky-head {
 @media (min-width: 48em) {
   .pdp-similar .hcarousel-btn {
     top: 4rem;
+  }
+}
+
+@media (max-width: 48em) {
+  .pdp-similar {
+    display: block;
+    height: fit-content;
+    min-height: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .pdp-similar .hcarousel {
+    display: block;
+    height: fit-content;
+  }
+
+  .pdp-similar .hcarousel-viewport,
+  .pdp-similar .hcarousel-track {
+    height: fit-content;
+    min-height: 0;
+  }
+
+  .pdp-similar .slider-carousel .hcarousel-track {
+    gap: 0.85rem;
+  }
+
+  .pdp-similar .slider-carousel .slider-item {
+    width: min(11.5rem, 62vw);
+    gap: 0.45rem;
+    padding: 0.2rem;
+  }
+
+  .pdp-similar .slider-carousel .product-item-copy h3 {
+    font-size: 0.72rem;
+    line-height: 1.3;
+  }
+
+  .pdp-similar .slider-carousel .product-card-body {
+    gap: 0.35rem;
+  }
+
+  .pdp-similar .slider-carousel .product-card-price {
+    font-size: 0.82rem;
+  }
+
+  .pdp-faq-section {
+    margin-top: 0;
+    padding-top: 0.75rem;
   }
 }
 
@@ -10178,6 +10237,11 @@ html.header-primary-hidden .collection-sticky-head {
 .hcarousel-track {
   display: flex;
   width: max-content;
+  /* Not the flex default (stretch): every current consumer holds product
+     cards of differing natural height (title can wrap to 1 or 2 lines), and
+     stretch would inflate every card to the tallest one in view, stranding
+     shorter cards' prices near the bottom of dead space below the title. */
+  align-items: flex-start;
 }
 
 /* Touch scrolling is native, so let CSS snapping help and hide the overlay
@@ -10299,6 +10363,29 @@ html.header-primary-hidden .collection-sticky-head {
   scroll-snap-align: start;
   width: min(240px, 62vw);
   border-radius: 0;
+}
+
+/* Every product card in a horizontal rail (homepage's Featured/Best
+   Sellers/New Arrivals via .split-rail-item, PDP's "You may also like" via
+   .slider-item) scrolls independently rather than sitting in an aligned grid
+   row, so the grid's row-alignment reservations don't apply here and only
+   read as dead space:
+   - .product-card-body's `flex: 1; justify-content: space-between` (meant to
+     pin the price to the bottom of a grid row's shared height) instead grew
+     to fill whatever the tallest card in view left over — this pairs with
+     the align-items: flex-start fixes on .hcarousel-track / .split-rail
+     .dragscroll-track above.
+   - .product-item-copy h3's 2-line min-height (meant to keep prices level
+     across a grid row) left a gap under any 1-line title. */
+.slider-item .product-card-body,
+.split-rail-item .product-card-body {
+  flex: 0 0 auto;
+  justify-content: flex-start;
+}
+
+.slider-item .product-item-copy h3,
+.split-rail-item .product-item-copy h3 {
+  min-height: 0;
 }
 
 .category-slider-track {
@@ -11031,6 +11118,14 @@ html.header-primary-hidden .collection-sticky-head {
 .split-rail {
   min-width: 0;
   padding-bottom: 2.45rem;
+}
+
+/* Not the flex default (stretch): .dragscroll-track has no width/height on its
+   own children beyond .split-rail-item, so every card in view would otherwise
+   inflate to the tallest one — see .slider-item's identical fix below for the
+   full mechanism (shared card body/title CSS, different rail component). */
+.split-rail .dragscroll-track {
+  align-items: flex-start;
 }
 
 .split-intro {
