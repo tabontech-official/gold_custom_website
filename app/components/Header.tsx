@@ -119,6 +119,14 @@ function useHideOnScrollDown(revealAt = 80) {
     return () => window.removeEventListener('scroll', onScroll);
   }, [revealAt]);
 
+  // Mirrored onto <html> so sticky bars below the header (collection filter
+  // toolbar, category strip) can drop their top offset to 0 while the header
+  // is translated away — otherwise they keep clearing space for a header
+  // that isn't there, leaving a blank gap at the viewport top.
+  useEffect(() => {
+    document.documentElement.classList.toggle('header-primary-hidden', hidden);
+  }, [hidden]);
+
   return hidden;
 }
 
@@ -142,7 +150,7 @@ export function Header({
   // resizing it is all that's needed.
   const logoSrc =
     shop.brand?.logo?.image?.url ??
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/LOGO.webp?v=1787656136';
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/ChatGPT_Image_Aug_24_2026_02_24_14_PM.png?v=1787813253';
   const logoUrl = (scale: number) => cdnWidth(logoSrc, 360 * scale);
 
   return (

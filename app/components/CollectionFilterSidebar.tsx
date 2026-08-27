@@ -1,4 +1,10 @@
-import {useEffect, useState, type CSSProperties} from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react';
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS} from '~/lib/collectionFilter';
 import {
@@ -107,6 +113,28 @@ export function CollectionFilterSidebar({
   const sortRef = useDismissable<HTMLDivElement>(sortOpen, () =>
     setSortOpen(false),
   );
+  const toolbarRef = useRef<HTMLDivElement>(null);
+
+  // Exposed as --toolbar-height so the desktop filter rail (.collection-layout
+  // .collection-sidebar) knows how far down to start — it's sticky too, and
+  // without this its top offset only cleared the header, leaving the rail's
+  // own top items parked under the (now sticky) toolbar/icon strip above it.
+  useLayoutEffect(() => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const setHeight = () =>
+      document.documentElement.style.setProperty(
+        '--toolbar-height',
+        `${el.getBoundingClientRect().height}px`,
+      );
+    setHeight();
+    const observer = new ResizeObserver(setHeight);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.style.removeProperty('--toolbar-height');
+    };
+  }, []);
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
@@ -213,7 +241,11 @@ export function CollectionFilterSidebar({
 
   return (
     <>
-      <div className="collection-toolbar">
+      <div className="collection-toolbar" ref={toolbarRef}>
+        <span className="collection-filter-heading">
+          <FilterIcon />
+          <span>Filter</span>
+        </span>
         <button
           type="button"
           className="collection-filter-trigger"

@@ -536,12 +536,12 @@ export default function Product() {
         </div>
       </div>
 
-      <ProductFaqSection faqs={faqs} />
-
       <RelatedProducts
         products={recommendedProducts}
         viewAllTo={similarCollectionTo}
       />
+
+      <ProductFaqSection faqs={faqs} />
 
       <Analytics.ProductView
         data={{

@@ -23,6 +23,7 @@ import {
 } from '~/lib/seo';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {CollectionStickyHead} from '~/components/CollectionStickyHead';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
@@ -539,13 +540,15 @@ export default function Collection() {
       </div>
 
       {rootData?.header && (
-        <div className="section-inner">
-          <CollectionSubNavIcons
-            handle={collection.handle}
-            header={rootData.header}
-            publicStoreDomain={rootData.publicStoreDomain}
-          />
-        </div>
+        <CollectionStickyHead>
+          <div className="section-inner">
+            <CollectionSubNavIcons
+              handle={collection.handle}
+              header={rootData.header}
+              publicStoreDomain={rootData.publicStoreDomain}
+            />
+          </div>
+        </CollectionStickyHead>
       )}
 
       <section className="home-section">

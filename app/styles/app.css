@@ -5758,13 +5758,95 @@ F
   font-family: var(--font-body);
 }
 
-/* The rail is a drawer at EVERY width — products get the full column and the
-   toolbar's "Filters" button is the only way in. The old desktop layout kept
-   a permanent 16rem grid column; the drawer rules below now apply throughout,
-   so nothing here overrides them. */
-
 .collection-main {
   min-width: 0;
+}
+
+/* Desktop: permanent left rail again, sticky under the header, scrolling
+   only within its own height — not a fixed drawer overlay. Mobile keeps the
+   fixed off-canvas drawer defined below. */
+@media (min-width: 60em) {
+  .collection-layout {
+    align-items: start;
+    display: grid;
+    gap: 2.5rem;
+    grid-template-columns: 16rem minmax(0, 1fr);
+  }
+
+  .collection-layout .collection-sidebar {
+    background: none;
+    bottom: auto;
+    /* Must clear everything stacked above it: header, the sticky category
+       strip (--sticky-head-height, 0 where there isn't one) and the sticky
+       toolbar (--toolbar-height) — both measured live, see
+       CollectionStickyHead and CollectionFilterSidebar's toolbarRef. A static
+       guess here previously left the rail's own top filter group parked
+       under the toolbar once it started sticking. */
+    max-height: calc(
+      100vh - var(--desktop-header-primary-height) -
+        var(--sticky-head-height, 0px) - var(--toolbar-height, 0px) - 1.5rem
+    );
+    max-width: none;
+    padding: 0.9rem 0 2rem;
+    position: sticky;
+    top: calc(
+      var(--desktop-header-primary-height) + var(--sticky-head-height, 0px) +
+        var(--toolbar-height, 0px) + 0.75rem
+    );
+    transform: none;
+    transition: top 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+    width: auto;
+    z-index: 1;
+  }
+
+  html.header-primary-hidden .collection-layout .collection-sidebar {
+    max-height: calc(
+      100vh - var(--sticky-head-height, 0px) - var(--toolbar-height, 0px) - 1.5rem
+    );
+    top: calc(var(--sticky-head-height, 0px) + var(--toolbar-height, 0px) + 0.75rem);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .collection-layout .collection-sidebar {
+      transition: none;
+    }
+  }
+
+  .collection-layout .collection-drawer-backdrop,
+  .collection-layout .sidebar-close,
+  .collection-layout .collection-filter-trigger,
+  .collection-layout .sidebar-head {
+    display: none;
+  }
+
+  /* CollectionFilterSidebar renders the toolbar, chip row and <aside> as
+     siblings (a fragment) — as direct grid children they'd each claim their
+     own row in column 1. Span both columns so only the <aside> occupies the
+     rail and .collection-main. */
+  .collection-layout > .collection-toolbar,
+  .collection-layout > .collection-active-filters {
+    grid-column: 1 / -1;
+  }
+
+  /* Desktop-only "Filter" label in the shared sort/filter bar — the mobile
+     drawer trigger button is hidden above, this replaces it as the bar's
+     left-hand anchor. */
+  .collection-filter-heading {
+    align-items: center;
+    display: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    gap: 0.45rem;
+  }
+
+  .collection-layout .collection-filter-heading {
+    display: flex;
+  }
+
+  .collection-filter-heading svg {
+    height: 18px;
+    width: 18px;
+  }
 }
 
 /* Denser cards on catalogue pages — the global 355px min leaves 3 giant
@@ -5802,14 +5884,51 @@ F
   margin: 0.5rem 0 2rem;
   padding: 0.6rem 0;
   position: sticky;
-  /* Must clear the only pinned tier, .header-primary. Mobile uses the shorter
-     --header-height; desktop swaps in the taller primary row below, otherwise
-     the bar parks ~28px too high and the header covers half of it. */
-  top: var(--header-height);
+  /* Must clear the two pinned tiers above it: .header-primary, then
+     .collection-sticky-head (the title row + category icon strip — see
+     CollectionStickyHead) when a collection renders one. --sticky-head-height
+     is 0px on collections with no sticky head and measured live otherwise, so
+     this stacks under whichever combination is actually on screen. */
+  top: calc(var(--header-height) + var(--sticky-head-height, 0px));
   /* Above the product cards, below the header (z:900) and its dropdowns. */
   z-index: 50;
+  transition: top 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  @media (min-width: 60em) {
+    top: calc(var(--desktop-header-primary-height) + var(--sticky-head-height, 0px));
+  }
+}
+
+/* Header slides away on scroll-down (Header.tsx's useHideOnScrollDown) — this
+   bar would otherwise keep reserving the header's height as blank space at
+   the viewport top since sticky's offset doesn't know the header is gone.
+   The sticky head (if present) stays put, so the toolbar still clears it. */
+html.header-primary-hidden .collection-toolbar {
+  top: var(--sticky-head-height, 0px);
+}
+
+/* Collection heading + category icon strip, pinned together under the header
+   (or under the top of the viewport once the header slides away). Height is
+   measured by CollectionStickyHead and written to --sticky-head-height so
+   .collection-toolbar knows how far down to park. */
+.collection-sticky-head {
+  background: #fff;
+  position: sticky;
+  top: var(--header-height);
+  transition: top 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  z-index: 55;
   @media (min-width: 60em) {
     top: var(--desktop-header-primary-height);
+  }
+}
+
+html.header-primary-hidden .collection-sticky-head {
+  top: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collection-toolbar,
+  .collection-sticky-head {
+    transition: none;
   }
 }
 
@@ -5829,6 +5948,10 @@ F
 .collection-toolbar svg {
   height: 18px;
   width: 18px;
+}
+
+.collection-filter-heading {
+  display: none;
 }
 
 .collection-drawer-backdrop {
@@ -6038,8 +6161,6 @@ F
    Shape is the iPhone indicator: a 4px rounded translucent thumb on a hairline
    track, no steppers.
 --------------------------------------------------------------------------- */
-.collection-sidebar::-webkit-scrollbar,
-.sidebar-categories::-webkit-scrollbar,
 .header-search-results::-webkit-scrollbar,
 .predictive-search::-webkit-scrollbar {
   height: 4px;
@@ -6049,42 +6170,24 @@ F
 /* A track IS wanted here: it shows how far the list runs even when the thumb
    is short, which a trackless overlay bar cannot. Kept very pale so it reads
    as a hairline guide rather than a chrome gutter. */
-.collection-sidebar::-webkit-scrollbar-track,
-.sidebar-categories::-webkit-scrollbar-track,
 .header-search-results::-webkit-scrollbar-track,
 .predictive-search::-webkit-scrollbar-track {
   background: rgba(0, 0, 0, 0.05);
   border-radius: 999px;
 }
 
-.collection-sidebar::-webkit-scrollbar-thumb,
-.sidebar-categories::-webkit-scrollbar-thumb,
 .header-search-results::-webkit-scrollbar-thumb,
 .predictive-search::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.2);
   border-radius: 999px;
 }
 
-.collection-sidebar::-webkit-scrollbar-thumb:hover,
-.sidebar-categories::-webkit-scrollbar-thumb:hover,
 .header-search-results::-webkit-scrollbar-thumb:hover,
 .predictive-search::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.32);
 }
 
-/* Breathing room between the list and the bar. Padding on a scroll container
-   insets the CONTENT but not the scrollbar, which is exactly what is needed —
-   the category labels were running straight into the track.
-   Only .sidebar-categories here: it has no horizontal padding of its own. The
-   outer rail already has 1.4rem in the mobile drawer, so it is given a right
-   inset only at the desktop breakpoint where its padding is 0. */
-.sidebar-categories {
-  padding-right: 0.85rem;
-}
-
 /* The stepper arrows at each end are the other half of what reads as chunky. */
-.collection-sidebar::-webkit-scrollbar-button,
-.sidebar-categories::-webkit-scrollbar-button,
 .header-search-results::-webkit-scrollbar-button,
 .predictive-search::-webkit-scrollbar-button {
   display: none;
@@ -6096,8 +6199,6 @@ F
    guard we need — setting scrollbar-width there would switch the rules above
    back off. */
 @supports not selector(::-webkit-scrollbar) {
-  .collection-sidebar,
-  .sidebar-categories,
   .header-search-results,
   .predictive-search {
     /* thumb, then track — same two values as the webkit rules above, so these
@@ -6105,6 +6206,20 @@ F
     scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05);
     scrollbar-width: thin;
   }
+}
+
+/* Filter rail scrolls (both the outer rail and the nested Categories list)
+   stay fully functional, just with no visible scrollbar track/thumb —
+   requested after the thin-iPhone-style bar above was judged unnecessary
+   chrome specifically on the filter section. */
+.collection-sidebar,
+.sidebar-categories {
+  scrollbar-width: none;
+}
+
+.collection-sidebar::-webkit-scrollbar,
+.sidebar-categories::-webkit-scrollbar {
+  display: none;
 }
 
 .sidebar-category {
@@ -9796,6 +9911,7 @@ F
   padding: 0;
 }
 
+
 .subnav-icons .dragscroll-viewport {
   cursor: grab;
   /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
@@ -9846,15 +9962,15 @@ F
    3.6rem top padding is dead space between the strip and the filter bar.
    Zero it and let the toolbar's own small margin be the gap.
    Scoped to `:has(.subnav-icons)` because the padding is correct on pages
-   with no strip above them. */
-.collection > .section-inner:has(.subnav-icons) + .home-section {
+   with no strip above them. Selector targets .collection-sticky-head (the
+   wrapper CollectionStickyHead renders around the title row + subnav strip,
+   see collections.$handle.tsx), not .section-inner directly, since that's
+   what now sits as .home-section's preceding sibling. */
+.collection-sticky-head:has(.subnav-icons) + .home-section {
   padding-top: 4px;
 }
 
-.collection
-  > .section-inner:has(.subnav-icons)
-  + .home-section
-  .collection-toolbar {
+.collection-sticky-head:has(.subnav-icons) + .home-section .collection-toolbar {
   margin-top: 0.8rem;
 }
 
@@ -12444,13 +12560,18 @@ F
    which is why the <a> and <li> below are left at `z-index: auto`. */
 .social-rail {
   position: fixed;
-  top: 50%;
+  /* Nudged past dead centre: the collection page's sticky category strip +
+     toolbar (z-index 55/50, opaque) sit in the same left-edge column on
+     shorter viewports, and centring here used to let their top edge cut into
+     the rail's first icon. */
+  top: calc(50% + 3rem);
   /* Flush to the viewport edge — the pills read as attached to the screen
      rather than floating in a gutter, so their left corners are square too. */
   left: 0;
   transform: translateY(-50%);
-  /* Above the page, below the header dropdowns / cart aside / popup. */
-  z-index: 40;
+  /* Above the page AND the collection page's sticky bars (55/50), below the
+     header (900) / dropdowns / cart aside / popup. */
+  z-index: 56;
   display: flex;
   flex-direction: column;
   /* NOT the default `stretch`. A flex column stretches every item to the
@@ -12508,13 +12629,17 @@ F
    size with slack on the end. Collapsed it contributes nothing: no width, no
    margin, no border. */
 .social-rail-handle {
-  display: inline-flex;
+  /* inline-block, not inline-flex: text-overflow only truncates with "…" in a
+     block formatting context — a flex container hard-clips with no ellipsis,
+     which is what a truncated handle needs now that the reveal is narrower. */
+  display: inline-block;
   max-width: 0;
   margin-left: 0;
   padding-left: 0;
   border-left: 0 solid rgb(255 255 255 / 55%);
   opacity: 0;
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
   transition:
     max-width 300ms cubic-bezier(0.22, 0.61, 0.36, 1),
@@ -12524,12 +12649,13 @@ F
     opacity 140ms ease;
 }
 
-/* 9rem clears the longest handle in SOCIAL_LINKS with a little room; keeping it
-   near the real text width matters because max-width animates toward the value
-   named here, so an oversized ceiling makes the reveal finish early and stall. */
+/* Half the old 9rem reveal — a shorter, snappier opening on pointer devices.
+   Longer handles ("Gold Custom LA", "@goldcustom_la") no longer fully fit and
+   truncate with an ellipsis (see .social-rail-handle's text-overflow); the
+   full handle is still in the link's aria-label either way. */
 .social-rail a:hover .social-rail-handle,
 .social-rail a:focus-visible .social-rail-handle {
-  max-width: 9rem;
+  max-width: 4.5rem;
   margin-left: 0.5rem;
   padding-left: 0.45rem;
   border-left-width: 2px;
