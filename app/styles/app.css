@@ -3916,7 +3916,11 @@ F
 
 /* Hero */
 .hero {
-  background: #fff;
+  /* Matches the black header (#0c0c0c) rather than white: the slide images
+     don't always cover the box edge-to-edge at every viewport ratio during
+     the swipe transform, and a white sliver peeking through there against
+     the black header above read as a stray gap between the two. */
+  background: #0c0c0c;
   color: #000;
   /* The heading now rides inside each slide (so it slides with its photo), and
      the slide track is absolute — nothing in flow sizes the hero any more.
@@ -10386,6 +10390,18 @@ html.header-primary-hidden .collection-sticky-head {
 .slider-item .product-item-copy h3,
 .split-rail-item .product-item-copy h3 {
   min-height: 0;
+}
+
+/* .product-item's content-visibility: auto (further up) is a grid-only
+   optimization — it treats a card as "not near the viewport" and holds it at
+   the 440px contain-intrinsic-size placeholder instead of its real content
+   height, which showed up as a large blank gap below the price on any rail
+   card the browser hadn't (re)computed layout for yet. A rail only ever
+   renders a handful of cards, nowhere near the hundreds a full search grid
+   can, so the layout/paint saving it exists for isn't worth this bug here. */
+.slider-item,
+.split-rail-item {
+  content-visibility: visible;
 }
 
 .category-slider-track {
