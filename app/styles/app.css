@@ -6105,6 +6105,10 @@ html.header-primary-hidden
      sits flush against it whether the circle labels wrap to one line or two. */
   .collection-toolbar {
     background: #fff;
+    /* White, not the default 2px --color-border: the strip directly above is
+       also white, so a dark rule here read as a seam between two bars that
+       are meant to look like one block. */
+    border-top: 1px solid #fff;
     bottom: auto !important;
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
     left: 0;
@@ -6112,7 +6116,13 @@ html.header-primary-hidden
     padding: 0.5rem var(--section-pad);
     position: fixed !important;
     right: 0;
-    top: calc(var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px)) !important;
+    /* 1px UNDER the strip's bottom edge. --sticky-head-height is rounded UP
+       from a fractional measurement, so butting them exactly could leave a
+       sub-pixel hairline with the scrolling page showing through it. An
+       overlap cannot gap, and both bars are white so it is invisible. */
+    top: calc(
+      var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) - 1px
+    ) !important;
     transform: none !important;
     transition: none;
     z-index: 54;
