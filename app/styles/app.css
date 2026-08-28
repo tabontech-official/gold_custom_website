@@ -5944,21 +5944,54 @@ F
      CollectionStickyHead) when a collection renders one. --sticky-head-height
      is 0px on collections with no sticky head and measured live otherwise, so
      this stacks under whichever combination is actually on screen. */
-  top: calc(var(--header-height) + var(--sticky-head-height, 0px));
+  top: calc(var(--pin) + var(--sticky-head-height, 0px));
   /* Above the product cards, below the header (z:900) and its dropdowns. */
   z-index: 50;
-  transition: top 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* The real height of the sticky .header-primary row at each breakpoint. The
+   global --header-height (64px) is neither the 3.65rem phone row nor the
+   5.2rem tablet one, and the difference showed as a strip of page scrolling
+   past between the header and the pinned category strip. */
+.collection-toolbar,
+.collection-sticky-head {
+  --pin: 3.65rem;
+  @media (min-width: 48em) {
+    --pin: var(--mobile-header-height);
+  }
   @media (min-width: 60em) {
-    top: calc(var(--desktop-header-primary-height) + var(--sticky-head-height, 0px));
+    --pin: var(--desktop-header-primary-height);
   }
 }
 
-/* Header slides away on scroll-down (Header.tsx's useHideOnScrollDown) — this
-   bar would otherwise keep reserving the header's height as blank space at
-   the viewport top since sticky's offset doesn't know the header is gone.
-   The sticky head (if present) stays put, so the toolbar still clears it. */
-html.header-primary-hidden .collection-toolbar {
-  top: var(--sticky-head-height, 0px);
+/* Header slides away on scroll-down (Header.tsx's useHideOnScrollDown) — the
+   pinned bars would otherwise keep reserving its height as blank space at the
+   viewport top, since sticky's offset doesn't know the header is gone.
+
+   They follow it with a TRANSFORM, not by animating `top`: iOS Safari
+   positions sticky elements off the main thread and re-syncs an animating
+   `top` a frame late, which made the category circles shake on every scroll
+   direction change. A transform runs on the compositor, in step with the
+   header's own translateY, so there is never a gap between the two.
+
+   Only while actually stuck (`is-stuck`, set by CollectionStickyHead): a
+   transform also moves the bar while it is still in normal flow, where it
+   would slide up over the collection title. */
+html.header-primary-hidden .collection-sticky-head.is-stuck,
+html.header-primary-hidden
+  .collection-sticky-head.is-stuck
+  + .home-section
+  .collection-toolbar {
+  transform: translateY(calc(-1 * var(--pin)));
+}
+
+/* No sticky head on the page (search, collections without a category strip):
+   nothing to follow, so the toolbar just moves up to the top. */
+html.header-primary-hidden
+  body:not(:has(.collection-sticky-head))
+  .collection-toolbar {
+  top: 0;
 }
 
 /* Collection heading + category icon strip, pinned together under the header
@@ -5968,16 +6001,9 @@ html.header-primary-hidden .collection-toolbar {
 .collection-sticky-head {
   background: #fff;
   position: sticky;
-  top: var(--header-height);
-  transition: top 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  top: var(--pin);
+  transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
   z-index: 55;
-  @media (min-width: 60em) {
-    top: var(--desktop-header-primary-height);
-  }
-}
-
-html.header-primary-hidden .collection-sticky-head {
-  top: 0;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -7012,6 +7038,7 @@ html.header-primary-hidden .collection-sticky-head {
 .pgg-stage {
   flex: 1 1 auto;
   min-width: 0;
+  position: relative;
 }
 
 /* Swipe feedback. While the finger is down the transition is off so the photo
@@ -7163,11 +7190,55 @@ html.header-primary-hidden .collection-sticky-head {
   transform: translate(-50%, -50%);
 }
 
-/* Arrow pager, laid over the photo. Hidden by default — desktop pages through
-   the thumbnail rail, which shows the whole set at once and needs no stepping.
-   Shown by the mobile block, where the rail is gone. */
+/* Arrow pager, laid over the photo — left/right inner edges, vertically
+   centred. Desktop still has the thumbnail rail alongside for jumping
+   straight to a shot; these are for quick prev/next without leaving the
+   image. Same bare shaft-arrow used on mobile, just heavier here since a
+   mouse cursor never sits this close to confirm the hit target the way a
+   fingertip does. */
 .pgg-nav {
-  display: none;
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: space-between;
+  left: 0;
+  padding: 0 0.75rem;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+  z-index: 2;
+}
+
+.pgg-nav-btn {
+  align-items: center;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.85))
+    drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
+  justify-content: center;
+  padding: 0.7rem;
+  pointer-events: auto;
+  transition: color 0.18s ease;
+}
+
+.pgg-nav-btn svg {
+  height: 2rem;
+  width: 2rem;
+  stroke-width: 3;
+}
+
+.pgg-nav-btn:active {
+  color: var(--color-gold);
+}
+
+.pgg-nav-btn:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
 }
 
 /* Style code line above the heading */
@@ -7384,48 +7455,26 @@ html.header-primary-hidden .collection-sticky-head {
     width: 100%;
   }
 
-  /* Centred on the bottom edge of the photo, as a pair. No disc, no border —
-     the same bare shaft-arrow the footer's Subscribe control uses, so the two
-     read as one vocabulary rather than two different button languages. */
+  /* Bottom edge, centred as a pair — narrower than the image, so left/right
+     inner-edge placement (the desktop layout above) would sit too close to
+     the thumb doing the swiping. */
   .pgg-nav {
+    align-items: flex-end;
     bottom: 0.5rem;
-    display: flex;
+    height: auto;
+    justify-content: center;
     gap: 2.25rem;
     left: 50%;
-    position: absolute;
+    padding: 0;
+    right: auto;
+    top: auto;
     transform: translateX(-50%);
-    z-index: 2;
   }
 
-  .pgg-nav-btn {
-    align-items: center;
-    appearance: none;
-    background: transparent;
-    border: 0;
-    /* White glyph carrying its own dark outline. The catalogue mixes shots on
-       white and on black, so neither a light nor a dark arrow works alone:
-       the tight shadow draws a hard edge that reads against white, and the
-       white stroke itself reads against black. The wider, softer second
-       shadow lifts it off busy mid-tone areas of the product. */
-    color: #fff;
-    filter: drop-shadow(0 0 1.5px rgba(0, 0, 0, 0.85))
-      drop-shadow(0 1px 4px rgba(0, 0, 0, 0.45));
-    cursor: pointer;
-    display: inline-flex;
-    justify-content: center;
-    /* Padding, not a box: it buys the 44px touch target without drawing
-       anything. The glyph itself stays 1.15rem. */
-    padding: 0.7rem;
-    transition: color 0.18s ease;
-  }
-
-  .pgg-nav-btn:active {
-    color: var(--color-gold);
-  }
-
-  .pgg-nav-btn:focus-visible {
-    outline: 2px solid var(--color-gold-dark);
-    outline-offset: 2px;
+  .pgg-nav-btn svg {
+    height: 1.15rem;
+    width: 1.15rem;
+    stroke-width: 2.4;
   }
 
   .product-heading h1 {
@@ -10056,7 +10105,7 @@ html.header-primary-hidden .collection-sticky-head {
     /* One shorthand, not `padding` then `padding-inline`: the block values and
        the gutter give-back have to be set together or whichever lands second
        resets the other axis. */
-    padding: 0.55rem var(--section-pad) 0.15rem;
+    padding: 0.55rem var(--section-pad) 0;
   }
 
   .subnav-icon-label {
@@ -10074,11 +10123,19 @@ html.header-primary-hidden .collection-sticky-head {
    see collections.$handle.tsx), not .section-inner directly, since that's
    what now sits as .home-section's preceding sibling. */
 .collection-sticky-head:has(.subnav-icons) + .home-section {
-  padding-top: 4px;
+  padding-top: 0;
 }
 
+/* Flush against the strip: both boxes are pinned (the toolbar at exactly
+   pin + --sticky-head-height), so any margin here is a slit of page
+   scrolling past between them. */
 .collection-sticky-head:has(.subnav-icons) + .home-section .collection-toolbar {
-  margin-top: 0.8rem;
+  margin-top: 0;
+  /* 1px UNDER the strip (it is layered above, z 55 vs 50): two sticky boxes
+     meeting edge to edge can land on different sub-pixel boundaries while
+     scrolling, and iOS paints a flickering hairline of page in the seam. An
+     overlap has no seam. */
+  top: calc(var(--pin) + var(--sticky-head-height, 0px) - 1px);
 }
 
 .subnav-icon {

@@ -14,6 +14,8 @@ const graphqlConfig: IGraphQLConfig = {
         './*.{ts,tsx,js,jsx}',
         './app/**/*.{ts,tsx,js,jsx}',
         '!./app/graphql/**/*.{ts,tsx,js,jsx}',
+        // Admin API mutation (raw fetch, see the file) — not Storefront schema.
+        '!./app/routes/api.data-sale-opt-out.ts',
       ],
     },
 

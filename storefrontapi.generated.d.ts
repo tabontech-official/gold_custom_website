@@ -1280,18 +1280,6 @@ export type ShopByCategoriesQuery = {
   >;
 };
 
-export type HeroFieldsFragment = {
-  fields: Array<
-    Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-      reference?: StorefrontAPI.Maybe<{
-        image?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.Image, 'url' | 'altText'>
-        >;
-      }>;
-    }
-  >;
-};
-
 export type HeroSlideFragment = Pick<StorefrontAPI.Metaobject, 'handle'> & {
   fields: Array<
     Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
@@ -1375,17 +1363,6 @@ export type HeroContentQuery = {
             >;
           }
         >;
-      }
-    >;
-  }>;
-  cover?: StorefrontAPI.Maybe<{
-    fields: Array<
-      Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'> & {
-        reference?: StorefrontAPI.Maybe<{
-          image?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.Image, 'url' | 'altText'>
-          >;
-        }>;
       }
     >;
   }>;
@@ -2677,23 +2654,11 @@ export type SearchPageFragment = {__typename: 'Page'} & Pick<
   'handle' | 'id' | 'title' | 'trackingParameters'
 >;
 
-export type PageInfoFragmentFragment = Pick<
-  StorefrontAPI.PageInfo,
-  'hasNextPage' | 'hasPreviousPage' | 'startCursor' | 'endCursor'
->;
-
 export type RegularSearchQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  endCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
   first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
   term: StorefrontAPI.Scalars['String']['input'];
-  startCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
   productFilters?: StorefrontAPI.InputMaybe<
     Array<StorefrontAPI.ProductFilter> | StorefrontAPI.ProductFilter
   >;
@@ -2763,10 +2728,6 @@ export type RegularSearchQuery = {
           Pick<StorefrontAPI.FilterValue, 'id' | 'label' | 'count' | 'input'>
         >;
       }
-    >;
-    pageInfo: Pick<
-      StorefrontAPI.PageInfo,
-      'hasNextPage' | 'hasPreviousPage' | 'startCursor' | 'endCursor'
     >;
   };
 };
@@ -3014,7 +2975,7 @@ interface GeneratedQueryTypes {
     return: ShopByCategoriesQuery;
     variables: ShopByCategoriesQueryVariables;
   };
-  '#graphql\n  query HeroContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    desktop: metaobject(\n      handle: {type: "web_hero_section", handle: "web-hero-section-ogaqzqnu"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    # Same container shape as desktop, pointing at the portrait (1400x2000)\n    # variants of the same four slides.\n    mobile: metaobject(\n      handle: {type: "web_hero_section", handle: "mobile_hero_section"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    # The banners moved to web_hero_section, but this older entry still supplies\n    # the standalone image DiamondValueSection renders further down the page.\n    cover: metaobject(\n      handle: {type: "hero_content", handle: "hero-content-fbt3hbmk"}\n    ) {\n      ...HeroFields\n    }\n  }\n  #graphql\n  fragment HeroSlide on Metaobject {\n    handle\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n  #graphql\n  fragment HeroFields on Metaobject {\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n': {
+  '#graphql\n  query HeroContent($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    desktop: metaobject(\n      handle: {type: "web_hero_section", handle: "web-hero-section-ogaqzqnu"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n    # Same container shape as desktop, pointing at the portrait (1400x2000)\n    # variants of the same four slides.\n    mobile: metaobject(\n      handle: {type: "web_hero_section", handle: "mobile_hero_section"}\n    ) {\n      fields {\n        key\n        references(first: 10) {\n          nodes {\n            ...HeroSlide\n          }\n        }\n        reference {\n          ...HeroSlide\n        }\n      }\n    }\n  }\n  #graphql\n  fragment HeroSlide on Metaobject {\n    handle\n    fields {\n      key\n      value\n      reference {\n        ... on MediaImage {\n          image {\n            url\n            altText\n          }\n        }\n      }\n    }\n  }\n\n': {
     return: HeroContentQuery;
     variables: HeroContentQueryVariables;
   };
@@ -3094,7 +3055,7 @@ interface GeneratedQueryTypes {
     return: AjaxProductQuery;
     variables: AjaxProductQueryVariables;
   };
-  "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $endCursor: String\n    $first: Int\n    $language: LanguageCode\n    $last: Int\n    $term: String!\n    $startCursor: String\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      after: $endCursor,\n      before: $startCursor,\n      first: $first,\n      last: $last,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: HIDE,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n      pageInfo {\n        ...PageInfoFragment\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n  #graphql\n  fragment PageInfoFragment on PageInfo {\n    hasNextPage\n    hasPreviousPage\n    startCursor\n    endCursor\n  }\n\n": {
+  "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $first: Int\n    $language: LanguageCode\n    $term: String!\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      first: $first,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: HIDE,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n": {
     return: RegularSearchQuery;
     variables: RegularSearchQueryVariables;
   };

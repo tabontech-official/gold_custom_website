@@ -96,7 +96,11 @@ function useHideOnScrollDown(revealAt = 80) {
     let ticking = false;
 
     function measure() {
-      const y = window.scrollY;
+      // Clamp out iOS rubber-band overshoot: past either end, scrollY runs
+      // beyond the document and springs back, flipping the delta sign every
+      // frame — and with it the header and every sticky bar pinned under it.
+      const maxY = document.documentElement.scrollHeight - window.innerHeight;
+      const y = Math.min(Math.max(window.scrollY, 0), Math.max(maxY, 0));
       const delta = y - lastY;
       if (y < revealAt) {
         setHidden(false);

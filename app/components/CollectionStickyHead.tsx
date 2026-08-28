@@ -1,4 +1,4 @@
-import {useLayoutEffect, useRef, type ReactNode} from 'react';
+import {useEffect, useLayoutEffect, useRef, type ReactNode} from 'react';
 
 /**
  * Wraps the collection heading + category icon strip so both stay pinned
@@ -16,7 +16,9 @@ export function CollectionStickyHead({children}: {children: ReactNode}) {
     const setHeight = () =>
       document.documentElement.style.setProperty(
         '--sticky-head-height',
-        `${el.getBoundingClientRect().height}px`,
+        // Whole pixels: a fractional offset puts the toolbar's sticky edge
+        // on a different sub-pixel boundary from this box's bottom edge.
+        `${Math.ceil(el.getBoundingClientRect().height)}px`,
       );
     setHeight();
     const observer = new ResizeObserver(setHeight);
@@ -31,9 +33,45 @@ export function CollectionStickyHead({children}: {children: ReactNode}) {
     };
   }, []);
 
+  // `is-stuck` while the box is pinned. app.css moves it (and the toolbar)
+  // up with the hiding header via a transform, which must not apply while
+  // the box is still in normal flow. A zero-height sentinel sits where the
+  // box's natural top is: once that scrolls above the pin offset, the box is
+  // stuck. IntersectionObserver so nothing runs per scroll frame on iOS.
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    const sentinel = sentinelRef.current;
+    if (!el || !sentinel) return;
+    let observer: IntersectionObserver | undefined;
+    const observe = () => {
+      observer?.disconnect();
+      const pin = parseFloat(getComputedStyle(el).top) || 0;
+      observer = new IntersectionObserver(
+        ([entry]) =>
+          el.classList.toggle(
+            'is-stuck',
+            !entry.isIntersecting && entry.boundingClientRect.top < pin,
+          ),
+        {rootMargin: `-${Math.ceil(pin)}px 0px 0px 0px`},
+      );
+      observer.observe(sentinel);
+    };
+    observe();
+    // The pin offset changes with the breakpoint.
+    window.addEventListener('resize', observe);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', observe);
+    };
+  }, []);
+
   return (
-    <div className="collection-sticky-head" ref={ref}>
-      {children}
-    </div>
+    <>
+      <div ref={sentinelRef} aria-hidden="true" />
+      <div className="collection-sticky-head" ref={ref}>
+        {children}
+      </div>
+    </>
   );
 }
