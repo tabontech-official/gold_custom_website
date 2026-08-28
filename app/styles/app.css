@@ -6013,6 +6013,59 @@ html.header-primary-hidden
   }
 }
 
+/* Phones: lock both bars still.
+
+   The category strip's sticky edge used to sit exactly on the header's bottom
+   edge, so any sub-pixel drift put part of it UNDER the header and Safari
+   repainted the seam every frame. Padding puts real clearance between the
+   two, and nothing on the strip transforms or transitions any more — when the
+   header hides it just re-pins at 0 in one step. The filter bar leaves the
+   sticky stack entirely: a fixed bar along the bottom of the screen, which
+   never moves relative to the viewport at all. !important because the
+   desktop stacking rules above use long compound selectors that would
+   otherwise outrank this block. */
+@media (max-width: 48em) {
+  .collection-sticky-head {
+    padding: 0.5rem 0 0.4rem;
+    transition: none;
+  }
+
+  html.header-primary-hidden .collection-sticky-head {
+    --pin: 0px;
+  }
+
+  html.header-primary-hidden .collection-sticky-head.is-stuck {
+    transform: none;
+  }
+
+  .collection-toolbar {
+    border-bottom: 0;
+    bottom: 0 !important;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.08);
+    left: 0;
+    margin: 0 !important;
+    padding: 0.6rem var(--section-pad)
+      calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    position: fixed !important;
+    right: 0;
+    top: auto !important;
+    transform: none !important;
+    transition: none;
+    z-index: 60;
+  }
+
+  /* Opens upward now that the trigger sits at the bottom of the screen. */
+  .collection-toolbar .collection-sort-popover {
+    bottom: calc(100% + 0.5rem);
+    top: auto;
+  }
+
+  /* Room under the grid so the fixed bar never covers the last row. */
+  .collection {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .collection-toolbar button {
   align-items: center;
   background: none;
