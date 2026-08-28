@@ -92,6 +92,15 @@ function useHideOnScrollDown(revealAt = 80) {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    // Touch devices keep the header pinned. iOS Safari's collapsing address
+    // bar, rubber-band bounce and compositor-thread momentum scrolling all
+    // feed reversing scroll deltas into this hook, so the header flipped
+    // hidden/shown many times a second — and every flip re-pinned the sticky
+    // category strip and filter bar a frame late, which is the "vibrating"
+    // collection page on iPhone. A header that never moves gives them a
+    // constant offset and nothing to chase.
+    if (window.matchMedia('(hover: none)').matches) return;
+
     let lastY = window.scrollY;
     let ticking = false;
 
@@ -134,6 +143,36 @@ function useHideOnScrollDown(revealAt = 80) {
   return hidden;
 }
 
+/**
+ * Adds `page-scrolled` to <html> once the viewport has moved past the
+ * announcement bar, so mobile collection pages can collapse it and reclaim
+ * its height (see app.css, --announce-h).
+ *
+ * An IntersectionObserver against a sentinel the announcement's own height,
+ * NOT a scroll listener: it fires once per crossing, off the main thread. A
+ * per-frame scroll handler here would put a layout change back on the same
+ * thread as the fixed bars below it, which is what made the collection page
+ * vibrate on iOS in the first place. The sentinel's height also gives the
+ * toggle natural hysteresis — it flips at one edge, not on every pixel.
+ */
+function useScrolledPastAnnouncement(ref: React.RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(([entry]) =>
+      document.documentElement.classList.toggle(
+        'page-scrolled',
+        !entry.isIntersecting,
+      ),
+    );
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      document.documentElement.classList.remove('page-scrolled');
+    };
+  }, [ref]);
+}
+
 export function Header({
   header,
   isLoggedIn,
@@ -142,6 +181,8 @@ export function Header({
 }: HeaderProps) {
   const {shop} = header;
   const hideStickyRow = useHideOnScrollDown();
+  const topSentinelRef = useRef<HTMLDivElement>(null);
+  useScrolledPastAnnouncement(topSentinelRef);
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
   //
@@ -159,6 +200,14 @@ export function Header({
 
   return (
     <>
+      {/* Sits at document top, the announcement bar's own height. Once it
+          scrolls out of view the bar collapses — see
+          useScrolledPastAnnouncement. */}
+      <div
+        aria-hidden="true"
+        className="top-scroll-sentinel"
+        ref={topSentinelRef}
+      />
       {/* Tier 1 — announcement micro-banner with golden shimmer */}
       <div className="announcement-bar" aria-live="polite">
         {/* Same booking modal the product page uses, minus product context. */}

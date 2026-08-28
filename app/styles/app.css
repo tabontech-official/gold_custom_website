@@ -6013,57 +6013,128 @@ html.header-primary-hidden
   }
 }
 
-/* Phones: lock both bars still.
+/* Phones: NOTHING on this page is sticky.
 
-   The category strip's sticky edge used to sit exactly on the header's bottom
-   edge, so any sub-pixel drift put part of it UNDER the header and Safari
-   repainted the seam every frame. Padding puts real clearance between the
-   two, and nothing on the strip transforms or transitions any more — when the
-   header hides it just re-pins at 0 in one step. The filter bar leaves the
-   sticky stack entirely: a fixed bar along the bottom of the screen, which
-   never moves relative to the viewport at all. !important because the
-   desktop stacking rules above use long compound selectors that would
-   otherwise outrank this block. */
+   Three passes at making the category strip and the filter bar hold still as
+   sticky boxes all failed on iOS. WebKit positions sticky elements on the
+   compositor thread while their offsets are recomputed on the main thread, so
+   any pinned box whose `top` is not a constant gets redrawn a frame late on
+   every scroll frame — the vibration. Padding, rounding the measured heights,
+   collapsing the two boxes into one wrapper and dropping every transform each
+   reduced it and none removed it, because the sticky recalculation itself is
+   the cause.
+
+   So the strip is plain in-flow content here: it scrolls away with the page
+   like any other block and cannot be repositioned mid-scroll, because there
+   is nothing to reposition. Categories stay reachable — they sit at the top
+   of the page, one flick away — and the filter bar, the control that has to
+   stay in reach, is a FIXED bar along the bottom of the screen instead.
+   `fixed` is anchored to the viewport, not to a scrolling ancestor, so it
+   never participates in the sticky machinery at all.
+
+   The header keeps its own `position: sticky; top: 0`, which is the one
+   stable case: a zero offset that never changes, and (see
+   useHideOnScrollDown in Header.tsx) it no longer hides on touch devices, so
+   nothing below it ever has to follow it.
+
+   !important because the desktop stacking rules above use long compound
+   selectors that would otherwise outrank this block. */
 @media (max-width: 48em) {
-  .collection-sticky-head {
-    padding: 0.5rem 0 0.4rem;
-    transition: none;
+  /* The whole top stack is FIXED, as one block: announcement, header row,
+     category strip. It has to be all three or none — the announcement bar
+     scrolls away in normal flow, which moves the header's bottom edge for
+     the first ~24px of scroll, and anything fixed underneath would overlap
+     it there and then gap. Fixed to the viewport, every offset below is a
+     constant, so there is nothing for WebKit to recompute mid-scroll.
+
+     Heights are explicit rather than measured: 1.5rem announcement +
+     3.65rem header row = 5.15rem, so the strip's own top never depends on a
+     value that can arrive a frame late. Only the strip's HEIGHT is measured
+     (--sticky-head-height, once at mount and on resize) because the circles
+     and their labels reflow with the text.
+
+     Scoped with :has() so only collection pages pay for it — every other
+     mobile page keeps the announcement scrolling away as before. */
+  /* Every band's offset derives from this one value, so collapsing the
+     announcement moves the whole stack in a single step. `page-scrolled` is
+     set by an IntersectionObserver in Header.tsx once the viewport passes the
+     bar — one discrete class change, never a per-frame recalculation. */
+  body:has(.collection-sticky-head) {
+    --announce-h: 1.5rem;
   }
 
-  html.header-primary-hidden .collection-sticky-head {
-    --pin: 0px;
+  html.page-scrolled body:has(.collection-sticky-head) {
+    --announce-h: 0rem;
   }
 
-  html.header-primary-hidden .collection-sticky-head.is-stuck {
-    transform: none;
-  }
-
-  .collection-toolbar {
-    border-bottom: 0;
-    bottom: 0 !important;
-    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.08);
+  body:has(.collection-sticky-head) .announcement-bar {
+    height: var(--announce-h);
     left: 0;
-    margin: 0 !important;
-    padding: 0.6rem var(--section-pad)
-      calc(0.6rem + env(safe-area-inset-bottom, 0px));
-    position: fixed !important;
+    min-height: 0;
+    /* Collapses to nothing rather than display:none — the height IS the
+       offset every band below reads, so one value moves all of them. */
+    overflow: hidden;
+    padding-block: 0;
+    position: fixed;
     right: 0;
-    top: auto !important;
+    top: 0;
+    z-index: 901;
+  }
+
+  body:has(.collection-sticky-head) .header-primary {
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: var(--announce-h);
+  }
+
+  .collection-sticky-head {
+    background: #fff;
+    left: 0;
+    padding: 0.5rem 0 0.4rem;
+    position: fixed;
+    right: 0;
+    top: calc(var(--announce-h) + 3.65rem);
     transform: none !important;
     transition: none;
-    z-index: 60;
+    z-index: 55;
   }
 
-  /* Opens upward now that the trigger sits at the bottom of the screen. */
-  .collection-toolbar .collection-sort-popover {
-    bottom: calc(100% + 0.5rem);
-    top: auto;
+  /* Last band of the fixed stack, directly under the strip. --sticky-head-height
+     is the strip's measured height (once at mount and on resize), so the bar
+     sits flush against it whether the circle labels wrap to one line or two. */
+  .collection-toolbar {
+    background: #fff;
+    bottom: auto !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+    left: 0;
+    margin: 0 !important;
+    padding: 0.5rem var(--section-pad);
+    position: fixed !important;
+    right: 0;
+    top: calc(var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px)) !important;
+    transform: none !important;
+    transition: none;
+    z-index: 54;
   }
 
-  /* Room under the grid so the fixed bar never covers the last row. */
-  .collection {
-    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+  /* Clears the whole fixed stack: announcement + header + strip + this bar.
+     Without it the page would start underneath them. */
+  body:has(.collection-sticky-head) .page-body {
+    padding-top: calc(
+      var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) +
+        var(--toolbar-height, 0px)
+    );
   }
+}
+
+.top-scroll-sentinel {
+  height: 1.5rem;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 1px;
 }
 
 .collection-toolbar button {
