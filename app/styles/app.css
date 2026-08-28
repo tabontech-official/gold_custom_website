@@ -10074,6 +10074,18 @@ html.header-primary-hidden
   touch-action: pan-x pan-y pinch-zoom;
 }
 
+/* iOS Safari can jitter a momentum scroller when it is nested inside a
+   transformed sticky element. Keep this rail on the browser's plain scroll
+   path; the collection header rule below also removes the competing motion. */
+@media (max-width: 47.99em) {
+  @supports (-webkit-touch-callout: none) {
+    .subnav-icons .dragscroll-viewport {
+      -webkit-overflow-scrolling: auto;
+      scroll-behavior: auto;
+    }
+  }
+}
+
 .subnav-icons .dragscroll-track {
   /* flex-start, not the default stretch: a two-line label used to make its
      whole tile taller than the rest, and the circle stretched with it. */
@@ -10136,6 +10148,21 @@ html.header-primary-hidden
      scrolling, and iOS paints a flickering hairline of page in the seam. An
      overlap has no seam. */
   top: calc(var(--pin) + var(--sticky-head-height, 0px) - 1px);
+}
+
+/* On iPhone Safari, do not animate a sticky stack in response to the page
+   scroll. The header, circular category rail, and filter bar then share one
+   stable compositing path instead of vibrating as their transforms resync. */
+@media (max-width: 47.99em) {
+  @supports (-webkit-touch-callout: none) {
+    body:has(.collection) .header-primary,
+    body:has(.collection) .collection-sticky-head,
+    body:has(.collection) .collection-toolbar {
+      transform: none;
+      transition: none;
+      will-change: auto;
+    }
+  }
 }
 
 .subnav-icon {
