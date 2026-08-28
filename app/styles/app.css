@@ -10077,14 +10077,6 @@ html.header-primary-hidden
 /* iOS Safari can jitter a momentum scroller when it is nested inside a
    transformed sticky element. Keep this rail on the browser's plain scroll
    path; the collection header rule below also removes the competing motion. */
-@media (max-width: 47.99em) {
-  @supports (-webkit-touch-callout: none) {
-    .subnav-icons .dragscroll-viewport {
-      -webkit-overflow-scrolling: auto;
-      scroll-behavior: auto;
-    }
-  }
-}
 
 .subnav-icons .dragscroll-track {
   /* flex-start, not the default stretch: a two-line label used to make its
