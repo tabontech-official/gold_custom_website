@@ -16,7 +16,6 @@ export async function loader({request, context}: Route.LoaderArgs) {
     status: 200,
     headers: {
       'Content-Type': 'text/plain',
-
       'Cache-Control': `max-age=${60 * 60 * 24}`,
     },
   });
@@ -29,18 +28,12 @@ function robotsTxtData({url, shopId}: {shopId?: string; url?: string}) {
 User-agent: *
 ${generalDisallowRules({sitemapUrl, shopId})}
 
-# Googlebot and Googlebot-Image already inherit the "*" group above — a named
-# user-agent group is only needed when a bot should get DIFFERENT rules, and
-# neither does. These are declared anyway, explicitly allowing product pages
-# and images, because Merchant Center's crawlability check names both by
-# token and a naive implementation may not credit the wildcard fallback.
 User-agent: Googlebot
 ${generalDisallowRules({sitemapUrl, shopId})}
 
 User-agent: Googlebot-Image
 ${generalDisallowRules({sitemapUrl, shopId})}
 
-# Google adsbot ignores robots.txt unless specifically named!
 User-agent: adsbot-google
 Disallow: /checkouts/
 Disallow: /checkout
@@ -73,20 +66,6 @@ ${aiCrawlerRules({shopId})}
 `.trim();
 }
 
-/**
- * AI crawlers are explicitly allowed so the catalog can surface in AI answers
- * and agentic shopping. They're named individually because a bot with its own
- * User-agent group ignores the wildcard `*` group entirely — so without these,
- * "allowed" would depend on each vendor's default.
- *
- * Two kinds, grouped separately so blocking the training half later is a
- * one-line change:
- *   - answer/search bots fetch a page to cite it, and link back
- *   - training bots ingest content for model training and send no traffic
- *
- * Google-Extended and Applebot-Extended are AI-training opt-out tokens only —
- * they do not affect Googlebot/Applebot search crawling.
- */
 function aiCrawlerRules({shopId}: {shopId?: string}) {
   const answerBots = [
     'OAI-SearchBot',
@@ -96,6 +75,8 @@ function aiCrawlerRules({shopId}: {shopId?: string}) {
     'Claude-User',
     'Claude-SearchBot',
     'Amazonbot',
+    'YouBot',         // You.com AI Search
+    'Diffbot'         // Often used to parse e-commerce product data for graphs
   ];
   const trainingBots = [
     'GPTBot',
@@ -105,11 +86,10 @@ function aiCrawlerRules({shopId}: {shopId?: string}) {
     'Applebot-Extended',
     'CCBot',
     'Meta-ExternalAgent',
+    'cohere-ai',      // Cohere training models
+    'Bytespider'      // ByteDance / TikTok AI
   ];
 
-  // No sitemapUrl here on purpose: `Sitemap:` is a non-group directive, so
-  // declaring it once in the `*` group covers every crawler. Repeating it per
-  // bot would add a dozen duplicate lines for no benefit.
   const group = (agent: string) =>
     `User-agent: ${agent}\n${generalDisallowRules({shopId})}`;
 
@@ -121,15 +101,6 @@ function aiCrawlerRules({shopId}: {shopId?: string}) {
   ].join('\n\n');
 }
 
-/**
- * This function generates disallow rules that generally follow what Shopify's
- * Online Store has as defaults for their robots.txt
- *
- * One deliberate departure: Shopify's default blocks `/policies/`. We allow it.
- * Shipping, returns and warranty are exactly the pages an AI answer engine
- * needs to cite when someone asks "what's their return policy" — blocking them
- * means the answer gets guessed or sourced from a competitor.
- */
 function generalDisallowRules({
   shopId,
   sitemapUrl,
@@ -137,7 +108,11 @@ function generalDisallowRules({
   shopId?: string;
   sitemapUrl?: string;
 }) {
-  return `Disallow: /admin
+  return `Allow: /products/
+Allow: /collections/
+Allow: /pages/
+Allow: /policies/
+Disallow: /admin
 Disallow: /cart
 Disallow: /orders
 Disallow: /checkouts/
