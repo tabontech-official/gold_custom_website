@@ -55,6 +55,9 @@ export default async function handleRequest(
       // Reputon renders each clip in TikTok's own player iframe
       // (tiktok.com/player/v1/<id>).
       'https://www.tiktok.com',
+      // fbevents.js opens a hidden facebook.com iframe as a cookie bridge for
+      // ad attribution matching.
+      'https://www.facebook.com',
     ],
     // Hosted product videos are served from the store's own domain
     // (e.g. goldcustom.com/cdn/shop/videos/...), not cdn.shopify.com.
@@ -99,6 +102,9 @@ export default async function handleRequest(
       'https://www.facebook.com',
       'https://stats.g.doubleclick.net',
       'https://www.google.com',
+      // Google Ads remarketing beacon (ga-audiences) fires at the visitor's
+      // own regional Google domain, not google.com.
+      'https://www.google.com.pk',
       'data:',
     ],
     // Google Fonts (stylesheet + font files).

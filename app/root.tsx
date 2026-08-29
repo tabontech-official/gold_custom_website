@@ -385,6 +385,11 @@ export function Layout({children}: {children?: React.ReactNode}) {
         {tagBootstrap && (
           <script
             nonce={nonce}
+            // CSP nonce-hiding: the browser wipes the `nonce` attribute after
+            // parsing so injected scripts can't read it back out. React's
+            // hydration check reads that emptied attribute and warns, even
+            // though the server sent it correctly.
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{__html: tagBootstrap}}
           />
         )}
