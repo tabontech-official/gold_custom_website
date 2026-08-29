@@ -259,6 +259,27 @@ function playableSources(sources: NonNullable<GalleryMedia['sources']>) {
   return mp4.length ? mp4 : sources;
 }
 
+/**
+ * Same autoplay deal as the <video> above, except an embed only obeys query
+ * params. Shopify's ExternalVideo host is either YOUTUBE or VIMEO, so both
+ * spellings of "muted" go on - each provider ignores the other's, and that is
+ * cheaper than reading `host` back through the gallery's flat media shape.
+ * `playsinline` keeps iOS from hijacking the whole screen on play.
+ */
+function autoplayEmbed(embedUrl: string) {
+  try {
+    const url = new URL(embedUrl);
+    url.searchParams.set('autoplay', '1');
+    url.searchParams.set('mute', '1'); // YouTube
+    url.searchParams.set('muted', '1'); // Vimeo
+    url.searchParams.set('playsinline', '1');
+    return url.toString();
+  } catch {
+    // A relative or malformed embedUrl is not worth crashing the gallery over.
+    return embedUrl;
+  }
+}
+
 function GalleryThumb({media: m, title}: {media: GalleryMedia; title: string}) {
   const thumbUrl = m.kind === 'image' ? m.image?.url : m.thumbUrl;
 
@@ -411,7 +432,7 @@ function GalleryTile({
       ) : m.kind === 'external' && m.embedUrl ? (
         <iframe
           className="pgg-media"
-          src={m.embedUrl}
+          src={autoplayEmbed(m.embedUrl)}
           title={m.alt || title}
           allow="autoplay; encrypted-media; picture-in-picture"
           allowFullScreen
@@ -462,11 +483,25 @@ function VideoPlayer({
   }, [hasMp4, hlsSource?.url]);
 
   return (
-    // eslint-disable-next-line jsx-a11y/media-has-caption
+    // No media-has-caption disable needed: the player is muted, so there is no
+    // audio track to caption and the rule stands down on its own.
     <video
       ref={videoRef}
       className="pgg-media"
       controls
+      /**
+       * The tile is only mounted while the video is the active stage item
+       * (see the stage stack above), so "mounted" already means "the shopper
+       * just landed on the video" - the native attribute fires exactly then
+       * and no observer is needed.
+       *
+       * `muted` is not a preference, it is the price of admission: every
+       * browser blocks an unmuted autoplay, and a blocked <video> just sits
+       * on its poster. `controls` is already here, so sound is one click
+       * away - and it doubles as the WCAG 2.2.2 pause control.
+       */
+      autoPlay
+      muted
       playsInline
       preload={preload}
       poster={poster || undefined}
