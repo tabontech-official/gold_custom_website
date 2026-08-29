@@ -95,13 +95,12 @@ export function GoogleReviewsSection() {
   }, []);
 
   return (
-    <section className="home-section google-reviews-section">
+    <section
+      className="home-section google-reviews-section"
+      aria-label="Google reviews"
+    >
       <div className="section-inner">
-        <div
-          className="google-reviews-stage"
-          aria-label="Google reviews grid"
-          ref={stage}
-        >
+        <div className="google-reviews-stage" ref={stage}>
           <div
             className={ELFSIGHT_WIDGET_ID}
             data-elfsight-app-lazy=""
