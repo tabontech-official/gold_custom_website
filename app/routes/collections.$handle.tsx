@@ -38,6 +38,7 @@ import {
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
+import {DescriptionAccordions} from '~/components/DescriptionAccordions';
 import {extractFaqsFromDescription} from '~/lib/description';
 import {
   buildFaqJsonLd,
@@ -640,7 +641,7 @@ export default function Collection() {
 
       {descriptionRest && (
         <section
-          className="home-section"
+          className="home-section collection-about"
           aria-labelledby="collection-description-title"
         >
           <div className="section-inner">
@@ -649,14 +650,16 @@ export default function Collection() {
                 About {collection.title}
               </h2>
             </div>
-            {/* Straight prose, not an accordion: the copy is headings and
-                paragraphs meant to be read. `product-description-intro` is
-                the existing style for exactly this — merchant rich text at
-                body size, with gold list markers and links. */}
-            <div
-              className="product-description-intro"
-              dangerouslySetInnerHTML={{__html: descriptionRest}}
-            />
+            {/* Same accordion the product page uses for its own description
+                (`headingTag="h5"` there; collection copy is authored with
+                `h2`). A flat wall of prose under a category grid is what
+                read as cheap — a merchant's 6-heading collection write-up
+                rendered as 6,000 characters of unbroken text. This keeps the
+                intro visible and collapses each h2 section behind its own
+                "+", the same reveal a shopper already knows from the product
+                page. `collection-about` narrows the whole stack to a reading
+                column and adds the section's own rule/divider — see app.css. */}
+            <DescriptionAccordions html={descriptionRest} headingTag="h2" />
           </div>
         </section>
       )}

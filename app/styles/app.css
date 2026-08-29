@@ -11019,6 +11019,32 @@ html.header-primary-hidden
   text-shadow: none;
 }
 
+/* Collection "About" copy. A hairline off the products grid above (the same
+   divider every other section boundary on the site uses), a short gold rule
+   under the heading — the one flourish, sized to read as a mark rather than
+   a line — and the prose narrowed to a reading column instead of stretching
+   the full section width, which is what made it look unfinished on a wide
+   screen: 150-character lines with nothing to anchor them. */
+.collection-about {
+  border-top: 1px solid var(--color-border);
+}
+
+.collection-about .editorial-heading::after {
+  content: '';
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin: 0.75rem auto 0;
+  background: var(--color-gold-dark);
+}
+
+/* Narrows the whole accordion stack (intro + every section), not just the
+   intro paragraph — DescriptionAccordions wraps both in .product-accordions. */
+.collection-about .product-accordions {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
 .editorial-heading-row {
   position: relative;
 }
