@@ -1165,7 +1165,7 @@ export type FeaturedCollectionFragment = Pick<
   >;
   products: {
     nodes: Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
+      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
         priceRange: {
           minVariantPrice: Pick<
             StorefrontAPI.MoneyV2,
@@ -1178,8 +1178,14 @@ export type FeaturedCollectionFragment = Pick<
             'id' | 'url' | 'altText' | 'width' | 'height'
           >
         >;
+        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
         selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+          }
         >;
       }
     >;
@@ -1199,7 +1205,7 @@ export type FeaturedCollectionQuery = {
       >;
       products: {
         nodes: Array<
-          Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
+          Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
             priceRange: {
               minVariantPrice: Pick<
                 StorefrontAPI.MoneyV2,
@@ -1212,8 +1218,16 @@ export type FeaturedCollectionQuery = {
                 'id' | 'url' | 'altText' | 'width' | 'height'
               >
             >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
             selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
             >;
           }
         >;
@@ -1370,7 +1384,7 @@ export type HeroContentQuery = {
 
 export type RecommendedProductFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'title' | 'handle' | 'productType'
+  'id' | 'title' | 'handle' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
@@ -1379,8 +1393,14 @@ export type RecommendedProductFragment = Pick<
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
 };
 
@@ -1392,7 +1412,10 @@ export type RecommendedProductsQueryVariables = StorefrontAPI.Exact<{
 export type RecommendedProductsQuery = {
   products: {
     nodes: Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'productType'> & {
+      Pick<
+        StorefrontAPI.Product,
+        'id' | 'title' | 'handle' | 'productType' | 'tags'
+      > & {
         category?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.TaxonomyCategory, 'name'>
         >;
@@ -1408,8 +1431,14 @@ export type RecommendedProductsQuery = {
             'id' | 'url' | 'altText' | 'width' | 'height'
           >
         >;
+        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
         selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+          }
         >;
       }
     >;
@@ -1418,7 +1447,7 @@ export type RecommendedProductsQuery = {
 
 export type BestSellingProductFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'title' | 'handle' | 'productType'
+  'id' | 'title' | 'handle' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
@@ -1427,8 +1456,14 @@ export type BestSellingProductFragment = Pick<
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
 };
 
@@ -1444,7 +1479,7 @@ export type BestSellingProductsQuery = {
         nodes: Array<
           Pick<
             StorefrontAPI.Product,
-            'id' | 'title' | 'handle' | 'productType'
+            'id' | 'title' | 'handle' | 'productType' | 'tags'
           > & {
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
@@ -1461,8 +1496,16 @@ export type BestSellingProductsQuery = {
                 'id' | 'url' | 'altText' | 'width' | 'height'
               >
             >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
             selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
             >;
           }
         >;
@@ -1473,7 +1516,7 @@ export type BestSellingProductsQuery = {
 
 export type GenderArrivalProductFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'title' | 'handle' | 'productType'
+  'id' | 'title' | 'handle' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
@@ -1482,8 +1525,14 @@ export type GenderArrivalProductFragment = Pick<
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
 };
 
@@ -1498,7 +1547,7 @@ export type NewArrivalsByGenderQuery = {
       nodes: Array<
         Pick<
           StorefrontAPI.Product,
-          'id' | 'title' | 'handle' | 'productType'
+          'id' | 'title' | 'handle' | 'productType' | 'tags'
         > & {
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
@@ -1515,8 +1564,14 @@ export type NewArrivalsByGenderQuery = {
               'id' | 'url' | 'altText' | 'width' | 'height'
             >
           >;
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
           selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+            }
           >;
         }
       >;
@@ -1527,7 +1582,7 @@ export type NewArrivalsByGenderQuery = {
       nodes: Array<
         Pick<
           StorefrontAPI.Product,
-          'id' | 'title' | 'handle' | 'productType'
+          'id' | 'title' | 'handle' | 'productType' | 'tags'
         > & {
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
@@ -1544,8 +1599,14 @@ export type NewArrivalsByGenderQuery = {
               'id' | 'url' | 'altText' | 'width' | 'height'
             >
           >;
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
           selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+            }
           >;
         }
       >;
@@ -1594,8 +1655,14 @@ export type ProductNodeFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'tags'
 > & {
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
   variants: {
     nodes: Array<Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>>;
@@ -1618,8 +1685,14 @@ export type CollectionProductsQuery = {
   products: {
     nodes: Array<
       Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
         selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+          }
         >;
         variants: {
           nodes: Array<
@@ -1685,8 +1758,14 @@ export type CollectionByHandleQuery = {
     products: {
       nodes: Array<
         Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
           selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+            }
           >;
           variants: {
             nodes: Array<
@@ -1827,14 +1906,20 @@ export type MoneyProductItemFragment = Pick<
 
 export type ProductItemFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'handle' | 'title' | 'productType'
+  'id' | 'handle' | 'title' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'altText' | 'url' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
   priceRange: {
     minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
@@ -1972,7 +2057,7 @@ export type CollectionQuery = {
         nodes: Array<
           Pick<
             StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'productType'
+            'id' | 'handle' | 'title' | 'productType' | 'tags'
           > & {
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
@@ -1983,8 +2068,16 @@ export type CollectionQuery = {
                 'id' | 'altText' | 'url' | 'width' | 'height'
               >
             >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
             selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
             >;
             priceRange: {
               minVariantPrice: Pick<
@@ -2007,7 +2100,7 @@ export type CollectionQuery = {
         nodes: Array<
           Pick<
             StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'productType'
+            'id' | 'handle' | 'title' | 'productType' | 'tags'
           > & {
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
@@ -2018,8 +2111,16 @@ export type CollectionQuery = {
                 'id' | 'altText' | 'url' | 'width' | 'height'
               >
             >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
             selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+              Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
             >;
             priceRange: {
               minVariantPrice: Pick<
@@ -2517,7 +2618,7 @@ export type ProductQuery = {
 
 export type RecommendedItemFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'title' | 'handle' | 'productType'
+  'id' | 'title' | 'handle' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
@@ -2526,8 +2627,14 @@ export type RecommendedItemFragment = Pick<
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
 };
 
@@ -2542,7 +2649,10 @@ export type ProductRecommendationsQueryVariables = StorefrontAPI.Exact<{
 export type ProductRecommendationsQuery = {
   productRecommendations?: StorefrontAPI.Maybe<
     Array<
-      Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'productType'> & {
+      Pick<
+        StorefrontAPI.Product,
+        'id' | 'title' | 'handle' | 'productType' | 'tags'
+      > & {
         category?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.TaxonomyCategory, 'name'>
         >;
@@ -2558,8 +2668,14 @@ export type ProductRecommendationsQuery = {
             'id' | 'url' | 'altText' | 'width' | 'height'
           >
         >;
+        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
         selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+          Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+          }
         >;
       }
     >
@@ -2897,7 +3013,7 @@ export type SitemapProductCategoriesQuery = {
 
 export type WishlistProductFragment = Pick<
   StorefrontAPI.Product,
-  'id' | 'title' | 'handle' | 'productType'
+  'id' | 'title' | 'handle' | 'productType' | 'tags'
 > & {
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
@@ -2906,8 +3022,14 @@ export type WishlistProductFragment = Pick<
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
   >;
+  collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+    Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+      price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+      compareAtPrice?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+      >;
+    }
   >;
 };
 
@@ -2919,7 +3041,10 @@ export type WishlistProductQueryVariables = StorefrontAPI.Exact<{
 
 export type WishlistProductQuery = {
   product?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'productType'> & {
+    Pick<
+      StorefrontAPI.Product,
+      'id' | 'title' | 'handle' | 'productType' | 'tags'
+    > & {
       category?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.TaxonomyCategory, 'name'>
       >;
@@ -2929,8 +3054,14 @@ export type WishlistProductQuery = {
       featuredImage?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
       >;
+      collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
       selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-        Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'>
+        Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+          price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+          compareAtPrice?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+          >;
+        }
       >;
     }
   >;
@@ -2969,7 +3100,7 @@ interface GeneratedQueryTypes {
     return: StoreRobotsQuery;
     variables: StoreRobotsQueryVariables;
   };
-  '#graphql\n  fragment FeaturedCollection on Collection {\n    id\n    title\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    handle\n    # No sortKey: the default is COLLECTION_DEFAULT, which is the collection\'s\n    # OWN order — the manual arrangement set in the admin. Naming MANUAL here\n    # instead would break the rail the day someone switches "All" to sort by\n    # best-selling or price, because MANUAL returns nothing then.\n    #\n    # 24, not 12: the rail reveals RAIL_BATCH (8) at a time as you scroll, so\n    # 12 ran dry after a single reveal.\n    products(first: 24) {\n      nodes {\n        id\n        title\n        handle\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n        }\n      }\n    }\n  }\n  query FeaturedCollection($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "all") {\n      ...FeaturedCollection\n    }\n  }\n': {
+  '#graphql\n  fragment FeaturedCollection on Collection {\n    id\n    title\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    handle\n    # No sortKey: the default is COLLECTION_DEFAULT, which is the collection\'s\n    # OWN order — the manual arrangement set in the admin. Naming MANUAL here\n    # instead would break the rail the day someone switches "All" to sort by\n    # best-selling or price, because MANUAL returns nothing then.\n    #\n    # 24, not 12: the rail reveals RAIL_BATCH (8) at a time as you scroll, so\n    # 12 ran dry after a single reveal.\n    products(first: 24) {\n      nodes {\n        id\n        title\n        handle\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n  query FeaturedCollection($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "all") {\n      ...FeaturedCollection\n    }\n  }\n': {
     return: FeaturedCollectionQuery;
     variables: FeaturedCollectionQueryVariables;
   };
@@ -2981,15 +3112,15 @@ interface GeneratedQueryTypes {
     return: HeroContentQuery;
     variables: HeroContentQueryVariables;
   };
-  "#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 24, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...RecommendedProduct\n      }\n    }\n  }\n": {
+  "#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    products(first: 24, sortKey: UPDATED_AT, reverse: true) {\n      nodes {\n        ...RecommendedProduct\n      }\n    }\n  }\n": {
     return: RecommendedProductsQuery;
     variables: RecommendedProductsQueryVariables;
   };
-  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "best-sellers") {\n      handle\n      products(first: 24) {\n        nodes {\n          ...BestSellingProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "best-sellers") {\n      handle\n      products(first: 24) {\n        nodes {\n          ...BestSellingProduct\n        }\n      }\n    }\n  }\n': {
     return: BestSellingProductsQuery;
     variables: BestSellingProductsQueryVariables;
   };
-  '#graphql\n  fragment GenderArrivalProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query NewArrivalsByGender($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    womens: collection(handle: "womens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n    mens: collection(handle: "mens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment GenderArrivalProduct on Product {\n    id\n    title\n    handle\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query NewArrivalsByGender($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    womens: collection(handle: "womens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n    mens: collection(handle: "mens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n  }\n': {
     return: NewArrivalsByGenderQuery;
     variables: NewArrivalsByGenderQueryVariables;
   };
@@ -2997,7 +3128,7 @@ interface GeneratedQueryTypes {
     return: HomeArticlesQuery;
     variables: HomeArticlesQueryVariables;
   };
-  '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
+  '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          # Card badges. Tags drive Karat/Diamond and best-sellers\n          # membership drives Best Seller. See cardBadges() in\n          # ProductItem.tsx for why only those, and only from here.\n          tags\n          collections(first: 15) {\n            nodes {\n              handle\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            # Card badges: a Sale badge must come from a real\n            # compare-at price, never from a tag someone typed.\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
   };
@@ -3005,7 +3136,7 @@ interface GeneratedQueryTypes {
     return: MenuDisplayProductsQuery;
     variables: MenuDisplayProductsQueryVariables;
   };
-  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
+  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };
@@ -3029,7 +3160,7 @@ interface GeneratedQueryTypes {
     return: ParentCollectionContentQuery;
     variables: ParentCollectionContentQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };
@@ -3049,7 +3180,7 @@ interface GeneratedQueryTypes {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };
-  "#graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n": {
+  "#graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n": {
     return: ProductRecommendationsQuery;
     variables: ProductRecommendationsQueryVariables;
   };
@@ -3077,7 +3208,7 @@ interface GeneratedQueryTypes {
     return: SitemapProductCategoriesQuery;
     variables: SitemapProductCategoriesQueryVariables;
   };
-  "#graphql\n  fragment WishlistProduct on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n    }\n  }\n  query WishlistProduct(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...WishlistProduct\n    }\n  }\n": {
+  "#graphql\n  fragment WishlistProduct on Product {\n    id\n    title\n    handle\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query WishlistProduct(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...WishlistProduct\n    }\n  }\n": {
     return: WishlistProductQuery;
     variables: WishlistProductQueryVariables;
   };

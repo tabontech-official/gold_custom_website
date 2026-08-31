@@ -20,9 +20,28 @@ export async function loader({request, context}: any) {
           title
           handle
           tags
+          # Card badges. Tags drive Karat/Diamond and best-sellers
+          # membership drives Best Seller. See cardBadges() in
+          # ProductItem.tsx for why only those, and only from here.
+          tags
+          collections(first: 15) {
+            nodes {
+              handle
+            }
+          }
           selectedOrFirstAvailableVariant {
             id
             availableForSale
+            # Card badges: a Sale badge must come from a real
+            # compare-at price, never from a tag someone typed.
+            price {
+              amount
+              currencyCode
+            }
+            compareAtPrice {
+              amount
+              currencyCode
+            }
           }
           variants(first: 1) {
             nodes {
@@ -123,9 +142,28 @@ export async function loader({request, context}: any) {
         title
         handle
         tags
+        # Card badges. Tags drive Karat/Diamond and best-sellers
+        # membership drives Best Seller. See cardBadges() in
+        # ProductItem.tsx for why only those, and only from here.
+        tags
+        collections(first: 15) {
+          nodes {
+            handle
+          }
+        }
         selectedOrFirstAvailableVariant {
           id
           availableForSale
+          # Card badges: a Sale badge must come from a real
+          # compare-at price, never from a tag someone typed.
+          price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
+            amount
+            currencyCode
+          }
         }
         variants(first: 1) {
           nodes {

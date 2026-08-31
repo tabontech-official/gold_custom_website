@@ -78,17 +78,29 @@ function UtilityMessage() {
 }
 
 /**
- * True once the visitor has scrolled DOWN past `revealAt`; flips back to
- * false the moment they scroll up at all, or whenever they're still within
- * `revealAt` of the top (so the sticky row never hides on the small bounce
- * scrolls a page load or an anchor jump can produce).
+ * True once the visitor has scrolled DOWN past the header's own flow space;
+ * flips back to false the moment they scroll up at all.
  *
- * rAF-throttled — the scroll listener itself never runs more than once per
- * frame, however fast `scroll` events fire — and a small dead zone (4px)
- * around zero delta absorbs trackpad/inertial jitter that would otherwise
- * flicker the header hidden and shown on a scroll that isn't really moving.
+ * The threshold is MEASURED, not a constant, and that is the whole fix.
+ *
+ * `.header-primary` is `position: sticky`, and a sticky element always keeps
+ * its space in normal flow. Between roughly 44px and 132px of scroll the
+ * header is already pinned to the viewport while the space it reserves is
+ * STILL ON SCREEN — so translating it away there uncovers bare page
+ * background: a white band across the top with the nav bar sitting under it.
+ * The old threshold was the constant 80, which sits inside that band, which
+ * is why the gap showed up on a slow scroll and never on a fast one.
+ *
+ * Measuring the header's flow bottom (offsetTop + offsetHeight) means it can
+ * only hide once the space it vacates is already above the viewport, so there
+ * is nothing left behind to see. Re-measured on resize, because the header's
+ * height is a clamp on viewport width.
+ *
+ * rAF-throttled — the scroll listener never runs more than once per frame,
+ * however fast `scroll` events fire — and a 4px dead zone absorbs
+ * trackpad/inertial jitter that would otherwise flicker it.
  */
-function useHideOnScrollDown(revealAt = 80) {
+function useHideOnScrollDown() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
@@ -101,10 +113,21 @@ function useHideOnScrollDown(revealAt = 80) {
     // constant offset and nothing to chase.
     if (window.matchMedia('(hover: none)').matches) return;
 
+    const header = document.querySelector('.header-primary');
+    if (!(header instanceof HTMLElement)) return;
+
+    // Falls back past any plausible header, so a failed measurement errs
+    // toward hiding late rather than hiding inside the gap band.
+    let revealAt = 240;
+    const measure = () => {
+      revealAt = Math.max(header.offsetTop + header.offsetHeight, 120);
+    };
+    measure();
+
     let lastY = window.scrollY;
     let ticking = false;
 
-    function measure() {
+    function read() {
       // Clamp out iOS rubber-band overshoot: past either end, scrollY runs
       // beyond the document and springs back, flipping the delta sign every
       // frame — and with it the header and every sticky bar pinned under it.
@@ -125,17 +148,20 @@ function useHideOnScrollDown(revealAt = 80) {
     function onScroll() {
       if (ticking) return;
       ticking = true;
-      requestAnimationFrame(measure);
+      requestAnimationFrame(read);
     }
 
     window.addEventListener('scroll', onScroll, {passive: true});
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [revealAt]);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
 
   // Mirrored onto <html> so sticky bars below the header (collection filter
-  // toolbar, category strip) can drop their top offset to 0 while the header
-  // is translated away — otherwise they keep clearing space for a header
-  // that isn't there, leaving a blank gap at the viewport top.
+  // toolbar, category strip) can drop their top offset while it is translated
+  // away — otherwise they keep clearing space for a header that isn't there.
   useEffect(() => {
     document.documentElement.classList.toggle('header-primary-hidden', hidden);
   }, [hidden]);
@@ -180,9 +206,9 @@ export function Header({
   publicStoreDomain,
 }: HeaderProps) {
   const {shop} = header;
-  const hideStickyRow = useHideOnScrollDown();
   const topSentinelRef = useRef<HTMLDivElement>(null);
   useScrolledPastAnnouncement(topSentinelRef);
+  const hideStickyRow = useHideOnScrollDown();
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
   //

@@ -998,11 +998,12 @@ button.announcement-link {
   top: 0;
   width: 100%;
   z-index: 900;
-  /* Slides fully out of view on scroll-down, back in on scroll-up — see
-     useHideOnScrollDown in Header.tsx, which toggles .is-hidden. Transform,
-     not display/visibility: sticky positioning still holds the row's spot in
-     the layout, so the page never jumps, and the slide runs on the
-     compositor instead of costing layout every frame. */
+  /* Slides out of view on scroll-down, back in on scroll-up — see
+     useHideOnScrollDown in Header.tsx, which toggles .is-hidden and only ever
+     does so once this row's own flow space is above the viewport (the band
+     where it is not is what used to leave a white gap). Transform, not
+     display/visibility: the slide runs on the compositor instead of costing
+     layout every frame. */
   transform: translateY(0);
   transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
   will-change: transform;
@@ -5790,12 +5791,75 @@ F
 }
 
 /* Collection page — title, filter toolbar, break, empty state */
+.collection {
+  background: var(--color-bg-soft);
+  padding-top: 1rem;
+}
+
+.collection > .section-inner,
+.collection .home-section,
+.collection .collection-layout,
+.collection .collection-main {
+  background: var(--color-bg-soft);
+}
+
+.collection > .section-inner {
+  padding-top: 0.5rem;
+}
+
+.collection .breadcrumb {
+  margin-top: 0;
+  padding-top: 0.8rem;
+}
+
+.collection-toolbar,
+.collection-sticky-head {
+  background: var(--color-bg-soft);
+}
+
 .collection-title-row {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+@media (min-width: 48em) {
+  .collection {
+    padding-top: 1.5rem;
+  }
+
+  .collection > .section-inner {
+    padding-top: 1rem;
+  }
+
+  .collection .breadcrumb {
+    padding-top: 1.2rem;
+  }
+}
+
+@media (max-width: 47.99em) {
+  .collection {
+    background: var(--color-bg-soft);
+    padding-top: 0.75rem;
+  }
+
+  .collection > .section-inner,
+  .collection .home-section,
+  .collection .collection-layout,
+  .collection .collection-main {
+    background: var(--color-bg-soft);
+  }
+
+  .collection > .section-inner {
+    padding-top: 0.25rem;
+  }
+
+  .collection .breadcrumb {
+    padding-top: 0.5rem;
+  }
 }
 
 .collection-title-row h1 {
@@ -5922,7 +5986,7 @@ F
    filter drawer */
 .collection-toolbar {
   align-items: center;
-  background: #fff;
+  background: var(--color-bg-soft);
   border-bottom: 2px solid var(--color-border);
   border-top: 2px solid var(--color-border);
   box-sizing: border-box;
@@ -5965,9 +6029,9 @@ F
   }
 }
 
-/* Header slides away on scroll-down (Header.tsx's useHideOnScrollDown) — the
-   pinned bars would otherwise keep reserving its height as blank space at the
-   viewport top, since sticky's offset doesn't know the header is gone.
+/* The pinned bars follow the header up while it is hidden, or they would keep
+   reserving its height as blank space at the viewport top — sticky's own
+   offset does not know the header has gone.
 
    They follow it with a TRANSFORM, not by animating `top`: iOS Safari
    positions sticky elements off the main thread and re-syncs an animating
@@ -5995,11 +6059,11 @@ html.header-primary-hidden
 }
 
 /* Collection heading + category icon strip, pinned together under the header
-   (or under the top of the viewport once the header slides away). Height is
+   (or under the top of the viewport once it slides away). Height is
    measured by CollectionStickyHead and written to --sticky-head-height so
    .collection-toolbar knows how far down to park. */
 .collection-sticky-head {
-  background: #fff;
+  background: var(--color-bg-soft);
   position: sticky;
   top: var(--pin);
   transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -6033,9 +6097,9 @@ html.header-primary-hidden
    never participates in the sticky machinery at all.
 
    The header keeps its own `position: sticky; top: 0`, which is the one
-   stable case: a zero offset that never changes, and (see
-   useHideOnScrollDown in Header.tsx) it no longer hides on touch devices, so
-   nothing below it ever has to follow it.
+   stable case: a zero offset that never changes. It no longer hides on scroll
+   on any device (see the note in Header.tsx), so nothing below it ever has to
+   follow it.
 
    !important because the desktop stacking rules above use long compound
    selectors that would otherwise outrank this block. */
@@ -6664,12 +6728,23 @@ html.header-primary-hidden
   text-decoration: none;
   color: inherit;
   overflow: hidden;
-  background: transparent;
-  border: 0;
+  background: #fff;
+  /* A hairline and a barely-there shadow, so each piece sits on its own card
+     instead of floating in the page. Both are deliberately under-stated: the
+     grid shows a dozen at once, and a border heavy enough to read on its own
+     becomes a cage when it is tiled. The rule is only visible where it meets
+     the background, which is the whole job.
+     Everything is border-box (see the reset), so this adds no width and the
+     grid does not reflow. */
+  border: 1px solid rgba(17, 17, 17, 0.07);
   border-radius: 8px;
+  box-shadow:
+    0 1px 2px rgba(17, 17, 17, 0.035),
+    0 6px 14px rgba(17, 17, 17, 0.045);
   padding: 0.45rem;
   transition:
     background-color 180ms ease,
+    border-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
   /* Same technique .home-journal/.homepage-faq-section use: skip layout and
@@ -6693,6 +6768,9 @@ html.header-primary-hidden
   /* Opaque rather than 58% + a blur: this fired on every hover across a grid
      of cards, and each one promoted the whole card to its own blurred layer. */
   background: #fff;
+  /* Hover deepens the resting shadow rather than introducing one, so the card
+     lifts off a surface it was already on. */
+  border-color: rgba(17, 17, 17, 0.12);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.82) inset,
     0 18px 34px rgba(17, 17, 17, 0.12);
@@ -10272,6 +10350,13 @@ html.header-primary-hidden
      scroller's own inline padding so the first and last circles still clear
      the screen edge when the rail is parked at either end. Without that
      padding the row would scroll to a hard stop with a circle half off. */
+  .collection-toolbar,
+  .collection-sticky-head,
+  .collection-main,
+  .subnav-icons {
+    background: var(--color-bg-soft);
+  }
+
   .subnav-icons {
     margin-inline: calc(-1 * var(--section-pad));
   }
@@ -10286,6 +10371,14 @@ html.header-primary-hidden
   .subnav-icon-label {
     font-size: 0.72rem;
     letter-spacing: 0.01em;
+  }
+
+  .subnav-icon-circle {
+    background: var(--color-bg-soft);
+  }
+
+  .collection-sidebar {
+    background: var(--color-bg-soft);
   }
 }
 
@@ -10351,7 +10444,7 @@ html.header-primary-hidden
   /* Never grow or shrink with the tile: the circle is exactly the tile width
      square, so every circle in the strip is the same size. */
   flex: 0 0 auto;
-  background: #fff;
+  background: var(--color-bg-soft);
   border: 2px solid var(--color-border);
   border-radius: 50%;
   display: flex;
@@ -13353,5 +13446,139 @@ html.header-primary-hidden
       0 18px 46px rgba(0, 0, 0, 0.045),
       0 1px 0 rgba(255, 255, 255, 0.85) inset;
     pointer-events: none;
+  }
+}
+
+/* -- Card badges ----------------------------------------------------------
+   Corners carry meaning (see cardBadges in ProductItem.tsx):
+     top-left     the spec  - karat, and construction beside it
+     bottom-left  the accolade - Best Seller
+     bottom-right what you can act on - Sold Out / Sale, else Diamond
+     top-right    never used; the wishlist heart lives there
+
+   Every tone is a tint, not a fill: a pale wash of its own hue with the same
+   hue darkened for the type. Saturated blocks of navy and aubergine won the
+   eye away from the jewellery and read as supermarket stickers on a $1,200
+   piece. A tint lets the photograph stay the loudest thing on the card while
+   the colour still does the sorting - gold for metal, purple for stone, blue
+   for the accolade, red for price, green for construction. */
+/* One positioned box per corner; the badges inside sit in a row. */
+.product-card-badges {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  max-width: calc(100% - 3.6rem);
+  pointer-events: none;
+}
+
+.product-card-badge {
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid transparent;
+  /* The photographs behind these are busy and dark. A blur plus a near-opaque
+     tint keeps the type legible without needing a solid block of colour. */
+  backdrop-filter: blur(8px);
+  box-shadow: 0 1px 2px rgba(17, 17, 17, 0.06);
+  pointer-events: none;
+}
+
+/* top-left holds up to two (karat + construction). */
+.product-card-badges.at-top-left {
+  top: 0.6rem;
+  left: 0.6rem;
+}
+
+.product-card-badges.at-bottom-left {
+  bottom: 0.6rem;
+  left: 0.6rem;
+}
+
+.product-card-badges.at-bottom-right {
+  bottom: 0.6rem;
+  right: 0.6rem;
+}
+
+/* Gold - the metal. */
+.product-card-badge.is-karat {
+  color: #7a5c14;
+  border-color: rgba(212, 175, 55, 0.55);
+  background: rgba(250, 240, 208, 0.92);
+}
+
+/* Warm stone - how the piece is built. Sits beside the karat, so it is the
+   quietest tint of the set; it should read as a spec, not a claim. */
+.product-card-badge.is-construction {
+  color: #5f5a4e;
+  border-color: rgba(120, 110, 88, 0.32);
+  background: rgba(243, 240, 231, 0.94);
+}
+
+/* Purple - the stone. */
+.product-card-badge.is-diamond {
+  color: #5b3a8c;
+  border-color: rgba(120, 86, 168, 0.45);
+  background: rgba(238, 231, 249, 0.94);
+}
+
+/* Blue - the accolade. */
+.product-card-badge.is-best-seller {
+  color: #1d4b8f;
+  border-color: rgba(43, 98, 181, 0.45);
+  background: rgba(226, 237, 252, 0.94);
+}
+
+/* Red - price. */
+.product-card-badge.is-sale {
+  color: #9c2626;
+  border-color: rgba(176, 42, 42, 0.4);
+  background: rgba(253, 235, 234, 0.94);
+}
+
+.product-card-badge.is-audience {
+  color: #4a4a52;
+  border-color: rgba(17, 17, 17, 0.14);
+  background: rgba(246, 246, 246, 0.94);
+}
+
+@media (max-width: 40em) {
+  .product-card-badge {
+    padding: 0.22rem 0.44rem;
+    font-size: 0.53rem;
+    letter-spacing: 0.04em;
+  }
+
+  .product-card-badges {
+    gap: 0.22rem;
+  }
+
+  .product-card-badges.at-top-left {
+    top: 0.4rem;
+    left: 0.4rem;
+  }
+
+  .product-card-badges.at-bottom-left {
+    bottom: 0.4rem;
+    left: 0.4rem;
+  }
+
+  .product-card-badges.at-bottom-right {
+    bottom: 0.4rem;
+    right: 0.4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-card-badge {
+    backdrop-filter: none;
   }
 }

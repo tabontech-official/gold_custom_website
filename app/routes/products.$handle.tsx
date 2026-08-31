@@ -41,6 +41,8 @@ import {
   type InstallmentsPricing,
 } from '~/lib/shopPayInstallments';
 import {buildFaqJsonLd, parseFaqMetafield, type Faq} from '~/lib/faqs';
+import {TRUST_CLAIMS} from '~/lib/trustClaims';
+import {TrustClaimIconArt} from '~/components/TrustClaims';
 import {buildVideoJsonLd} from '~/lib/videoSchema';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {meaningfulSelectedOptions} from '~/lib/variants';
@@ -620,65 +622,26 @@ function ProductWishlistButton({handle}: {handle: string}) {
   );
 }
 
+/**
+ * The store's promises, under the buy box.
+ *
+ * The copy lives in ~/lib/trustClaims so this and the collection strip cannot
+ * drift apart — and so a policy change is one edit, not a hunt. A badge here
+ * once outlived the policy it described; see that file.
+ */
 function ProductTrustBadges() {
-  const badges = [
-    {
-      title: 'Free U.S. Shipping',
-      sub: 'On orders over $99',
-      icon: (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M8 20h28v25H8" />
-          <path d="M36 28h10l8 9v8H36" />
-          <path d="M14 48a5 5 0 1 0 10 0 5 5 0 0 0-10 0ZM43 48a5 5 0 1 0 10 0 5 5 0 0 0-10 0Z" />
-          <path d="M3 28h16M6 36h13" />
-        </svg>
-      ),
-    },
-    {
-      // Matches the refund policy: 14 days, exchange or store credit. It said
-      // "30 Day Returns / No questions asked", which the policy does not honour.
-      title: '14 Day Returns',
-      sub: 'Exchange or store credit',
-      icon: (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M18 45h28l-5-16H23l-5 16Z" />
-          <path d="M27 45h28l-6-16h-8" />
-          <path d="M32 8v9M15 14l6 7M49 14l-6 7" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Made in U.S.A',
-      sub: 'From our factory to you',
-      icon: (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M32 58s18-17 18-33a18 18 0 0 0-36 0c0 16 18 33 18 33Z" />
-          <circle cx="32" cy="25" r="7" />
-        </svg>
-      ),
-    },
-    {
-      title: '1 Year Free Warranty',
-      sub: 'On all production defects',
-      icon: (
-        <svg viewBox="0 0 64 64" aria-hidden="true">
-          <path d="M32 6 50 13v14c0 15-8 25-18 31-10-6-18-16-18-31V13l18-7Z" />
-          <path d="m23 32 6 6 13-15" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
     <div
       className="product-trust-badges pdp-card"
       aria-label="Product trust badges"
     >
-      {badges.map((badge) => (
-        <div className="product-trust-badge" key={badge.title}>
-          <span className="product-trust-icon">{badge.icon}</span>
-          <span className="product-trust-title">{badge.title}</span>
-          <span className="product-trust-sub">{badge.sub}</span>
+      {TRUST_CLAIMS.map((claim) => (
+        <div className="product-trust-badge" key={claim.title}>
+          <span className="product-trust-icon">
+            <TrustClaimIconArt name={claim.icon} />
+          </span>
+          <span className="product-trust-title">{claim.title}</span>
+          <span className="product-trust-sub">{claim.sub}</span>
         </div>
       ))}
     </div>
@@ -1622,9 +1585,28 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
       width
       height
     }
+    # Card badges. Tags drive Karat/Diamond and best-sellers
+    # membership drives Best Seller. See cardBadges() in
+    # ProductItem.tsx for why only those, and only from here.
+    tags
+    collections(first: 15) {
+      nodes {
+        handle
+      }
+    }
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      # Card badges: a Sale badge must come from a real
+      # compare-at price, never from a tag someone typed.
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
     }
   }
   query ProductRecommendations(

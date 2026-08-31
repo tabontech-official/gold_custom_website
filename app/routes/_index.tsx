@@ -1098,9 +1098,28 @@ const FEATURED_COLLECTION_QUERY = `#graphql
           width
           height
         }
+        # Card badges. Tags drive Karat/Diamond and best-sellers
+        # membership drives Best Seller. See cardBadges() in
+        # ProductItem.tsx for why only those, and only from here.
+        tags
+        collections(first: 15) {
+          nodes {
+            handle
+          }
+        }
         selectedOrFirstAvailableVariant {
           id
           availableForSale
+          # Card badges: a Sale badge must come from a real
+          # compare-at price, never from a tag someone typed.
+          price {
+            amount
+            currencyCode
+          }
+          compareAtPrice {
+            amount
+            currencyCode
+          }
         }
       }
     }
@@ -1243,9 +1262,28 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       width
       height
     }
+    # Card badges. Tags drive Karat/Diamond and best-sellers
+    # membership drives Best Seller. See cardBadges() in
+    # ProductItem.tsx for why only those, and only from here.
+    tags
+    collections(first: 15) {
+      nodes {
+        handle
+      }
+    }
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      # Card badges: a Sale badge must come from a real
+      # compare-at price, never from a tag someone typed.
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
     }
   }
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
@@ -1283,9 +1321,28 @@ const BEST_SELLING_PRODUCTS_QUERY = `#graphql
       width
       height
     }
+    # Card badges. Tags drive Karat/Diamond and best-sellers
+    # membership drives Best Seller. See cardBadges() in
+    # ProductItem.tsx for why only those, and only from here.
+    tags
+    collections(first: 15) {
+      nodes {
+        handle
+      }
+    }
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      # Card badges: a Sale badge must come from a real
+      # compare-at price, never from a tag someone typed.
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
     }
   }
   query BestSellingProducts ($country: CountryCode, $language: LanguageCode)
@@ -1325,9 +1382,28 @@ const NEW_ARRIVALS_BY_GENDER_QUERY = `#graphql
       width
       height
     }
+    # Card badges. Tags drive Karat/Diamond and best-sellers
+    # membership drives Best Seller. See cardBadges() in
+    # ProductItem.tsx for why only those, and only from here.
+    tags
+    collections(first: 15) {
+      nodes {
+        handle
+      }
+    }
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      # Card badges: a Sale badge must come from a real
+      # compare-at price, never from a tag someone typed.
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
     }
   }
   query NewArrivalsByGender($country: CountryCode, $language: LanguageCode)
