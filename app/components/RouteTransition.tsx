@@ -1,5 +1,9 @@
 import {useNavigation, useLocation} from 'react-router';
-import {isPageChange, routeSkeletonVariant} from '~/lib/routeTransition';
+import {
+  isPageChange,
+  routeSkeletonVariant,
+  shouldShowSkeleton,
+} from '~/lib/routeTransition';
 
 /**
  * Feedback for cross-page navigation.
@@ -85,8 +89,12 @@ export function RouteSkeleton({pathname}: {pathname: string}) {
  */
 export function RouteTransition({children}: {children: React.ReactNode}) {
   const navigatingTo = useNavigatingTo();
+  const {pathname} = useLocation();
 
   if (!navigatingTo) return <>{children}</>;
+  // Product → product keeps the current page mounted rather than blanking it.
+  // See shouldShowSkeleton for why. RouteProgressBar still reports the wait.
+  if (!shouldShowSkeleton(navigatingTo, pathname)) return <>{children}</>;
 
   return (
     <div aria-busy="true">

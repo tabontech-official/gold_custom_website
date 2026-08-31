@@ -1,4 +1,5 @@
 import {useState} from 'react';
+import {Link} from 'react-router';
 import {useDismissable} from '~/hooks/useDismissable';
 
 export type PremiumSelectOption = {
@@ -7,12 +8,25 @@ export type PremiumSelectOption = {
   name: string;
   selected: boolean;
   available: boolean;
+  /**
+   * Where picking this option goes, when it is a navigation.
+   *
+   * Set it and the row renders as a real `<Link>`, which is what lets React
+   * Router prefetch on hover — a Karat or Length value lives on a *different
+   * product*, so clicking one has to fetch that product's loader data, and
+   * without prefetch the shopper waits for it after the click.
+   *
+   * Leave it undefined for choices that never navigate (ring size, which is
+   * add-to-cart state) or that have no destination (an option value with no
+   * matching variant); those keep the plain button and `onSelect`.
+   */
+  to?: string | null;
 };
 
 /**
  * Premium variant selector rendered as a custom listbox (native <select>
  * can't be styled to match). Presentation only — the parent decides what
- * selecting an option does via `onSelect`.
+ * selecting an option does, via `to` for navigations or `onSelect` otherwise.
  */
 export function PremiumSelect({
   label,
@@ -22,7 +36,8 @@ export function PremiumSelect({
 }: {
   label: string;
   options: PremiumSelectOption[];
-  onSelect: (option: PremiumSelectOption) => void;
+  /** Only called for options with no `to`. */
+  onSelect?: (option: PremiumSelectOption) => void;
   /** Optional aside under the label, e.g. a sizing-guide link. */
   hint?: React.ReactNode;
 }) {
@@ -86,20 +101,16 @@ export function PremiumSelect({
             role="listbox"
             aria-labelledby={labelId}
           >
-            {options.map((option) => (
-              <li key={option.key} role="none">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={option.selected}
-                  className={`variant-select-option${
-                    option.selected ? ' is-selected' : ''
-                  }${option.available ? '' : ' is-unavailable'}`}
-                  onClick={() => {
-                    setOpen(false);
-                    if (!option.selected) onSelect(option);
-                  }}
-                >
+            {options.map((option) => {
+              // The option already showing needs no navigation, so it stays a
+              // button — clicking the current value should do nothing, as it
+              // did before, not re-enter the same URL.
+              const href = option.selected ? null : option.to;
+              const className = `variant-select-option${
+                option.selected ? ' is-selected' : ''
+              }${option.available ? '' : ' is-unavailable'}`;
+              const body = (
+                <>
                   <span>{option.name}</span>
                   {option.selected && (
                     <svg
@@ -117,9 +128,47 @@ export function PremiumSelect({
                       />
                     </svg>
                   )}
-                </button>
-              </li>
-            ))}
+                </>
+              );
+
+              return (
+                <li key={option.key} role="none">
+                  {href ? (
+                    <Link
+                      to={href}
+                      role="option"
+                      aria-selected={option.selected}
+                      className={className}
+                      // Every destination is worth prefetching on hover: a
+                      // sibling product needs its whole loader, and even a
+                      // same-page variant swap (`?Metal=…`) re-runs this
+                      // route's loader — that refetch is what keeps the price
+                      // and the cart line honest (see useOptimisticVariant in
+                      // products.$handle.tsx). Warming it on hover is what
+                      // makes the click land on data that has already arrived.
+                      prefetch="intent"
+                      preventScrollReset
+                      onClick={() => setOpen(false)}
+                    >
+                      {body}
+                    </Link>
+                  ) : (
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={option.selected}
+                      className={className}
+                      onClick={() => {
+                        setOpen(false);
+                        if (!option.selected) onSelect?.(option);
+                      }}
+                    >
+                      {body}
+                    </button>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

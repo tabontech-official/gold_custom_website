@@ -1,5 +1,5 @@
 import type {ReactNode} from 'react';
-import {useLocation, useNavigate, Link} from 'react-router';
+import {useLocation, Link} from 'react-router';
 import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton, AddedToBagLabel} from './AddToCartButton';
 import {AppointmentModal} from './AppointmentModal';
@@ -41,14 +41,13 @@ export function ProductForm({
   onRingSizeChange?: (size: string) => void;
 }) {
   const {pathname} = useLocation();
-  const navigate = useNavigate();
   const {open} = useAside();
 
   // Shopify options with more than one value become premium dropdowns.
   const optionSelects = productOptions
     .filter((option) => option.optionValues.length > 1)
     .map((option) => {
-      const options: Array<PremiumSelectOption & {to: string | null}> =
+      const options: PremiumSelectOption[] =
         option.optionValues.map((value) => {
           const to =
             !value.exists && !value.isDifferentProduct
@@ -84,14 +83,6 @@ export function ProductForm({
                 key={select.label}
                 label={select.label}
                 options={select.options}
-                onSelect={(picked) => {
-                  const target = select.options.find(
-                    (o) => o.key === picked.key,
-                  );
-                  if (target?.to) {
-                    navigate(target.to, {preventScrollReset: true});
-                  }
-                }}
               />
             ))}
 
@@ -103,12 +94,11 @@ export function ProductForm({
                   name: o.name,
                   selected: o.selected,
                   available: o.available,
+                  // A sibling product, so this is a real navigation — `to`
+                  // makes it a Link, which prefetches the other product's
+                  // data on hover instead of after the click.
+                  to: replaceProductHandleInPath(pathname, o.handle),
                 }))}
-                onSelect={(picked) => {
-                  navigate(replaceProductHandleInPath(pathname, picked.key), {
-                    preventScrollReset: true,
-                  });
-                }}
               />
             )}
 

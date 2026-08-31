@@ -17,6 +17,33 @@ export function isPageChange(next: string, current: string) {
   return next !== current;
 }
 
+/**
+ * Whether this navigation should have its page replaced by a skeleton.
+ *
+ * Product → product is deliberately excluded. Picking a Length, Karat or
+ * Center-Diamond value on a PDP navigates to a *sibling product* (those are
+ * separate Shopify products until the catalog is consolidated into real
+ * variants), which is a pathname change — so the skeleton used to tear the
+ * whole PDP out, mount a PDP-shaped placeholder, and mount a fresh PDP after.
+ * The gallery remounted, page state was lost, and the flash read as a full
+ * page reload on a page whose shell, layout and most content are identical.
+ *
+ * Keeping the current page mounted is both cheaper and more honest: the option
+ * links prefetch on hover, so the wait is short, and RouteProgressBar still
+ * runs — the visitor gets movement under the header instead of a blank page.
+ *
+ * Every other cross-page navigation (collection → product, product → article)
+ * still gets the skeleton, which is the case it was built for: those genuinely
+ * replace the whole layout, and leaving the old page up would be the dead-tap
+ * window the skeleton exists to close.
+ */
+export function shouldShowSkeleton(next: string, current: string) {
+  if (!isPageChange(next, current)) return false;
+  const from = routeSkeletonVariant(current);
+  const to = routeSkeletonVariant(next);
+  return !(from === 'product' && to === 'product');
+}
+
 export type SkeletonVariant = 'product' | 'collection' | 'article' | 'generic';
 
 /**

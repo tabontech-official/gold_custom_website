@@ -328,7 +328,22 @@ export default function Product() {
   const isRing = isRingProduct(product);
   const [ringSize, setRingSize] = useState(DEFAULT_RING_SIZE);
 
-  // Optimistically selects a variant with given available variant information
+  /**
+   * Optimistically selects a variant from the available variant information.
+   *
+   * Do NOT pair this with a `shouldRevalidate` that skips same-pathname
+   * navigations. `useOptimisticVariant` returns its optimistic match only
+   * while `navigation.state === 'loading'`; the moment the navigation settles
+   * it returns `product.selectedOrFirstAvailableVariant` — the loader's value.
+   * Skip the loader and that value never changes, so after the transition the
+   * page silently reverts to the previous variant: the selector reads "14K
+   * White Gold" (it is derived from the URL) while the price, SKU and the line
+   * added to the cart are still Yellow Gold. Measured, not theorised.
+   *
+   * The refetch is what makes the selection true. It is not what the shopper
+   * waits for — the optimistic value paints immediately and the loader only
+   * confirms it.
+   */
   const selectedVariant = useOptimisticVariant(
     product.selectedOrFirstAvailableVariant,
     getAdjacentAndFirstAvailableVariants(product),
@@ -1149,6 +1164,43 @@ function FinancingPartners() {
   );
 }
 
+/**
+ * Placeholder for the rail while its deferred query resolves.
+ *
+ * It used to be `fallback={null}`, which collapsed the section to zero height
+ * — so every switch to a sibling product (a Karat or Length value, which is a
+ * different product and therefore a real navigation) made the page jump as the
+ * rail vanished and popped back. That jump is most of what reads as "the page
+ * reloaded" when nothing is reloading at all.
+ *
+ * Borrows the carousel's own class names rather than defining a parallel
+ * layout, so the placeholder inherits the real rail's track padding, 1.5rem
+ * gap, card width and the .pdp-similar mobile overrides — and cannot drift out
+ * of alignment with it when those change.
+ */
+function RelatedProductsSkeleton() {
+  return (
+    <div className="hcarousel slider-carousel" aria-hidden="true">
+      <div className="hcarousel-viewport">
+        <div className="hcarousel-track">
+          {Array.from({length: 4}).map((_, index) => (
+            <article
+              className="product-item product-skeleton slider-item"
+              key={index}
+            >
+              <div className="product-image-skeleton" />
+              <div className="product-card-body">
+                <div className="product-text-skeleton is-title" />
+                <div className="product-text-skeleton is-price" />
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RelatedProducts({
   products,
   viewAllTo,
@@ -1163,7 +1215,7 @@ function RelatedProducts({
           <h2 className="pdp-similar-title">You May Also Like</h2>
         </div>
       </div>
-      <Suspense fallback={null}>
+      <Suspense fallback={<RelatedProductsSkeleton />}>
         <Await resolve={products}>
           {(data) => {
             const items = (data?.productRecommendations ?? []).slice(0, 8);

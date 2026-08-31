@@ -7257,9 +7257,38 @@ html.header-primary-hidden
   border: 0;
 }
 
+/* Loading shimmer, on the <img> itself rather than the tile behind it — the
+   tile and the featured image both paint #fff, which would cover any skeleton
+   put on the parent. An image's own background shows through only while it has
+   no pixels to draw, so decoding covers this with no JS, no state, and no
+   stuck-skeleton risk if a cached image's load event beats React's handler.
+
+   Bounded to 8 iterations (~11s) rather than `infinite`: past that the photo
+   has either arrived or failed, and an animation running forever behind every
+   tile of every product page is battery spent on something nobody can see. */
+.pgg-feature img,
+.pgg-tile img {
+  background-image: linear-gradient(
+    105deg,
+    #eee8dd 0%,
+    #f8f4ed 42%,
+    #e9dfd1 66%,
+    #eee8dd 100%
+  );
+  background-size: 220% 100%;
+  animation: skeletonShimmer 1.35s ease-in-out 8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pgg-feature img,
+  .pgg-tile img {
+    animation: none;
+  }
+}
+
 /* The image fills the frame edge-to-edge (cover) — no floating white space. */
 .pgg-feature img {
-  background: #fff;
+  background-color: #fff;
   transition: transform 220ms ease;
   will-change: transform;
 }
@@ -8314,6 +8343,13 @@ html.header-primary-hidden
   font-size: 0.92rem;
   text-align: left;
   cursor: pointer;
+  /* An option is a <button> for choices that never navigate (ring size) and an
+     <a> for ones that do (a Karat/Length value on a sibling product, rendered
+     as a Link so React Router prefetches it on hover). These two lines keep
+     the anchor from picking up the global `a:hover { text-decoration:
+     underline }` — the row must look identical either way. `.is-unavailable`
+     still wins its line-through: same specificity, declared later. */
+  text-decoration: none;
   /* Opts out of the 300ms tap delay, so touch can't emit a late "ghost" click
      at these coordinates after the list has closed. */
   touch-action: manipulation;
@@ -8322,6 +8358,7 @@ html.header-primary-hidden
 
 .variant-select-option:hover {
   background: var(--color-bg-soft);
+  text-decoration: none;
 }
 
 .variant-select-option.is-selected {
