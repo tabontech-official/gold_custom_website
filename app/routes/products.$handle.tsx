@@ -1,4 +1,4 @@
-﻿import {Suspense, useEffect, useRef, useState} from 'react';
+import {Suspense, useEffect, useRef, useState} from 'react';
 import {redirect, useLoaderData, Await, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
@@ -41,6 +41,7 @@ import {
   type InstallmentsPricing,
 } from '~/lib/shopPayInstallments';
 import {buildFaqJsonLd, parseFaqMetafield, type Faq} from '~/lib/faqs';
+import {buildVideoJsonLd} from '~/lib/videoSchema';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {meaningfulSelectedOptions} from '~/lib/variants';
 import {DescriptionAccordions} from '~/components/DescriptionAccordions';
@@ -362,13 +363,26 @@ export default function Product() {
 
   const {title, descriptionHtml} = product;
   const mediaItems = normalizeMedia(product.media?.nodes ?? [], title);
+  const productOrigin = siteOrigin(root);
   const productJsonLd = buildProductJsonLd({
     product,
     selectedVariant,
     mediaItems,
-    origin: siteOrigin(root),
+    origin: productOrigin,
     priceValidUntil,
     validFrom,
+  });
+  // VideoObject for every video in the gallery — YouTube embeds and the few
+  // Shopify-hosted clips alike. `uploadDate` is the product's publishedAt:
+  // Shopify's media union carries no upload timestamp, and Google requires
+  // the field, so the closest true date the page holds stands in for it.
+  // ponytail: swap in a real per-video date if one ever lands on a metafield.
+  const videoJsonLd = buildVideoJsonLd({
+    media: mediaItems,
+    name: title,
+    description: metaDescription(product.seo?.description || product.description),
+    uploadDate: product.publishedAt,
+    pageUrl: absoluteUrl(productOrigin, productCanonicalPath(product)),
   });
   const rawCategory = product.category?.name || product.productType || '';
   const categoryName =
@@ -456,9 +470,11 @@ export default function Product() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             '@context': 'https://schema.org',
-            '@graph': authoredFaqs
-              ? [productJsonLd, buildFaqJsonLd(authoredFaqs)]
-              : [productJsonLd],
+            '@graph': [
+              productJsonLd,
+              ...(authoredFaqs ? [buildFaqJsonLd(authoredFaqs)] : []),
+              ...videoJsonLd,
+            ],
           }).replace(/</g, '\\u003c'),
         }}
       />
@@ -1426,6 +1442,9 @@ const PRODUCT_FRAGMENT = `#graphql
     productType
     descriptionHtml
     description
+    # VideoObject.uploadDate. See buildVideoJsonLd's caller for why this
+    # stands in for the real upload date.
+    publishedAt
     encodedVariantExistence
     encodedVariantAvailability
     category {
