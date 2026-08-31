@@ -5791,7 +5791,13 @@ F
 }
 
 /* Collection page — title, filter toolbar, break, empty state */
-.collection {
+/* Search shares the collection page's ground. It renders the same grid, the
+   same filter toolbar and the same cards, so leaving it on plain white made
+   the results read as a different, lesser page than /collections/<x>.
+   Listed in the same rules rather than copied into their own so the two can
+   never drift apart. `.search-page` keeps its own padding (declared later). */
+.collection,
+.search-page {
   background: var(--color-bg-soft);
   padding-top: 1rem;
 }
@@ -5799,7 +5805,11 @@ F
 .collection > .section-inner,
 .collection .home-section,
 .collection .collection-layout,
-.collection .collection-main {
+.collection .collection-main,
+.search-page > .section-inner,
+.search-page .home-section,
+.search-page .collection-layout,
+.search-page .collection-main {
   background: var(--color-bg-soft);
 }
 
@@ -6655,7 +6665,13 @@ html.header-primary-hidden
 /* No top padding: the breadcrumb already carries the gap below the sticky
    menu, exactly as on the collection pages this page mirrors. */
 .search-page {
-  padding: 0 0 4rem;
+  /* The top padding is not decoration: with `padding-top: 0` a descendant's
+     top margin collapsed straight through this element and pushed it 32px
+     down the page. A margin lives OUTSIDE the box, so the soft background
+     could not paint it — leaving a white strip under the nav that the
+     collection pages do not have. Padding blocks the collapse, which is also
+     how `.collection` avoids it. */
+  padding: 1rem 0 4rem;
 }
 
 .search-page-summary {
