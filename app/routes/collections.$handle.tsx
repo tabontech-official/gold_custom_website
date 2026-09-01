@@ -701,6 +701,8 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     id
     handle
     title
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
     # Only used to resolve each product's canonical
     # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
     # Without them productCanonicalPath falls back to the flat

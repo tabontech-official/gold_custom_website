@@ -3,6 +3,7 @@ import type {Route} from './+types/_index';
 import {Suspense, useEffect, useRef, useState} from 'react';
 import type {
   RecommendedProductsQuery,
+  RecommendedProductFragment,
   NewArrivalsByGenderQuery,
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
@@ -998,7 +999,7 @@ function RecommendedProducts({
               <Await resolve={products}>
                 {(response) => (
                   <ProductRail
-                    products={response?.products.nodes ?? []}
+                    products={balancedNewArrivals(response)}
                     ariaLabel="new arrivals"
                     emptyMessage="New arrivals are loading or unavailable right now."
                   />
@@ -1243,6 +1244,8 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
     id
     title
     handle
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
     # Resolve each card's canonical /collections/<category>/products/<handle>
     # link. Without them the card falls back to the flat path, which 301s.
     productType
@@ -1286,15 +1289,103 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
       }
     }
   }
+  # One newest-first slice per department, not one flat newest-first query
+  # across the whole catalogue. A flat query reads as "New Arrivals" but is
+  # really "whatever category got bulk-uploaded most recently" — a single
+  # same-day batch of earrings can fill all 24 slots and shut out every other
+  # department for as long as it stays the most recent thing in the store.
+  # Six aliased department collections, four each, interleaved client-side
+  # (see balancedNewArrivals below), keeps the rail representative of the
+  # whole catalogue instead of whichever category shipped last.
+  #
+  # Not engagement-rings or diamond: both are cross-cuts of the six below
+  # (57/144 engagement-rings products are also in rings; 184/309 diamond
+  # products are also in pendants) rather than distinct product types, so
+  # including them risks the same product filling two of the rail's slots.
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
-    products(first: 24, sortKey: UPDATED_AT, reverse: true) {
-      nodes {
-        ...RecommendedProduct
+    bracelets: collection(handle: "bracelets") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
+      }
+    }
+    chains: collection(handle: "chains") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
+      }
+    }
+    necklaces: collection(handle: "necklaces") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
+      }
+    }
+    earrings: collection(handle: "earrings") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
+      }
+    }
+    pendants: collection(handle: "pendants") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
+      }
+    }
+    rings: collection(handle: "rings") {
+      products(first: 4, sortKey: CREATED, reverse: true) {
+        nodes {
+          ...RecommendedProduct
+        }
       }
     }
   }
 ` as const;
+
+/**
+ * Round-robins the six departments' newest-first lists into one 24-item feed:
+ * newest bracelet, newest chain, newest necklace, ... then second-newest of
+ * each, and so on. A straight concatenation (all bracelets, then all chains)
+ * would put four whole departments off the end of a rail most shoppers never
+ * scroll to; round-robin means every department is visible from the first
+ * screen regardless of scroll depth.
+ *
+ * Deduplicates by id — the six source collections are chosen to barely
+ * overlap (see the query comment), but "barely" is not "never", and one
+ * product occupying two of the rail's 24 slots would just reintroduce the
+ * imbalance this exists to fix.
+ */
+function balancedNewArrivals(
+  response: RecommendedProductsQuery | null | undefined,
+): RecommendedProductFragment[] {
+  const lanes = [
+    response?.bracelets?.products.nodes,
+    response?.chains?.products.nodes,
+    response?.necklaces?.products.nodes,
+    response?.earrings?.products.nodes,
+    response?.pendants?.products.nodes,
+    response?.rings?.products.nodes,
+  ].map((nodes) => nodes ?? []);
+
+  const seen = new Set<string>();
+  const merged: RecommendedProductFragment[] = [];
+  for (let row = 0; merged.length < 24 && lanes.some((lane) => row < lane.length); row++) {
+    for (const lane of lanes) {
+      const product = lane[row];
+      if (!product || seen.has(product.id)) continue;
+      seen.add(product.id);
+      merged.push(product);
+    }
+  }
+  return merged;
+}
 
 // ponytail: 24 fetched up front; the rail reveals them in batches as you
 // scroll. Swap to cursor pagination only if a store needs to browse past 24.
@@ -1303,6 +1394,8 @@ const BEST_SELLING_PRODUCTS_QUERY = `#graphql
     id
     title
     handle
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
     # See RecommendedProduct — canonical link resolution.
     productType
     category {
@@ -1364,6 +1457,8 @@ const NEW_ARRIVALS_BY_GENDER_QUERY = `#graphql
     id
     title
     handle
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
     # See RecommendedProduct — canonical link resolution.
     productType
     category {

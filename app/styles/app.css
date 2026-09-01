@@ -13553,6 +13553,15 @@ html.header-primary-hidden
   background: rgba(226, 237, 252, 0.94);
 }
 
+/* Orange - the other accolade, freshness rather than popularity. Shares the
+   bottom-left corner with Best Seller (see cardBadges' accolade array) so the
+   two never collide on one card. */
+.product-card-badge.is-new-arrival {
+  color: #a3540c;
+  border-color: rgba(217, 122, 30, 0.5);
+  background: rgba(253, 235, 217, 0.94);
+}
+
 /* Red - price. */
 .product-card-badge.is-sale {
   color: #9c2626;

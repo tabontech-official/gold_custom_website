@@ -1566,6 +1566,8 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
     id
     title
     handle
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
     # Resolve each card's canonical /collections/<category>/products/<handle>
     # link. Without them the card falls back to the flat path, which 301s.
     productType

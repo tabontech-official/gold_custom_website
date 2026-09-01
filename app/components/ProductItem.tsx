@@ -163,6 +163,7 @@ type CardBadge = {
   tone:
     | 'sale'
     | 'best-seller'
+    | 'new-arrival'
     | 'diamond'
     | 'karat'
     | 'construction'
@@ -179,6 +180,25 @@ type CardBadge = {
 
 /** The one collection small enough to be a real distinction: 27 products. */
 const BEST_SELLER_COLLECTION = 'best-sellers';
+
+/**
+ * How long a piece stays marked New Arrival after `publishedAt`.
+ *
+ * Re-measured 2026-09-01: 30 days covered 18% of the catalogue sitewide, but
+ * on the homepage's own "New Arrivals" rail (top 24 by UPDATED_AT) it hit
+ * 75% — that rail is sorted by recent activity, so it is already biased
+ * toward whatever the badge is trying to call out, and a same-day upload
+ * batch of ~14 products saturated it. 7 days brings that specific rail to
+ * 58% and the sitewide figure to 4.5%.
+ *
+ * 58%, not near-zero: those 14 products are genuinely new (published and
+ * updated minutes apart, same day), not stale republishes, so nothing short
+ * of hiding the badge on that one rail removes them — any threshold above 0
+ * days still catches a real same-day batch. Shortening the window is a real
+ * fix everywhere else on the site; on that rail specifically it is a partial
+ * one, because the rail's own sort keeps recent uploads clustered together.
+ */
+const NEW_ARRIVAL_DAYS = 7;
 
 /**
  * Up to two badges per card: one status, one material.
@@ -199,10 +219,10 @@ const BEST_SELLER_COLLECTION = 'best-sellers';
  * scarce enough to still mean something when they appear.
  *
  * NOT here, and why:
- *  - New Arrival: no product has been published in the last 90 days, and the
- *    new-arrivals collection holds 2,000 of them. There is nothing true to
- *    mark. Trim that collection (or publish new pieces) and it becomes real.
- *  - Trending: same problem, 2,000 products.
+ *  - Trending: the new-arrivals collection holds 2,000 hand-curated products,
+ *    which is most of the catalogue — there is nothing true to mark. New
+ *    Arrival avoids the same trap by reading `publishedAt` directly instead
+ *    of collection membership; see NEW_ARRIVAL_DAYS above.
  *  - Men's / Women's: 41% and 36% of the catalogue, and on a gendered
  *    collection page it would be on every card at once — it takes the slot
  *    without adding anything. It is the lowest-priority entry below, so it
@@ -218,9 +238,20 @@ function cardBadges(product: any): CardBadge[] {
     );
 
   // --- accolade (bottom-left): what the shop says about the piece -----------
-  const accolade: CardBadge[] = inCollection(BEST_SELLER_COLLECTION)
-    ? [{label: 'Best Seller', tone: 'best-seller', slot: 'bottom-left'}]
-    : [];
+  //
+  // Best Seller first: only 27 products qualify, against ~800 for New
+  // Arrival, so the rarer claim wins the corner on a card that has both.
+  const accolade: CardBadge[] = [];
+  if (inCollection(BEST_SELLER_COLLECTION)) {
+    accolade.push({label: 'Best Seller', tone: 'best-seller', slot: 'bottom-left'});
+  }
+  const publishedAt = product?.publishedAt ? new Date(product.publishedAt) : null;
+  if (publishedAt && !Number.isNaN(publishedAt.getTime())) {
+    const days = (Date.now() - publishedAt.getTime()) / 86_400_000;
+    if (days <= NEW_ARRIVAL_DAYS) {
+      accolade.push({label: 'New Arrival', tone: 'new-arrival', slot: 'bottom-left'});
+    }
+  }
 
   // --- status (bottom-right): what the shopper can act on ------------------
   //

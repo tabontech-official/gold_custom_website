@@ -379,7 +379,28 @@ function HeaderSearchBar() {
           placeholder="Search..."
           ref={inputRef}
           type="search"
-          value={term}
+          /**
+           * `defaultValue`, not `value` — this input is server-rendered, and
+           * a controlled `value` forces React to overwrite the DOM's actual
+           * text with its own state on every re-render of this component.
+           * Nothing here ever needs to push a value INTO the box from
+           * outside typing (`term` is only ever set by this input's own
+           * onChange — grep confirms it), so nothing is lost by letting the
+           * browser own it.
+           *
+           * That overwrite is exactly the bug reported: type fast right as
+           * the page loads, before hydration attaches this onChange, and the
+           * browser's native input happily takes every keystroke — but
+           * `term` is still `''` because React never captured them. The next
+           * time ANYTHING causes this component to re-render (a fetch
+           * elsewhere resolving, a sibling state change, unrelated context
+           * update — it does not have to involve this input at all), React
+           * commits `value={term}` back onto the DOM and silently erases
+           * every character typed in that window. The caret is still there
+           * and still blinking because the input never lost DOM focus — it
+           * just lost its own text out from under the person typing it.
+           */
+          defaultValue={term}
         />
         <button aria-label="Submit search" className="reset" type="submit">
           <SearchIcon />
@@ -521,6 +542,15 @@ export function HeaderMenu({
             relativeUrl={relativeUrl}
           />
         ))}
+        {/* Not a MegaMenuItem: /custom-jewelry is a services landing page, not
+            a Shopify collection, so it has no menu items for a dropdown to
+            show — MegaMenuItem's product-fetching and sub-collection matching
+            would all resolve to nothing. A plain link, same class as every
+            department's own trigger so it reads as one nav rather than a
+            department plus a stray extra. */}
+        <NavLink className="header-menu-item" prefetch="intent" to="/custom-jewelry">
+          Custom Jewelry
+        </NavLink>
       </nav>
     );
   }
@@ -907,6 +937,12 @@ function MobileMenu({
           </div>
         );
       })}
+      {/* Same reasoning as the desktop nav: /custom-jewelry has no submenu to
+          expand, so it is a flat link rather than a mobile-nav-department
+          with a +/− toggle that would open onto nothing. */}
+      <NavLink onClick={onNavigate} prefetch="viewport" to="/custom-jewelry">
+        Custom Jewelry
+      </NavLink>
     </nav>
   );
 }
