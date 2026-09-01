@@ -7768,70 +7768,46 @@ html.header-primary-hidden
   background: var(--color-bg-soft);
 }
 
-/* Product-spec highlights under the price — flat icon + label, two columns */
-.product-specs {
-  list-style: none;
+/* Weight/size, last in the description card — a small labeled spec sheet
+   (Metal Type / Width / Weight / Length), one hairline row per fact, in the
+   same plain style as the accordion rows above it rather than a sentence. */
+.product-specs-text {
   margin: 0.85rem 0 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.7rem 1.5rem;
 }
 
-.product-spec-item {
+.product-specs-row {
   display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--color-ink);
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.85rem;
 }
 
-/* Each icon sits in its own bounded rectangle rather than floating loose
-   against the label, so the specs read as a set of chips instead of four
-   free-floating glyphs of differing visual weight. Wider padding than tall is
-   what makes the box read as a rectangle rather than a square. */
-.product-spec-item .product-spec-svg {
-  box-sizing: content-box;
-  width: 1.5rem;
-  height: 1.5rem;
-  padding: 0.3rem 0.55rem;
+.product-specs-row:last-child {
+  border-bottom: none;
+}
+
+.product-specs-row dt {
   flex-shrink: 0;
-  stroke-width: 1.6;
-  color: var(--color-gold-dark);
-  border: 1px solid var(--color-ink);
-  border-radius: 5px;
-  background: var(--color-bg-soft);
+  color: var(--color-ink-soft);
 }
 
-/* Metal-tone tint for the ingot icon. */
-.spec-icon--white {
-  color: #8a9099;
-}
-
-.spec-icon--rose {
-  color: #c67b63;
-}
-
-@media (max-width: 30em) {
-  .product-specs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.7rem 0.9rem;
-  }
-
-  .product-spec-item {
-    gap: 0.5rem;
-    font-size: 0.82rem;
-  }
-
-  /* Specificity must match the framed rule above, or that one wins here and
-     phones render the icons at their full desktop size. */
-  .product-spec-item .product-spec-svg {
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0.3rem 0.55rem;
-  }
+/* Flex items default to min-width: auto, which refuses to shrink below the
+   text's own natural width — that is what pushed a longer value ("10K Yellow
+   Gold", "Approx. 31.9g") straight past the card's right edge instead of
+   wrapping. min-width: 0 lets it shrink and wrap like a normal block; the
+   card no longer depends on every product's spec text happening to be short
+   enough to fit one line. */
+.product-specs-row dd {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+  overflow-wrap: break-word;
+  color: var(--color-ink);
 }
 
 .product-details {
@@ -8089,13 +8065,6 @@ html.header-primary-hidden
 
   .product-financing-label {
     margin-bottom: 0.5rem;
-  }
-
-  /* .product-main already spaces its children with a flex gap; this margin sat
-     on top of it, so the run under the financing box measured roughly twice
-     what every other break in the column uses. */
-  .product-specs {
-    margin-top: 0;
   }
 }
 

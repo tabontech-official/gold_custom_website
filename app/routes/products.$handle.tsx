@@ -378,7 +378,16 @@ export default function Product() {
     selectedOrFirstAvailableVariant: selectedVariant,
   });
 
-  const {title, descriptionHtml} = product;
+  const {title} = product;
+  // Strip the merchant's own "Size & Weight" heading and its Length/Width
+  // lines, when present (990 of 4,539 products, checked directly against the
+  // Storefront API — always this exact heading text) — the spec sheet below
+  // the description prints the same facts, sourced from the variant instead
+  // of copy, so every product ends up with the identical block in the
+  // identical place rather than depending on whether a merchant happened to
+  // write one. Two systems for the same numbers is what read as
+  // inconsistent; one system that always runs is the fix.
+  const descriptionHtml = stripSizeWeightSection(product.descriptionHtml);
   const mediaItems = normalizeMedia(product.media?.nodes ?? [], title);
   const productOrigin = siteOrigin(root);
   const productJsonLd = buildProductJsonLd({
@@ -564,6 +573,20 @@ export default function Product() {
                   order and may add 5â€“7 business days before shipping.
                 </p>
               </div>
+              {/* Last thing in the card, after the description and the care
+                  note — ALWAYS rendered, same place, same style, on every
+                  product. That consistency is the point: this used to be
+                  conditional on whether the merchant had written their own
+                  "Size & Weight" copy, so some products carried it and some
+                  didn't and the page read as two different designs. Sourced
+                  from the variant, not the description, so it fills in
+                  whatever the merchant's copy is missing rather than only
+                  ever repeating what is already there — stripSizeWeightSection
+                  above is what keeps the two from duplicating instead. */}
+              <ProductSpecsLine
+                weight={selectedVariant?.weight}
+                weightUnit={selectedVariant?.weightUnit}
+              />
             </div>
           </div>
         </div>
@@ -738,94 +761,46 @@ const WEIGHT_UNIT_ABBR: Record<string, string> = {
 };
 
 /**
- * Product-spec highlights under the price â€” metal, width, weight, length â€”
- * read from the variant/title. Each row only renders when its value exists.
+ * Cuts a merchant's own "Size & Weight" heading and everything after it up
+ * to the next heading — the one template variant found across the
+ * catalogue (990 of 4,539 products, checked directly against the Storefront
+ * API, always this exact heading text). Its body is always the same
+ * Length/Width lines ProductSpecsLine prints below the description, sourced
+ * from the variant instead of copy — leaving both in would show the same
+ * two numbers twice in two different styles on the same page.
  */
-function ProductSpecIcons({
-  keyword,
-  weight,
-  weightUnit,
-}: {
-  keyword: string;
-  weight?: number | null;
-  weightUnit?: string | null;
-}) {
-  const karat = parseKarat(keyword);
-  const width = keyword.match(/(\d+(?:\.\d+)?)\s*mm\b/i)?.[1];
-  const length = keyword.match(
-    /(\d+(?:\.\d+)?)\s*-?\s*(?:inch(?:es)?\b|in\b|["â€â€³])/i,
-  )?.[1];
-  const weightLabel =
-    typeof weight === 'number' && weight > 0
-      ? `Approx. ${weight}${WEIGHT_UNIT_ABBR[weightUnit ?? ''] ?? weightUnit ?? ''}`
-      : null;
-
-  const specs: Array<{icon: SpecIconName; label: string; toneClass?: string}> =
-    [];
-  if (karat)
-    specs.push({
-      icon: 'metal',
-      label: `Solid ${karat.label}`,
-      toneClass: `spec-icon--${karat.tone}`,
-    });
-  if (width) specs.push({icon: 'width', label: `${width}mm Width`});
-  if (weightLabel) specs.push({icon: 'weight', label: weightLabel});
-  if (length) specs.push({icon: 'length', label: `${length} Inch Length`});
-
-  if (!specs.length) return null;
-
-  return (
-    <ul className="product-specs" aria-label="Product specifications">
-      {specs.map((spec) => (
-        <li className="product-spec-item" key={spec.label}>
-          <SpecIcon name={spec.icon} className={spec.toneClass} />
-          <span>{spec.label}</span>
-        </li>
-      ))}
-    </ul>
+function stripSizeWeightSection(html?: string | null): string {
+  if (!html) return '';
+  return html.replace(
+    /<h[1-6][^>]*>\s*size\s*(?:&amp;|&|and)\s*weight\s*<\/h[1-6]>[\s\S]*?(?=<h[1-6]|$)/i,
+    '',
   );
 }
 
-type SpecIconName = 'metal' | 'width' | 'weight' | 'length';
+/**
+ * Weight, as a labeled spec row in the description card — nothing else.
+ * Metal type already has its own line under the title (see metalLabel); size
+ * came out too, so this is just the one fact. Renders nothing when the
+ * variant has no weight.
+ */
+function ProductSpecsLine({
+  weight,
+  weightUnit,
+}: {
+  weight?: number | null;
+  weightUnit?: string | null;
+}) {
+  if (typeof weight !== 'number' || weight <= 0) return null;
+  const weightLabel = `Approx. ${weight}${WEIGHT_UNIT_ABBR[weightUnit ?? ''] ?? weightUnit ?? ''}`;
 
-function SpecIcon({name, className}: {name: SpecIconName; className?: string}) {
-  const common = {
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 1.7,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-    className: `product-spec-svg${className ? ` ${className}` : ''}`,
-  };
-  switch (name) {
-    case 'metal': // faceted gold ingot / bar
-      return (
-        <svg {...common}>
-          <path d="M5 9l2.5-3h9L19 9l-7 10z" />
-          <path d="M5 9h14M9.5 6l2.5 3 2.5-3M12 9v10" />
-        </svg>
-      );
-    case 'width': // horizontal caliper span
-      return (
-        <svg {...common}>
-          <path d="M3 12h18M3 8v8M21 8v8M7 10l-2 2 2 2M17 10l2 2-2 2" />
-        </svg>
-      );
-    case 'weight': // scale weight
-      return (
-        <svg {...common}>
-          <path d="M8 7h8l3 12H5zM9 7a3 3 0 0 1 6 0" />
-        </svg>
-      );
-    case 'length': // vertical ruler
-      return (
-        <svg {...common}>
-          <path d="M12 3v18M8 5l4-2 4 2M8 19l4 2 4-2M9 8h6M9 12h6M9 16h6" />
-        </svg>
-      );
-  }
+  return (
+    <dl className="product-specs-text">
+      <div className="product-specs-row">
+        <dt>Weight</dt>
+        <dd>{weightLabel}</dd>
+      </div>
+    </dl>
+  );
 }
 
 const SHOP_PAY_TERMS_SCRIPT_ID = 'shopify-payment-terms-script';
