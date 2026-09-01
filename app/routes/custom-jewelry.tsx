@@ -4,6 +4,7 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/custom-jewelry';
 import {AppointmentModal} from '~/components/AppointmentModal';
+import {CustomJewelryModal} from '~/components/CustomJewelryModal';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({matches}) =>
@@ -112,7 +113,7 @@ export default function CustomJewelry() {
               single gram of gold.
             </p>
             <div className="svc-actions">
-              <AppointmentModal
+              <CustomJewelryModal
                 triggerLabel="Start your design"
                 triggerClassName="btn btn-primary svc-cta"
               />

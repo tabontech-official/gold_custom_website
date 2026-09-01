@@ -11983,6 +11983,52 @@ html.header-primary-hidden
   color: var(--color-ink-soft);
 }
 
+/* CustomJewelryModal's product-type picker — same field spacing/label as
+   .appt-field, sized to match the reference layout (two columns on mobile). */
+.cj-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+}
+
+.cj-type-btn {
+  padding: 0.9rem 0.5rem;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.cj-type-btn:hover {
+  border-color: var(--color-ink-soft);
+}
+
+.cj-type-btn.is-selected {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+}
+
+.cj-file-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.cj-file-input {
+  font-size: 0.82rem;
+}
+
+.cj-file-name {
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
 /* Compact the modal on phones — full-desktop padding/spacing/height overflows
    small screens. Matches the site's 48em mobile breakpoint. Tighter chrome,
    shorter fields, smaller type. */

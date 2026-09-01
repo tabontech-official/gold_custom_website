@@ -1,4 +1,5 @@
 import type {Route} from './+types/api.appointment';
+import {emailRow, emailShell, escapeHtml, sendResendEmail} from '~/lib/email';
 
 // Private-consultation request. Mirrors the newsletter (api.subscribe): create
 // the customer via the Storefront API (TAKEN = already on file, fine), then
@@ -72,16 +73,6 @@ type Details = {
   message: string;
 };
 
-function escapeHtml(v: string): string {
-  return v.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[
-        c
-      ]!,
-  );
-}
-
 function prettyDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
@@ -97,31 +88,12 @@ function prettyDate(iso: string): string {
 // Sends the store alert + customer confirmation via Resend. If RESEND_API_KEY
 // is unset, quietly skips (booking still succeeds).
 async function sendEmails(env: Env, d: Details): Promise<void> {
-  const key = (env as any).RESEND_API_KEY as string | undefined;
-  if (!key) {
-    console.warn('[appointment] RESEND_API_KEY unset — emails skipped');
-    return;
-  }
-  const from =
-    ((env as any).RESEND_FROM as string) || 'Gold Custom <onboarding@resend.dev>';
   const notify = (env as any).NOTIFY_EMAIL as string | undefined;
   if (!notify) {
     console.warn('[appointment] NOTIFY_EMAIL unset — store alert skipped');
   }
   const storeUrl = `https://goldcustom.com/products/${d.productHandle}`;
   const when = prettyDate(d.date);
-
-  const send = async (to: string, subject: string, html: string) => {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${key}`,
-      },
-      body: JSON.stringify({from, to, subject, html}),
-    });
-    if (!res.ok) console.error(`[appointment] Resend ${to}:`, await res.text());
-  };
 
   const messageBlock = d.message
     ? `<div style="margin:16px 0 0;padding:12px 14px;background:#faf6ec;border-left:3px solid #d4af6a">
@@ -133,17 +105,21 @@ async function sendEmails(env: Env, d: Details): Promise<void> {
   // Only the store alert depends on NOTIFY_EMAIL; the customer confirmation
   // below is addressed to the booker, so it must still send when this is unset.
   if (notify) {
-    await send(
-      notify,
-      'New Jewelry Appointment Alert',
-      shell(
-        'New Consultation Request',
-        `<p style="margin:0 0 18px;color:#4a463f">A customer has requested a private consultation.</p>
-       ${row('Customer', d.name)}${row('Email', d.email)}${row('Appointment', when)}
-       ${row('Product', d.productTitle)}${d.variantInfo ? row('Variant', d.variantInfo) : ''}
+    await sendResendEmail(
+      env,
+      {
+        to: notify,
+        subject: 'New Jewelry Appointment Alert',
+        html: emailShell(
+          'New Consultation Request',
+          `<p style="margin:0 0 18px;color:#4a463f">A customer has requested a private consultation.</p>
+       ${emailRow('Customer', d.name)}${emailRow('Email', d.email)}${emailRow('Appointment', when)}
+       ${emailRow('Product', d.productTitle)}${d.variantInfo ? emailRow('Variant', d.variantInfo) : ''}
        ${messageBlock}
        <p style="margin:18px 0 0"><a href="${escapeHtml(storeUrl)}" style="color:#b6893f">View product &rarr;</a></p>`,
-      ),
+        ),
+      },
+      'appointment',
     );
   }
 
@@ -161,30 +137,20 @@ async function sendEmails(env: Env, d: Details): Promise<void> {
   // confirmation only, which is what the modal already shows.
   if (String((env as any).SEND_CUSTOMER_EMAILS) !== 'true') return;
 
-  await send(
-    d.email,
-    'Your Gold Custom Consultation Request',
-    shell(
-      `Thank you, ${escapeHtml(d.name.split(' ')[0])}`,
-      `<p style="margin:0 0 16px;line-height:1.6;color:#4a463f">We've received your request for a private consultation. One of our jewelry specialists will contact you shortly to confirm the details.</p>
-       ${row('Piece', d.productTitle)}${row('Requested date', when)}
+  await sendResendEmail(
+    env,
+    {
+      to: d.email,
+      subject: 'Your Gold Custom Consultation Request',
+      html: emailShell(
+        `Thank you, ${escapeHtml(d.name.split(' ')[0])}`,
+        `<p style="margin:0 0 16px;line-height:1.6;color:#4a463f">We've received your request for a private consultation. One of our jewelry specialists will contact you shortly to confirm the details.</p>
+       ${emailRow('Piece', d.productTitle)}${emailRow('Requested date', when)}
        <p style="margin:20px 0 0"><a href="${escapeHtml(storeUrl)}" style="color:#b6893f">View this piece &rarr;</a></p>`,
-    ),
+      ),
+    },
+    'appointment',
   );
-}
-
-function shell(title: string, body: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#f4f1ea;font-family:Georgia,serif;color:#2b2620">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffdf8;border:1px solid #e6ddc9;border-radius:12px;overflow:hidden">
-      <tr><td style="background:#1c1a17;padding:24px;text-align:center"><span style="color:#d4af6a;font-size:20px;letter-spacing:3px;text-transform:uppercase">Gold Custom</span></td></tr>
-      <tr><td style="padding:32px"><h1 style="margin:0 0 16px;font-size:22px;font-weight:normal;color:#1c1a17">${title}</h1>${body}</td></tr>
-      <tr><td style="padding:20px 32px;border-top:1px solid #eee4d2;font-size:12px;color:#8a8175;text-align:center">Gold Custom · Fine Jewelry &amp; Watches</td></tr>
-    </table></td></tr></table></body></html>`;
-}
-
-function row(label: string, value: string): string {
-  return `<p style="margin:0 0 10px;font-size:15px"><span style="color:#8a8175">${label}:</span> <strong style="color:#1c1a17">${escapeHtml(value)}</strong></p>`;
 }
 
 const APPOINTMENT_CUSTOMER_MUTATION = `#graphql
