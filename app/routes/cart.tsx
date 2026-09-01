@@ -30,6 +30,7 @@ export async function action({request, context}: Route.ActionArgs) {
   }
 
   let status = 200;
+
   let result: CartQueryDataReturn;
 
   switch (action) {

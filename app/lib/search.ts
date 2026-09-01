@@ -20,9 +20,14 @@ export type QuickSearchItems = {
 export type SearchCollection =
   CollectionIndexQuery['collections']['nodes'][number];
 
+/**
+ * What the page renders: `partial`/`bySku` are candidate-gathering only (see
+ * regularSearch) and never reach here — their matches are merged straight
+ * into `products.nodes` before this shape is built.
+ */
 export type RegularSearchReturn = ResultWithItems<
   'regular',
-  RegularSearchQuery
+  Pick<RegularSearchQuery, 'pages' | 'products'>
 >;
 export type PredictiveSearchReturn = ResultWithItems<
   'predictive',

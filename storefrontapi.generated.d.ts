@@ -2954,6 +2954,8 @@ export type RegularSearchQueryVariables = StorefrontAPI.Exact<{
   first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   term: StorefrontAPI.Scalars['String']['input'];
+  partialTerm: StorefrontAPI.Scalars['String']['input'];
+  skuTerm: StorefrontAPI.Scalars['String']['input'];
   productFilters?: StorefrontAPI.InputMaybe<
     Array<StorefrontAPI.ProductFilter> | StorefrontAPI.ProductFilter
   >;
@@ -3023,6 +3025,102 @@ export type RegularSearchQuery = {
           Pick<StorefrontAPI.FilterValue, 'id' | 'label' | 'count' | 'input'>
         >;
       }
+    >;
+  };
+  partial: {
+    nodes: Array<
+      {__typename: 'Product'} & Pick<
+        StorefrontAPI.Product,
+        | 'handle'
+        | 'id'
+        | 'productType'
+        | 'publishedAt'
+        | 'title'
+        | 'trackingParameters'
+        | 'vendor'
+      > & {
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'url' | 'altText' | 'width' | 'height'
+            >
+          >;
+          priceRange: {
+            minVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+          };
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id'> & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+              selectedOptions: Array<
+                Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+              >;
+              product: Pick<StorefrontAPI.Product, 'handle' | 'title'>;
+            }
+          >;
+        }
+    >;
+  };
+  bySku: {
+    nodes: Array<
+      {__typename: 'Product'} & Pick<
+        StorefrontAPI.Product,
+        | 'handle'
+        | 'id'
+        | 'productType'
+        | 'publishedAt'
+        | 'title'
+        | 'trackingParameters'
+        | 'vendor'
+      > & {
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'url' | 'altText' | 'width' | 'height'
+            >
+          >;
+          priceRange: {
+            minVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+          };
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id'> & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+              selectedOptions: Array<
+                Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+              >;
+              product: Pick<StorefrontAPI.Product, 'handle' | 'title'>;
+            }
+          >;
+        }
     >;
   };
 };
@@ -3109,6 +3207,7 @@ export type QuickSearchQueryVariables = StorefrontAPI.Exact<{
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
   term: StorefrontAPI.Scalars['String']['input'];
   partialTerm: StorefrontAPI.Scalars['String']['input'];
+  skuTerm: StorefrontAPI.Scalars['String']['input'];
   productCount: StorefrontAPI.Scalars['Int']['input'];
 }>;
 
@@ -3137,6 +3236,29 @@ export type QuickSearchQuery = {
     >;
   };
   partial: {
+    nodes: Array<
+      {__typename: 'Product'} & Pick<
+        StorefrontAPI.Product,
+        'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
+      > & {
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id'> & {
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            }
+          >;
+        }
+    >;
+  };
+  bySku: {
     nodes: Array<
       {__typename: 'Product'} & Pick<
         StorefrontAPI.Product,
@@ -3365,7 +3487,7 @@ interface GeneratedQueryTypes {
     return: AjaxProductQuery;
     variables: AjaxProductQueryVariables;
   };
-  "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $first: Int\n    $language: LanguageCode\n    $term: String!\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      first: $first,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: HIDE,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n": {
+  "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $first: Int\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      first: $first,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n    }\n    # Same wildcarded, in-progress-word pass the dropdown already runs (see\n    # QUICK_SEARCH_QUERY) — without it this page and the dropdown gather\n    # candidates two different ways for the identical term, so a product the\n    # dropdown found could be ranked outside this query's own top $first and\n    # never make it here. Unioned into the candidate pool before filtering,\n    # same as the dropdown does.\n    partial: search(\n      query: $partialTerm,\n      first: $first,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n    # SKU is not one of the fields Shopify's plain-text search matches — a\n    # shopper pasting a SKU code got the same OR-every-word noise as a title\n    # search, with the actual product often not even in it. variants.sku: is\n    # the field-qualified query that actually reaches it; see regularSearch\n    # for how these results skip the word-matching filter everything else\n    # here goes through, since a SKU hit is already exact.\n    bySku: search(\n      query: $skuTerm,\n      first: 10,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n": {
     return: RegularSearchQuery;
     variables: RegularSearchQueryVariables;
   };
@@ -3377,7 +3499,7 @@ interface GeneratedQueryTypes {
     return: CollectionSearchProductsQuery;
     variables: CollectionSearchProductsQueryVariables;
   };
-  '#graphql\n  query QuickSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $term,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      totalCount\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # Same search with the in-progress word wildcarded. Shopify matches whole\n    # tokens, so a shopper on their way to "oval" gets exactly zero results for\n    # "ova" — this alias is what keeps the list alive mid-word.\n    partial: search(\n      query: $partialTerm,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    predictiveSearch(\n      limit: 10,\n      limitScope: EACH,\n      query: $term,\n      types: [QUERY],\n    ) {\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion\'s canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn\'t cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n': {
+  '#graphql\n  query QuickSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $term,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      totalCount\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # Same search with the in-progress word wildcarded. Shopify matches whole\n    # tokens, so a shopper on their way to "oval" gets exactly zero results for\n    # "ova" — this alias is what keeps the list alive mid-word.\n    partial: search(\n      query: $partialTerm,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # SKU is not a field Shopify\'s plain-text search matches — variants.sku:\n    # is (see skuQuery). A shopper who pastes a code deserves the same exact\n    # hit here as on the results page, not the OR-every-word noise everything\n    # above returns for it.\n    bySku: search(\n      query: $skuTerm,\n      types: [PRODUCT],\n      first: 10,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    predictiveSearch(\n      limit: 10,\n      limitScope: EACH,\n      query: $term,\n      types: [QUERY],\n    ) {\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion\'s canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn\'t cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n': {
     return: QuickSearchQuery;
     variables: QuickSearchQueryVariables;
   };

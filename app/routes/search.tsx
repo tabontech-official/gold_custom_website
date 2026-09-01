@@ -269,6 +269,8 @@ export const SEARCH_QUERY = `#graphql
     $first: Int
     $language: LanguageCode
     $term: String!
+    $partialTerm: String!
+    $skuTerm: String!
     $productFilters: [ProductFilter!]
     $sortKey: SearchSortKeys
     $reverse: Boolean
@@ -291,7 +293,7 @@ export const SEARCH_QUERY = `#graphql
       reverse: $reverse,
       productFilters: $productFilters,
       types: [PRODUCT],
-      unavailableProducts: HIDE,
+      unavailableProducts: LAST,
     ) {
       nodes {
         ...on Product {
@@ -309,6 +311,42 @@ export const SEARCH_QUERY = `#graphql
           label
           count
           input
+        }
+      }
+    }
+    # Same wildcarded, in-progress-word pass the dropdown already runs (see
+    # QUICK_SEARCH_QUERY) — without it this page and the dropdown gather
+    # candidates two different ways for the identical term, so a product the
+    # dropdown found could be ranked outside this query's own top $first and
+    # never make it here. Unioned into the candidate pool before filtering,
+    # same as the dropdown does.
+    partial: search(
+      query: $partialTerm,
+      first: $first,
+      types: [PRODUCT],
+      unavailableProducts: LAST,
+    ) {
+      nodes {
+        ...on Product {
+          ...SearchProduct
+        }
+      }
+    }
+    # SKU is not one of the fields Shopify's plain-text search matches — a
+    # shopper pasting a SKU code got the same OR-every-word noise as a title
+    # search, with the actual product often not even in it. variants.sku: is
+    # the field-qualified query that actually reaches it; see regularSearch
+    # for how these results skip the word-matching filter everything else
+    # here goes through, since a SKU hit is already exact.
+    bySku: search(
+      query: $skuTerm,
+      first: 10,
+      types: [PRODUCT],
+      unavailableProducts: LAST,
+    ) {
+      nodes {
+        ...on Product {
+          ...SearchProduct
         }
       }
     }
@@ -374,32 +412,56 @@ async function regularSearch({
   // "next page" to be wrong about: everything that matches is on screen already.
   const {
     errors,
-    ...items
+    pages,
+    products,
+    partial,
+    bySku,
   }: {errors?: Array<{message: string}>} & RegularSearchQuery =
     await storefront.query(SEARCH_QUERY, {
       cache: CacheCatalog(),
       variables: {
         first: 250,
         term,
+        partialTerm: withTrailingWildcard(term),
+        skuTerm: `${skuQuery(term)}*`,
         productFilters,
         sortKey: 'RELEVANCE',
         reverse: false,
       },
     });
 
-  if (!items) {
+  if (!products) {
     throw new Error('No search data returned from Shopify API');
   }
 
   // Same relevance rule the dropdown uses: every word of the term has to be in
   // the title or product type. Without it "18 inch chain" returns 629 results of
   // which four in the first forty are actually 18 inches long.
+  //
+  // `partial` is unioned in BEFORE that filter — the same wildcarded pass the
+  // dropdown runs, so this page gathers candidates the same way the dropdown
+  // does instead of relying on one exact-term search's own top-250 ranking to
+  // happen to contain the true match.
+  //
+  // `bySku` is unioned in AFTER — a SKU hit is already exact (it matched a
+  // specific field, not a loose OR of words), and would almost certainly fail
+  // the title/productType word filter since a SKU code is not in the title.
+  const seenViaSku = new Set(bySku?.nodes.map((product) => product.id));
+  const seenExact = new Set(products.nodes.map((product) => product.id));
+  const wordMatched = productsMatchingTerm(term, [
+    ...products.nodes,
+    ...(partial?.nodes ?? []).filter((product) => !seenExact.has(product.id)),
+  ]);
+
   const filtered = {
-    ...items,
+    pages,
     products: {
-      ...items.products,
+      ...products,
       nodes: sortSearchProducts(
-        productsMatchingTerm(term, items.products.nodes),
+        [
+          ...(bySku?.nodes ?? []),
+          ...wordMatched.filter((product) => !seenViaSku.has(product.id)),
+        ],
         sort,
       ),
     },
@@ -537,6 +599,20 @@ function withTrailingWildcard(term: string) {
   return [...words.slice(0, -1), `${words[words.length - 1]}*`].join(' ');
 }
 
+/**
+ * SKU is not one of the fields Shopify's plain free-text search matches — it
+ * only reaches title, product type, vendor and tags. variants.sku: is the
+ * field-qualified syntax that actually reaches it, confirmed directly
+ * against the Storefront API: a bare `sku:` prefix (the field name a
+ * shopper's own search vocabulary would guess) silently matches nothing —
+ * the real field lives one level down, on the variant, and gets this exact,
+ * unquoted, wildcarded form. A quoted phrase or a quoted wildcard both also
+ * came back empty; this is the one shape that works.
+ */
+function skuQuery(term: string) {
+  return `variants.sku:${term.trim()}`;
+}
+
 // Fallback for terms that name no category. Products come from the REGULAR
 // search connection, not `predictiveSearch`, which caps `limit` at 10 per type —
 // the API rejects anything higher, so it can never answer "show me what matches".
@@ -546,6 +622,7 @@ const QUICK_SEARCH_QUERY = `#graphql
     $language: LanguageCode
     $term: String!
     $partialTerm: String!
+    $skuTerm: String!
     $productCount: Int!
   ) @inContext(country: $country, language: $language) {
     products: search(
@@ -568,6 +645,22 @@ const QUICK_SEARCH_QUERY = `#graphql
       query: $partialTerm,
       types: [PRODUCT],
       first: $productCount,
+      unavailableProducts: LAST,
+    ) {
+      nodes {
+        ...on Product {
+          ...PredictiveProduct
+        }
+      }
+    }
+    # SKU is not a field Shopify's plain-text search matches — variants.sku:
+    # is (see skuQuery). A shopper who pastes a code deserves the same exact
+    # hit here as on the results page, not the OR-every-word noise everything
+    # above returns for it.
+    bySku: search(
+      query: $skuTerm,
+      types: [PRODUCT],
+      first: 10,
       unavailableProducts: LAST,
     ) {
       nodes {
@@ -646,6 +739,7 @@ async function predictiveSearch({
   const {
     products,
     partial,
+    bySku,
     predictiveSearch: suggestions,
     errors,
   } = await storefront.query(QUICK_SEARCH_QUERY, {
@@ -653,6 +747,7 @@ async function predictiveSearch({
     variables: {
       term,
       partialTerm: withTrailingWildcard(term),
+      skuTerm: `${skuQuery(term)}*`,
       productCount: FALLBACK_SEARCH_POOL,
     },
   });
@@ -674,10 +769,15 @@ async function predictiveSearch({
     ...products.nodes,
     ...(partial?.nodes ?? []).filter((product) => !seen.has(product.id)),
   ];
-  const matching = productsMatchingTerm(term, pool).slice(
-    0,
-    MAX_DROPDOWN_PRODUCTS,
-  );
+  // SKU hits are already exact — same reasoning as regularSearch — so they
+  // skip productsMatchingTerm and go in first.
+  const seenViaSku = new Set(bySku?.nodes.map((product) => product.id));
+  const matching = [
+    ...(bySku?.nodes ?? []),
+    ...productsMatchingTerm(term, pool).filter(
+      (product) => !seenViaSku.has(product.id),
+    ),
+  ].slice(0, MAX_DROPDOWN_PRODUCTS);
 
   return {
     type,
