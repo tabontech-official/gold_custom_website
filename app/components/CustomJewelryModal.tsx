@@ -24,10 +24,12 @@ const PRODUCT_TYPES = [
  * (.appt-*), same fetcher/success-state pattern, posts to
  * /api/custom-jewelry instead.
  *
- * multipart/form-data, not the plain POST AppointmentModal uses — the
- * optional reference photo needs it. fetcher.submit takes the raw FormData
- * directly rather than fetcher.Form, since a controlled file input has to be
- * read from the DOM at submit time either way.
+ * No file upload — a reference-photo field used to sit here, but EmailJS's
+ * free-plan request cap (50Kb total, across every field) made anything but
+ * a tiny image fail with a 413 while the customer still saw "Request
+ * received". Dropped rather than shipped broken; add it back once
+ * attachments have a real home (a paid EmailJS plan, or upload-then-link
+ * through some other storage) instead of being crammed into template_params.
  */
 export function CustomJewelryModal({
   triggerLabel = 'Start your design',
@@ -39,7 +41,6 @@ export function CustomJewelryModal({
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [productType, setProductType] = useState('');
-  const [fileName, setFileName] = useState('');
   const fetcher = useFetcher<ActionResult>();
   const dialogRef = useRef<HTMLDivElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -72,18 +73,8 @@ export function CustomJewelryModal({
   useEffect(() => {
     if (!succeeded) return;
     setProductType('');
-    setFileName('');
     formRef.current?.reset();
   }, [succeeded]);
-
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    void fetcher.submit(new FormData(event.currentTarget), {
-      method: 'post',
-      action: '/api/custom-jewelry',
-      encType: 'multipart/form-data',
-    });
-  }
 
   return (
     <>
@@ -150,10 +141,10 @@ export function CustomJewelryModal({
                     <h2>Request Custom Jewelry</h2>
                   </header>
 
-                  <form
+                  <fetcher.Form
                     ref={formRef}
-                    onSubmit={handleSubmit}
-                    encType="multipart/form-data"
+                    method="post"
+                    action="/api/custom-jewelry"
                     noValidate
                   >
                     <label className="appt-field">
@@ -240,27 +231,6 @@ export function CustomJewelryModal({
                       )}
                     </label>
 
-                    <label className="appt-field">
-                      <span>Supporting Document (optional)</span>
-                      <span className="cj-file-row">
-                        <input
-                          type="file"
-                          name="document"
-                          accept="image/*,.pdf"
-                          className="cj-file-input"
-                          onChange={(e) =>
-                            setFileName(e.currentTarget.files?.[0]?.name ?? '')
-                          }
-                        />
-                        {fileName && (
-                          <span className="cj-file-name">{fileName}</span>
-                        )}
-                      </span>
-                      {fieldErrors?.document && (
-                        <em className="appt-error">{fieldErrors.document}</em>
-                      )}
-                    </label>
-
                     {formError && <p className="appt-form-error">{formError}</p>}
 
                     <button
@@ -273,7 +243,7 @@ export function CustomJewelryModal({
                     <p className="appt-fineprint">
                       A designer will reach out to talk through your idea.
                     </p>
-                  </form>
+                  </fetcher.Form>
                 </>
               )}
             </div>

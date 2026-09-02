@@ -12013,22 +12013,6 @@ html.header-primary-hidden
   color: #fff;
 }
 
-.cj-file-row {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  flex-wrap: wrap;
-}
-
-.cj-file-input {
-  font-size: 0.82rem;
-}
-
-.cj-file-name {
-  font-size: 0.78rem;
-  color: var(--color-ink-soft);
-}
-
 /* Compact the modal on phones — full-desktop padding/spacing/height overflows
    small screens. Matches the site's 48em mobile breakpoint. Tighter chrome,
    shorter fields, smaller type. */
@@ -13523,12 +13507,6 @@ html.header-primary-hidden
   pointer-events: none;
 }
 
-/* top-left holds up to two (karat + construction). */
-.product-card-badges.at-top-left {
-  top: 0.6rem;
-  left: 0.6rem;
-}
-
 .product-card-badges.at-bottom-left {
   bottom: 0.6rem;
   left: 0.6rem;
@@ -13539,28 +13517,6 @@ html.header-primary-hidden
   right: 0.6rem;
 }
 
-/* Gold - the metal. */
-.product-card-badge.is-karat {
-  color: #7a5c14;
-  border-color: rgba(212, 175, 55, 0.55);
-  background: rgba(250, 240, 208, 0.92);
-}
-
-/* Warm stone - how the piece is built. Sits beside the karat, so it is the
-   quietest tint of the set; it should read as a spec, not a claim. */
-.product-card-badge.is-construction {
-  color: #5f5a4e;
-  border-color: rgba(120, 110, 88, 0.32);
-  background: rgba(243, 240, 231, 0.94);
-}
-
-/* Purple - the stone. */
-.product-card-badge.is-diamond {
-  color: #5b3a8c;
-  border-color: rgba(120, 86, 168, 0.45);
-  background: rgba(238, 231, 249, 0.94);
-}
-
 /* Blue - the accolade. */
 .product-card-badge.is-best-seller {
   color: #1d4b8f;
@@ -13569,8 +13525,7 @@ html.header-primary-hidden
 }
 
 /* Orange - the other accolade, freshness rather than popularity. Shares the
-   bottom-left corner with Best Seller (see cardBadges' accolade array) so the
-   two never collide on one card. */
+   bottom-left corner with Best Seller; only one is ever shown. */
 .product-card-badge.is-new-arrival {
   color: #a3540c;
   border-color: rgba(217, 122, 30, 0.5);
@@ -13584,12 +13539,6 @@ html.header-primary-hidden
   background: rgba(253, 235, 234, 0.94);
 }
 
-.product-card-badge.is-audience {
-  color: #4a4a52;
-  border-color: rgba(17, 17, 17, 0.14);
-  background: rgba(246, 246, 246, 0.94);
-}
-
 @media (max-width: 40em) {
   .product-card-badge {
     padding: 0.22rem 0.44rem;
@@ -13599,11 +13548,6 @@ html.header-primary-hidden
 
   .product-card-badges {
     gap: 0.22rem;
-  }
-
-  .product-card-badges.at-top-left {
-    top: 0.4rem;
-    left: 0.4rem;
   }
 
   .product-card-badges.at-bottom-left {

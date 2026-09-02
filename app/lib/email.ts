@@ -1,81 +1,83 @@
 /**
- * Shared Resend plumbing. Started as one copy inside api.appointment.tsx;
- * pulled out once api.custom-jewelry.tsx needed the identical shell/row
- * template and send call — two real call sites, not a hypothetical one.
+ * Shared EmailJS plumbing. Replaces the Resend integration this file used to
+ * hold — Resend's shared sandbox sender could only deliver to the Resend
+ * account's own owner address, which made every store-alert email a 403
+ * unless a domain got verified. EmailJS's REST API has no such recipient
+ * restriction once server-side (non-browser) API access is turned on for
+ * the account.
+ *
+ * Unlike Resend, the email's HTML lives on EmailJS's own dashboard as a
+ * template (service_8238tjc / one template per form) — this file only ever
+ * sends the template_id plus a flat bag of {{variable}}: value pairs for
+ * EmailJS to interpolate. There is no HTML-building helper here anymore
+ * because there is nothing left to build; see the two *.html files next to
+ * this one for the actual template markup to paste into each EmailJS
+ * template's source editor.
  */
 
-export function escapeHtml(v: string): string {
-  return v.replace(
-    /[&<>"']/g,
-    (c) =>
-      ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[
-        c
-      ]!,
-  );
-}
-
-export function emailRow(label: string, value: string): string {
-  return `<p style="margin:0 0 10px;font-size:15px"><span style="color:#8a8175">${label}:</span> <strong style="color:#1c1a17">${escapeHtml(value)}</strong></p>`;
-}
-
-export function emailShell(title: string, body: string): string {
-  return `<!doctype html><html><body style="margin:0;background:#f4f1ea;font-family:Georgia,serif;color:#2b2620">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 12px"><tr><td align="center">
-    <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fffdf8;border:1px solid #e6ddc9;border-radius:12px;overflow:hidden">
-      <tr><td style="background:#1c1a17;padding:24px;text-align:center"><span style="color:#d4af6a;font-size:20px;letter-spacing:3px;text-transform:uppercase">Gold Custom</span></td></tr>
-      <tr><td style="padding:32px"><h1 style="margin:0 0 16px;font-size:22px;font-weight:normal;color:#1c1a17">${title}</h1>${body}</td></tr>
-      <tr><td style="padding:20px 32px;border-top:1px solid #eee4d2;font-size:12px;color:#8a8175;text-align:center">Gold Custom · Fine Jewelry &amp; Watches</td></tr>
-    </table></td></tr></table></body></html>`;
+/**
+ * Reads the four EmailJS values off the Worker env. `Env` doesn't declare
+ * these (store-specific secrets, not part of Hydrogen's own type), hence the
+ * one `as any` each call site would otherwise repeat.
+ */
+export function emailJsConfig(env: Env): {
+  publicKey?: string;
+  privateKey?: string;
+  serviceId?: string;
+} {
+  return {
+    publicKey: (env as any).EMAILJS_PUBLIC_KEY as string | undefined,
+    privateKey: (env as any).EMAILJS_PRIVATE_KEY as string | undefined,
+    serviceId: (env as any).EMAILJS_SERVICE_ID as string | undefined,
+  };
 }
 
 /**
- * Reads RESEND_API_KEY/RESEND_FROM off the Worker env the same way every
- * caller here needs to — `Env` doesn't declare these (they're store-specific
- * secrets, not part of Hydrogen's own type), hence the one `as any` each call
- * site would otherwise repeat.
+ * Sends one email through an EmailJS template. Best-effort — logs and
+ * returns rather than throwing, so an EmailJS outage or misconfiguration
+ * never fails the form submission it's attached to (every caller already
+ * treats "the inquiry was received" as true once validation passes).
+ *
+ * `accessToken` (the private key) is what lets this run from a server at
+ * all — EmailJS trusts a browser call by its Origin header, which a Worker
+ * request doesn't send, so without the private key every server-side call
+ * gets refused as "non-browser". The account also has to have "API calls
+ * from non-browser applications" turned on under
+ * dashboard.emailjs.com/admin/account/security — the private key alone
+ * doesn't bypass that switch.
  */
-export function resendConfig(env: Env): {key?: string; from: string} {
-  const key = (env as any).RESEND_API_KEY as string | undefined;
-  const from =
-    ((env as any).RESEND_FROM as string) ||
-    'Gold Custom <onboarding@resend.dev>';
-  return {key, from};
-}
-
-/**
- * Sends one email through Resend. Best-effort — logs and returns rather than
- * throwing, so a Resend outage never fails the form submission it's attached
- * to (every caller already treats "the inquiry was received" as true once
- * validation passes and the record/customer side succeeds).
- */
-export async function sendResendEmail(
+export async function sendEmailJs(
   env: Env,
   {
-    to,
-    subject,
-    html,
-    attachments,
+    templateId,
+    templateParams,
   }: {
-    to: string;
-    subject: string;
-    html: string;
-    /** Resend's own shape: base64 `content`, no data: URI prefix. */
-    attachments?: Array<{filename: string; content: string}>;
+    templateId?: string;
+    templateParams: Record<string, string>;
   },
   logTag: string,
 ): Promise<void> {
-  const {key, from} = resendConfig(env);
-  if (!key) {
-    console.warn(`[${logTag}] RESEND_API_KEY unset — email skipped`);
+  const {publicKey, privateKey, serviceId} = emailJsConfig(env);
+  if (!publicKey || !privateKey || !serviceId) {
+    console.warn(`[${logTag}] EmailJS credentials unset — email skipped`);
     return;
   }
-  const res = await fetch('https://api.resend.com/emails', {
+  if (!templateId) {
+    console.warn(`[${logTag}] EmailJS template id unset — email skipped`);
+    return;
+  }
+  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
-    body: JSON.stringify({from, to, subject, html, attachments}),
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      accessToken: privateKey,
+      template_params: templateParams,
+    }),
   });
-  if (!res.ok) console.error(`[${logTag}] Resend ${to}:`, await res.text());
+  if (!res.ok) {
+    console.error(`[${logTag}] EmailJS ${res.status}:`, await res.text());
+  }
 }

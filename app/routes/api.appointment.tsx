@@ -1,5 +1,5 @@
 import type {Route} from './+types/api.appointment';
-import {emailRow, emailShell, escapeHtml, sendResendEmail} from '~/lib/email';
+import {sendEmailJs} from '~/lib/email';
 
 // Private-consultation request. Mirrors the newsletter (api.subscribe): create
 // the customer via the Storefront API (TAKEN = already on file, fine), then
@@ -85,69 +85,51 @@ function prettyDate(iso: string): string {
       }).format(d);
 }
 
-// Sends the store alert + customer confirmation via Resend. If RESEND_API_KEY
-// is unset, quietly skips (booking still succeeds).
+// Sends the store alert via EmailJS. If credentials are unset, quietly skips
+// (booking still succeeds) — see sendEmailJs.
+//
+// One variable per field, so the template can lay each out as its own row
+// instead of printing one pre-wrapped text blob. Every value is sent as a
+// string — EmailJS drops a missing variable's row silently, but an empty
+// string still renders the row's label, so absent optional fields are sent
+// as '' and the template uses EmailJS's {{#var}}...{{/var}} section syntax
+// to omit the whole row.
+//
+// Values are plain text, never HTML: EmailJS escapes template variable
+// content (a live send proved it — `<br>` came back as the literal text
+// "<br>"), so any tag put in here renders as visible characters.
 async function sendEmails(env: Env, d: Details): Promise<void> {
   const notify = (env as any).NOTIFY_EMAIL as string | undefined;
   if (!notify) {
     console.warn('[appointment] NOTIFY_EMAIL unset — store alert skipped');
+    return;
   }
-  const storeUrl = `https://goldcustom.com/products/${d.productHandle}`;
-  const when = prettyDate(d.date);
+  const templateId = (env as any).EMAILJS_TEMPLATE_APPOINTMENT as
+    | string
+    | undefined;
 
-  const messageBlock = d.message
-    ? `<div style="margin:16px 0 0;padding:12px 14px;background:#faf6ec;border-left:3px solid #d4af6a">
-         <div style="font-size:13px;color:#8a8175;margin-bottom:4px">Message</div>
-         <div style="font-size:15px;color:#2b2620;white-space:pre-wrap">${escapeHtml(d.message)}</div>
-       </div>`
+  const productUrl = d.productHandle
+    ? `https://goldcustom.com/products/${d.productHandle}`
     : '';
 
-  // Only the store alert depends on NOTIFY_EMAIL; the customer confirmation
-  // below is addressed to the booker, so it must still send when this is unset.
-  if (notify) {
-    await sendResendEmail(
-      env,
-      {
-        to: notify,
-        subject: 'New Jewelry Appointment Alert',
-        html: emailShell(
-          'New Consultation Request',
-          `<p style="margin:0 0 18px;color:#4a463f">A customer has requested a private consultation.</p>
-       ${emailRow('Customer', d.name)}${emailRow('Email', d.email)}${emailRow('Appointment', when)}
-       ${emailRow('Product', d.productTitle)}${d.variantInfo ? emailRow('Variant', d.variantInfo) : ''}
-       ${messageBlock}
-       <p style="margin:18px 0 0"><a href="${escapeHtml(storeUrl)}" style="color:#b6893f">View product &rarr;</a></p>`,
-        ),
-      },
-      'appointment',
-    );
-  }
-
-  // Customer confirmation — opt-in, because it needs a VERIFIED SENDING DOMAIN.
-  //
-  // Resend's shared `onboarding@resend.dev` sender may only deliver to the
-  // account owner's own address; every other recipient is rejected 403. The
-  // store alert above is fine (it goes to the owner), but this one is addressed
-  // to whoever booked, so on a sandbox account it fails 100% of the time and
-  // just fills the log with rejections.
-  //
-  // To turn it on: verify goldcustom.com at resend.com/domains, point
-  // RESEND_FROM at an address on that domain, then set
-  // SEND_CUSTOMER_EMAILS="true". Until then the booker sees the on-screen
-  // confirmation only, which is what the modal already shows.
-  if (String((env as any).SEND_CUSTOMER_EMAILS) !== 'true') return;
-
-  await sendResendEmail(
+  await sendEmailJs(
     env,
     {
-      to: d.email,
-      subject: 'Your Gold Custom Consultation Request',
-      html: emailShell(
-        `Thank you, ${escapeHtml(d.name.split(' ')[0])}`,
-        `<p style="margin:0 0 16px;line-height:1.6;color:#4a463f">We've received your request for a private consultation. One of our jewelry specialists will contact you shortly to confirm the details.</p>
-       ${emailRow('Piece', d.productTitle)}${emailRow('Requested date', when)}
-       <p style="margin:20px 0 0"><a href="${escapeHtml(storeUrl)}" style="color:#b6893f">View this piece &rarr;</a></p>`,
-      ),
+      templateId,
+      templateParams: {
+        to_email: notify,
+        name: d.name,
+        email: d.email,
+        requested_date: prettyDate(d.date),
+        product: d.productTitle,
+        variant: d.variantInfo,
+        product_url: productUrl,
+        message: d.message,
+        time: new Intl.DateTimeFormat('en-US', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }).format(new Date()),
+      },
     },
     'appointment',
   );
