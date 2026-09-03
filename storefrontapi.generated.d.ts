@@ -1815,6 +1815,18 @@ export type HomeArticlesQuery = {
   };
 };
 
+export type AppointmentProductQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type AppointmentProductQuery = {
+  product?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Product, 'title'> & {
+      media: {nodes: Array<Pick<StorefrontAPI.MediaImage, 'id'>>};
+    }
+  >;
+};
+
 export type AppointmentCustomerMutationVariables = StorefrontAPI.Exact<{
   input: StorefrontAPI.CustomerCreateInput;
 }>;
@@ -1823,7 +1835,7 @@ export type AppointmentCustomerMutation = {
   customerCreate?: StorefrontAPI.Maybe<{
     customer?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Customer, 'id'>>;
     customerUserErrors: Array<
-      Pick<StorefrontAPI.CustomerUserError, 'code' | 'message'>
+      Pick<StorefrontAPI.CustomerUserError, 'code' | 'field' | 'message'>
     >;
   }>;
 };
@@ -1964,6 +1976,19 @@ export type CollectionByHandleQuery = {
         }
       >;
     };
+  }>;
+};
+
+export type CustomJewelryCustomerMutationVariables = StorefrontAPI.Exact<{
+  input: StorefrontAPI.CustomerCreateInput;
+}>;
+
+export type CustomJewelryCustomerMutation = {
+  customerCreate?: StorefrontAPI.Maybe<{
+    customer?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Customer, 'id'>>;
+    customerUserErrors: Array<
+      Pick<StorefrontAPI.CustomerUserError, 'code' | 'message'>
+    >;
   }>;
 };
 
@@ -3149,59 +3174,6 @@ export type PredictiveQueryFragment = {
   'text' | 'styledText' | 'trackingParameters'
 >;
 
-export type CollectionIndexQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type CollectionIndexQuery = {
-  collections: {
-    nodes: Array<
-      Pick<StorefrontAPI.Collection, 'id' | 'title' | 'handle'> & {
-        image?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.Image, 'url' | 'altText' | 'width' | 'height'>
-        >;
-        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-      }
-    >;
-  };
-};
-
-export type CollectionSearchProductsQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  handle: StorefrontAPI.Scalars['String']['input'];
-  productCount: StorefrontAPI.Scalars['Int']['input'];
-}>;
-
-export type CollectionSearchProductsQuery = {
-  collection?: StorefrontAPI.Maybe<{
-    products: {
-      nodes: Array<
-        {__typename: 'Product'} & Pick<
-          StorefrontAPI.Product,
-          'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
-        > & {
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.ProductVariant, 'id'> & {
-                image?: StorefrontAPI.Maybe<
-                  Pick<
-                    StorefrontAPI.Image,
-                    'url' | 'altText' | 'width' | 'height'
-                  >
-                >;
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-              }
-            >;
-          }
-      >;
-    };
-  }>;
-};
-
 export type QuickSearchQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -3427,6 +3399,10 @@ interface GeneratedQueryTypes {
     return: HomeArticlesQuery;
     variables: HomeArticlesQueryVariables;
   };
+  '#graphql\n  query AppointmentProduct($handle: String!) {\n    product(handle: $handle) {\n      title\n      media(first: 1) {\n        nodes {\n          ... on MediaImage {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
+    return: AppointmentProductQuery;
+    variables: AppointmentProductQueryVariables;
+  };
   '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          # Card badges. Tags drive Karat/Diamond and best-sellers\n          # membership drives Best Seller. See cardBadges() in\n          # ProductItem.tsx for why only those, and only from here.\n          tags\n          collections(first: 15) {\n            nodes {\n              handle\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            # Card badges: a Sale badge must come from a real\n            # compare-at price, never from a tag someone typed.\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
@@ -3491,14 +3467,6 @@ interface GeneratedQueryTypes {
     return: RegularSearchQuery;
     variables: RegularSearchQueryVariables;
   };
-  '#graphql\n  query CollectionIndex($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collections(first: 250) {\n      nodes {\n        id\n        title\n        handle\n        image {\n          url\n          altText\n          width\n          height\n        }\n        # Existence check, not a listing — a suggestion that opens onto "no\n        # products" is worse than no suggestion.\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
-    return: CollectionIndexQuery;
-    variables: CollectionIndexQueryVariables;
-  };
-  "#graphql\n  query CollectionSearchProducts(\n    $country: CountryCode\n    $language: LanguageCode\n    $handle: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: $productCount) {\n        nodes {\n          ...PredictiveProduct\n        }\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion's canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn't cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n": {
-    return: CollectionSearchProductsQuery;
-    variables: CollectionSearchProductsQueryVariables;
-  };
   '#graphql\n  query QuickSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $term,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      totalCount\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # Same search with the in-progress word wildcarded. Shopify matches whole\n    # tokens, so a shopper on their way to "oval" gets exactly zero results for\n    # "ova" — this alias is what keeps the list alive mid-word.\n    partial: search(\n      query: $partialTerm,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # SKU is not a field Shopify\'s plain-text search matches — variants.sku:\n    # is (see skuQuery). A shopper who pastes a code deserves the same exact\n    # hit here as on the results page, not the OR-every-word noise everything\n    # above returns for it.\n    bySku: search(\n      query: $skuTerm,\n      types: [PRODUCT],\n      first: 10,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    predictiveSearch(\n      limit: 10,\n      limitScope: EACH,\n      query: $term,\n      types: [QUERY],\n    ) {\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion\'s canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn\'t cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n': {
     return: QuickSearchQuery;
     variables: QuickSearchQueryVariables;
@@ -3514,9 +3482,13 @@ interface GeneratedQueryTypes {
 }
 
 interface GeneratedMutationTypes {
-  '#graphql\n  mutation AppointmentCustomer($input: CustomerCreateInput!) {\n    customerCreate(input: $input) {\n      customer { id }\n      customerUserErrors { code message }\n    }\n  }\n': {
+  '#graphql\n  mutation AppointmentCustomer($input: CustomerCreateInput!) {\n    customerCreate(input: $input) {\n      customer {\n        id\n      }\n      customerUserErrors {\n        code\n        field\n        message\n      }\n    }\n  }\n': {
     return: AppointmentCustomerMutation;
     variables: AppointmentCustomerMutationVariables;
+  };
+  '#graphql\n  mutation CustomJewelryCustomer($input: CustomerCreateInput!) {\n    customerCreate(input: $input) {\n      customer {\n        id\n      }\n      customerUserErrors {\n        code\n        message\n      }\n    }\n  }\n': {
+    return: CustomJewelryCustomerMutation;
+    variables: CustomJewelryCustomerMutationVariables;
   };
   '#graphql\n  mutation NewsletterSubscribe($input: CustomerCreateInput!) {\n    customerCreate(input: $input) {\n      customer {\n        id\n      }\n      customerUserErrors {\n        code\n        message\n      }\n    }\n  }\n': {
     return: NewsletterSubscribeMutation;

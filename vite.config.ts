@@ -41,6 +41,6 @@ export default defineConfig({
     },
   },
   server: {
-    allowedHosts: ['.tryhydrogen.dev'],
+    allowedHosts: ['.tryhydrogen.dev', 'amaze-saint-haziness.ngrok-free.dev',],
   },
 });

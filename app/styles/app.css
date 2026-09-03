@@ -1797,39 +1797,6 @@ F
   font-size: 0.75rem;
 }
 
-.header-search-collection {
-  align-items: center;
-  background: var(--color-bg-soft);
-  border-bottom: 1px solid var(--color-border);
-  display: flex;
-  gap: 0.75rem;
-  justify-content: space-between;
-  padding: 0.85rem 1.25rem;
-}
-
-.header-search-collection:hover {
-  background: var(--color-gold-soft, var(--color-bg-soft));
-}
-
-.header-search-collection small {
-  color: var(--color-gold-dark);
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.header-search-collection .header-search-result-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  white-space: normal;
-}
-
-.header-search-collection span[aria-hidden] {
-  color: var(--color-gold-dark);
-  flex-shrink: 0;
-}
-
 .header-actions {
   align-items: center;
   display: flex;
@@ -3219,36 +3186,6 @@ F
 .predictive-search-result {
   margin: 0;
   padding: 0 1.15rem;
-}
-
-/* The one scored collection, pinned above the product list in the mobile
-   panel. Reads as a destination rather than another result row. */
-.predictive-search-collection {
-  margin: 1.15rem 1.15rem 0;
-}
-
-.predictive-search-collection a {
-  align-items: center;
-  background: var(--color-bg-soft);
-  border: 1px solid var(--color-border);
-  border-left: 3px solid var(--color-gold);
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem 0.9rem;
-}
-
-.predictive-search-collection small {
-  color: var(--color-gold-dark);
-  display: block;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.predictive-search-collection span {
-  font-size: 0.95rem;
-  font-weight: 600;
 }
 
 /* The section label sits on a hairline running to the panel edge, opened by a
@@ -6127,21 +6064,25 @@ html.header-primary-hidden
      (--sticky-head-height, once at mount and on resize) because the circles
      and their labels reflow with the text.
 
-     Scoped with :has() so only collection pages pay for it — every other
-     mobile page keeps the announcement scrolling away as before. */
+     Scoped with :has(.collection-toolbar), NOT :has(.collection-sticky-head):
+     the toolbar is the band this stack exists to pin, and it also renders on
+     pages with no category strip (search). Keying off the strip left search's
+     fixed toolbar reading an undefined --announce-h — its `top` computed to
+     auto and the bar froze mid-page. Every other mobile page keeps the
+     announcement scrolling away as before. */
   /* Every band's offset derives from this one value, so collapsing the
      announcement moves the whole stack in a single step. `page-scrolled` is
      set by an IntersectionObserver in Header.tsx once the viewport passes the
      bar — one discrete class change, never a per-frame recalculation. */
-  body:has(.collection-sticky-head) {
+  body:has(.collection-toolbar) {
     --announce-h: 1.5rem;
   }
 
-  html.page-scrolled body:has(.collection-sticky-head) {
+  html.page-scrolled body:has(.collection-toolbar) {
     --announce-h: 0rem;
   }
 
-  body:has(.collection-sticky-head) .announcement-bar {
+  body:has(.collection-toolbar) .announcement-bar {
     height: var(--announce-h);
     left: 0;
     min-height: 0;
@@ -6155,7 +6096,7 @@ html.header-primary-hidden
     z-index: 901;
   }
 
-  body:has(.collection-sticky-head) .header-primary {
+  body:has(.collection-toolbar) .header-primary {
     left: 0;
     position: fixed;
     right: 0;
@@ -6202,13 +6143,34 @@ html.header-primary-hidden
     z-index: 54;
   }
 
-  /* Clears the whole fixed stack: announcement + header + strip + this bar.
-     Without it the page would start underneath them. */
-  body:has(.collection-sticky-head) .page-body {
+  /* Clears the whole fixed stack: announcement + header + strip (0 when the
+     page has none) + this bar. Without it the page would start underneath
+     them.
+
+     --toolbar-height is measured by JS after hydration; until then the
+     toolbar is already fixed (pure CSS) but this padding would be short by
+     its height, parking the page heading half under the bar on first paint.
+     2.6rem is the bar's real height (0.5rem×2 padding + its one row of
+     buttons), corrected to the exact measurement once JS runs. */
+  body:has(.collection-toolbar) .page-body {
     padding-top: calc(
       var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) +
-        var(--toolbar-height, 0px)
+        var(--toolbar-height, 2.6rem)
     );
+  }
+
+  /* Collections with no circular category strip (CollectionSubNavIcons
+     rendered nothing — e.g. Necklaces): the sticky head is an empty fixed
+     band whose padding still measures into --sticky-head-height, and the
+     products section keeps its stock 3.6rem top padding because the zeroing
+     rule above the toolbar is scoped to :has(.subnav-icons). Both read as a
+     blank hole between the filter bar and the grid, so collapse both. */
+  .collection-sticky-head:not(:has(.subnav-icons)) {
+    padding: 0;
+  }
+
+  .collection-sticky-head:not(:has(.subnav-icons)) + .home-section {
+    padding-top: 0;
   }
 }
 
@@ -11913,7 +11875,8 @@ html.header-primary-hidden
 }
 
 .appt-field input,
-.appt-field textarea {
+.appt-field textarea,
+.appt-field select {
   width: 100%;
   min-height: 3rem;
   padding: 0 0.9rem;
@@ -11933,13 +11896,23 @@ html.header-primary-hidden
 }
 
 .appt-field input:focus,
-.appt-field textarea:focus {
+.appt-field textarea:focus,
+.appt-field select:focus {
   outline: none;
   border-color: var(--color-gold);
 }
 
-.appt-field input[aria-invalid='true'] {
+.appt-field input[aria-invalid='true'],
+.appt-field select[aria-invalid='true'] {
   border-color: var(--color-sale);
+}
+
+/* CustomJewelryModal's per-category option sheet — two selects per row,
+   collapsing to one column on phones alongside the other compact rules. */
+.cj-spec-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 0.75rem;
 }
 
 .appt-error {
@@ -12058,9 +12031,14 @@ html.header-primary-hidden
   }
 
   .appt-field input,
-  .appt-field textarea {
+  .appt-field textarea,
+  .appt-field select {
     min-height: 2.5rem;
     font-size: 0.95rem;
+  }
+
+  .cj-spec-grid {
+    grid-template-columns: 1fr;
   }
 
   .appt-field textarea {

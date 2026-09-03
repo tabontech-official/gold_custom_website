@@ -6,7 +6,6 @@ import {
   getEmptyPredictiveSearchResult,
   urlWithTrackingParams,
   type PredictiveSearchReturn,
-  type SearchCollection,
 } from '~/lib/search';
 import {useAside} from './Aside';
 import {productCanonicalPath} from '~/lib/categories';
@@ -16,7 +15,6 @@ type PredictiveSearchItems = PredictiveSearchReturn['result']['items'];
 type UsePredictiveSearchReturn = {
   term: React.MutableRefObject<string>;
   total: number;
-  collection: SearchCollection | null | undefined;
   inputRef: React.MutableRefObject<HTMLInputElement | null>;
   items: PredictiveSearchItems;
   fetcher: Fetcher<PredictiveSearchReturn>;
@@ -26,7 +24,6 @@ type SearchResultsPredictiveArgs = Pick<
   UsePredictiveSearchReturn,
   'term' | 'total' | 'inputRef' | 'items'
 > & {
-  collection: SearchCollection | null | undefined;
   state: Fetcher['state'];
   closeSearch: () => void;
 };
@@ -48,8 +45,7 @@ export function SearchResultsPredictive({
   children,
 }: SearchResultsPredictiveProps) {
   const aside = useAside();
-  const {term, inputRef, fetcher, total, items, collection} =
-    usePredictiveSearch();
+  const {term, inputRef, fetcher, total, items} = usePredictiveSearch();
 
   /*
    * Utility that resets the search input
@@ -71,7 +67,6 @@ export function SearchResultsPredictive({
 
   return children({
     items,
-    collection,
     closeSearch,
     inputRef,
     state: fetcher.state,
@@ -80,41 +75,10 @@ export function SearchResultsPredictive({
   });
 }
 
-SearchResultsPredictive.Collection = SearchResultsPredictiveCollection;
 SearchResultsPredictive.Products = SearchResultsPredictiveProducts;
 SearchResultsPredictive.Queries = SearchResultsPredictiveQueries;
 SearchResultsPredictive.Empty = SearchResultsPredictiveEmpty;
 
-function SearchResultsPredictiveCollection({
-  term,
-  collection,
-  closeSearch,
-}: Pick<SearchResultsPredictiveArgs, 'term' | 'closeSearch'> & {
-  collection: SearchCollection | null | undefined;
-}) {
-  // Scored server-side against every collection — see mostRelatedCollection.
-  if (!collection) return null;
-
-  return (
-    <div className="predictive-search-collection" key="collection">
-      <Link onClick={closeSearch} to={`/collections/${collection.handle}`}>
-        {collection.image?.url && (
-          <Image
-            loader={cdnLoader}
-            alt={collection.image.altText ?? ''}
-            src={collection.image.url}
-            width={50}
-            height={50}
-          />
-        )}
-        <div>
-          <small>Collection</small>
-          <span>{collection.title}</span>
-        </div>
-      </Link>
-    </div>
-  );
-}
 function SearchResultsPredictiveProducts({
   term,
   products,
@@ -218,8 +182,8 @@ function usePredictiveSearch(): UsePredictiveSearchReturn {
     }
   }, []);
 
-  const {items, total, collection} =
+  const {items, total} =
     fetcher?.data?.result ?? getEmptyPredictiveSearchResult();
 
-  return {items, total, collection, inputRef, term, fetcher};
+  return {items, total, inputRef, term, fetcher};
 }

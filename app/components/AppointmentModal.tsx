@@ -189,6 +189,20 @@ export function AppointmentModal({
                   </label>
 
                   <label className="appt-field">
+                    <span>Phone Number</span>
+                    <input
+                      type="tel"
+                      name="phone"
+                      autoComplete="tel"
+                      required
+                      aria-invalid={Boolean(fieldErrors?.phone)}
+                    />
+                    {fieldErrors?.phone && (
+                      <em className="appt-error">{fieldErrors.phone}</em>
+                    )}
+                  </label>
+
+                  <label className="appt-field">
                     <span>Preferred Date</span>
                     <input
                       type="date"
@@ -203,7 +217,7 @@ export function AppointmentModal({
                   </label>
 
                   <label className="appt-field">
-                    <span>Message (optional)</span>
+                    <span>Description (optional)</span>
                     <textarea
                       name="message"
                       rows={3}

@@ -110,7 +110,7 @@ function SearchAside() {
         </SearchFormPredictive>
 
         <SearchResultsPredictive>
-          {({items, total, term, state, closeSearch, collection}) => {
+          {({items, total, term, state, closeSearch}) => {
             const {products, queries} = items;
 
             if (state === 'loading' && term.current) {
@@ -126,11 +126,6 @@ function SearchAside() {
                 <SearchResultsPredictive.Queries
                   queries={queries}
                   queriesDatalistId={queriesDatalistId}
-                />
-                <SearchResultsPredictive.Collection
-                  collection={collection}
-                  closeSearch={closeSearch}
-                  term={term}
                 />
                 <SearchResultsPredictive.Products
                   products={products}

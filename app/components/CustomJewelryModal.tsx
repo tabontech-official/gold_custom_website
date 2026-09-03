@@ -2,21 +2,11 @@ import {useEffect, useRef, useState} from 'react';
 import {createPortal} from 'react-dom';
 import {useFetcher} from 'react-router';
 import {useTrackConversion} from '~/hooks/useTrackConversion';
+import {CATEGORY_SPECS, PRODUCT_TYPES} from '~/lib/customDesignOptions';
 
 type ActionResult =
   | {ok: true}
   | {ok: false; error?: string; errors?: Record<string, string>};
-
-const PRODUCT_TYPES = [
-  'Pendant',
-  'Bridal',
-  'Rings',
-  'Chain',
-  'Earrings',
-  'Bracelet',
-  'Watch',
-  'Other',
-];
 
 /**
  * "Start your design" button + modal — a dedicated custom-piece inquiry,
@@ -24,12 +14,10 @@ const PRODUCT_TYPES = [
  * (.appt-*), same fetcher/success-state pattern, posts to
  * /api/custom-jewelry instead.
  *
- * No file upload — a reference-photo field used to sit here, but EmailJS's
- * free-plan request cap (50Kb total, across every field) made anything but
- * a tiny image fail with a 413 while the customer still saw "Request
- * received". Dropped rather than shipped broken; add it back once
- * attachments have a real home (a paid EmailJS plan, or upload-then-link
- * through some other storage) instead of being crammed into template_params.
+ * The reference image posts as multipart and lands in Shopify Files (then
+ * the customer's custom.gallery metafield) — it never enters the email, so
+ * EmailJS's 50Kb request cap that once forced this field's removal no
+ * longer applies.
  */
 export function CustomJewelryModal({
   triggerLabel = 'Start your design',
@@ -145,6 +133,7 @@ export function CustomJewelryModal({
                     ref={formRef}
                     method="post"
                     action="/api/custom-jewelry"
+                    encType="multipart/form-data"
                     noValidate
                   >
                     <label className="appt-field">
@@ -216,6 +205,53 @@ export function CustomJewelryModal({
                         <em className="appt-error">{fieldErrors.productType}</em>
                       )}
                     </div>
+
+                    {/* key={productType} remounts the selects, so switching
+                        category never carries over a stale selection. */}
+                    {productType && (
+                      <div className="cj-spec-grid" key={productType}>
+                        {(CATEGORY_SPECS[productType] ?? []).map((field) => (
+                          <label className="appt-field" key={field.key}>
+                            <span>{field.label}</span>
+                            <select
+                              name={`spec_${field.key}`}
+                              required
+                              defaultValue=""
+                              aria-invalid={Boolean(
+                                fieldErrors?.[`spec_${field.key}`],
+                              )}
+                            >
+                              <option value="" disabled>
+                                Select…
+                              </option>
+                              {field.options.map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                            {fieldErrors?.[`spec_${field.key}`] && (
+                              <em className="appt-error">
+                                {fieldErrors[`spec_${field.key}`]}
+                              </em>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="appt-field">
+                      <span>Reference Image (optional)</span>
+                      <input
+                        type="file"
+                        name="image"
+                        accept="image/*"
+                        aria-invalid={Boolean(fieldErrors?.image)}
+                      />
+                      {fieldErrors?.image && (
+                        <em className="appt-error">{fieldErrors.image}</em>
+                      )}
+                    </label>
 
                     <label className="appt-field">
                       <span>Description</span>

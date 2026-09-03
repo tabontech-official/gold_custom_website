@@ -1,5 +1,4 @@
 import type {
-  CollectionIndexQuery,
   QuickSearchQuery,
   RegularSearchQuery,
 } from 'storefrontapi.generated';
@@ -17,9 +16,6 @@ export type QuickSearchItems = {
   queries: NonNullable<QuickSearchQuery['predictiveSearch']>['queries'];
 };
 
-export type SearchCollection =
-  CollectionIndexQuery['collections']['nodes'][number];
-
 /**
  * What the page renders: `partial`/`bySku` are candidate-gathering only (see
  * regularSearch) and never reach here — their matches are merged straight
@@ -32,7 +28,7 @@ export type RegularSearchReturn = ResultWithItems<
 export type PredictiveSearchReturn = ResultWithItems<
   'predictive',
   QuickSearchItems
-> & {result: {totalCount?: number; collection?: SearchCollection | null}};
+>;
 
 /**
  * Returns the empty state of a predictive search result to reset the search state.
@@ -40,8 +36,6 @@ export type PredictiveSearchReturn = ResultWithItems<
 export function getEmptyPredictiveSearchResult(): PredictiveSearchReturn['result'] {
   return {
     total: 0,
-    totalCount: 0,
-    collection: null,
     items: {products: [], queries: []},
   };
 }
@@ -128,73 +122,6 @@ const wordInHaystack = (word: string, haystack: Set<string>, partial: boolean) =
   (partial &&
     word.length >= 2 &&
     [...haystack].some((candidate) => candidate.startsWith(word)));
-
-type RelatableCollection = {
-  handle: string;
-  title: string;
-  products?: {nodes: Array<unknown>};
-};
-
-/**
- * Pick the ONE collection a search term is actually about.
- *
- * Shopify's predictive ordering ranks by title similarity alone, which gets the
- * answer wrong in two ways we hit constantly: it puts empty novelty collections
- * first ("rope chain" returns the empty `rope-chain-with-pendants` ahead of
- * `rope-chains`; "earring" returns `baby-earrings` ahead of `earrings`), and any
- * substring counts as a hit — so "ring" looks like a match on "ea-rring-s" and
- * would send someone shopping for rings to the earrings page.
- *
- * Hence: match whole WORDS (killing the substring trap), require every word of
- * the term to be present, drop empty collections, and among the survivors prefer
- * the least specific one — the canonical category rather than a niche subset.
- */
-export function mostRelatedCollection<T extends RelatableCollection>(
-  term: string,
-  collections: T[] | undefined,
-): {collection: T; exact: boolean} | null {
-  const termWords = normalizeWords(term ?? '');
-  if (!termWords.length || !collections?.length) return null;
-
-  let best: {collection: T; score: number; extra: number} | null = null;
-
-  for (const collection of collections) {
-    // A suggestion that opens onto "no products" is worse than no suggestion.
-    if (collection.products && !collection.products.nodes.length) continue;
-
-    const handleWords = normalizeWords(collection.handle);
-    const haystack = new Set([
-      ...handleWords,
-      ...normalizeWords(collection.title),
-    ]);
-    const handleSet = new Set(handleWords);
-    const isLast = (index: number) => index === termWords.length - 1;
-    if (!termWords.some((word, i) => wordInHaystack(word, handleSet, isLast(i))))
-      continue;
-    if (!termWords.every((word, i) => wordInHaystack(word, haystack, isLast(i))))
-      continue;
-
-    // `rings` beats `womens-gold-rings`: fewest words that aren't the term wins,
-    // and saying exactly the term and nothing else wins outright.
-    const extra = handleWords.filter(
-      (word) => !termWords.includes(word),
-    ).length;
-    const score =
-      100 - extra * 10 + (handleWords.length === termWords.length ? 50 : 0);
-
-    if (!best || score > best.score) best = {collection, score, extra};
-  }
-
-  // Beyond one qualifying word the collection stops being about what was asked:
-  // "cuban" → `cuban-chains` still holds, "gold" → `men-gold-pendants` does not.
-  if (!best || best.extra > 1) return null;
-
-  // `exact` means the collection says precisely what the shopper said, give or
-  // take a plural — "women diamond ring" → `womens-diamond-ring`. That is a
-  // strong enough signal to let the collection define the whole result set.
-  // Anything looser ("gold" → `men-gold-pendants`) is only a suggestion.
-  return {collection: best.collection, exact: best.extra === 0};
-}
 
 /**
  * Keep only the products a shopper would accept as an answer.

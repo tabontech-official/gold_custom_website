@@ -327,7 +327,7 @@ function HeaderSearchBar() {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const {items, total, collection} =
+  const {items, total} =
     fetcher.data?.result ?? getEmptyPredictiveSearchResult();
   const showResults = isOpen && term.length > 0;
 
@@ -419,21 +419,6 @@ function HeaderSearchBar() {
             </p>
           ) : (
             <>
-              {collection && (
-                <Link
-                  className="header-search-collection"
-                  onClick={closeResults}
-                  to={`/collections/${collection.handle}`}
-                >
-                  <span className="header-search-result-info">
-                    <small>Collection</small>
-                    <span className="header-search-result-title">
-                      {collection.title}
-                    </span>
-                  </span>
-                  <span aria-hidden="true">&rarr;</span>
-                </Link>
-              )}
               <ul>
                 {items.products.map((product) => {
                   const image = product.selectedOrFirstAvailableVariant?.image;

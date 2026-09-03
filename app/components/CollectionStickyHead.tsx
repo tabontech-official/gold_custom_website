@@ -1,5 +1,10 @@
 import {useEffect, useLayoutEffect, useRef, type ReactNode} from 'react';
 
+// useLayoutEffect warns during SSR (it cannot run there); useEffect is the
+// same no-op without the warning. The measurement is client-only work.
+const useClientLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
+
 /**
  * Wraps the collection heading + category icon strip so both stay pinned
  * under the header while scrolling. Rendered height varies (title can wrap
@@ -10,7 +15,7 @@ import {useEffect, useLayoutEffect, useRef, type ReactNode} from 'react';
 export function CollectionStickyHead({children}: {children: ReactNode}) {
   const ref = useRef<HTMLDivElement>(null);
 
-  useLayoutEffect(() => {
+  useClientLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     const setHeight = () =>

@@ -31,9 +31,11 @@ declare global {
     /** Meta (Facebook/Instagram) pixel ID — all digits. */
     PUBLIC_META_PIXEL_ID?: string;
     /**
-     * Admin API token (custom app, write_customers scope) for the
-     * dataSaleOptOut mutation behind /pages/data-sharing-opt-out. Unset:
-     * browser-level opt-out still works, account-level returns an apology.
+     * Custom-app Admin token (read_customers + write_customers; add
+     * write_files for jewelry image uploads). Used by the appointment and
+     * custom-jewelry customer metafield writes (app/lib/customer-metafields)
+     * and the dataSaleOptOut mutation behind /pages/data-sharing-opt-out.
+     * Unset: bookings/inquiries fail — the metafields are their record.
      */
     PRIVATE_ADMIN_API_TOKEN?: string;
   }

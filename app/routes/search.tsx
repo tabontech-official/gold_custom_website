@@ -1,4 +1,4 @@
-import {Link, redirect, useLoaderData} from 'react-router';
+import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/search';
 import {Analytics} from '@shopify/hydrogen';
 import {SearchResults} from '~/components/SearchResults';
@@ -7,7 +7,6 @@ import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
-  mostRelatedCollection,
   productsMatchingTerm,
 } from '~/lib/search';
 import type {RegularSearchQuery} from 'storefrontapi.generated';
@@ -34,33 +33,6 @@ export const meta: Route.MetaFunction = () =>
 export async function loader({request, context}: Route.LoaderArgs) {
   const url = new URL(request.url);
   const isPredictive = url.searchParams.has('predictive');
-
-  // A term that names a category outright is answered by the category itself.
-  // Searching "women diamond ring" means the 23 pieces in `womens-diamond-ring`,
-  // and Shopify's OR-matching cannot produce that set — it returns a thousand
-  // things that are a ring OR a diamond. The collection page already has the
-  // filters, sort and pagination this one would otherwise have to reimplement,
-  // so hand over to it. `filter`/`sort` params use the same vocabulary on both
-  // routes (see collectionFilter.ts), so they survive the hop.
-  if (!isPredictive) {
-    const term = String(url.searchParams.get('q') || '').trim();
-    const tag = tagFromSearchTerm(term);
-    if (term && !tag) {
-      const {collections} = await context.storefront.query(
-        COLLECTION_INDEX_QUERY,
-        {cache: context.storefront.CacheLong()},
-      );
-      const match = mostRelatedCollection(term, collections?.nodes ?? []);
-      if (match?.exact) {
-        const params = new URLSearchParams(url.searchParams);
-        params.delete('q');
-        const query = params.toString();
-        return redirect(
-          `/collections/${match.collection.handle}${query ? `?${query}` : ''}`,
-        );
-      }
-    }
-  }
 
   const searchPromise: Promise<PredictiveSearchReturn | RegularSearchReturn> =
     isPredictive
@@ -526,59 +498,7 @@ const PREDICTIVE_SEARCH_QUERY_FRAGMENT = `#graphql
   }
 ` as const;
 
-// Every collection, so a search term is scored against the whole catalogue
-// rather than the ten guesses predictiveSearch happens to return. Titles and
-// handles change a few times a year, so this is cached hard and shared by every
-// keystroke of every shopper.
-const COLLECTION_INDEX_QUERY = `#graphql
-  query CollectionIndex($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collections(first: 250) {
-      nodes {
-        id
-        title
-        handle
-        image {
-          url
-          altText
-          width
-          height
-        }
-        # Existence check, not a listing — a suggestion that opens onto "no
-        # products" is worse than no suggestion.
-        products(first: 1) {
-          nodes {
-            id
-          }
-        }
-      }
-    }
-  }
-` as const;
-
-// A matched collection's products, which ARE the answer when the term names a
-// category: "women diamond ring" means the 23 in `womens-diamond-ring`, not the
-// 100 loosely-related rings Shopify's OR-matching returns for those words.
-const COLLECTION_PRODUCTS_QUERY = `#graphql
-  query CollectionSearchProducts(
-    $country: CountryCode
-    $language: LanguageCode
-    $handle: String!
-    $productCount: Int!
-  ) @inContext(country: $country, language: $language) {
-    collection(handle: $handle) {
-      products(first: $productCount) {
-        nodes {
-          ...PredictiveProduct
-        }
-      }
-    }
-  }
-  ${PREDICTIVE_SEARCH_PRODUCT_FRAGMENT}
-` as const;
-
-// Ceiling, not a target. A matched collection returns exactly what it holds —
-// 23 for `womens-diamond-ring` — and only the unmatched fallback ever fills this.
+// Ceiling on how many products the dropdown shows.
 const MAX_DROPDOWN_PRODUCTS = 100;
 
 // The fallback pool searched before filtering. Shopify's OR-matching means the
@@ -701,41 +621,6 @@ async function predictiveSearch({
 
   if (!term) return {type, term, result: getEmptyPredictiveSearchResult()};
 
-  const {collections} = await storefront.query(COLLECTION_INDEX_QUERY, {
-    cache: storefront.CacheLong(),
-  });
-
-  const match = mostRelatedCollection(term, collections?.nodes ?? []);
-
-  // When the term names a category, that category IS the result set — precise,
-  // and as long as it actually is. Shopify's search ORs the words together, so
-  // "women diamond ring" comes back as 1000 things that are merely a ring OR a
-  // diamond; filtering that afterwards can't recover the answer either, because
-  // "women" is a tag on virtually every ring. Only the collection knows.
-  if (match?.exact) {
-    const {collection} = await storefront.query(COLLECTION_PRODUCTS_QUERY, {
-      cache: CacheCatalog(),
-      variables: {
-        handle: match.collection.handle,
-        productCount: MAX_DROPDOWN_PRODUCTS,
-      },
-    });
-    const products = collection?.products.nodes ?? [];
-    if (products.length) {
-      return {
-        type,
-        term,
-        result: {
-          total: products.length + 1,
-          totalCount: products.length,
-          collection: match.collection,
-          items: {products, queries: []},
-        },
-      };
-    }
-  }
-
-  // No category matched — fall back to relevance-ordered search.
   const {
     products,
     partial,
@@ -783,9 +668,7 @@ async function predictiveSearch({
     type,
     term,
     result: {
-      total: matching.length + (match ? 1 : 0),
-      totalCount: matching.length,
-      collection: match?.collection ?? null,
+      total: matching.length,
       items: {products: matching, queries: suggestions?.queries ?? []},
     },
   };

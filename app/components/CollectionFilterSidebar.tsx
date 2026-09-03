@@ -5,6 +5,11 @@ import {
   useState,
   type CSSProperties,
 } from 'react';
+
+// useLayoutEffect warns during SSR (it cannot run there); useEffect is the
+// same no-op without the warning. Both only measure the DOM, client-only work.
+const useClientLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
 import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS} from '~/lib/collectionFilter';
 import {
@@ -119,7 +124,7 @@ export function CollectionFilterSidebar({
   // .collection-sidebar) knows how far down to start — it's sticky too, and
   // without this its top offset only cleared the header, leaving the rail's
   // own top items parked under the (now sticky) toolbar/icon strip above it.
-  useLayoutEffect(() => {
+  useClientLayoutEffect(() => {
     const el = toolbarRef.current;
     if (!el) return;
     const setHeight = () =>
