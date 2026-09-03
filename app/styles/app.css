@@ -11907,14 +11907,6 @@ html.header-primary-hidden
   border-color: var(--color-sale);
 }
 
-/* CustomJewelryModal's per-category option sheet — two selects per row,
-   collapsing to one column on phones alongside the other compact rules. */
-.cj-spec-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  column-gap: 0.75rem;
-}
-
 .appt-error {
   display: block;
   margin-top: 0.35rem;
@@ -11954,36 +11946,6 @@ html.header-primary-hidden
   text-align: center;
   font-size: 0.78rem;
   color: var(--color-ink-soft);
-}
-
-/* CustomJewelryModal's product-type picker — same field spacing/label as
-   .appt-field, sized to match the reference layout (two columns on mobile). */
-.cj-type-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
-.cj-type-btn {
-  padding: 0.9rem 0.5rem;
-  background: var(--color-bg-soft);
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--color-ink);
-  cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
-}
-
-.cj-type-btn:hover {
-  border-color: var(--color-ink-soft);
-}
-
-.cj-type-btn.is-selected {
-  background: var(--color-ink);
-  border-color: var(--color-ink);
-  color: #fff;
 }
 
 /* Compact the modal on phones — full-desktop padding/spacing/height overflows

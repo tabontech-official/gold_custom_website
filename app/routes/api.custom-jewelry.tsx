@@ -40,6 +40,10 @@ export async function action({request, context}: Route.ActionArgs) {
     errors.contact = 'Please enter a valid phone number.';
   if (!PRODUCT_TYPES.includes(productType))
     errors.productType = 'Please choose a product type.';
+  // Storing the contact details on a customer record requires the visitor's
+  // explicit OK — no consent, no processing.
+  if (form.get('consent') !== 'yes')
+    errors.consent = 'Please agree so we can store your details and reply.';
 
   // Per-category design options — required, and only values from the
   // category's own option sheet are accepted.
@@ -52,8 +56,8 @@ export async function action({request, context}: Route.ActionArgs) {
     errors.image = 'Please upload an image file.';
   if (imageFile && imageFile.size > MAX_IMAGE_BYTES)
     errors.image = 'Please keep the image under 10MB.';
-  if (description.length < 5)
-    errors.description = 'Tell us a little about what you have in mind.';
+  // Description is optional — the builder's structured selections already
+  // describe the piece; free text only adds to them.
 
   if (Object.keys(errors).length) return {ok: false, errors};
 
@@ -61,7 +65,7 @@ export async function action({request, context}: Route.ActionArgs) {
   // custom.description metafield and email template both carry them with no
   // schema or template changes.
   const specs = specSummary(selections);
-  const fullDescription = specs ? `${specs}\n\n${description}` : description;
+  const fullDescription = [specs, description].filter(Boolean).join('\n\n');
 
   try {
     const [firstName, ...rest] = name.split(' ');

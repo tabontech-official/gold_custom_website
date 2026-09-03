@@ -1,0 +1,1166 @@
+/* ============================================================
+   Custom-design builder (/custom-jewelry)
+   Own sheet, loaded only by that route via its `links` export.
+   Inherits the site's tokens: --color-ink, --color-ink-soft,
+   --color-border, --color-gold, --color-bg-soft, --color-sale.
+   ============================================================ */
+
+/* The outer card: visible boundary, very light grey interior — the white
+   step panel sits inside it. */
+.cdz {
+  max-width: 80rem;
+  width: calc(100% - 2 * var(--section-pad, 5vw));
+  margin: 0.75rem auto 3.5rem;
+  padding: 1.8rem 1.6rem 2.2rem;
+  background: #f5f6f7;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+}
+
+/* Phases hide via the `hidden` attribute so their inputs stay mounted. */
+.cdz [hidden] {
+  display: none !important;
+}
+
+/* app.css caps every form at 400px on desktop — that squeezed the whole
+   builder into a two-column sliver. This form owns the panel's full width. */
+.cdz form {
+  max-width: none;
+}
+
+/* ── Masthead: homepage-style editorial title, ink→gold blend ─ */
+
+.cdz-masthead {
+  text-align: center;
+  margin: 0.4rem 0 1.6rem;
+}
+
+.cdz-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+}
+
+/* The blend lives on the second half — classic ink beside deep gold. */
+.cdz-title span {
+  background: linear-gradient(
+    100deg,
+    var(--color-ink) 0%,
+    #7a5c1a 30%,
+    var(--color-gold) 50%,
+    #7a5c1a 72%,
+    var(--color-ink) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.cdz-tagline {
+  margin: 0.55rem 0 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+/* ── Phase rail: 1 Design · 2 Details · 3 Review ───────────── */
+
+.cdz-phases {
+  display: flex;
+  justify-content: center;
+  list-style: none;
+  margin: 0 0 1.6rem;
+  padding: 0;
+}
+
+.cdz-phase {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--color-ink-soft);
+}
+
+/* Connector line between phases. */
+.cdz-phase + .cdz-phase::before {
+  content: '';
+  width: clamp(2.5rem, 10vw, 8rem);
+  height: 1px;
+  background: var(--color-border);
+  margin: 0 1rem;
+}
+
+.cdz-phase-dot {
+  display: grid;
+  place-items: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  font-size: 0.78rem;
+  background: #fff;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.cdz-phase-label {
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cdz-phase.is-current {
+  color: var(--color-ink);
+}
+
+.cdz-phase.is-current .cdz-phase-dot {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: #fff;
+}
+
+.cdz-phase.is-done {
+  color: var(--color-ink);
+}
+
+.cdz-phase.is-done .cdz-phase-dot {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+}
+
+/* ── The panel everything lives in ─────────────────────────── */
+
+.cdz-panel {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 1.4rem 1.2rem 2.2rem;
+  box-shadow: 0 20px 45px -32px rgba(20, 16, 8, 0.35);
+}
+
+@media (min-width: 48em) {
+  .cdz-panel {
+    padding: 2rem 3rem 4.2rem;
+  }
+}
+
+@media (min-width: 75em) {
+  .cdz-panel {
+    padding: 2.4rem 4.5rem 4.4rem;
+  }
+}
+
+/* ── Toolbar: back pill with the step's question inline ────── */
+
+/* Back and reset live in the panel's extreme top corners; the heading keeps
+   the row's center to itself. */
+.cdz-toolbar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 2.3rem;
+  margin-bottom: 0.8rem;
+  /* Keep a long heading clear of the corner buttons. */
+  padding: 0 4.5rem;
+}
+
+.cdz-toolbar .cdz-back {
+  position: absolute;
+  top: 0.9rem;
+  left: 1rem;
+}
+
+.cdz-toolbar .cdz-reset {
+  position: absolute;
+  top: 0.9rem;
+  right: 1rem;
+}
+
+/* Reset-everything icon, top-right corner of the panel. */
+.cdz-reset {
+  justify-self: end;
+  display: grid;
+  place-items: center;
+  width: 2.3rem;
+  height: 2.3rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease,
+    transform 200ms ease;
+}
+
+.cdz-reset svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: var(--color-ink-soft);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cdz-reset:hover {
+  border-color: var(--color-sale);
+  transform: rotate(-180deg);
+}
+
+.cdz-reset:hover svg {
+  stroke: var(--color-sale);
+}
+
+.cdz-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  padding: 0.42rem 0.95rem 0.42rem 0.7rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.cdz-back svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cdz-back:hover {
+  border-color: var(--color-ink);
+  background: var(--color-bg-soft);
+}
+
+/* Bottom line, pinned to the panel's bottom edge: trail chips flush left,
+   counter flush right. The panel's own bottom padding reserves the room. */
+.cdz-footer {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 0.9rem;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.cdz-trail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.cdz-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.18rem 0.65rem;
+  background: var(--color-bg-soft);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease;
+}
+
+.cdz-chip-key {
+  font-weight: 400;
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.cdz-chip:hover {
+  border-color: var(--color-gold);
+  background: #fff;
+}
+
+/* ── Step: eyebrow, heading, entry animation ───────────────── */
+
+.cdz-step {
+  animation: cdz-step-in 260ms ease both;
+}
+
+@keyframes cdz-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdz-step {
+    animation: none;
+  }
+}
+
+.cdz-question {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  letter-spacing: 0.01em;
+}
+
+/* Step counter, right end of the bottom line. */
+.cdz-counter {
+  margin: 0 0 0 auto;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  white-space: nowrap;
+}
+
+/* ── Tile grids ────────────────────────────────────────────── */
+
+/* Centered flex rows, fixed-width tiles — a partial last row centers its
+   cards instead of hugging the left edge. */
+.cdz-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+  max-width: 62rem;
+  margin: 0 auto;
+}
+
+.cdz-grid .cdz-tile {
+  width: 12rem;
+}
+
+/* Text-only cards (karat, budget, weight…) carry nothing but the words —
+   taller card, big bold value. */
+.cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) {
+  min-height: 7.5rem;
+}
+
+.cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) .cdz-tile-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) .cdz-tile-caption {
+  font-size: 0.8rem;
+}
+
+/* Many small choices (ring sizes, lengths): tighter tiles. */
+.cdz-grid-dense {
+  max-width: 52rem;
+}
+
+.cdz-grid-dense .cdz-tile {
+  width: 6rem;
+}
+
+.cdz-grid-dense .cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) {
+  min-height: 4.4rem;
+}
+
+.cdz-grid-dense
+  .cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo)
+  .cdz-tile-value {
+  font-size: 1.05rem;
+}
+
+.cdz-grid-pieces .cdz-tile {
+  width: 10.5rem;
+}
+
+.cdz-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 5.4rem;
+  padding: 1.1rem 0.7rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 150ms ease, box-shadow 150ms ease,
+    transform 150ms ease;
+}
+
+.cdz-tile-media {
+  padding-top: 1.3rem;
+  min-height: 10rem;
+}
+
+.cdz-tile:hover {
+  border-color: var(--color-gold);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -18px rgba(20, 16, 8, 0.45);
+}
+
+.cdz-tile.is-selected {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 1px var(--color-gold);
+}
+
+/* Small gold check badge, only on the selected tile. */
+.cdz-tile-check {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  display: none;
+  place-items: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  background: var(--color-gold);
+  color: #fff;
+  font-size: 0.7rem;
+}
+
+.cdz-tile.is-selected .cdz-tile-check {
+  display: grid;
+}
+
+.cdz-tile-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  line-height: 1.25;
+}
+
+.cdz-tile-caption {
+  font-size: 0.72rem;
+  color: var(--color-ink-soft);
+}
+
+/* Budget card: min on top, "to" between, max below. */
+.cdz-range {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  line-height: 1.15;
+}
+
+.cdz-range b {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.cdz-range i {
+  font-size: 0.66rem;
+  font-style: normal;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+
+/* Circular collection photo — same visual language as the header's
+   circular sub-nav strip. */
+.cdz-photo {
+  display: block;
+  width: 6.4rem;
+  height: 6.4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-soft);
+}
+
+.cdz-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Placeholder circle for options with no collection behind them ("Other"). */
+.cdz-photo-empty {
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 300;
+  color: var(--color-ink-soft);
+}
+
+/* Photo steps: no card box — the circle IS the control. */
+.cdz-grid-photos {
+  row-gap: 1.4rem;
+  max-width: 56rem;
+}
+
+.cdz-grid-photos .cdz-tile {
+  width: 8.2rem;
+}
+
+/* Bigger circles on desktop — they carry the whole option, so let them. */
+@media (min-width: 48em) {
+  .cdz-grid-photos {
+    row-gap: 1.8rem;
+    max-width: 66rem;
+  }
+
+  .cdz-grid-photos .cdz-tile {
+    width: 11.5rem;
+  }
+
+  .cdz-grid-photos .cdz-photo,
+  .cdz-grid-photos .cdz-swatch {
+    width: 9rem;
+    height: 9rem;
+  }
+
+  .cdz-grid-photos .cdz-tile-check {
+    margin-right: -4.3rem;
+  }
+}
+
+.cdz-tile-photo,
+.cdz-tile-photo:hover,
+.cdz-tile-photo.is-selected {
+  background: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.cdz-tile-photo {
+  min-height: 0;
+  padding: 0.3rem 0.2rem;
+  gap: 0.65rem;
+}
+
+.cdz-tile-photo .cdz-photo {
+  transition: box-shadow 150ms ease, border-color 150ms ease,
+    transform 150ms ease;
+}
+
+.cdz-tile-photo:hover {
+  transform: translateY(-3px);
+}
+
+.cdz-tile-photo:hover .cdz-photo {
+  border-color: var(--color-gold);
+}
+
+.cdz-tile-photo.is-selected .cdz-photo {
+  border-color: var(--color-gold);
+  box-shadow: 0 0 0 3px #fff, 0 0 0 4.5px var(--color-gold);
+}
+
+/* Pin the check badge to the circle's top-right edge, not the tile's. */
+.cdz-tile-photo .cdz-tile-check {
+  top: 0;
+  right: 50%;
+  margin-right: -3.1rem;
+}
+
+/* Plain outline drawings on the piece cards — no circle behind them,
+   like the reference card set. Dashed strokes come from the SVG itself. */
+.cdz-piece-icon {
+  width: 5.2rem;
+  height: 5.2rem;
+  fill: none;
+  stroke: var(--color-ink-soft);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 150ms ease;
+}
+
+.cdz-tile:hover .cdz-piece-icon,
+.cdz-tile.is-selected .cdz-piece-icon {
+  stroke: var(--color-ink);
+}
+
+/* Metal / stone balls — raw shiny spheres, no box around them. */
+.cdz-swatch {
+  position: relative;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    inset -0.5rem -0.7rem 1rem rgba(0, 0, 0, 0.22),
+    inset 0.35rem 0.5rem 0.8rem rgba(255, 255, 255, 0.45),
+    0 0.6rem 1rem -0.5rem rgba(20, 16, 8, 0.5);
+  transition: box-shadow 150ms ease;
+}
+
+/* Specular highlight — the "shine". */
+.cdz-swatch::after {
+  content: '';
+  position: absolute;
+  top: 12%;
+  left: 16%;
+  width: 34%;
+  height: 26%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 40% 35%,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0) 70%
+  );
+  transform: rotate(-18deg);
+}
+
+.cdz-grid-balls {
+  row-gap: 1.6rem;
+}
+
+.cdz-grid-balls .cdz-tile {
+  width: 9.5rem;
+}
+
+.cdz-tile-photo:hover .cdz-swatch {
+  box-shadow:
+    inset -0.5rem -0.7rem 1rem rgba(0, 0, 0, 0.22),
+    inset 0.35rem 0.5rem 0.8rem rgba(255, 255, 255, 0.45),
+    0 0.9rem 1.2rem -0.5rem rgba(20, 16, 8, 0.55);
+}
+
+.cdz-tile-photo.is-selected .cdz-swatch {
+  box-shadow:
+    inset -0.5rem -0.7rem 1rem rgba(0, 0, 0, 0.22),
+    inset 0.35rem 0.5rem 0.8rem rgba(255, 255, 255, 0.45),
+    0 0 0 3px #fff,
+    0 0 0 4.5px var(--color-gold);
+}
+
+.cdz-grid-balls .cdz-tile-check {
+  margin-right: -2.9rem;
+}
+
+/* ── Fields (details + review extras) ──────────────────────── */
+
+.cdz-details {
+  max-width: 26rem;
+  margin: 0 auto;
+}
+
+.cdz-field {
+  display: block;
+  margin-bottom: 1.1rem;
+}
+
+.cdz-field > span {
+  display: block;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin-bottom: 0.4rem;
+}
+
+/* Pointy black-and-white fields: square corners, black border, white fill. */
+.cdz-field input,
+.cdz-field textarea {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0 0.9rem;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 0;
+  font-size: 1rem;
+  color: #000;
+  font-family: inherit;
+  transition: box-shadow 140ms ease;
+}
+
+.cdz-field textarea {
+  padding: 0.7rem 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.cdz-field input:focus,
+.cdz-field textarea:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px #000;
+}
+
+.cdz-field input[aria-invalid='true'],
+.cdz-field textarea[aria-invalid='true'] {
+  border-color: var(--color-sale);
+}
+
+/* Reference-image upload: a designed drop-zone instead of the raw native
+   file input (which stays inside, invisible, and carries the file). */
+.cdz-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 7rem;
+  padding: 1.1rem 1rem;
+  background: #fff;
+  border: 1px dashed #000;
+  cursor: pointer;
+  text-align: center;
+  transition: background 150ms ease;
+}
+
+.cdz-upload:hover {
+  background: var(--color-bg-soft);
+}
+
+.cdz-upload input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.cdz-upload-icon {
+  width: 1.7rem;
+  height: 1.7rem;
+  fill: none;
+  stroke: #000;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cdz-upload-cta {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #000;
+}
+
+.cdz-upload-hint {
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+}
+
+.cdz-upload-picked {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  text-align: left;
+}
+
+.cdz-upload-thumb {
+  width: 4.2rem;
+  height: 4.2rem;
+  object-fit: cover;
+  border: 1px solid #000;
+  flex-shrink: 0;
+}
+
+.cdz-upload-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.cdz-upload-clear {
+  margin-top: 0.45rem;
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.78rem;
+  color: var(--color-sale);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Consent checkbox — same monochrome language, square box. */
+.cdz-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0.2rem 0 0.9rem;
+  cursor: pointer;
+}
+
+.cdz-consent input {
+  appearance: none;
+  flex-shrink: 0;
+  width: 1.3rem;
+  height: 1.3rem;
+  margin-top: 0.05rem;
+  background: #fff;
+  border: 1px solid #000;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+/* Crisp drawn checkmark (SVG), not a font glyph — always sharp and white. */
+.cdz-consent input:checked {
+  background: #000
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4.5 12.5l5.5 5.5L19.5 6.5' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / 0.85rem no-repeat;
+}
+
+.cdz-consent span {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--color-ink);
+}
+
+.cdz-error {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  font-style: normal;
+  color: var(--color-sale);
+}
+
+.cdz-form-error {
+  margin: 0 0 1rem;
+  padding: 0.6rem 0.8rem;
+  background: rgba(178, 58, 72, 0.08);
+  border-left: 2px solid var(--color-sale);
+  font-size: 0.85rem;
+  color: var(--color-sale);
+}
+
+/* Black button, sharp corners — inverts to white on hover. Fully styled
+   here (no .btn classes) so app.css button rules can't repaint it. */
+.cdz-next {
+  width: 100%;
+  margin-top: 0.3rem;
+  padding: 0.9rem 1rem;
+  background: #000;
+  border: 1px solid #000;
+  border-radius: 0;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.cdz-next:hover:not(:disabled) {
+  background: #fff;
+  color: #000;
+}
+
+.cdz-next:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cdz-fineprint {
+  margin: 0.85rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
+/* ── Review: summary beside the extras on desktop ──────────── */
+
+.cdz-review {
+  max-width: 62rem;
+  margin: 0 auto;
+}
+
+@media (min-width: 60em) {
+  .cdz-review {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+  }
+}
+
+.cdz-summary {
+  margin: 0 0 1.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.cdz-summary-row {
+  display: grid;
+  grid-template-columns: 6.5rem 1fr auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.8rem 1.1rem;
+  background: #fff;
+}
+
+.cdz-summary-row + .cdz-summary-row {
+  border-top: 1px solid var(--color-border);
+}
+
+.cdz-summary-row dt {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.cdz-summary-row dd {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+.cdz-edit {
+  background: none;
+  border: none;
+  padding: 0.2rem 0.3rem;
+  font-size: 0.78rem;
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.cdz-edit:hover {
+  color: var(--color-ink);
+}
+
+/* ── Success panel ─────────────────────────────────────────── */
+
+.cdz-success {
+  text-align: center;
+  padding-top: 3rem;
+  padding-bottom: 3.5rem;
+}
+
+.cdz-success-mark svg {
+  width: 3.4rem;
+  height: 3.4rem;
+  stroke: var(--color-gold);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cdz-success h2 {
+  margin: 0.9rem 0 0.4rem;
+}
+
+.cdz-success p {
+  max-width: 28rem;
+  margin: 0 auto;
+  color: var(--color-ink-soft);
+}
+
+/* ── Mobile ────────────────────────────────────────────────── */
+
+@media (max-width: 48em) {
+  .cdz {
+    padding: 0.9rem 0.7rem 1.3rem;
+    margin-bottom: 2rem;
+    border-radius: 14px;
+  }
+
+  .cdz-panel {
+    padding: 1rem 0.7rem 1.5rem;
+  }
+
+  .cdz-masthead {
+    margin: 0.2rem 0 1rem;
+  }
+
+  /* All three phases must fit one line — smaller dots, hairline connectors. */
+  .cdz-phases {
+    margin-bottom: 0.9rem;
+  }
+
+  .cdz-phase {
+    gap: 0.35rem;
+  }
+
+  .cdz-phase + .cdz-phase::before {
+    width: clamp(0.7rem, 4vw, 2rem);
+    margin: 0 0.45rem;
+  }
+
+  .cdz-phase-dot {
+    width: 1.45rem;
+    height: 1.45rem;
+    font-size: 0.68rem;
+  }
+
+  /* Icon-only round back button, both buttons pushed into the very
+     corners; the heading keeps the middle. */
+  .cdz-toolbar {
+    margin-bottom: 0.5rem;
+    padding: 0 2.6rem;
+  }
+
+  .cdz-back-label {
+    display: none;
+  }
+
+  .cdz-toolbar .cdz-back {
+    top: 0.55rem;
+    left: 0.55rem;
+    width: 2.1rem;
+    height: 2.1rem;
+    padding: 0;
+    justify-content: center;
+    border-radius: 50%;
+  }
+
+  .cdz-toolbar .cdz-reset {
+    top: 0.55rem;
+    right: 0.55rem;
+    width: 2.1rem;
+    height: 2.1rem;
+  }
+
+  .cdz-phase-label {
+    font-size: 0.66rem;
+  }
+
+  .cdz-phase + .cdz-phase::before {
+    margin: 0 0.5rem;
+  }
+
+  /* Every option step becomes one horizontal rail — swipe sideways. The
+     half-visible next card is the scroll affordance; no scrollbar. */
+  .cdz-grid {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 0.55rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding: 0.2rem 0.2rem 0.4rem;
+    scrollbar-width: none;
+  }
+
+  .cdz-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .cdz-grid .cdz-tile {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  .cdz-grid .cdz-tile,
+  .cdz-grid-pieces .cdz-tile {
+    width: 7.9rem;
+  }
+
+  .cdz-grid-dense .cdz-tile {
+    width: 5rem;
+  }
+
+  .cdz-tile {
+    min-height: 4.4rem;
+    padding: 0.8rem 0.5rem;
+  }
+
+  .cdz-tile-media {
+    min-height: 8.2rem;
+  }
+
+  .cdz-photo {
+    width: 6.2rem;
+    height: 6.2rem;
+  }
+
+  /* Icons sit inside a boxed card — a touch smaller than the bare circles. */
+  .cdz-piece-icon {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .cdz-grid-photos .cdz-tile {
+    width: 7.6rem;
+  }
+
+  .cdz-tile-photo .cdz-tile-check {
+    margin-right: -3rem;
+  }
+
+  .cdz-swatch,
+  .cdz-grid-photos .cdz-swatch {
+    width: 5.8rem;
+    height: 5.8rem;
+  }
+
+  .cdz-grid-balls .cdz-tile-check {
+    margin-right: -2.8rem;
+  }
+
+  /* Tighter circle-to-label spacing on the rails. */
+  .cdz-tile-photo {
+    gap: 0.4rem;
+    padding: 0.2rem 0.1rem;
+  }
+
+  .cdz-grid {
+    padding-bottom: 0.5rem;
+  }
+
+  /* Chips wrap on phones — keep the footer in flow so it can't overlap,
+     but pull it into the panel's bottom corners: chips flush left, the
+     counter flush right, everything smaller so it adjusts cleanly. */
+  .cdz-footer {
+    position: static;
+    flex-wrap: wrap;
+    margin: 1rem -0.3rem -0.8rem;
+  }
+
+  .cdz-chip {
+    padding: 0.12rem 0.5rem;
+    gap: 0.28rem;
+    font-size: 0.64rem;
+  }
+
+  .cdz-chip-key {
+    font-size: 0.54rem;
+  }
+
+  .cdz-trail {
+    gap: 0.25rem;
+  }
+
+  .cdz-counter {
+    font-size: 0.6rem;
+    letter-spacing: 0.14em;
+    align-self: flex-end;
+  }
+
+  .cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) {
+    min-height: 6rem;
+  }
+
+  .cdz-tile:not(.cdz-tile-media):not(.cdz-tile-photo) .cdz-tile-value {
+    font-size: 1.2rem;
+  }
+
+  .cdz-piece-icon {
+    padding: 1.1rem;
+  }
+
+  .cdz-summary-row {
+    grid-template-columns: 4.6rem 1fr auto;
+    padding: 0.65rem 0.75rem;
+  }
+}

@@ -79,6 +79,8 @@ export default async function handleRequest(
     imgSrc: [
       "'self'",
       'https://cdn.shopify.com',
+      // Local object-URL previews (the custom-design reference image).
+      'blob:',
       // Agent avatars and images sent in chat. Tidio renders emoji as twemoji
       // images served from cdnjs, not from its own domain.
       'https://*.tidio.co',
