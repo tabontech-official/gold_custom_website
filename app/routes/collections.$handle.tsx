@@ -23,6 +23,7 @@ import {
 } from '~/lib/seo';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {ShareButtons} from '~/components/ShareButtons';
 import {CollectionStickyHead} from '~/components/CollectionStickyHead';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
@@ -537,6 +538,10 @@ export default function Collection() {
         />
         <div className="collection-title-row">
           <h1>{displayTitle(collection)}</h1>
+          <ShareButtons
+            title={collection.title}
+            image={collection.image?.url ?? undefined}
+          />
         </div>
       </div>
 

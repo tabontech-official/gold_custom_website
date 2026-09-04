@@ -18,6 +18,7 @@ import {ProductForm} from '~/components/ProductForm';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
+import {ShareButtons} from '~/components/ShareButtons';
 import {getMegaMenuParentCrumb} from '~/lib/megaMenu';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {
@@ -586,6 +587,10 @@ export default function Product() {
               <ProductSpecsLine
                 weight={selectedVariant?.weight}
                 weightUnit={selectedVariant?.weightUnit}
+              />
+              <ShareButtons
+                title={product.title}
+                image={selectedVariant?.image?.url}
               />
             </div>
           </div>

@@ -50,11 +50,11 @@ export default function CustomJewelry() {
           <div className="section-inner svc-hero-inner">
             <div className="svc-hero-content">
               <p className="svc-kicker">Custom jewelry · Los Angeles</p>
-              <h1>Made once. For you.</h1>
+              <h1>Custom Solid Gold Jewelry, Made For You.</h1>
               <p className="svc-hero-lede">
-                Pick the piece, the metal, the stones — a designer turns it
-                into a 3D render you approve before we cast a single gram of
-                gold.
+                Pick the piece, the metal, the stones and our designers create
+                a 3D render for your approval before crafting your custom gold
+                piece.
               </p>
               <div className="svc-actions">
                 <button

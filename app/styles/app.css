@@ -11915,6 +11915,110 @@ html.header-primary-hidden
   color: var(--color-sale);
 }
 
+/* Social share row (product + collection pages). Buttons open the network's
+   own share flow; previews come from the page's existing OG tags. */
+.share-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.product-details-card .share-row {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.share-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  margin-right: 0.25rem;
+}
+
+.share-btn {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.share-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: var(--color-ink);
+}
+
+.share-btn .share-native {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 1.6;
+}
+
+.share-btn:hover {
+  border-color: var(--color-gold);
+  background: var(--color-bg-soft);
+}
+
+/* Anchor for the per-platform Feed/DM menu. */
+.share-net {
+  position: relative;
+  display: inline-flex;
+}
+
+.share-menu {
+  position: absolute;
+  top: calc(100% + 0.4rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 11.5rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 12px 28px -14px rgba(20, 16, 8, 0.4);
+  overflow: hidden;
+}
+
+.share-menu button {
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 0.82rem;
+  font-family: inherit;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.share-menu button:hover {
+  background: var(--color-bg-soft);
+}
+
+.share-menu button + button {
+  border-top: 1px solid var(--color-border);
+}
+
+/* "Link copied — paste it in your DM" feedback. */
+.share-copied {
+  font-size: 0.75rem;
+  color: var(--color-ink-soft);
+}
+
+/* The collection title row sits high on the page — drop the menu below
+   without clipping; the row is the positioning context. */
+.collection-title-row .share-row {
+  flex-shrink: 0;
+}
+
 .appt-form-error {
   margin: 0 0 1rem;
   padding: 0.6rem 0.8rem;
