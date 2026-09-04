@@ -28,8 +28,13 @@ export type TrustClaim = {
 
 export const TRUST_CLAIMS: TrustClaim[] = [
   {title: 'Free U.S. Shipping', sub: 'On orders over $99', icon: 'shipping'},
-  // Matches the refund policy: 14 days, exchange or store credit.
-  {title: '14 Day Returns', sub: 'Exchange or store credit', icon: 'returns'},
+  // Matches the refund policy: 14 days, exchange or store credit, return
+  // shipping on the customer.
+  {
+    title: '14 Day Returns',
+    sub: 'Exchange or store credit · Return shipping fees apply',
+    icon: 'returns',
+  },
   {title: 'Made in U.S.A', sub: 'From our factory to you', icon: 'usa'},
   // Already published on every product page before this list existed. Kept
   // verbatim rather than dropped — removing a live promise is a business

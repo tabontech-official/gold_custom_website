@@ -36,7 +36,9 @@ import {cdnLoader, cdnWidth} from '~/lib/cdnImage';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
 const HEADER_UTILITY_MESSAGES = [
-  'Complimentary shipping and returns',
+  // Matches the shipping + refund policies: free US shipping starts at $99,
+  // returns run 14 days with conditions.
+  'Free U.S. shipping over $99 · 14-day returns, terms apply',
   // Not "Lifetime warranty" — the policy is 1 year on production defects.
   '1-year warranty on production defects',
   'Private Los Angeles appointments',
