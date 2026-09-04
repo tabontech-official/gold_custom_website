@@ -1,23 +1,22 @@
 import type {Route} from './+types/api.custom-jewelry';
-import {sendEmailJs} from '~/lib/email';
 import {
-  phoneDigits,
+  createCustomerRecord,
   saveCustomerMetafields,
   uploadReferenceImage,
 } from '~/lib/customer-metafields';
 import {
   PRODUCT_TYPES,
   readSpecSelections,
-  specSummary,
 } from '~/lib/customDesignOptions';
 
 // Custom jewelry inquiry. Same customer-record pattern as api.appointment:
 // create the customer via the Storefront API (TAKEN = already on file,
 // fine), then record the inquiry on the customer's custom.* metafields —
 // the chosen product type into custom.product, the visitor's reference
-// image into custom.gallery (uploaded to Shopify Files; the old EmailJS
-// 50Kb cap doesn't apply since the image never enters the email), and the
-// idea into custom.description. The store alert email stays as before.
+// image into custom.gallery (uploaded to Shopify Files), the structured
+// design into custom.custom_design, and the idea into custom.description.
+// Notification is Shopify Flow's job: writing custom.request last is the
+// event the store's workflow listens for. No email is sent from here.
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -61,12 +60,6 @@ export async function action({request, context}: Route.ActionArgs) {
 
   if (Object.keys(errors).length) return {ok: false, errors};
 
-  // The chosen options travel inside the description, so the existing
-  // custom.description metafield and email template both carry them with no
-  // schema or template changes.
-  const specs = specSummary(selections);
-  const fullDescription = [specs, description].filter(Boolean).join('\n\n');
-
   try {
     const [firstName, ...rest] = name.split(' ');
 
@@ -107,91 +100,50 @@ export async function action({request, context}: Route.ActionArgs) {
       galleryId = uploaded;
     }
 
-    // Every design choice, structured, into the custom.custom_design JSON
-    // metafield — labeled by the step names the shopper saw, so the admin
-    // view reads like the review screen.
+    // Every design choice, structured, labeled by the step names the
+    // shopper saw. The free-text description stays OUT of here — it has its
+    // own field, carrying only what the customer wrote.
     const designJson = JSON.stringify({
       piece: productType,
       details: Object.fromEntries(selections),
-      description: description || undefined,
       submitted_at: new Date().toISOString(),
     });
 
+    // The Customer-record metaobject entry IS the submission now — the
+    // per-field customer metafield definitions were replaced by it.
+    const recordId = await createCustomerRecord(context.env, {
+      request_type: 'Custom Jewelry Request',
+      name,
+      email,
+      phone: contact,
+      product: productType,
+      custom_design: designJson,
+      description,
+      gallery: galleryId,
+    });
+
+    if (!recordId) {
+      return {ok: false, error: 'Something went wrong. Please try again.'};
+    }
+
+    // Point the customer's custom.customer_details reference at the entry —
+    // this metafield write is also what fires the Flow notification.
     const saved = await saveCustomerMetafields(
       context.env,
       customerCreate?.customer?.id,
       email,
-      {
-        name,
-        phone: phoneDigits(contact),
-        product: productType,
-        gallery: galleryId,
-        description: fullDescription,
-        custom_design: designJson,
-        // Which flow filed this — notification automations key off it.
-        request: 'Custom Jewelry Request',
-      },
+      {customer_details: recordId},
     );
 
     if (!saved) {
       return {ok: false, error: 'Something went wrong. Please try again.'};
     }
 
-    await sendEmails(context.env, {
-      name,
-      email,
-      contact,
-      productType,
-      description: fullDescription,
-    });
     return {ok: true};
   } catch (error) {
     console.error('[custom-jewelry]', error);
     return {ok: false, error: 'Something went wrong. Please try again.'};
   }
-}
-
-type Details = {
-  name: string;
-  email: string;
-  contact: string;
-  productType: string;
-  description: string;
-};
-
-async function sendEmails(env: Env, d: Details): Promise<void> {
-  const notify = (env as any).NOTIFY_EMAIL as string | undefined;
-  if (!notify) {
-    console.warn('[custom-jewelry] NOTIFY_EMAIL unset — store alert skipped');
-    return;
-  }
-  const templateId = (env as any).EMAILJS_TEMPLATE_CUSTOM_JEWELRY as
-    | string
-    | undefined;
-
-  // One variable per field so the template lays each out as its own row.
-  // Values are plain text, never HTML — EmailJS escapes template variable
-  // content, so an injected tag renders as visible text (see the note above
-  // sendEmails in the pre-metafields api.appointment.tsx history).
-  await sendEmailJs(
-    env,
-    {
-      templateId,
-      templateParams: {
-        to_email: notify,
-        name: d.name,
-        email: d.email,
-        phone: d.contact,
-        product_type: d.productType,
-        description: d.description,
-        time: new Intl.DateTimeFormat('en-US', {
-          dateStyle: 'medium',
-          timeStyle: 'short',
-        }).format(new Date()),
-      },
-    },
-    'custom-jewelry',
-  );
 }
 
 const CUSTOM_JEWELRY_CUSTOMER_MUTATION = `#graphql

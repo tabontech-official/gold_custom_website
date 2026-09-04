@@ -45,12 +45,6 @@ export async function adminRequest(
   return (await response.json()) as AdminResult;
 }
 
-// The custom.phone definition is Integer-typed: digits only, no leading
-// zeros — a "+", spaces, or formatting would be rejected by metafieldsSet.
-export function phoneDigits(raw: string): string {
-  return raw.replace(/\D/g, '').replace(/^0+/, '');
-}
-
 // Writes values onto the customer's custom.* metafields. Empty values are
 // skipped, and no explicit `type` is sent — metafieldsSet then validates
 // each write against the definition's actual type in admin, so the code
@@ -103,6 +97,36 @@ export async function saveCustomerMetafields(
   }
 
   return true;
+}
+
+/**
+ * Creates one "Customer record" metaobject entry per submission — the
+ * system of record since the per-field customer metafield definitions were
+ * replaced by it. Returns the new entry's GID so the caller can point the
+ * customer's custom.customer_details reference at it, or undefined on
+ * failure. Empty fields are skipped. Needs the write_metaobjects scope.
+ */
+export async function createCustomerRecord(
+  env: Env,
+  fields: Record<string, string>,
+): Promise<string | undefined> {
+  const result = await adminRequest(env, METAOBJECT_CREATE_MUTATION, {
+    metaobject: {
+      type: 'customer_record',
+      fields: Object.entries(fields)
+        .filter(([, value]) => value)
+        .map(([key, value]) => ({key, value})),
+    },
+  });
+
+  const failure =
+    result.data?.metaobjectCreate?.userErrors?.[0] ?? result.errors?.[0];
+  if (failure) {
+    console.error(`${LOG} metaobjectCreate:`, JSON.stringify(failure));
+    return undefined;
+  }
+
+  return result.data?.metaobjectCreate?.metaobject?.id as string | undefined;
 }
 
 // Uploads a visitor-provided image into Shopify Files (staged upload, then
@@ -195,6 +219,21 @@ const METAFIELDS_SET_MUTATION = `
         id
         key
         value
+      }
+      userErrors {
+        field
+        message
+        code
+      }
+    }
+  }
+`;
+
+const METAOBJECT_CREATE_MUTATION = `
+  mutation BookingCustomerRecord($metaobject: MetaobjectCreateInput!) {
+    metaobjectCreate(metaobject: $metaobject) {
+      metaobject {
+        id
       }
       userErrors {
         field

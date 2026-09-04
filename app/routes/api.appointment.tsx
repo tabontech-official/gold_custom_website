@@ -1,5 +1,8 @@
 import type {Route} from './+types/api.appointment';
-import {phoneDigits, saveCustomerMetafields} from '~/lib/customer-metafields';
+import {
+  createCustomerRecord,
+  saveCustomerMetafields,
+} from '~/lib/customer-metafields';
 
 export async function action({request, context}: Route.ActionArgs) {
   const form = await request.formData();
@@ -102,20 +105,35 @@ export async function action({request, context}: Route.ActionArgs) {
       }
     }
 
+    // The Customer-record metaobject entry IS the submission now — the
+    // per-field customer metafield definitions were replaced by it. The
+    // definition has no date field, so the requested date rides in the
+    // custom_design JSON.
+    const recordId = await createCustomerRecord(context.env, {
+      request_type: 'Appointment',
+      name,
+      email,
+      phone,
+      product: productLine,
+      custom_design: JSON.stringify({requested_date: date}),
+      description: message,
+      gallery: galleryId,
+    });
+
+    if (!recordId) {
+      return {
+        ok: false,
+        error: 'Something went wrong. Please try again.',
+      };
+    }
+
+    // Point the customer's custom.customer_details reference at the entry —
+    // this metafield write is also what fires the Flow notification.
     const saved = await saveCustomerMetafields(
       context.env,
       customerCreate?.customer?.id,
       email,
-      {
-        name,
-        phone: phoneDigits(phone),
-        date,
-        description: message,
-        product: productLine,
-        gallery: galleryId,
-        // Which flow filed this — notification automations key off it.
-        request: 'Appointment',
-      },
+      {customer_details: recordId},
     );
 
     if (!saved) {
