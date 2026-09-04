@@ -5,6 +5,7 @@ import {
   activeFields,
   CATEGORY_SPECS,
   PRODUCT_TYPES,
+  whenMatches,
   type SpecField,
   type SpecOption,
 } from '~/lib/customDesignOptions';
@@ -305,7 +306,8 @@ export function CustomDesignBuilder() {
     // branch's answers — drop them so they can't be submitted stale.
     if (answers[key] !== value) {
       for (const f of fullSpec) {
-        if (f.when?.key === key && f.when.value !== value) delete next[f.key];
+        if (f.when?.key === key && !whenMatches(f.when, value))
+          delete next[f.key];
       }
     }
     setAnswers(next);

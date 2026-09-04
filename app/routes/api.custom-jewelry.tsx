@@ -107,6 +107,16 @@ export async function action({request, context}: Route.ActionArgs) {
       galleryId = uploaded;
     }
 
+    // Every design choice, structured, into the custom.custom_design JSON
+    // metafield — labeled by the step names the shopper saw, so the admin
+    // view reads like the review screen.
+    const designJson = JSON.stringify({
+      piece: productType,
+      details: Object.fromEntries(selections),
+      description: description || undefined,
+      submitted_at: new Date().toISOString(),
+    });
+
     const saved = await saveCustomerMetafields(
       context.env,
       customerCreate?.customer?.id,
@@ -117,6 +127,7 @@ export async function action({request, context}: Route.ActionArgs) {
         product: productType,
         gallery: galleryId,
         description: fullDescription,
+        custom_design: designJson,
       },
     );
 

@@ -22,17 +22,23 @@ for (const type of Object.keys(CATEGORY_SPECS)) {
 // No sheet uses the same form field twice within one branch, every `when`
 // points at an earlier field's real option, and no step repeats a value.
 for (const [type, fields] of Object.entries(CATEGORY_SPECS)) {
-  const keys = fields.map((f) => `${f.key}|${f.when?.value ?? ''}`);
+  const keys = fields.map((f) => `${f.key}|${[f.when?.value ?? ''].flat().join()}`);
   assert.equal(new Set(keys).size, keys.length, `duplicate key in "${type}"`);
   for (const field of fields) {
     if (field.when) {
-      const parent = fields.find((f) => f.key === field.when!.key);
-      assert.ok(
-        parent &&
-          fields.indexOf(parent) < fields.indexOf(field) &&
-          parent.options.some((o) => o.value === field.when!.value),
-        `bad when-reference in "${type}" ${field.key}`,
-      );
+      // Some earlier field with that key must offer each trigger value —
+      // "earlier" so the flow can never depend on an answer not yet asked.
+      for (const value of [field.when.value].flat()) {
+        assert.ok(
+          fields.some(
+            (f) =>
+              f.key === field.when!.key &&
+              fields.indexOf(f) < fields.indexOf(field) &&
+              f.options.some((o) => o.value === value),
+          ),
+          `bad when-value "${value}" in "${type}" ${field.key}`,
+        );
+      }
     }
     const values = field.options.map((o) => o.value);
     assert.equal(
@@ -49,22 +55,32 @@ const ring = (values: Record<string, string>) =>
 
 const good = ring({
   spec_kind: 'Engagement',
-  spec_style: 'Solitaire',
+  spec_style: 'Round',
+  spec_design: 'Solitaire Band',
+  spec_stones: 'Sapphire',
+  spec_carat: '1.00 ct',
   spec_metal: 'Yellow Gold',
   spec_karat: '14K',
-  spec_stones: 'Sapphire',
   spec_size: '7',
+  spec_engraving: 'No Engraving',
   spec_budget: '$1,000 – $1,500',
 });
 assert.deepEqual(good.errors, {});
 assert.equal(
   specSummary(good.selections),
-  'Type: Engagement · Style: Solitaire · Metal: Yellow Gold · Karat: 14K · Stone: Sapphire · Size: 7 · Budget: $1,000 – $1,500',
+  'Type: Engagement · Style: Round · Band: Solitaire Band · Stone: Sapphire · Carat: 1.00 ct · Metal: Yellow Gold · Karat: 14K · Size: 7 · Engraving: No Engraving · Budget: $1,000 – $1,500',
 );
 
-// Engagement gets gem center stones; the generic list belongs to Casual.
-assert.ok(ring({spec_kind: 'Engagement', spec_stones: 'Cubic Zirconia'}).errors.spec_stones);
-assert.ok(!ring({spec_kind: 'Casual', spec_stones: 'Cubic Zirconia'}).errors.spec_stones);
+// A diamond center raises the natural-vs-lab question; a sapphire does not.
+assert.match(
+  ring({spec_kind: 'Engagement', spec_stones: 'Diamond'}).errors.spec_stonetype,
+  /choose/i,
+);
+assert.ok(!('spec_stonetype' in good.errors));
+
+// Engagement requires a center stone; only the Casual list offers "No stones".
+assert.ok(ring({spec_kind: 'Engagement', spec_stones: 'No stones'}).errors.spec_stones);
+assert.ok(!ring({spec_kind: 'Casual', spec_stones: 'No stones'}).errors.spec_stones);
 
 // Branching: the same style value is only valid under its own branch —
 // "Wedding Band" is a Casual style, so it fails the Engagement sheet.
@@ -75,6 +91,23 @@ assert.ok(!ring({spec_kind: 'Casual', spec_style: 'Wedding Band'}).errors.spec_s
 const bad = ring({spec_metal: 'Platinum', spec_karat: '14K'});
 assert.equal(bad.errors.spec_metal, 'Please choose one of the listed options.');
 assert.match(bad.errors.spec_size, /choose/i);
+
+// Pendant styles branch into their own follow-ups: a Cross asks for a cross
+// design; a Nameplate never sees that field but asks for a font instead.
+const pendant = (values: Record<string, string>) =>
+  readSpecSelections('Pendant', (name) => values[name] ?? '');
+assert.match(pendant({spec_style: 'Cross'}).errors.spec_design, /choose/i);
+assert.ok(!('spec_font' in pendant({spec_style: 'Cross'}).errors));
+assert.match(pendant({spec_style: 'Nameplate'}).errors.spec_font, /choose/i);
+assert.ok(!pendant({spec_style: 'Cross', spec_design: 'Gothic Cross'}).errors.spec_design);
+
+// Chains: stone type/coverage only appear once a diamond setting is chosen —
+// and any of the three stone-bearing settings unlocks them.
+const chain = (values: Record<string, string>) =>
+  readSpecSelections('Chain', (name) => values[name] ?? '');
+assert.ok(!('spec_stonetype' in chain({spec_stones: 'No Diamonds'}).errors));
+assert.match(chain({spec_stones: 'Partial Pavé'}).errors.spec_stonetype, /choose/i);
+assert.ok(!chain({spec_stones: 'Full Pavé / Iced', spec_stonetype: 'Diamond'}).errors.spec_stonetype);
 
 // An unknown category has no sheet, so nothing is required and nothing passes.
 const none = readSpecSelections('Nonsense', () => 'x');
