@@ -128,6 +128,8 @@ export async function action({request, context}: Route.ActionArgs) {
         gallery: galleryId,
         description: fullDescription,
         custom_design: designJson,
+        // Which flow filed this — notification automations key off it.
+        request: 'Custom Jewelry Request',
       },
     );
 

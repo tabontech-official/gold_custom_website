@@ -113,6 +113,8 @@ export async function action({request, context}: Route.ActionArgs) {
         description: message,
         product: productLine,
         gallery: galleryId,
+        // Which flow filed this — notification automations key off it.
+        request: 'Appointment',
       },
     );
 
