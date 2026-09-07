@@ -7089,7 +7089,12 @@ html.header-primary-hidden
   padding: 0;
   list-style: none;
   @media (min-width: 48em) {
-    grid-column: 1;
+    /* Full width, not just the gallery column. Boxed into column 1 the trail
+       ran out of room at 48rem and wrapped onto a second line while two thirds
+       of the page sat empty beside it — it starts at the same left edge either
+       way, so spanning both columns costs nothing and buys ~70rem. */
+    grid-column: 1 / -1;
+    flex-wrap: nowrap;
   }
 }
 
@@ -7109,12 +7114,20 @@ html.header-primary-hidden
   color: var(--color-gold-dark);
 }
 
+/* The trail is desktop-only (it is display:none under 48em), and the product
+   title is always the last crumb — so it is the one thing allowed to shrink.
+   Ellipsis rather than a wrap: a title long enough to overflow 70rem is long
+   enough that its tail is not what tells the shopper where they are. */
 .breadcrumb .is-current {
   color: var(--color-ink);
-  white-space: normal;
-  overflow-wrap: anywhere;
-  word-break: normal;
-  max-width: none;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.breadcrumb-item:last-child {
+  min-width: 0;
 }
 
 .breadcrumb-sep {
@@ -11976,6 +11989,106 @@ html.header-primary-hidden
   border-top: 1px solid var(--color-border);
 }
 
+/* Inline row — the product card's variant, no trigger. Same hairline rule
+   above it that .share-wrap gets there, so swapping one for the other does
+   not move the card's other content. */
+.share-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.share-inline-label {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold-dark);
+}
+
+/* Scrolls rather than wraps: the ask was one line, and a narrow phone cannot
+   fit nine icons at a comfortable tap size. The scrollbar is hidden, so it
+   reads as a row that runs on. */
+.share-inline-row {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.share-inline-row::-webkit-scrollbar {
+  display: none;
+}
+
+.share-inline-btn {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--color-bg-soft);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
+}
+
+.share-inline-btn svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: var(--color-ink);
+}
+
+/* Copy link and the copied tick are drawn as strokes, not filled shapes. */
+.share-inline-btn.is-stroke svg {
+  fill: none;
+  stroke: var(--color-ink);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.share-inline-btn:hover,
+.share-inline-btn:active {
+  background: var(--color-gold);
+  transform: scale(0.95);
+}
+
+.share-inline-btn:hover svg,
+.share-inline-btn:active svg {
+  fill: #fff;
+}
+
+.share-inline-btn.is-stroke:hover svg,
+.share-inline-btn.is-stroke:active svg {
+  fill: none;
+  stroke: #fff;
+}
+
+.share-inline-btn:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .share-inline-btn {
+    transition: none;
+  }
+
+  .share-inline-btn:hover,
+  .share-inline-btn:active {
+    transform: none;
+  }
+}
+
 /* Plain text control — no button chrome, no circle. Same recipe as the
    toolbar's own .collection-filter-trigger/.collection-sort-trigger
    (flat text controls with only the bar's hairline for chrome), duplicated
@@ -13762,4 +13875,396 @@ html.header-primary-hidden
   .product-card-badge {
     backdrop-filter: none;
   }
+}
+
+/* ── Picture Pendant photo ─────────────────────────────────────────────────
+   Trigger button in the purchase column, styled as .product-book-consult so it
+   sits between Add to bag and Book Private Consultation as one of the same
+   family. The dialog reuses the .appt-* overlay shell. */
+/* Stands in for Add to bag in the buy row while no photo is attached, so it
+   inherits .product-atc and only adds the icon alignment. */
+.pendant-photo-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  flex: 1 1 auto;
+}
+
+.pendant-photo-gate {
+  margin: -0.15rem 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  text-align: center;
+  color: var(--color-ink-soft);
+}
+
+/* Attached. Sits above the buy row, where Add to bag has reappeared. */
+.pendant-photo-saved {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--color-gold-soft);
+  border-radius: 12px;
+  background: rgba(212, 175, 55, 0.07);
+}
+
+.pendant-photo-saved-thumb {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  box-shadow:
+    inset 0 0 0 2px var(--color-gold),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.pendant-photo-saved-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.pendant-photo-saved-title {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.pendant-photo-saved-title svg {
+  color: var(--color-gold-dark);
+}
+
+.pendant-photo-saved-note {
+  margin: 0.1rem 0 0;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--color-ink-soft);
+}
+
+/* Both exits on the surface: a shopper should never have to open a dialog to
+   discover how to remove a photo. */
+.pendant-photo-saved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.9rem;
+  margin-top: 0.35rem;
+}
+
+.pendant-photo-saved-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.pendant-photo-saved-btn:hover {
+  color: var(--color-gold-dark);
+}
+
+.pendant-photo-saved-btn.is-remove {
+  font-weight: 500;
+  color: var(--color-sale);
+}
+
+.pendant-photo-saved-btn:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+.pendant-modal {
+  max-width: 640px;
+}
+
+.pendant-modal-head {
+  margin: 0 0 1.15rem;
+  padding-right: 2rem;
+}
+
+.pendant-modal-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--color-ink);
+}
+
+.pendant-modal-head p {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+}
+
+.pendant-modal-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.pendant-modal-drop {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.6rem;
+  min-height: 200px;
+  padding: 1.2rem;
+  border: 1.5px dashed var(--color-border);
+  border-radius: 12px;
+  background: #fcfcfd;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.pendant-modal-drop.is-dragging {
+  border-color: var(--color-gold);
+  background: var(--color-gold-soft);
+}
+
+.pendant-modal-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 40px;
+  padding: 0.55rem 1.15rem;
+  border: 1px solid var(--color-ink);
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: var(--color-light);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.14s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.pendant-modal-select:active {
+  transform: scale(0.96);
+}
+
+.pendant-modal-hint {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--color-ink-soft);
+}
+
+.pendant-modal-filename {
+  margin: 0;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.74rem;
+  color: var(--color-ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pendant-modal-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-gold-deep);
+  font-family: inherit;
+  font-size: 0.74rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.pendant-modal-link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* The requirements, as the reference dialog has them: plain sentences beside
+   the drop area, so nothing is a surprise after a failed upload. */
+.pendant-modal-notes {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.pendant-modal-notes li::marker {
+  color: var(--color-gold);
+}
+
+.pendant-modal-error {
+  margin: 0.9rem 0 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(178, 58, 72, 0.08);
+  font-size: 0.78rem;
+  color: var(--color-sale);
+}
+
+.pendant-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.pendant-modal-btn {
+  min-height: 38px;
+  padding: 0.5rem 1.15rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--color-ink);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.14s cubic-bezier(0.34, 1.4, 0.64, 1),
+    opacity 0.14s ease;
+}
+
+.pendant-modal-btn.is-primary {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--color-light);
+}
+
+.pendant-modal-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.pendant-modal-btn:disabled {
+  opacity: 0.42;
+  cursor: default;
+}
+
+.pendant-modal-btn:focus-visible,
+.pendant-modal-select:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+/* The bezel — a stand-in for the pendant's own gold frame, so the shopper
+   previews the crop in the shape it will actually be worn. */
+.pendant-photo-bezel {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-bg-soft);
+  box-shadow:
+    inset 0 0 0 2px var(--color-gold),
+    inset 0 1px 6px rgba(0, 0, 0, 0.28),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.pendant-photo-bezel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pendant-photo-progress {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.pendant-photo-progress::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 2px solid rgba(212, 175, 55, 0.25);
+  border-top-color: var(--color-gold-dark);
+  border-radius: 50%;
+  animation: pendant-photo-spin 0.8s linear infinite;
+}
+
+@keyframes pendant-photo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The real input stays in the DOM (the buttons click it) but never renders —
+   `display: none` would take it out of the accessibility tree with it. */
+.pendant-photo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 34em) {
+  /* One column: the drop area stays the first thing, the requirements read
+     under it rather than squeezing into half a phone's width. */
+  .pendant-modal-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pendant-modal-drop {
+    min-height: 168px;
+  }
+
+  .pendant-modal-foot .pendant-modal-btn {
+    flex: 1 1 0;
+  }
+}
+
+/* The shopper decides how long they look at a spinner; a permanently moving
+   element on the page is not their choice to make. */
+@media (prefers-reduced-motion: reduce) {
+  .pendant-modal-drop,
+  .pendant-modal-btn,
+  .pendant-modal-select {
+    transition: none;
+  }
+
+  .pendant-photo-progress::after {
+    animation: none;
+  }
+
+  .pendant-modal-btn:active:not(:disabled),
+  .pendant-modal-select:active {
+    transform: none;
+  }
+}
+
+/* Cart line: the uploaded photo, shown as itself instead of a raw CDN URL. */
+.cart-line-photo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.cart-line-photo img {
+  width: 26px;
+  height: 26px;
+  object-fit: cover;
+  border: 1px solid rgba(17, 17, 17, 0.15);
+  border-radius: 3px;
 }

@@ -263,6 +263,45 @@ const STAGED_UPLOADS_MUTATION = `
   }
 `;
 
+/**
+ * The public CDN URL of a file `uploadReferenceImage` just created.
+ *
+ * `fileCreate` returns the file as UPLOADED — Shopify has the bytes but has not
+ * processed them yet, and `image.url` stays null until the file reaches READY,
+ * about a second later (measured against this store). A caller that needs a
+ * URL rather than a GID has to wait for that: a cart line attribute is read by
+ * a human off the order, so a GID nobody can open is not an answer.
+ *
+ * Returns undefined if the file is still not ready after ~5s; the caller then
+ * fails the upload visibly rather than putting an unopenable value on the line.
+ */
+export async function fileCdnUrl(
+  env: Env,
+  fileId: string,
+): Promise<string | undefined> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    const result = await adminRequest(env, FILE_URL_QUERY, {id: fileId});
+    const url = result.data?.node?.image?.url as string | undefined;
+    if (url) return url;
+  }
+
+  console.error(`${LOG} file never reached READY:`, fileId);
+  return undefined;
+}
+
+const FILE_URL_QUERY = `
+  query BookingFileUrl($id: ID!) {
+    node(id: $id) {
+      ... on MediaImage {
+        image {
+          url
+        }
+      }
+    }
+  }
+`;
+
 const FILE_CREATE_MUTATION = `
   mutation BookingFileCreate($files: [FileCreateInput!]!) {
     fileCreate(files: $files) {

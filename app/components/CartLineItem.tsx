@@ -6,6 +6,7 @@ import {useVariantUrl} from '~/lib/variants';
 import {Link, useFetcher} from 'react-router';
 import {ProductPrice} from './ProductPrice';
 import {useAside} from './Aside';
+import {PENDANT_PHOTO_ATTRIBUTE_KEY} from '~/lib/pendantPhoto';
 import type {
   CartApiQueryFragment,
   CartLineFragment,
@@ -73,9 +74,25 @@ export function CartLineItem({
     <ul className="cart-line-options">
       {lineProperties.map((property) => (
         <li key={property.name}>
-          <small>
-            {property.name}: {property.value}
-          </small>
+          {property.name === PENDANT_PHOTO_ATTRIBUTE_KEY ? (
+            // The value is a CDN URL. Printed as text it wraps across three
+            // lines and buries the rest of the line's details, so it shows as
+            // what it actually is — and as the shopper's own confirmation that
+            // THIS line carries THAT photo.
+            <a
+              className="cart-line-photo"
+              href={property.value}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img src={property.value} alt="" loading="lazy" />
+              <small>{property.name}</small>
+            </a>
+          ) : (
+            <small>
+              {property.name}: {property.value}
+            </small>
+          )}
         </li>
       ))}
     </ul>

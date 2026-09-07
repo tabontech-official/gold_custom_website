@@ -31,6 +31,7 @@ import {
   RING_SIZE_ATTRIBUTE_KEY,
   isRingProduct,
 } from '~/lib/ringSizes';
+import {isPicturePendantProduct} from '~/lib/pendantPhoto';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
 import {
@@ -331,6 +332,19 @@ export default function Product() {
   const isRing = isRingProduct(product);
   const [ringSize, setRingSize] = useState(DEFAULT_RING_SIZE);
 
+  // A Picture Pendant is made from the shopper's own photo, so it cannot be
+  // added to the bag without one. The uploaded photo's URL lives here for the
+  // same reason the ring size does: it belongs to the line about to be built,
+  // not to the cart, the session or the customer — which is what keeps two
+  // pendants bought with two different photos from sharing a slot.
+  //
+  // ponytail: deliberately NOT restored from the cart the way ring size is. An
+  // already-bagged pendant reloading with its photo pre-filled would show a
+  // preview the shopper did not just upload; starting empty also leaves them
+  // free to buy the same pendant again with a different picture.
+  const needsPhoto = isPicturePendantProduct(product);
+  const [photoUrl, setPhotoUrl] = useState<string | undefined>();
+
   /**
    * Optimistically selects a variant from the available variant information.
    *
@@ -560,6 +574,8 @@ export default function Product() {
                 }}
                 ringSize={isRing ? ringSize : undefined}
                 onRingSizeChange={setRingSize}
+                photoUrl={photoUrl}
+                onPhotoChange={needsPhoto ? setPhotoUrl : undefined}
               />
             </div>
 
@@ -591,6 +607,7 @@ export default function Product() {
               <ShareButtons
                 title={product.title}
                 image={selectedVariant?.image?.url}
+                inline
               />
             </div>
           </div>
@@ -1435,6 +1452,8 @@ const PRODUCT_FRAGMENT = `#graphql
     vendor
     handle
     productType
+    # Drives the Picture Pendant photo upload — see isPicturePendantProduct.
+    tags
     descriptionHtml
     description
     # VideoObject.uploadDate. See buildVideoJsonLd's caller for why this

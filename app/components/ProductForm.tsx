@@ -4,7 +4,9 @@ import {type MappedProductOptions} from '@shopify/hydrogen';
 import {AddToCartButton, AddedToBagLabel} from './AddToCartButton';
 import {AppointmentModal} from './AppointmentModal';
 import {useAside} from './Aside';
+import {PendantPhotoModal} from './PendantPhotoModal';
 import {PremiumSelect, type PremiumSelectOption} from './PremiumSelect';
+import {PENDANT_PHOTO_ATTRIBUTE_KEY} from '~/lib/pendantPhoto';
 import {
   RING_SIZES,
   RING_SIZE_ATTRIBUTE_KEY,
@@ -30,6 +32,8 @@ export function ProductForm({
   product,
   ringSize,
   onRingSizeChange,
+  photoUrl,
+  onPhotoChange,
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
@@ -39,6 +43,13 @@ export function ProductForm({
   /** Set only for rings — omitted, no size selector and no size on the line. */
   ringSize?: string;
   onRingSizeChange?: (size: string) => void;
+  /**
+   * Set only for Picture Pendants. `onPhotoChange` present is what makes the
+   * upload required — the piece is the photo, so there is nothing to add to
+   * the bag until one is uploaded.
+   */
+  photoUrl?: string;
+  onPhotoChange?: (url?: string) => void;
 }) {
   const {pathname} = useLocation();
   const {open} = useAside();
@@ -71,6 +82,28 @@ export function ProductForm({
   // to make, not an empty box with a label and nothing under it.
   const hasSelectors =
     optionSelects.length > 0 || Boolean(variantGroup) || Boolean(ringSize);
+
+  // Every per-line choice Shopify has no variant for, in one place — these
+  // become line item properties on the order. Building the array here rather
+  // than inline is what keeps two of them from being an either/or.
+  const lineAttributes = [
+    ...(ringSize ? [{key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize}] : []),
+    ...(photoUrl
+      ? [{key: PENDANT_PHOTO_ATTRIBUTE_KEY, value: photoUrl}]
+      : []),
+  ];
+  // A Picture Pendant with no photo has nothing to add to the bag, so the Add
+  // to bag button is not rendered at all until one is uploaded — a disabled
+  // button the shopper cannot explain is worse than no button plus the control
+  // that unlocks it.
+  const needsPhoto = Boolean(onPhotoChange) && !photoUrl;
+  const photoControl = onPhotoChange ? (
+    <PendantPhotoModal
+      productTitle={product.title}
+      url={photoUrl}
+      onChange={onPhotoChange}
+    />
+  ) : null;
 
   return (
     <div className="product-form">
@@ -130,7 +163,14 @@ export function ProductForm({
       )}
 
       <div className="product-purchase-grid">
+        {/* Saved-photo summary sits above the buy row; the "add your photo"
+            call to action takes Add to bag's place inside it. Exactly one of
+            the two is ever mounted. */}
+        {!needsPhoto && photoControl}
+
         <div className="product-buy-row">
+          {needsPhoto && photoControl}
+          {!needsPhoto && (
           <AddToCartButton
             className="btn product-atc product-purchase-action"
             disabled={!selectedVariant || !selectedVariant.availableForSale}
@@ -144,10 +184,8 @@ export function ProductForm({
                       merchandiseId: selectedVariant.id,
                       quantity: 1,
                       selectedVariant,
-                      ...(ringSize && {
-                        attributes: [
-                          {key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize},
-                        ],
+                      ...(lineAttributes.length > 0 && {
+                        attributes: lineAttributes,
                       }),
                     },
                   ]
@@ -171,8 +209,18 @@ export function ProductForm({
               'Sold out'
             )}
           </AddToCartButton>
+          )}
           {wishlistButton}
         </div>
+
+        {/* Add to bag is absent, not broken — say why, once, where the button
+            would have been. */}
+        {needsPhoto && (
+          <p className="pendant-photo-gate">
+            This pendant is made from your picture, so a photo is required
+            before it can go in the bag.
+          </p>
+        )}
 
         <AppointmentModal
           product={{
