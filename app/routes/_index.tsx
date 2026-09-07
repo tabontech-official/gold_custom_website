@@ -809,8 +809,16 @@ function ProductRail({
   const [shown, setShown] = useState(RAIL_BATCH);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
-  // Reset when the product set changes (e.g. switching tabs).
-  useEffect(() => setShown(RAIL_BATCH), [products]);
+  // Switching tabs resets this rail by REMOUNTING it — callers pass a `key`.
+  //
+  // There used to be a `useEffect(() => setShown(RAIL_BATCH), [products])`
+  // here, and it silently broke the one rail whose products are built fresh on
+  // every render (balancedNewArrivals interleaves six department queries, so it
+  // returns a new array each time). A new array is a changed dependency, so the
+  // reset fired on every render and pinned `shown` to the first batch: the New
+  // Arrivals rail scrolled to its end and never revealed products 9-24, while
+  // every other rail — all of which pass a stable `.nodes` reference — worked.
+  // Array identity was never the right signal for "the product set changed".
 
   const hasMore = shown < products.length;
 
@@ -999,6 +1007,7 @@ function RecommendedProducts({
               <Await resolve={products}>
                 {(response) => (
                   <ProductRail
+                    key="all"
                     products={balancedNewArrivals(response)}
                     ariaLabel="new arrivals"
                     emptyMessage="New arrivals are loading or unavailable right now."
@@ -1011,6 +1020,7 @@ function RecommendedProducts({
               <Await resolve={genderNewArrivals}>
                 {(response) => (
                   <ProductRail
+                    key={tab}
                     products={
                       (tab === 'women'
                         ? response?.womens?.products?.nodes
