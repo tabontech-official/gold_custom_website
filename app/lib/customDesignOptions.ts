@@ -989,7 +989,15 @@ export function readSpecSelections(
   return {selections, errors};
 }
 
-/** "Metal: Yellow Gold · Karat: 14K · …" for the email/metafield. */
+/** "Metal: Yellow Gold · Karat: 14K · …" — one line, for chips/summaries. */
 export function specSummary(selections: Array<[string, string]>): string {
   return selections.map(([label, value]) => `${label}: ${value}`).join(' · ');
+}
+
+/**
+ * "Metal: Yellow Gold\nKarat: 14K\n…" — one option per line, for the
+ * design_detail metaobject field (multi-line text, not JSON).
+ */
+export function specDetailLines(selections: Array<[string, string]>): string {
+  return selections.map(([label, value]) => `${label}: ${value}`).join('\n');
 }

@@ -7,6 +7,7 @@ import {
 import {
   PRODUCT_TYPES,
   readSpecSelections,
+  specDetailLines,
 } from '~/lib/customDesignOptions';
 
 // Custom jewelry inquiry. Same customer-record pattern as api.appointment:
@@ -100,24 +101,24 @@ export async function action({request, context}: Route.ActionArgs) {
       galleryId = uploaded;
     }
 
-    // Every design choice, structured, labeled by the step names the
-    // shopper saw. The free-text description stays OUT of here — it has its
-    // own field, carrying only what the customer wrote.
-    const designJson = JSON.stringify({
-      piece: productType,
-      details: Object.fromEntries(selections),
-      submitted_at: new Date().toISOString(),
-    });
+    // Every design choice, one per line, labeled by the step names the
+    // shopper saw — plain text for design_detail, not JSON. The free-text
+    // description stays OUT of here — it has its own field, carrying only
+    // what the customer wrote.
+    const designDetail = specDetailLines(selections);
 
     // The Customer-record metaobject entry IS the submission now — the
     // per-field customer metafield definitions were replaced by it.
+    // date = when the request was sent (there is no requested date here,
+    // unlike the appointment flow).
     const recordId = await createCustomerRecord(context.env, {
       request_type: 'Custom Jewelry Request',
       name,
       email,
       phone: contact,
+      date: new Date().toISOString().slice(0, 10),
       product: productType,
-      custom_design: designJson,
+      design_detail: designDetail,
       description,
       gallery: galleryId,
     });

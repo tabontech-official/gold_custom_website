@@ -538,10 +538,6 @@ export default function Collection() {
         />
         <div className="collection-title-row">
           <h1>{displayTitle(collection)}</h1>
-          <ShareButtons
-            title={collection.title}
-            image={collection.image?.url ?? undefined}
-          />
         </div>
       </div>
 
@@ -559,7 +555,17 @@ export default function Collection() {
 
       <section className="home-section">
         <div className="section-inner collection-layout">
-          <CollectionFilterSidebar categories={categories} filters={filters} />
+          <CollectionFilterSidebar
+            categories={categories}
+            filters={filters}
+            shareButton={
+              <ShareButtons
+                title={collection.title}
+                image={collection.image?.url ?? undefined}
+                align="end"
+              />
+            }
+          />
           <div
             className={`collection-main${isListView ? ' is-list-view' : ''}`}
           >

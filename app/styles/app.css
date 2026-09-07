@@ -940,24 +940,50 @@ button.announcement-link {
 @media (max-width: 48em) {
   .announcement-bar {
     gap: 0.32rem;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.35fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.6fr) minmax(0, 0.8fr);
     min-height: 1.45rem;
-    padding: 0.18rem 0.45rem;
+    padding: 0.18rem 0.4rem;
   }
 
+  /* `justify-self: center` (the base rule) sizes this box to its CONTENT,
+     not its grid track — overflow/ellipsis never engage because the box is
+     never narrower than the text, so a long message spills straight into
+     the flanking links either side. Stretching it to the track and
+     text-align-centering the text INSIDE that fixed box is what actually
+     lets ellipsis clip it at the track's edge. */
   .announcement-text {
-    font-size: 0.48rem;
-    letter-spacing: 0.06em;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+    text-align: center;
+    font-size: 0.44rem;
+    letter-spacing: 0.03em;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
+  /* Same fix, other direction: justify-self: start/end (base rule) also
+     shrinks to content instead of stretching, so a long link label could
+     overflow into the center text too. */
+  .announcement-link:first-child {
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  .announcement-link:last-child {
+    justify-self: stretch;
+    text-align: right;
+  }
+
   .announcement-link {
-    font-size: 0.48rem;
-    letter-spacing: 0.06em;
+    width: 100%;
+    min-width: 0;
+    font-size: 0.44rem;
+    letter-spacing: 0.03em;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -5816,6 +5842,19 @@ F
   text-transform: uppercase;
 }
 
+/* The clamp above has a 1.9rem FLOOR — on a phone, 4vw is already smaller
+   than that floor, so it never actually shrinks and a long SEO title (e.g.
+   "Quinceañera Rings in 10K & 14K Gold | A Milestone Worth Marking") wraps
+   into a wall of huge uppercase lines. Scale genuinely with the viewport
+   here instead. */
+@media (max-width: 47.99em) {
+  .collection-title-row h1 {
+    font-size: clamp(1.05rem, 5.6vw, 1.5rem);
+    line-height: 1.22;
+    margin: 0.15rem 0 0.3rem;
+  }
+}
+
 /* Page divided in two: a filter rail locked to the left screen edge and the
    category content beside it. position: fixed — the rail cannot scroll with
    the page; a long filter list scrolls inside the rail itself. */
@@ -10072,8 +10111,14 @@ html.header-primary-hidden
 }
 
 .collection-sort-select {
-  margin-left: auto;
   position: relative;
+}
+
+/* Pushed to the far right instead — Sort now sits in normal flow right next
+   to Filters, and this is the one thing that ends up alone at the opposite
+   edge. */
+.collection-toolbar .share-wrap {
+  margin-left: auto;
 }
 
 .collection-sort-label {
@@ -11915,108 +11960,216 @@ html.header-primary-hidden
   color: var(--color-sale);
 }
 
-/* Social share row (product + collection pages). Buttons open the network's
-   own share flow; previews come from the page's existing OG tags. */
-.share-row {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* Social share control (product + collection pages) — one trigger icon,
+   one dropdown sheet. iOS share-sheet language: a horizontal row of app
+   icons, a short action list below. Previews come from the page's
+   existing OG tags; nothing here duplicates that. */
+.share-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
 }
 
-.product-details-card .share-row {
+.product-details-card .share-wrap {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid var(--color-border);
 }
 
-.share-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.14em;
+/* Plain text control — no button chrome, no circle. Same recipe as the
+   toolbar's own .collection-filter-trigger/.collection-sort-trigger
+   (flat text controls with only the bar's hairline for chrome), duplicated
+   here rather than shared so ShareButtons stays usable outside the
+   collection toolbar too (the product page's card also renders it). */
+.share-text-trigger {
+  align-items: center;
+  background: none;
+  border: 0;
+  color: #1c1c1e;
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-family: var(--font-classic);
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 0.5rem;
+  letter-spacing: 0.09em;
+  padding: 0.25rem 0;
   text-transform: uppercase;
-  color: var(--color-ink-soft);
-  margin-right: 0.25rem;
+  transition: color 160ms ease;
 }
 
-.share-btn {
-  display: grid;
-  place-items: center;
-  width: 2.25rem;
-  height: 2.25rem;
+.share-text-trigger:hover,
+.share-text-trigger[aria-expanded='true'] {
+  color: var(--color-gold-deep);
+}
+
+.share-text-trigger:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 3px;
+}
+
+.share-text-caret {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.share-text-trigger[aria-expanded='true'] .share-text-caret {
+  transform: rotate(180deg);
+}
+
+/* The sheet itself — fixed, compact width so it can never be wider than the
+   viewport regardless of where the trigger sits. `align="end"` (the
+   collection title row, flush against the page's right edge) hangs it from
+   the trigger's right edge instead of its left, so it opens inward. */
+.share-panel {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  z-index: 30;
+  width: 16.5rem;
+  max-width: calc(100vw - 2 * var(--section-pad, 1rem));
   background: #fff;
   border: 1px solid var(--color-border);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: border-color 150ms ease, background 150ms ease;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px -18px rgba(20, 16, 8, 0.45);
+  overflow: hidden;
+  animation: share-panel-in 140ms ease both;
 }
 
-.share-btn svg {
-  width: 1.05rem;
-  height: 1.05rem;
+@keyframes share-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.share-align-start .share-panel {
+  left: 0;
+}
+
+.share-align-end .share-panel {
+  right: 0;
+}
+
+/* Horizontally-scrollable app-icon row, like the native share sheet's own
+   app tray. flex-shrink: 0 on each tile keeps them from squeezing — the
+   row scrolls instead of the icons shrinking illegibly small. */
+.share-apps {
+  display: flex;
+  gap: 0.3rem;
+  padding: 0.9rem 0.6rem 0.6rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.share-apps::-webkit-scrollbar {
+  display: none;
+}
+
+.share-app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  width: 3.6rem;
+  padding: 0.15rem 0 0.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.share-app-icon {
+  display: grid;
+  place-items: center;
+  width: 2.7rem;
+  height: 2.7rem;
+  border-radius: 50%;
+  background: var(--color-bg-soft);
+  transition: background 140ms ease, transform 140ms ease;
+}
+
+.share-app-icon svg {
+  width: 1.25rem;
+  height: 1.25rem;
   fill: var(--color-ink);
 }
 
-.share-btn .share-native {
-  fill: none;
-  stroke: var(--color-ink);
-  stroke-width: 1.6;
+.share-app:hover .share-app-icon,
+.share-app:active .share-app-icon {
+  background: var(--color-gold);
+  transform: scale(0.95);
 }
 
-.share-btn:hover {
-  border-color: var(--color-gold);
-  background: var(--color-bg-soft);
+.share-app:hover .share-app-icon svg,
+.share-app:active .share-app-icon svg {
+  fill: #fff;
 }
 
-/* Anchor for the per-platform Feed/DM menu. */
-.share-net {
-  position: relative;
-  display: inline-flex;
+.share-app-label {
+  font-size: 0.66rem;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
 }
 
-.share-menu {
-  position: absolute;
-  top: calc(100% + 0.4rem);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 30;
+/* Vertical action list — Copy Link, More Options. */
+.share-actions {
+  border-top: 1px solid var(--color-border);
+}
+
+.share-actions button {
   display: flex;
-  flex-direction: column;
-  min-width: 11.5rem;
-  background: #fff;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-  box-shadow: 0 12px 28px -14px rgba(20, 16, 8, 0.4);
-  overflow: hidden;
-}
-
-.share-menu button {
-  padding: 0.6rem 0.9rem;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem 0.95rem;
   background: none;
   border: none;
   text-align: left;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
   color: var(--color-ink);
   cursor: pointer;
 }
 
-.share-menu button:hover {
+.share-actions button svg {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex-shrink: 0;
+  fill: none;
+  stroke: var(--color-ink-soft);
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.share-actions button:hover {
   background: var(--color-bg-soft);
 }
 
-.share-menu button + button {
+.share-actions button + button {
   border-top: 1px solid var(--color-border);
 }
 
-/* "Link copied — paste it in your DM" feedback. */
-.share-copied {
-  font-size: 0.75rem;
-  color: var(--color-ink-soft);
-}
+@media (max-width: 30em) {
+  .share-panel {
+    width: 15.5rem;
+  }
 
-/* The collection title row sits high on the page — drop the menu below
-   without clipping; the row is the positioning context. */
-.collection-title-row .share-row {
-  flex-shrink: 0;
+  .share-app {
+    width: 3.3rem;
+  }
+
+  .share-app-icon {
+    width: 2.4rem;
+    height: 2.4rem;
+  }
 }
 
 .appt-form-error {

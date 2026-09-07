@@ -4,6 +4,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
 } from 'react';
 
 // useLayoutEffect warns during SSR (it cannot run there); useEffect is the
@@ -106,12 +107,17 @@ export function CollectionFilterSidebar({
   // the toolbar's "Clear all" plus the rail's own checkboxes still undo a
   // filter — nothing becomes unreachable by hiding the chip row.
   showAppliedChips = true,
+  // Rendered node, not title/image props — keeps this component decoupled
+  // from ShareButtons and how the page builds its share content (same
+  // pattern as ProductForm's `wishlistButton`). Absent on /search.
+  shareButton,
 }: {
   categories?: SidebarCategory[];
   filters: Filter[];
   sortOptions?: ReadonlyArray<{label: string; value: string}>;
   showCounts?: boolean;
   showAppliedChips?: boolean;
+  shareButton?: ReactNode;
 }) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
@@ -276,6 +282,7 @@ export function CollectionFilterSidebar({
             <span>Clear all</span>
           </Link>
         )}
+        {shareButton}
         <div className="collection-sort-select" ref={sortRef}>
           <button
             aria-expanded={sortOpen}

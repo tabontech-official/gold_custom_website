@@ -106,16 +106,15 @@ export async function action({request, context}: Route.ActionArgs) {
     }
 
     // The Customer-record metaobject entry IS the submission now — the
-    // per-field customer metafield definitions were replaced by it. The
-    // definition has no date field, so the requested date rides in the
-    // custom_design JSON.
+    // per-field customer metafield definitions were replaced by it.
+    // date = the requested appointment date, not the submission time.
     const recordId = await createCustomerRecord(context.env, {
       request_type: 'Appointment',
       name,
       email,
       phone,
+      date,
       product: productLine,
-      custom_design: JSON.stringify({requested_date: date}),
       description: message,
       gallery: galleryId,
     });

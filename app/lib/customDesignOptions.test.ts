@@ -7,6 +7,7 @@ import {
   CATEGORY_SPECS,
   PRODUCT_TYPES,
   readSpecSelections,
+  specDetailLines,
   specSummary,
 } from './customDesignOptions.ts';
 
@@ -69,6 +70,11 @@ assert.deepEqual(good.errors, {});
 assert.equal(
   specSummary(good.selections),
   'Type: Engagement · Style: Round · Band: Solitaire Band · Stone: Sapphire · Carat: 1.00 ct · Metal: Yellow Gold · Karat: 14K · Size: 7 · Engraving: No Engraving · Budget: $1,000 – $1,500',
+);
+// design_detail: same pairs, one per line, for the multi-line metaobject field.
+assert.equal(
+  specDetailLines(good.selections),
+  'Type: Engagement\nStyle: Round\nBand: Solitaire Band\nStone: Sapphire\nCarat: 1.00 ct\nMetal: Yellow Gold\nKarat: 14K\nSize: 7\nEngraving: No Engraving\nBudget: $1,000 – $1,500',
 );
 
 // A diamond center raises the natural-vs-lab question; a sapphire does not.
