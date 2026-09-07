@@ -5,15 +5,67 @@ import {cdnLoader} from '~/lib/cdnImage';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
-import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {
+  SITE,
+  absoluteUrl,
+  breadcrumbJsonLd,
+  pageSeo,
+  rootDataFrom,
+  siteOrigin,
+} from '~/lib/seo';
 import {CacheContent} from '~/lib/cache';
 
-export const meta: Route.MetaFunction = ({matches}) =>
-  pageSeo({
+export const meta: Route.MetaFunction = ({data, matches}) => {
+  const origin = siteOrigin(rootDataFrom(matches));
+  const url = absoluteUrl(origin, '/blogs');
+  const description = `Gold buying guides, care tips and jewelry advice from ${SITE.name}.`;
+  const articles = data?.blog?.articles?.nodes ?? [];
+
+  return pageSeo({
     title: 'Jewelry Guides & Buying Advice',
-    description: `Gold buying guides, care tips and jewelry advice from ${SITE.name}.`,
-    url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/blogs'),
+    description,
+    url,
+    jsonLd: [
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Blog',
+        '@id': `${url}#blog`,
+        name: 'Jewelry Guides & Buying Advice',
+        description,
+        url,
+        publisher: {'@id': `${origin}/#organization`},
+        // Each entry carries the SAME @id the post's own page uses for its
+        // BlogPosting (`<post url>#article`), so the two pages describe one
+        // node rather than two: a crawler that has seen either page can join
+        // them up. Written out rather than left as a bare {'@id': …} reference,
+        // because a reference to a node that is not on this page is dangling.
+        //
+        // Current page only — the grid is paginated, and claiming posts that
+        // are not on this page would be describing a page that does not exist.
+        blogPost: articles.map((article) => {
+          const articleUrl = absoluteUrl(origin, `/blogs/${article.handle}`);
+          return {
+            '@type': 'BlogPosting',
+            '@id': `${articleUrl}#article`,
+            url: articleUrl,
+            headline: article.title,
+            datePublished: article.publishedAt,
+            image: article.image?.url ? [article.image.url] : undefined,
+            author: article.author?.name
+              ? {'@type': 'Person', name: article.author.name}
+              : {'@type': 'Organization', name: SITE.name},
+          };
+        }),
+      },
+      // The page renders a visible Home / Blog trail; every other route marks
+      // its own up, and this one was the exception.
+      breadcrumbJsonLd(origin, [
+        {name: 'Home', path: '/'},
+        {name: 'Blog', path: '/blogs'},
+      ]),
+    ],
   });
+};
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte

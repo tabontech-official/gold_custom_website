@@ -41,6 +41,18 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
             url,
             mainEntityOfPage: url,
             datePublished: article.publishedAt,
+            // Google lists dateModified among the Article rich result's
+            // recommended properties, and the Storefront API's Article type has
+            // no updated timestamp — only `publishedAt` (the Admin API has
+            // `updatedAt`, but that needs read_content and a per-render admin
+            // call for a field that is usually the publish date anyway). An
+            // unmodified article's dateModified IS its datePublished, which is
+            // what Google's own guidance says to send.
+            //
+            // Edit a post after publishing and this will understate it. If that
+            // starts to matter, set an article metafield on edit and prefer it
+            // here — Storefront can read article metafields.
+            dateModified: article.publishedAt,
             image: article.image?.url ? [article.image.url] : undefined,
             author: article.author?.name
               ? {'@type': 'Person', name: article.author.name}
