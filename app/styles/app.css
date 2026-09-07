@@ -1181,6 +1181,11 @@ F
   display: block;
   font-size: 1.17em;
   font-weight: 600;
+  /* The glyph swaps to ✕ while the drawer is open, and the two do not have
+     the same advance width — without a fixed box the whole header row nudges
+     sideways on every toggle. */
+  min-width: 1.15em;
+  text-align: center;
 }
 
 .header-menu-mobile-toggle {
@@ -9949,14 +9954,16 @@ html.header-primary-hidden
   margin: 0;
 }
 
-.homepage-faq-list {
+.homepage-faq-list,
+.collection-about .product-accordions {
   display: grid;
   gap: 0.7rem;
   margin: 0 auto;
   max-width: 64rem;
 }
 
-.homepage-faq-item {
+.homepage-faq-item,
+.collection-about .product-details {
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(160, 126, 55, 0.2);
   border-radius: 2px;
@@ -9967,12 +9974,14 @@ html.header-primary-hidden
     box-shadow 180ms ease;
 }
 
-.homepage-faq-item[open] {
+.homepage-faq-item[open],
+.collection-about .product-details[open] {
   background: #fff;
   box-shadow: 0 12px 28px rgba(47, 37, 18, 0.09);
 }
 
-.homepage-faq-item summary {
+.homepage-faq-item summary,
+.collection-about .product-details > summary {
   align-items: center;
   cursor: pointer;
   display: flex;
@@ -9984,11 +9993,13 @@ html.header-primary-hidden
   padding: 1.2rem 0;
 }
 
-.homepage-faq-item summary::-webkit-details-marker {
+.homepage-faq-item summary::-webkit-details-marker,
+.collection-about .product-details > summary::-webkit-details-marker {
   display: none;
 }
 
-.homepage-faq-item summary::after {
+.homepage-faq-item summary::after,
+.collection-about .product-details > summary::after {
   color: var(--color-gold-dark);
   content: '+';
   font-size: 1.45rem;
@@ -9996,7 +10007,8 @@ html.header-primary-hidden
   line-height: 1;
 }
 
-.homepage-faq-item[open] summary::after {
+.homepage-faq-item[open] summary::after,
+.collection-about .product-details[open] > summary::after {
   content: '−';
 }
 
@@ -10004,6 +10016,44 @@ html.header-primary-hidden
   color: var(--color-ink-soft);
   line-height: 1.7;
   margin: 0;
+  max-width: 42rem;
+  padding: 0 2rem 1.3rem 0;
+}
+
+/* ── About accordion == FAQ accordion ───────────────────────────────────────
+   The two sit one above the other on every collection page and were two
+   different controls doing the same job: bare hairline rows with a bold 700
+   label and a black rotating "+" above; white bordered cards with a lighter
+   500 label and a gold +/- below. The About stack now SHARES the FAQ's rules
+   rather than carrying a copy of the same values, so restyling one restyles
+   both and they cannot drift apart again.
+
+   What is left below is only the undoing. `.product-details` is also the
+   PRODUCT page's description accordion, so the base styles it drags along — a
+   bottom hairline, a black marker that rotates 45deg — have to be switched off
+   here, and ONLY inside .collection-about, leaving the PDP exactly as it was. */
+.collection-about .product-details {
+  border-bottom: 0;
+}
+
+/* The base rule rotates its "+" into an x; the FAQ swaps the glyph for a
+   minus. Both fire, and a rotated minus is a very odd looking dash. */
+.collection-about .product-details > summary::after,
+.collection-about .product-details[open] > summary::after {
+  transform: none;
+  transition: none;
+}
+
+/* The intro paragraph lives inside .product-accordions and must stay prose —
+   the grid it now sits in would otherwise stretch it to the card measure. */
+.collection-about .product-description-intro {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding-bottom: 0.35rem;
+}
+
+.collection-about .product-details-body {
+  color: var(--color-ink-soft);
   max-width: 42rem;
   padding: 0 2rem 1.3rem 0;
 }
@@ -10043,17 +10093,20 @@ html.header-primary-hidden
     padding-right: 0.75rem;
   }
 
-  .homepage-faq-item {
+  .homepage-faq-item,
+  .collection-about .product-details {
     padding: 0 0.9rem;
   }
 
-  .homepage-faq-item summary {
+  .homepage-faq-item summary,
+  .collection-about .product-details > summary {
     font-size: 0.85rem;
     gap: 0.6rem;
     padding: 1rem 0;
   }
 
-  .homepage-faq-item summary::after {
+  .homepage-faq-item summary::after,
+  .collection-about .product-details > summary::after {
     font-size: 1.25rem;
   }
 
@@ -11171,13 +11224,6 @@ html.header-primary-hidden
   height: 2px;
   margin: 0.75rem auto 0;
   background: var(--color-gold-dark);
-}
-
-/* Narrows the whole accordion stack (intro + every section), not just the
-   intro paragraph — DescriptionAccordions wraps both in .product-accordions. */
-.collection-about .product-accordions {
-  max-width: 40rem;
-  margin: 0 auto;
 }
 
 .editorial-heading-row {

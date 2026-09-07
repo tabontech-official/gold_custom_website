@@ -10,6 +10,13 @@ type AsideType = 'search' | 'cart' | 'mobile' | 'closed';
 type AsideContextValue = {
   type: AsideType;
   open: (mode: AsideType) => void;
+  /**
+   * Open `mode`, or close it if it is already the open one — for a control
+   * that IS the thing it opens, like the mobile menu button. `open` alone left
+   * that button one-way: pressing it a second time re-set the state it was
+   * already in, so the menu never closed from the control that opened it.
+   */
+  toggle: (mode: AsideType) => void;
   close: () => void;
 };
 
@@ -82,6 +89,10 @@ Aside.Provider = function AsideProvider({children}: {children: ReactNode}) {
       value={{
         type,
         open: setType,
+        // Functional update: reads the type at click time rather than the one
+        // captured when this value was built.
+        toggle: (mode) =>
+          setType((current) => (current === mode ? 'closed' : mode)),
         close: () => setType('closed'),
       }}
     >

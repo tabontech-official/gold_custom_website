@@ -959,14 +959,21 @@ function HeaderCtas({
 }
 
 function HeaderMenuMobileToggle() {
-  const {open} = useAside();
+  const {type, toggle} = useAside();
+  const isOpen = type === 'mobile';
+
   return (
     <button
       className="header-menu-mobile-toggle reset"
-      onClick={() => open('mobile')}
+      // Toggles rather than opens. The drawer starts BELOW the header
+      // (.overlay--mobile has `top: var(--mobile-header-height)`), so this
+      // button is never covered by the scrim and stays the obvious way back
+      // out — it just had no close half until now.
+      onClick={() => toggle('mobile')}
+      aria-expanded={isOpen}
       /* Without this the button's only accessible name was the glyph itself —
          an agent or screen reader was told the control is called "☰". */
-      aria-label="Open menu"
+      aria-label={isOpen ? 'Close menu' : 'Open menu'}
     >
       {/* Was an <h3>. It was never a heading: it is a glyph on a button, and it
           was the FIRST heading in the document, so every page announced its
@@ -974,7 +981,7 @@ function HeaderMenuMobileToggle() {
           reproduces the h3's computed box exactly (18.72px / 600 / block) so
           nothing moves. */}
       <span className="header-burger" aria-hidden="true">
-        ☰
+        {isOpen ? '✕' : '☰'}
       </span>
     </button>
   );
