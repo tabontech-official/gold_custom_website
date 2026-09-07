@@ -130,3 +130,73 @@ export const FAQS_QUERY = `#graphql
     }
   }
 ` as const;
+
+/**
+ * The Q&A in a blog article's own FAQ section.
+ *
+ * Ten of this blog's sixteen posts end in an "FAQ" / "Frequently Asked
+ * Questions" heading followed by question sub-headings and their answers —
+ * authored Q&A, which is exactly what FAQPage is for. This lifts it out so the
+ * article route can mark it up, the same way `parseFaqMetafield` does for the
+ * FAQs authored in metafields elsewhere.
+ *
+ * SCOPED TO THE FAQ SECTION, deliberately. Plenty of these posts use a
+ * question as an ordinary body heading ("What Does Real Gold Actually Mean?"
+ * opens a chapter, it is not a FAQ entry), so collecting every heading with a
+ * question mark would markup narrative prose as Q&A. The section boundary is
+ * the next same-or-higher-level heading.
+ *
+ * ON RICH RESULTS: Google restricted FAQ rich results to authoritative
+ * government and health sites in August 2023, so this will not draw an
+ * accordion in Search for a jewelry store. It is emitted for AI answer engines
+ * and other schema.org consumers — see the same note in howToSchema.ts.
+ */
+export function extractArticleFaqs(contentHtml?: string | null): Faq[] {
+  if (!contentHtml) return [];
+
+  const headings = [
+    ...contentHtml.matchAll(/<(h[2-4])[^>]*>([\s\S]*?)<\/\1>/g),
+  ].map((match) => ({
+    level: Number(match[1][1]),
+    text: htmlToText(match[2]),
+    start: match.index!,
+    end: match.index! + match[0].length,
+  }));
+
+  const headingIndex = headings.findIndex((heading) =>
+    /^(faq|faqs|frequently asked)/i.test(heading.text),
+  );
+  if (headingIndex < 0) return [];
+  const sectionLevel = headings[headingIndex].level;
+
+  const faqs: Faq[] = [];
+  for (let i = headingIndex + 1; i < headings.length; i++) {
+    const heading = headings[i];
+    // Out of the FAQ section — anything after this belongs to another chapter.
+    if (heading.level <= sectionLevel) break;
+    if (!heading.text.includes('?')) continue;
+
+    // The answer runs to the next heading of any level, or the end.
+    const next = headings[i + 1];
+    const answer = htmlToText(
+      contentHtml.slice(heading.end, next ? next.start : undefined),
+    );
+    if (answer) faqs.push({question: heading.text, answer});
+  }
+
+  return faqs;
+}
+
+/** Tags out, entities decoded, whitespace collapsed. */
+function htmlToText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&rsquo;|&apos;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}

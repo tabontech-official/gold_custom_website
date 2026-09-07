@@ -2018,7 +2018,7 @@ export type ArticleQuery = {
         articleByHandle?: StorefrontAPI.Maybe<
           Pick<
             StorefrontAPI.Article,
-            'handle' | 'title' | 'contentHtml' | 'publishedAt'
+            'handle' | 'title' | 'contentHtml' | 'publishedAt' | 'tags'
           > & {
             author?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.ArticleAuthor, 'name'>
@@ -3417,7 +3417,7 @@ interface GeneratedQueryTypes {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };
-  '#graphql\n  query Article(\n    $articleHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blogs(first: 1) {\n      nodes {\n        handle\n        articleByHandle(handle: $articleHandle) {\n          handle\n          title\n          contentHtml\n          publishedAt\n          author: authorV2 {\n            name\n          }\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n          seo {\n            description\n            title\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query Article(\n    $articleHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blogs(first: 1) {\n      nodes {\n        handle\n        articleByHandle(handle: $articleHandle) {\n          handle\n          title\n          contentHtml\n          publishedAt\n          tags\n          author: authorV2 {\n            name\n          }\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n          seo {\n            description\n            title\n          }\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;
     variables: ArticleQueryVariables;
   };

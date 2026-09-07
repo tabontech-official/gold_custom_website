@@ -12,6 +12,8 @@ import {
   rootDataFrom,
   siteOrigin,
 } from '~/lib/seo';
+import {buildFaqJsonLd, extractArticleFaqs} from '~/lib/faqs';
+import {buildHowToJsonLd} from '~/lib/howToSchema';
 import {CacheContent} from '~/lib/cache';
 
 /**
@@ -53,21 +55,76 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
             // starts to matter, set an article metafield on edit and prefer it
             // here — Storefront can read article metafields.
             dateModified: article.publishedAt,
-            image: article.image?.url ? [article.image.url] : undefined,
+            // ImageObject rather than a bare URL: the dimensions are already
+            // in the query, and a consumer that has them does not have to
+            // fetch the file to know whether it can use the image.
+            image: article.image?.url
+              ? [
+                  {
+                    '@type': 'ImageObject',
+                    url: article.image.url,
+                    width: article.image.width ?? undefined,
+                    height: article.image.height ?? undefined,
+                    caption: article.image.altText ?? undefined,
+                  },
+                ]
+              : undefined,
+            // A stable @id per author, so the same byline across sixteen posts
+            // resolves to ONE person rather than sixteen unrelated strings.
             author: article.author?.name
-              ? {'@type': 'Person', name: article.author.name}
-              : {'@type': 'Organization', name: SITE.name},
+              ? {
+                  '@type': 'Person',
+                  '@id': `${origin}/#/schema/person/${slugify(article.author.name)}`,
+                  name: article.author.name,
+                }
+              : {'@type': 'Organization', '@id': `${origin}/#organization`},
             publisher: {'@id': `${origin}/#organization`},
+            // Points at the Blog node the /blogs listing declares, so a post
+            // and the blog it belongs to are one connected graph rather than
+            // two pages that happen to link to each other.
+            isPartOf: {'@id': `${absoluteUrl(origin, '/blogs')}#blog`},
+            inLanguage: 'en-US',
+            // These run 800-3,100 words. Depth is a real signal to anything
+            // deciding whether the page answers a question or just mentions it.
+            wordCount: wordCount(article.contentHtml),
+            keywords: article.tags?.length ? article.tags.join(', ') : undefined,
           },
           breadcrumbJsonLd(origin, [
             {name: 'Home', path: '/'},
             {name: 'Blog', path: '/blogs'},
             {name: article.title, path: `/blogs/${params.articleHandle}`},
           ]),
+          // Step-by-step guides additionally describe their procedure. Opting
+          // in is a property of how the post is WRITTEN — a "How to …" heading
+          // over a numbered list — so a guide published tomorrow gets this with
+          // no code change, and a comparison post correctly gets nothing. See
+          // howToSchema.ts for the convention and why it is not title-based.
+          ...buildHowToJsonLd(article.contentHtml, url, article.image?.url),
+          // Posts that end in an authored FAQ section describe that Q&A too —
+          // ten of sixteen do. Same opt-in-by-content principle as the HowTo
+          // above: no FAQ section, no FAQPage node.
+          ...(() => {
+            const faqs = extractArticleFaqs(article.contentHtml);
+            return faqs.length ? [buildFaqJsonLd(faqs)] : [];
+          })(),
         ]
       : undefined,
   });
 };
+
+/** "Siraj Wahid" -> "siraj-wahid", for the author's stable @id. */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function wordCount(html?: string | null): number | undefined {
+  if (!html) return undefined;
+  const words = html.replace(/<[^>]+>/g, ' ').split(/\s+/).filter(Boolean).length;
+  return words || undefined;
+}
 
 export async function loader(args: Route.LoaderArgs) {
   // Start fetching non-critical data without blocking time to first byte
@@ -198,6 +255,7 @@ const ARTICLE_QUERY = `#graphql
           title
           contentHtml
           publishedAt
+          tags
           author: authorV2 {
             name
           }
