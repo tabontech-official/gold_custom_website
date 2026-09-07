@@ -2,8 +2,7 @@ import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import {
   getColumnItems,
-  getMegaMenuDepartmentForHandle,
-  MEGA_MENU,
+  getDepartmentForCollectionHandle,
   toRelativeUrl,
 } from '~/lib/megaMenu';
 
@@ -21,20 +20,11 @@ export function CollectionSubNav({
   publicStoreDomain: string;
 }) {
   const primaryDomainUrl = header.shop.primaryDomain.url;
-  const currentPath = `/collections/${handle}`;
-  const department =
-    getMegaMenuDepartmentForHandle(handle) ??
-    MEGA_MENU.find((menuDepartment) =>
-      menuDepartment.columns.some((column) =>
-        getColumnItems(header, column).some((item) => {
-          if (!item.url) return false;
-          return (
-            toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain) ===
-            currentPath
-          );
-        }),
-      ),
-    );
+  const department = getDepartmentForCollectionHandle({
+    handle,
+    header,
+    publicStoreDomain,
+  });
 
   if (!department) return null;
 

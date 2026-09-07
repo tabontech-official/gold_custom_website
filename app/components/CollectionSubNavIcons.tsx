@@ -3,10 +3,8 @@ import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import {DragScroller} from '~/components/DragScroller';
 import {
-  getColumnItems,
+  getDepartmentForCollectionHandle,
   getDepartmentItems,
-  getMegaMenuDepartmentForHandle,
-  MEGA_MENU,
   toRelativeUrl,
 } from '~/lib/megaMenu';
 
@@ -32,20 +30,11 @@ export function CollectionSubNavIcons({
   publicStoreDomain: string;
 }) {
   const primaryDomainUrl = header.shop.primaryDomain.url;
-  const currentPath = `/collections/${handle}`;
-  const department =
-    getMegaMenuDepartmentForHandle(handle) ??
-    MEGA_MENU.find((menuDepartment) =>
-      menuDepartment.columns.some((column) =>
-        getColumnItems(header, column).some((item) => {
-          if (!item.url) return false;
-          return (
-            toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain) ===
-            currentPath
-          );
-        }),
-      ),
-    );
+  const department = getDepartmentForCollectionHandle({
+    handle,
+    header,
+    publicStoreDomain,
+  });
 
   // getDepartmentItems, the same source the header dropdown renders from, so
   // the circles carry identical labels. Building the list here from raw

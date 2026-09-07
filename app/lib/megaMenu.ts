@@ -63,6 +63,9 @@ export const MEGA_MENU: MegaMenuDepartment[] = [
     id: 'chains',
     label: 'Chains',
     to: '/collections/chains',
+    // `tennis-chains` is listed in both the Chains and Diamond menus; Diamond
+    // owns it, same reasoning as Rings below.
+    yieldsTo: ['diamond'],
     // One column per Shopify menu ("Chains 1/2/3"), in menu order — the
     // dropdown mirrors the admin's own three-way split exactly.
     columns: [
@@ -283,6 +286,74 @@ export function getNavCollectionHandles(
   return handles;
 }
 
+/**
+ * Of several departments listing the same collection, the one that owns it.
+ *
+ * The Shopify menus overlap on purpose — `rings` lists Men's Diamond Rings and
+ * `chains` lists Tennis Chains because a shopper browsing those departments
+ * wants to find them. Array order is not an answer to "who owns it": `rings`
+ * and `chains` merely sit earlier in MEGA_MENU, which is why standing on
+ * `mens-diamond-rings` used to swap the sub-category strip over to the gold
+ * Rings categories and strand the shopper outside Diamond entirely.
+ *
+ * `yieldsTo` is the declared answer, and it is one-way by design (see Header's
+ * `ownedElsewhere`): a mutual "who is more specific" test has both departments
+ * dropping the shared category and neither keeping it.
+ */
+function mostSpecificDepartment(
+  matches: MegaMenuDepartment[],
+): MegaMenuDepartment | undefined {
+  return (
+    matches.find(
+      (department) =>
+        !matches.some(
+          (other) =>
+            other !== department &&
+            (department.yieldsTo ?? []).includes(other.id),
+        ),
+    ) ?? matches[0]
+  );
+}
+
+/**
+ * The department a collection page belongs to — its own department if it is
+ * one, otherwise the department that owns it as a sub-category.
+ *
+ * The single source for that question: the sub-category pills, the circular
+ * icon strip and the breadcrumb all route through here, so a page cannot show
+ * one department's crumb above another department's categories.
+ */
+export function getDepartmentForCollectionHandle({
+  handle,
+  header,
+  publicStoreDomain,
+}: {
+  handle?: string | null;
+  header?: HeaderQuery | null;
+  publicStoreDomain?: string | null;
+}): MegaMenuDepartment | undefined {
+  if (!handle) return undefined;
+  const own = getMegaMenuDepartmentForHandle(handle);
+  if (own) return own;
+  if (!header || !publicStoreDomain) return undefined;
+
+  const currentPath = `/collections/${handle}`;
+  const primaryDomainUrl = header.shop.primaryDomain.url;
+
+  return mostSpecificDepartment(
+    MEGA_MENU.filter((department) =>
+      department.columns.some((column) =>
+        getColumnItems(header, column).some(
+          (item) =>
+            Boolean(item.url) &&
+            toRelativeUrl(item.url!, primaryDomainUrl, publicStoreDomain) ===
+              currentPath,
+        ),
+      ),
+    ),
+  );
+}
+
 /** Finds the mega-menu department whose `to` matches a given collection path. */
 export function getMegaMenuDepartmentForHandle(
   handle: string,
@@ -320,21 +391,12 @@ export function getMegaMenuParentCrumb({
   header?: HeaderQuery | null;
   publicStoreDomain?: string | null;
 }): {label: string; to: string} | null {
-  if (!handle || !header || !publicStoreDomain) return null;
-  if (getMegaMenuDepartmentForHandle(handle)) return null;
-
-  const currentPath = `/collections/${handle}`;
-  const primaryDomainUrl = header.shop.primaryDomain.url;
-  const parent = MEGA_MENU.find((department) =>
-    department.columns.some((column) =>
-      getColumnItems(header, column).some(
-        (item) =>
-          Boolean(item.url) &&
-          toRelativeUrl(item.url!, primaryDomainUrl, publicStoreDomain) ===
-            currentPath,
-      ),
-    ),
-  );
+  if (getMegaMenuDepartmentForHandle(handle ?? '')) return null;
+  const parent = getDepartmentForCollectionHandle({
+    handle,
+    header,
+    publicStoreDomain,
+  });
 
   return parent ? {label: parent.label, to: parent.to} : null;
 }
@@ -356,17 +418,22 @@ export function getMegaMenuParentHandle(
   if (getMegaMenuDepartmentForHandle(handle)) return undefined;
 
   const normalized = handle.toLowerCase();
-  const parent = MEGA_MENU.find((department) =>
-    department.columns.some(
-      (column) =>
-        (column.items ?? []).some(
-          (item) => item.handle.toLowerCase() === normalized,
-        ) ||
-        (column.menuKeys ?? []).some((key) =>
-          (menuItemHandles?.[key] ?? []).some(
-            (menuHandle) => menuHandle.toLowerCase() === normalized,
+  // Same ownership rule as getDepartmentForCollectionHandle, on the handle-only
+  // data a loader has: a shared sub-category must inherit from ONE department,
+  // or the page's FAQ/cover come from Rings while its crumb says Diamond.
+  const parent = mostSpecificDepartment(
+    MEGA_MENU.filter((department) =>
+      department.columns.some(
+        (column) =>
+          (column.items ?? []).some(
+            (item) => item.handle.toLowerCase() === normalized,
+          ) ||
+          (column.menuKeys ?? []).some((key) =>
+            (menuItemHandles?.[key] ?? []).some(
+              (menuHandle) => menuHandle.toLowerCase() === normalized,
+            ),
           ),
-        ),
+      ),
     ),
   );
 
