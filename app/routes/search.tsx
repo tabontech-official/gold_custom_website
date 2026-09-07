@@ -7,6 +7,7 @@ import {
   type RegularSearchReturn,
   type PredictiveSearchReturn,
   getEmptyPredictiveSearchResult,
+  isFieldQualifiedTerm,
   productsMatchingTerm,
 } from '~/lib/search';
 import type {RegularSearchQuery} from 'storefrontapi.generated';
@@ -514,6 +515,11 @@ const FALLBACK_SEARCH_POOL = 250;
  * spends its time undoing.
  */
 function withTrailingWildcard(term: string) {
+  // `tag:"Crown Pendant"*` is not a prefix of anything the shopper is still
+  // typing — a field-qualified term is complete by construction, and the
+  // wildcard only pulls in neighbouring tags. See isFieldQualifiedTerm.
+  if (isFieldQualifiedTerm(term)) return term;
+
   const words = term.trim().split(/\s+/);
   if (!words[0]) return term;
   return [...words.slice(0, -1), `${words[words.length - 1]}*`].join(' ');
@@ -530,6 +536,12 @@ function withTrailingWildcard(term: string) {
  * came back empty; this is the one shape that works.
  */
 function skuQuery(term: string) {
+  // A field-qualified term is already a query; wrapping it in another field
+  // ("variants.sku:tag:\"Crown Pendant\"") is nonsense, and whatever it happens
+  // to match is unioned in AHEAD of the real results because SKU hits skip the
+  // word filter. Search the term as written instead — a tag query then simply
+  // returns the same products, which dedupe away.
+  if (isFieldQualifiedTerm(term)) return term.trim();
   return `variants.sku:${term.trim()}`;
 }
 

@@ -124,6 +124,24 @@ const wordInHaystack = (word: string, haystack: Set<string>, partial: boolean) =
     [...haystack].some((candidate) => candidate.startsWith(word)));
 
 /**
+ * A field-qualified Shopify query — `tag:"Crown Pendant"` from the sidebar's
+ * category links, `variants.sku:AB-12` from a pasted code.
+ *
+ * These are not free text. Shopify matched them exactly against one field, so
+ * none of the OR-widening that the word filter and the trailing wildcard exist
+ * to undo has happened, and applying either does damage instead: the word
+ * filter reads `tag` as a search word, finds it in no product title, and throws
+ * away every result — which is why the Categories rail's tag links all landed
+ * on an empty page.
+ *
+ * Anchored at the start, so an ordinary search that merely contains a colon is
+ * still treated as free text.
+ */
+export function isFieldQualifiedTerm(term: string): boolean {
+  return /^[a-z_]+(\.[a-z_]+)*:/i.test(term.trim());
+}
+
+/**
  * Keep only the products a shopper would accept as an answer.
  *
  * Shopify ORs the words of a query together, so "18 inch chain" comes back as
@@ -145,6 +163,9 @@ const wordInHaystack = (word: string, haystack: Set<string>, partial: boolean) =
 export function productsMatchingTerm<
   T extends {title: string; productType?: string | null},
 >(term: string, products: T[]): T[] {
+  // Already exact — see isFieldQualifiedTerm. Nothing to narrow.
+  if (isFieldQualifiedTerm(term ?? '')) return products;
+
   const termWords = normalizeWords(term ?? '');
   if (!termWords.length) return products;
 
