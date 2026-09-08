@@ -14397,7 +14397,12 @@ html.header-primary-hidden
  * (50/55) and stays under the header (900) and the modal (2000).
  */
 .offer-tab {
-  bottom: 7.5rem;
+  /* Flush to the right edge, level with Tidio's launcher on the opposite
+     side. Tidio renders in its own iframe with internal padding, so its
+     bubble's centre sits well above the viewport bottom and no shared token
+     can be read from here — this offset is measured against the live widget.
+     ponytail: one knob; re-measure and change the value if Tidio moves. */
+  bottom: var(--offer-tab-bottom, 4.2rem);
   position: fixed;
   right: 0;
   z-index: 60;
@@ -14406,9 +14411,9 @@ html.header-primary-hidden
 .offer-tab-btn {
   background: var(--color-ink);
   border: 0;
-  /* Angled leading edge — the tab reads as pointing out of the screen edge
-     rather than as a rectangle parked on top of the page. */
-  clip-path: polygon(0.85rem 0, 100% 0, 100% 100%, 0 100%);
+  /* Square rectangle, meeting the screen edge like .social-rail does on the
+     left; only the outer corners are eased. */
+  border-radius: 4px 0 0 4px;
   color: #fff;
   cursor: pointer;
   display: block;
@@ -14417,10 +14422,10 @@ html.header-primary-hidden
   font-weight: 700;
   letter-spacing: 0.16em;
   line-height: 1.35;
-  max-width: 6.5rem;
-  padding: 0.85rem 1rem 0.85rem 1.65rem;
-  text-align: left;
+  padding: 0.9rem 1.15rem;
+  text-align: center;
   text-transform: uppercase;
+  white-space: nowrap;
   transition:
     background 200ms ease,
     transform 200ms ease;
@@ -14448,7 +14453,7 @@ html.header-primary-hidden
   font-weight: 700;
   height: 1.4rem;
   justify-content: center;
-  left: -0.6rem;
+  left: -0.55rem;
   line-height: 1;
   padding: 0;
   position: absolute;
@@ -14462,13 +14467,13 @@ html.header-primary-hidden
 
 @media (max-width: 48em) {
   .offer-tab {
-    bottom: 5.5rem;
+    --offer-tab-bottom: 3.6rem;
+    right: 0;
   }
 
   .offer-tab-btn {
-    font-size: 0.62rem;
-    max-width: 5.5rem;
-    padding: 0.7rem 0.75rem 0.7rem 1.3rem;
+    font-size: 0.6rem;
+    padding: 0.65rem 0.85rem;
   }
 }
 
