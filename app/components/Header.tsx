@@ -18,7 +18,7 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
-import {AppointmentModal} from '~/components/AppointmentModal';
+import {SignupModal} from '~/components/SignupModal';
 import {
   MEGA_MENU,
   getDepartmentColumns,
@@ -35,15 +35,6 @@ import {SEARCH_ENDPOINT} from '~/components/SearchFormPredictive';
 import {cdnLoader, cdnWidth} from '~/lib/cdnImage';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 
-const HEADER_UTILITY_MESSAGES = [
-  // Matches the shipping + refund policies: free US shipping starts at $99,
-  // returns run 14 days with conditions.
-  'Free U.S. shipping over $99 · 14-day returns, terms apply',
-  // Not "Lifetime warranty" — the policy is 1 year on production defects.
-  '1-year warranty on production defects',
-  'Private Los Angeles appointments',
-];
-
 interface HeaderProps {
   header: HeaderQuery;
   cart: Promise<CartApiQueryFragment | null>;
@@ -52,32 +43,6 @@ interface HeaderProps {
 }
 
 type Viewport = 'desktop' | 'mobile';
-
-/**
- * The rotating utility message, isolated in its own component on purpose.
- *
- * The 2.5s interval used to live in `Header`, so every tick re-rendered the
- * whole header — search bar, cart Suspense boundary and all eight mega-menu
- * items with their fetchers — forever, on every page. Now the only thing that
- * re-renders is this one span.
- */
-function UtilityMessage() {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setIndex((current) => (current + 1) % HEADER_UTILITY_MESSAGES.length);
-    }, 2500);
-
-    return () => window.clearInterval(timer);
-  }, []);
-
-  return (
-    <span key={index} className="announcement-text">
-      {HEADER_UTILITY_MESSAGES[index]}
-    </span>
-  );
-}
 
 /**
  * True once the visitor has scrolled DOWN past the header's own flow space;
@@ -210,6 +175,13 @@ export function Header({
   const {shop} = header;
   const topSentinelRef = useRef<HTMLDivElement>(null);
   useScrolledPastAnnouncement(topSentinelRef);
+  // Starts open so SSR and the first client render match; the dismissal is
+  // read after mount, which is the only place sessionStorage exists.
+  const [announcementOpen, setAnnouncementOpen] = useState(true);
+  useEffect(() => {
+    if (sessionStorage.getItem('gc-announce-dismissed'))
+      setAnnouncementOpen(false);
+  }, []);
   const hideStickyRow = useHideOnScrollDown();
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
@@ -236,23 +208,39 @@ export function Header({
         className="top-scroll-sentinel"
         ref={topSentinelRef}
       />
-      {/* Tier 1 — announcement micro-banner with golden shimmer */}
-      <div className="announcement-bar" aria-live="polite">
-        {/* Same booking modal the product page uses, minus product context. */}
-        <AppointmentModal
-          triggerLabel="Book Now"
-          triggerClassName="announcement-link"
-        />
-        <UtilityMessage />
-        <a
-          className="announcement-link"
-          href="https://maps.app.goo.gl/252CwsjSZfhSae4B6"
-          target="_blank"
-          rel="noreferrer"
-        >
-          Los Angeles
-        </a>
-      </div>
+      {/* Tier 1 — one offer, one action, one dismiss. Hidden for the rest of
+          the session once closed; sessionStorage rather than localStorage so a
+          returning visitor sees the offer again. */}
+      {announcementOpen && (
+        <div className="announcement-bar" aria-live="polite">
+          <p className="announcement-text">
+            Sign up and get <strong>10% off</strong>
+            <span className="announcement-long"> your first order</span>
+            <span className="announcement-long">{' — '}</span>
+            <span className="announcement-short">{'. '}</span>
+            <SignupModal
+              triggerLabel={
+                <>
+                  <span className="announcement-long">Claim your code</span>
+                  <span className="announcement-short">Click the code</span>
+                </>
+              }
+              triggerClassName="announcement-link"
+            />
+          </p>
+          <button
+            type="button"
+            className="announcement-close"
+            aria-label="Dismiss announcement"
+            onClick={() => {
+              setAnnouncementOpen(false);
+              sessionStorage.setItem('gc-announce-dismissed', '1');
+            }}
+          >
+            &times;
+          </button>
+        </div>
+      )}
 
       {/* Tier 2 — search + region | logo | account + cart */}
       <div

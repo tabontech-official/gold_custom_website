@@ -836,7 +836,9 @@ button.reset:hover:not(:has(> *)) {
   );
   display: grid;
   gap: 1rem;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  /* One centred message; the close button sits in the right track so the text
+     stays optically centred against an equal empty track on the left. */
+  grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem;
   min-height: calc(var(--utility-bar-height) + 8px);
   overflow: hidden;
   padding: 0.48rem var(--section-pad);
@@ -876,6 +878,37 @@ button.reset:hover:not(:has(> *)) {
   width: 320%;
 }
 
+/* Phone-only wording; the desktop counterpart is .announcement-long. */
+.announcement-short {
+  display: none;
+}
+
+/* The offer's own emphasis — same black as the link, one notch heavier. */
+.announcement-text strong {
+  color: #000;
+  font-weight: 800;
+}
+
+.announcement-close {
+  background: none;
+  border: 0;
+  color: #000;
+  cursor: pointer;
+  font-size: 1.5rem;
+  font-weight: 700;
+  grid-column: 3;
+  justify-self: end;
+  line-height: 1;
+  opacity: 0.8;
+  padding: 0;
+  position: relative;
+  transition: opacity 180ms ease;
+}
+
+.announcement-close:hover {
+  opacity: 1;
+}
+
 /* Positioned so they paint above the ::before sheen — the shimmer travels
    behind the words, as it did when it was the bar's own background. */
 .announcement-link,
@@ -888,12 +921,14 @@ button.reset:hover:not(:has(> *)) {
      rest of the header. This tier is gold itself now, so its text is black,
      same as the original gold-bar design. */
   color: #000;
-  font-size: clamp(0.66rem, 0.82vw, 0.78rem);
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  font-size: clamp(0.72rem, 0.95vw, 0.88rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
   line-height: 1.2;
   opacity: 0.88;
-  text-decoration: none;
+  /* The one clickable thing on the bar, so it is underlined rather than bare. */
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
   text-transform: uppercase;
   transition:
     opacity 180ms ease,
@@ -929,10 +964,15 @@ button.announcement-link {
 .announcement-text {
   color: rgba(0, 0, 0, 0.7);
   display: inline-block;
-  font-size: clamp(0.66rem, 0.82vw, 0.78rem);
+  grid-column: 2;
+  margin: 0;
+  font-size: clamp(0.72rem, 0.95vw, 0.88rem);
   font-weight: 600;
   justify-self: center;
-  letter-spacing: 0.16em;
+  /* Wider tracking and word-spacing: the line runs the full bar rather than
+     sitting as a tight block in the middle of it. */
+  letter-spacing: 0.22em;
+  word-spacing: 0.12em;
   text-transform: uppercase;
   animation: announcementFade 2500ms ease-in-out;
 }
@@ -945,45 +985,38 @@ button.announcement-link {
     padding: 0.18rem 0.4rem;
   }
 
-  /* `justify-self: center` (the base rule) sizes this box to its CONTENT,
-     not its grid track — overflow/ellipsis never engage because the box is
-     never narrower than the text, so a long message spills straight into
-     the flanking links either side. Stretching it to the track and
-     text-align-centering the text INSIDE that fixed box is what actually
-     lets ellipsis clip it at the track's edge. */
+  /* Phones get the short form — "10% off — claim your code" — on ONE line.
+     The dropped words live in .announcement-long; tracking comes down too,
+     because at 0.1em even the short line pushed past 360px. */
+  .announcement-long {
+    display: none;
+  }
+
+  .announcement-short {
+    display: inline;
+  }
+
   .announcement-text {
     justify-self: stretch;
     width: 100%;
     min-width: 0;
     text-align: center;
-    font-size: 0.44rem;
-    letter-spacing: 0.03em;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* Scales with the viewport so the full short line — "Sign up and get 10%
+       off. Click the code" — stays on one line down to a 320px screen. */
+    font-size: clamp(0.46rem, 2.6vw, 0.58rem);
+    letter-spacing: 0.04em;
+    line-height: 1.4;
     white-space: nowrap;
-  }
-
-  /* Same fix, other direction: justify-self: start/end (base rule) also
-     shrinks to content instead of stretching, so a long link label could
-     overflow into the center text too. */
-  .announcement-link:first-child {
-    justify-self: stretch;
-    text-align: left;
-  }
-
-  .announcement-link:last-child {
-    justify-self: stretch;
-    text-align: right;
+    word-spacing: normal;
   }
 
   .announcement-link {
-    width: 100%;
-    min-width: 0;
-    font-size: 0.44rem;
-    letter-spacing: 0.03em;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-size: clamp(0.46rem, 2.6vw, 0.58rem);
+    letter-spacing: 0.04em;
+  }
+
+  .announcement-close {
+    font-size: 1.1rem;
   }
 }
 
@@ -14322,4 +14355,114 @@ html.header-primary-hidden
   border: 0;
   display: block;
   height: 100%;
+}
+
+/* Confirmation panel after signup — .appt-success carries the mark and type;
+   only the centring and the full-width button are its own. */
+.signup-welcome .appt-success-mark {
+  margin: 0 auto 0.25rem;
+}
+
+.signup-welcome .appt-submit {
+  width: 100%;
+}
+
+/* Fine print / success line under the 10%-off signup form. */
+.signup-note {
+  color: var(--color-ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+  margin: 0.9rem 0 0;
+  text-align: center;
+}
+
+/* --------------------------------------------------
+ * components/OfferTab — sticky 10%-off re-opener
+ * --------------------------------------------------
+ * Right edge rather than the bottom-right corner: Tidio's chat bubble owns
+ * that corner, so this sits above it, flush to the screen like .social-rail
+ * does on the left. z-index 60 clears the collection page's sticky bars
+ * (50/55) and stays under the header (900) and the modal (2000).
+ */
+.offer-tab {
+  bottom: 7.5rem;
+  position: fixed;
+  right: 0;
+  z-index: 60;
+}
+
+.offer-tab-btn {
+  background: var(--color-ink);
+  border: 0;
+  /* Angled leading edge — the tab reads as pointing out of the screen edge
+     rather than as a rectangle parked on top of the page. */
+  clip-path: polygon(0.85rem 0, 100% 0, 100% 100%, 0 100%);
+  color: #fff;
+  cursor: pointer;
+  display: block;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.35;
+  max-width: 6.5rem;
+  padding: 0.85rem 1rem 0.85rem 1.65rem;
+  text-align: left;
+  text-transform: uppercase;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
+}
+
+.offer-tab-btn strong {
+  color: var(--color-gold);
+  font-weight: 800;
+}
+
+.offer-tab-btn:hover {
+  background: #000;
+  transform: translateX(-3px);
+}
+
+.offer-tab-close {
+  align-items: center;
+  background: var(--color-ink);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  height: 1.4rem;
+  justify-content: center;
+  left: -0.6rem;
+  line-height: 1;
+  padding: 0;
+  position: absolute;
+  top: -0.6rem;
+  width: 1.4rem;
+}
+
+.offer-tab-close:hover {
+  background: #000;
+}
+
+@media (max-width: 48em) {
+  .offer-tab {
+    bottom: 5.5rem;
+  }
+
+  .offer-tab-btn {
+    font-size: 0.62rem;
+    max-width: 5.5rem;
+    padding: 0.7rem 0.75rem 0.7rem 1.3rem;
+  }
+}
+
+/* The signup modal's one field and one action read better full-width than at
+   the appointment form's multi-field proportions. */
+.signup-form .appt-submit {
+  width: 100%;
+  padding-block: 0.85rem;
 }

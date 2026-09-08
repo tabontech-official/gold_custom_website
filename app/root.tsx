@@ -19,6 +19,7 @@ import almarai400 from '~/assets/fonts/almarai-400.woff2?url';
 import almarai300 from '~/assets/fonts/almarai-300.woff2?url';
 import {PageLayout} from './components/PageLayout';
 import {ChatWidget} from './components/ChatWidget';
+import {OfferTab} from './components/OfferTab';
 import {WishlistToast} from './components/WishlistToast';
 import {AnalyticsBridge} from './components/AnalyticsBridge';
 import {analyticsBootstrap, analyticsTagIds} from '~/lib/analytics';
@@ -420,6 +421,7 @@ export default function App() {
       <PageLayout {...data}>
         <Outlet />
       </PageLayout>
+      <OfferTab />
       <ChatWidget />
       {/*
         Inside the provider, because it subscribes to it. It renders nothing —
