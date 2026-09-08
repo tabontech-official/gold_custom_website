@@ -1214,11 +1214,23 @@ F
   display: block;
   font-size: 1.17em;
   font-weight: 600;
-  /* The glyph swaps to ✕ while the drawer is open, and the two do not have
-     the same advance width — without a fixed box the whole header row nudges
-     sideways on every toggle. */
+  /* Fixed box so the header row never nudges sideways as the glyph turns. */
   min-width: 1.15em;
   text-align: center;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Open state flips the bars from horizontal to vertical — same icon, turned,
+   rather than a different glyph. Driven off aria-expanded, which the button
+   already sets, so there is no second source of truth. */
+.header-menu-mobile-toggle[aria-expanded='true'] .header-burger {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .header-burger {
+    transition: none;
+  }
 }
 
 .header-menu-mobile-toggle {
