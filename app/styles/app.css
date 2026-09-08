@@ -14314,3 +14314,12 @@ html.header-primary-hidden
   border: 1px solid rgba(17, 17, 17, 0.15);
   border-radius: 3px;
 }
+
+/* Contact hero shows the showroom map instead of a photo — the map fills the
+   same square box the photo did, so it only needs the iframe reset. */
+.contact-hero-map .svc-map {
+  aspect-ratio: auto;
+  border: 0;
+  display: block;
+  height: 100%;
+}

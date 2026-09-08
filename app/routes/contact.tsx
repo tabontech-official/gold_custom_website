@@ -1,7 +1,6 @@
 import {Link} from 'react-router';
-import {Image, useAnalytics} from '@shopify/hydrogen';
+import {useAnalytics} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
-import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/contact';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
@@ -11,16 +10,6 @@ export const meta: Route.MetaFunction = ({matches}) =>
     description: `Reach the ${SITE.name} team about an order, a return, sizing or a repair in progress. Call, email, or find the answer yourself.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/contact'),
   });
-
-/* Hero photograph, from the store's Shopify Files. Dimensions are the
-   original's — Hydrogen's <Image> needs them to reserve the box and to
-   build the srcSet, and the CDN serves the resized copies. */
-const HERO_IMAGE = {
-  url: 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/contact.png?v=1787056671',
-  width: 1254,
-  height: 1254,
-  altText: 'The Gold Custom concierge team',
-};
 
 /* Address, hours and the map live on /showroom — this page is reach-us only.
    Two pages publishing the same NAP compete for the same query and double the
@@ -81,11 +70,13 @@ export default function Contact() {
             </p>
           </div>
 
-          <div className="svc-hero-media">
-            <Image
-              loader={cdnLoader}
-              data={HERO_IMAGE}
-              sizes="(min-width: 60em) 50vw, 100vw"
+          <div className="svc-hero-media contact-hero-map">
+            <iframe
+              className="svc-map"
+              title="Gold Custom showroom at 550 S Hill Street, Los Angeles"
+              src="https://www.google.com/maps?q=550%20S%20Hill%20St%20%23660%2C%20Los%20Angeles%2C%20CA%2090013&z=16&output=embed"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
             />
           </div>
         </div>

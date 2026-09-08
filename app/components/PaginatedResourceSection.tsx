@@ -25,7 +25,8 @@ export function PaginatedResourceSection<NodesType>({
                 <PreviousLink className="load-more-btn is-ghost">
                   {isLoading ? 'Loading…' : '↑ Load previous'}
                 </PreviousLink>
-              </div>
+              </div> 
+             
             )}
 
             {resourcesClassName ? (
@@ -33,7 +34,6 @@ export function PaginatedResourceSection<NodesType>({
             ) : (
               resourcesMarkup
             )}
-
             <div className="load-more-bar">
               <span className="load-more-count">{nodes.length} pieces shown</span>
               {hasNextPage ? (
