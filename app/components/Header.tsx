@@ -968,8 +968,11 @@ function HeaderMenuMobileToggle() {
           outline as starting at h3 "☰" before reaching the real h1. The class
           reproduces the h3's computed box exactly (18.72px / 600 / block) so
           nothing moves. */}
+      {/* Same glyph open or closed — the drawer already has its own close
+          control, and swapping the burger for a ✕ moved the one landmark a
+          thumb navigates by. aria-expanded still carries the state. */}
       <span className="header-burger" aria-hidden="true">
-        {isOpen ? '✕' : '☰'}
+        ☰
       </span>
     </button>
   );
