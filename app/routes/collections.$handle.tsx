@@ -34,6 +34,7 @@ import {
   MIAMI_CUBAN_HANDLE,
   collectionHandlesFromMenu,
   getMegaMenuParentCrumb,
+  useDepartmentHint,
   getMegaMenuParentHandle,
   getNavCollectionHandles,
 } from '~/lib/megaMenu';
@@ -494,6 +495,7 @@ export default function Collection() {
     handle: collection.handle,
     header: rootData?.header,
     publicStoreDomain: rootData?.publicStoreDomain,
+    preferDepartmentId: useDepartmentHint(),
   });
 
   // Only the collections the header nav doesn't already link to — the nav

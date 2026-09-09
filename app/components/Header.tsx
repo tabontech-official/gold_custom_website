@@ -21,6 +21,7 @@ import {useAside} from '~/components/Aside';
 import {SignupModal} from '~/components/SignupModal';
 import {
   MEGA_MENU,
+  departmentLinkState,
   getDepartmentColumns,
   getDepartmentItems,
   getDepartmentSubCollectionHandles,
@@ -753,6 +754,7 @@ function MegaMenuItem({
                       <NavLink
                         onClick={closeMegaMenu}
                         prefetch="intent"
+                        state={departmentLinkState(department.id)}
                         to={relativeUrl(item.url ?? '')}
                       >
                         {item.title}
@@ -901,6 +903,7 @@ function MobileMenu({
                       key={item.id}
                       onClick={onNavigate}
                       prefetch="viewport"
+                      state={departmentLinkState(department.id)}
                       to={relativeUrl(item.url)}
                     >
                       {item.title}

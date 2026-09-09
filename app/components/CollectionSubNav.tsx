@@ -1,9 +1,11 @@
 import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import {
+  departmentLinkState,
   getColumnItems,
   getDepartmentForCollectionHandle,
   toRelativeUrl,
+  useDepartmentHint,
 } from '~/lib/megaMenu';
 
 function pillClassName({isActive}: {isActive: boolean}) {
@@ -24,6 +26,7 @@ export function CollectionSubNav({
     handle,
     header,
     publicStoreDomain,
+    preferDepartmentId: useDepartmentHint(),
   });
 
   if (!department) return null;
@@ -43,6 +46,7 @@ export function CollectionSubNav({
           <NavLink
             key={item.id}
             to={toRelativeUrl(item.url, primaryDomainUrl, publicStoreDomain)}
+            state={departmentLinkState(department.id)}
             className={pillClassName}
           >
             {item.title}

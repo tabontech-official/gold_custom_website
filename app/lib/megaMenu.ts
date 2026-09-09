@@ -1,3 +1,4 @@
+import {useLocation} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 
 type CategoryMenuKey =
@@ -327,10 +328,20 @@ export function getDepartmentForCollectionHandle({
   handle,
   header,
   publicStoreDomain,
+  preferDepartmentId,
 }: {
   handle?: string | null;
   header?: HeaderQuery | null;
   publicStoreDomain?: string | null;
+  /**
+   * The department the shopper actually navigated FROM (see `useDepartmentHint`).
+   * A shared sub-category like `tennis-chains` is listed by both Chains and
+   * Diamond; `yieldsTo` decides who owns it in the abstract, but a shopper who
+   * clicked it while browsing Chains must stay in Chains rather than being
+   * dropped into Diamond. Ignored unless that department really lists this
+   * collection.
+   */
+  preferDepartmentId?: string | null;
 }): MegaMenuDepartment | undefined {
   if (!handle) return undefined;
   const own = getMegaMenuDepartmentForHandle(handle);
@@ -340,17 +351,20 @@ export function getDepartmentForCollectionHandle({
   const currentPath = `/collections/${handle}`;
   const primaryDomainUrl = header.shop.primaryDomain.url;
 
-  return mostSpecificDepartment(
-    MEGA_MENU.filter((department) =>
-      department.columns.some((column) =>
-        getColumnItems(header, column).some(
-          (item) =>
-            Boolean(item.url) &&
-            toRelativeUrl(item.url!, primaryDomainUrl, publicStoreDomain) ===
-              currentPath,
-        ),
+  const matches = MEGA_MENU.filter((department) =>
+    department.columns.some((column) =>
+      getColumnItems(header, column).some(
+        (item) =>
+          Boolean(item.url) &&
+          toRelativeUrl(item.url!, primaryDomainUrl, publicStoreDomain) ===
+            currentPath,
       ),
     ),
+  );
+
+  return (
+    matches.find((department) => department.id === preferDepartmentId) ??
+    mostSpecificDepartment(matches)
   );
 }
 
@@ -386,16 +400,19 @@ export function getMegaMenuParentCrumb({
   handle,
   header,
   publicStoreDomain,
+  preferDepartmentId,
 }: {
   handle?: string | null;
   header?: HeaderQuery | null;
   publicStoreDomain?: string | null;
+  preferDepartmentId?: string | null;
 }): {label: string; to: string} | null {
   if (getMegaMenuDepartmentForHandle(handle ?? '')) return null;
   const parent = getDepartmentForCollectionHandle({
     handle,
     header,
     publicStoreDomain,
+    preferDepartmentId,
   });
 
   return parent ? {label: parent.label, to: parent.to} : null;
@@ -460,4 +477,19 @@ export function toRelativeUrl(
     url.includes(primaryDomainUrl)
     ? new URL(url).pathname
     : url;
+}
+
+/**
+ * The department a nav link was clicked from, carried in the router's link
+ * state by every submenu link (`departmentLinkState`). Client-side only: a
+ * reload drops it and ownership (`yieldsTo`) decides again.
+ */
+export function useDepartmentHint(): string | undefined {
+  const state = useLocation().state as {dept?: string} | null;
+  return state?.dept ?? undefined;
+}
+
+/** Link `state` marking which department a submenu link belongs to. */
+export function departmentLinkState(departmentId: string) {
+  return {dept: departmentId};
 }

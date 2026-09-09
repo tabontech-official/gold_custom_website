@@ -3,9 +3,11 @@ import {NavLink} from 'react-router';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import {DragScroller} from '~/components/DragScroller';
 import {
+  departmentLinkState,
   getDepartmentForCollectionHandle,
   getDepartmentItems,
   toRelativeUrl,
+  useDepartmentHint,
 } from '~/lib/megaMenu';
 
 type IconItem = {key: string; title: string; to: string; handle: string};
@@ -34,6 +36,7 @@ export function CollectionSubNavIcons({
     handle,
     header,
     publicStoreDomain,
+    preferDepartmentId: useDepartmentHint(),
   });
 
   // getDepartmentItems, the same source the header dropdown renders from, so
@@ -79,6 +82,7 @@ export function CollectionSubNavIcons({
         <NavLink
           key={item.key}
           to={item.to}
+          state={department ? departmentLinkState(department.id) : undefined}
           end
           className={({isActive}) =>
             isActive ? 'subnav-icon is-active' : 'subnav-icon'
