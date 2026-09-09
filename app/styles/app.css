@@ -975,15 +975,17 @@ button.reset:hover:not(:has(> *)) {
   white-space: nowrap;
 }
 
-/* "Book Now" is a <button> (it opens the appointment modal) but has to read as
-   the anchor beside it. Deliberately no font-size here — that would outrank
-   the mobile override on `.announcement-link` and freeze the desktop size. */
+/* "Book Appointment" is a <button> (it opens the appointment modal) but has to
+   read as the anchor beside it. Deliberately no font-size here — that would
+   outrank the mobile override on `.announcement-link` and freeze the desktop
+   size. Weight is NOT inherited either: inheriting gave the button the bar's
+   own 400 while the anchor beside it took .announcement-link's 700, so the two
+   sides of the bar were visibly different weights. */
 button.announcement-link {
   background: none;
   border: 0;
   cursor: pointer;
   font-family: inherit;
-  font-weight: inherit;
   padding: 0;
 }
 
