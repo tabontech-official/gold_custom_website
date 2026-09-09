@@ -44,15 +44,19 @@ export const PENDANT_PHOTO_MAX_BYTES = 10 * 1024 * 1024;
  *
  * productType is checked too because the two failures are not symmetric — an
  * upload box on a pendant that does not need one is a stray field, while a
- * missing one ships a blank pendant. It adds no product to the set today; it is
- * there so a future "... Picture Pendants" product that misses the tag still
- * asks for the photo.
+ * missing one ships a blank pendant. It adds no product to the set today.
+ *
+ * The match is the WHOLE tag, not a substring of it. A substring test ("does
+ * this tag contain the words picture pendant") turned the upload on for the
+ * diamond Hamsa pendants, which carry the category tag "Diamond Picture
+ * Pendants" — a diamond category, not a photo-engraved piece — and asked
+ * shoppers for a photo the product has no use for.
  */
 export function isPicturePendantProduct(product: {
   tags?: readonly string[] | null;
   productType?: string | null;
 }): boolean {
-  const says = (text: string) => /\bpicture\s+pendants?\b/i.test(text);
+  const says = (text: string) => /^picture\s+pendants?$/i.test(text.trim());
   return (
     (product.tags ?? []).some(says) || says(product.productType ?? '')
   );

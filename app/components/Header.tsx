@@ -18,7 +18,9 @@ import {
 } from '@shopify/hydrogen';
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
+import {AppointmentModal} from '~/components/AppointmentModal';
 import {SignupModal} from '~/components/SignupModal';
+import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {
   MEGA_MENU,
   departmentLinkState,
@@ -167,6 +169,44 @@ function useScrolledPastAnnouncement(ref: React.RefObject<HTMLDivElement | null>
   }, [ref]);
 }
 
+/**
+ * The standing promises, cycled one at a time in the announcement strip once
+ * the sign-up offer is dismissed. No close button — there is nothing left to
+ * dismiss, and the bar is now part of the page's furniture.
+ *
+ * Copy comes from TRUST_CLAIMS so the strip cannot promise something the
+ * product page and the refund policy don't (see trustClaims.ts), plus the
+ * layaway line the refund policy already names.
+ */
+function AnnouncementPromises() {
+  // Title always, qualifier only where there is room — the same
+  // .announcement-long/.announcement-short split the offer line uses. "14 Day
+  // Returns — Exchange or store credit · Return shipping fees apply" cannot
+  // fit one phone line, and this strip is a single line by design.
+  const messages = [
+    ...TRUST_CLAIMS.map((claim) => [claim.title, claim.sub] as const),
+    ['Layaway Available', 'Pay over time with Partial.ly'] as const,
+  ];
+  const [index, setIndex] = useState(0);
+  useEffect(() => {
+    const id = setInterval(
+      () => setIndex((current) => (current + 1) % messages.length),
+      5000,
+    );
+    return () => clearInterval(id);
+  }, [messages.length]);
+
+  return (
+    // `key` restarts the fade on every change — same one-line, uppercase,
+    // centred treatment as the offer it replaces.
+    <p className="announcement-text announcement-promise" key={index}>
+      {messages[index][0]}
+      <span className="announcement-long">{' — '}</span>
+      <span className="announcement-long">{messages[index][1]}</span>
+    </p>
+  );
+}
+
 export function Header({
   header,
   isLoggedIn,
@@ -209,39 +249,62 @@ export function Header({
         className="top-scroll-sentinel"
         ref={topSentinelRef}
       />
-      {/* Tier 1 — one offer, one action, one dismiss. Hidden for the rest of
-          the session once closed; sessionStorage rather than localStorage so a
-          returning visitor sees the offer again. */}
-      {announcementOpen && (
-        <div className="announcement-bar" aria-live="polite">
-          <p className="announcement-text">
-            Sign up and get <strong>10% off</strong>
-            <span className="announcement-long"> your first order</span>
-            <span className="announcement-long">{' — '}</span>
-            <span className="announcement-short">{'. '}</span>
-            <SignupModal
-              triggerLabel={
-                <>
-                  <span className="announcement-long">Claim your code</span>
-                  <span className="announcement-short">Click the code</span>
-                </>
-              }
-              triggerClassName="announcement-link"
-            />
-          </p>
-          <button
-            type="button"
-            className="announcement-close"
-            aria-label="Dismiss announcement"
-            onClick={() => {
-              setAnnouncementOpen(false);
-              sessionStorage.setItem('gc-announce-dismissed', '1');
-            }}
-          >
-            &times;
-          </button>
-        </div>
-      )}
+      {/* Tier 1 — one offer, one action, one dismiss. Dismissing swaps the
+          message, it does NOT remove the bar: the strip is also where the
+          store's standing promises (shipping, returns, layaway, warranty) are
+          read, and closing the sign-up offer used to take those away with it,
+          leaving the page jumping up by a whole row. Same bar, same gold, same
+          height — different words. sessionStorage rather than localStorage so
+          a returning visitor sees the offer again. */}
+      <div className="announcement-bar" aria-live="polite">
+        {/* Standing calls to action, one per side, on both message states —
+            they are not part of the offer and must not vanish with it.
+            Desktop only: the phone bar is a single 1.45rem line that the
+            centred message already fills. */}
+        <AppointmentModal
+          triggerLabel="Book Appointment"
+          triggerClassName="announcement-link announcement-side announcement-side--start"
+        />
+        <NavLink
+          className="announcement-link announcement-side announcement-side--end"
+          prefetch="intent"
+          to="/showroom"
+        >
+          Visit Showroom
+        </NavLink>
+        {announcementOpen ? (
+          <>
+            <p className="announcement-text">
+              Sign up and get <strong>10% off</strong>
+              <span className="announcement-long"> your first order</span>
+              <span className="announcement-long">{' — '}</span>
+              <span className="announcement-short">{'. '}</span>
+              <SignupModal
+                triggerLabel={
+                  <>
+                    <span className="announcement-long">Claim your code</span>
+                    <span className="announcement-short">Click the code</span>
+                  </>
+                }
+                triggerClassName="announcement-link"
+              />
+            </p>
+            <button
+              type="button"
+              className="announcement-close"
+              aria-label="Dismiss announcement"
+              onClick={() => {
+                setAnnouncementOpen(false);
+                sessionStorage.setItem('gc-announce-dismissed', '1');
+              }}
+            >
+              &times;
+            </button>
+          </>
+        ) : (
+          <AnnouncementPromises />
+        )}
+      </div>
 
       {/* Tier 2 — search + region | logo | account + cart */}
       <div

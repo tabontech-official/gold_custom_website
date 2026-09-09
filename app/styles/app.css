@@ -836,9 +836,12 @@ button.reset:hover:not(:has(> *)) {
   );
   display: grid;
   gap: 1rem;
-  /* One centred message; the close button sits in the right track so the text
-     stays optically centred against an equal empty track on the left. */
-  grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem;
+  /* Four tracks: Book Appointment | message | Visit Our Showroom | close.
+     The close button gets its own fixed track rather than sharing the
+     showroom link's, so dismissing the offer leaves an empty column instead
+     of reflowing the two standing links. */
+  grid-template-columns:
+    minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr) 2.25rem;
   min-height: calc(var(--utility-bar-height) + 8px);
   overflow: hidden;
   padding: 0.48rem var(--section-pad);
@@ -889,6 +892,41 @@ button.reset:hover:not(:has(> *)) {
   font-weight: 800;
 }
 
+/* The two standing actions flanking the message.
+
+   Every child pins itself to ROW 1. The links are written before the message
+   in the markup, so with auto-placement the message's `grid-column: 2` sat
+   behind the cursor after the right-hand link was placed and got pushed onto
+   a second row — a double-height bar with the links above the message.
+
+   `.announcement-bar` prefix so BOTH sides get this: the left one is a
+   <button> (it opens the appointment modal) and `button.announcement-link`
+   below zeroes the border, which outranks a bare `.announcement-side`. One
+   rule for the pair, or they read as two different controls. */
+.announcement-bar .announcement-side {
+  align-self: center;
+  background: none;
+  border: 0;
+  grid-row: 1;
+  line-height: 1.2;
+  padding: 0;
+  /* Underlined, like every other link on this bar — the boxed version made
+     two small controls out of what is one line of type. */
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+  white-space: nowrap;
+}
+
+.announcement-side--start {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.announcement-side--end {
+  grid-column: 3;
+  justify-self: end;
+}
+
 .announcement-close {
   background: none;
   border: 0;
@@ -896,7 +934,8 @@ button.reset:hover:not(:has(> *)) {
   cursor: pointer;
   font-size: 1.5rem;
   font-weight: 700;
-  grid-column: 3;
+  grid-column: 4;
+  grid-row: 1;
   justify-self: end;
   line-height: 1;
   opacity: 0.8;
@@ -965,6 +1004,7 @@ button.announcement-link {
   color: rgba(0, 0, 0, 0.7);
   display: inline-block;
   grid-column: 2;
+  grid-row: 1;
   margin: 0;
   font-size: clamp(0.72rem, 0.95vw, 0.88rem);
   font-weight: 600;
@@ -980,9 +1020,17 @@ button.announcement-link {
 @media (max-width: 48em) {
   .announcement-bar {
     gap: 0.32rem;
-    grid-template-columns: minmax(0, 0.68fr) minmax(0, 1.6fr) minmax(0, 0.8fr);
-    min-height: 1.45rem;
-    padding: 0.18rem 0.4rem;
+    /* Same four tracks as desktop, just tighter: the side links stay on the
+       phone in their short form ("Book" / "Showroom") — they are the two
+       actions this bar exists to offer, and hiding them left a strip that
+       only ever asked for an email. */
+    grid-template-columns: auto minmax(0, 1fr) auto 1.1rem;
+    /* Taller than the old 1.45rem strip: the two actions are real tap
+       targets here, not text, and 2rem is the smallest row that keeps them
+       above ~28px of touchable height. Anything reading the bar's height on
+       phones (--announce-h, .overlay--mobile) is updated with it. */
+    min-height: 2rem;
+    padding: 0.22rem 0.4rem;
   }
 
   /* Phones get the short form — "10% off — claim your code" — on ONE line.
@@ -999,6 +1047,11 @@ button.announcement-link {
   .announcement-text {
     justify-self: stretch;
     width: 100%;
+    /* Whatever is on the line — the offer's short form or a rotating promise
+       title — it is one line, ellipsised rather than clipped mid-word if a
+       320px screen still cannot take it. */
+    overflow: hidden;
+    text-overflow: ellipsis;
     min-width: 0;
     text-align: center;
     /* Scales with the viewport so the full short line — "Sign up and get 10%
@@ -1018,11 +1071,37 @@ button.announcement-link {
   .announcement-close {
     font-size: 1.1rem;
   }
+
+  /* Full names, drawn as buttons rather than underlined text — at this size
+     an underlined phrase between two other underlined phrases reads as one
+     run of small print, and these are the bar's two actions. The centre
+     message is the flexible track, so it shrinks around them and the row
+     height is unaffected. */
+  /* Sized for the 2rem phone row. */
+  .announcement-bar .announcement-side {
+    font-size: clamp(0.42rem, 2.1vw, 0.52rem);
+    letter-spacing: 0.04em;
+    text-underline-offset: 0.16em;
+  }
 }
 
 @keyframes goldShimmer {
   to {
     transform: translateX(-68.75%);
+  }
+}
+
+/* The rotating promises replace the offer once it is dismissed. They swap
+   every 5s, so they get a fade-IN only — announcementFade's built-in fade-out
+   at 2.5s would blank the line for the rest of each slot. */
+.announcement-promise {
+  animation: announcementPromiseIn 400ms ease-out;
+}
+
+@keyframes announcementPromiseIn {
+  from {
+    opacity: 0;
+    transform: translateY(2px);
   }
 }
 
@@ -4254,15 +4333,15 @@ F
     padding: 0 var(--section-pad);
   }
 
-  /* The announcement bar (1.45rem here) plus the row above. Not the
+  /* The announcement bar (2rem here) plus the row above. Not the
      --mobile-header-height token: this breakpoint sets its own row height. */
   .overlay--mobile {
-    top: 5.1rem;
+    top: 5.65rem;
   }
 
   .overlay--mobile aside {
-    height: calc(100vh - 5.1rem);
-    top: 5.1rem;
+    height: calc(100vh - 5.65rem);
+    top: 5.65rem;
   }
 
   .header-primary-left,
@@ -6147,8 +6226,8 @@ html.header-primary-hidden
      it there and then gap. Fixed to the viewport, every offset below is a
      constant, so there is nothing for WebKit to recompute mid-scroll.
 
-     Heights are explicit rather than measured: 1.5rem announcement +
-     3.65rem header row = 5.15rem, so the strip's own top never depends on a
+     Heights are explicit rather than measured: 2rem announcement +
+     3.65rem header row = 5.65rem, so the strip's own top never depends on a
      value that can arrive a frame late. Only the strip's HEIGHT is measured
      (--sticky-head-height, once at mount and on resize) because the circles
      and their labels reflow with the text.
@@ -6164,7 +6243,7 @@ html.header-primary-hidden
      set by an IntersectionObserver in Header.tsx once the viewport passes the
      bar — one discrete class change, never a per-frame recalculation. */
   body:has(.collection-toolbar) {
-    --announce-h: 1.5rem;
+    --announce-h: 2rem;
   }
 
   html.page-scrolled body:has(.collection-toolbar) {
@@ -7188,6 +7267,18 @@ html.header-primary-hidden
    above the page title here. */
 @media (max-width: 48em) {
   .breadcrumb {
+    display: none;
+  }
+
+  /* ...and the box that exists ONLY to hold the trail goes with it. Hiding
+     just the <nav> left its wrapper's padding behind: a band of white above
+     the tinted hero on /showroom, /contact, /repairs, /custom-jewelry, the
+     policy pages and /search — the page appearing to start with a gap in a
+     different colour. `:has(> .breadcrumb:only-child)` catches every one of
+     them without each route needing its own class, and leaves alone the
+     wrappers that hold a heading or content beside the trail (the collection
+     pages, the blog index). */
+  :has(> .breadcrumb:only-child) {
     display: none;
   }
 }

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {useFetcher} from 'react-router';
 import {useTrackConversion} from '~/hooks/useTrackConversion';
@@ -28,7 +28,7 @@ export function AppointmentModal({
   triggerClassName = 'btn product-book-consult product-book-consult--cta',
 }: {
   product?: ProductInfo;
-  triggerLabel?: string;
+  triggerLabel?: ReactNode;
   triggerClassName?: string;
 }) {
   const [open, setOpen] = useState(false);
