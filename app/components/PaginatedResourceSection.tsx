@@ -21,7 +21,7 @@ export function PaginatedResourceSection<NodesType>({
         return (
           <div className="load-more">
             {hasPreviousPage && (
-              <div className="load-more-bar">
+              <div className="load-more-bar">  
                 <PreviousLink className="load-more-btn is-ghost">
                   {isLoading ? 'Loading…' : '↑ Load previous'}
                 </PreviousLink>
