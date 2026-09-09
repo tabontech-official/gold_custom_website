@@ -257,21 +257,6 @@ export function Header({
           height — different words. sessionStorage rather than localStorage so
           a returning visitor sees the offer again. */}
       <div className="announcement-bar" aria-live="polite">
-        {/* Standing calls to action, one per side, on both message states —
-            they are not part of the offer and must not vanish with it.
-            Desktop only: the phone bar is a single 1.45rem line that the
-            centred message already fills. */}
-        <AppointmentModal
-          triggerLabel="Book Appointment"
-          triggerClassName="announcement-link announcement-side announcement-side--start"
-        />
-        <NavLink
-          className="announcement-link announcement-side announcement-side--end"
-          prefetch="intent"
-          to="/showroom"
-        >
-          Visit Showroom
-        </NavLink>
         {announcementOpen ? (
           <>
             <p className="announcement-text">
@@ -302,7 +287,24 @@ export function Header({
             </button>
           </>
         ) : (
-          <AnnouncementPromises />
+          /* The two standing actions appear only AFTER the offer is closed.
+             While the discount is up it is the one thing the bar is asking
+             for, and a row of three competing links is how you get none of
+             them clicked. */
+          <>
+            <AppointmentModal
+              triggerLabel="Book Appointment"
+              triggerClassName="announcement-link announcement-side announcement-side--start"
+            />
+            <AnnouncementPromises />
+            <NavLink
+              className="announcement-link announcement-side announcement-side--end"
+              prefetch="intent"
+              to="/showroom"
+            >
+              Visit Showroom
+            </NavLink>
+          </>
         )}
       </div>
 
