@@ -32,7 +32,7 @@ import {
   isRingProduct,
 } from '~/lib/ringSizes';
 import {isPicturePendantProduct} from '~/lib/pendantPhoto';
-import {mediaForSelectedOptions} from '~/lib/variantMedia';
+import {galleryLeadImage, mediaForSelectedOptions} from '~/lib/variantMedia';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
 import {
@@ -539,7 +539,10 @@ export default function Product() {
         <div className="product-gallery-column">
           <ProductGallery
             media={mediaItems}
-            selectedImageUrl={selectedVariant?.image?.url}
+            selectedImageUrl={galleryLeadImage(
+              mediaItems,
+              selectedVariant?.image?.url,
+            )}
             title={title}
           />
           <ProductTrustBadges />

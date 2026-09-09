@@ -67,3 +67,24 @@ export function mediaForSelectedOptions<T extends TaggedMedia>(
 
   return kept.length ? kept : media;
 }
+
+/**
+ * The image the gallery should lead with, given the selected variant's own
+ * image URL.
+ *
+ * Shopify lets a variant point at any image on the product, and the catalog
+ * has variants whose image contradicts their option group — EDR9-4's WHITE
+ * gold variant is assigned the yellow photo. Leading with it put a yellow
+ * ring under a "14K White Gold" selector. So the variant image leads only
+ * when it is part of the media this variant is actually showing; otherwise
+ * the group's own first image does, and nothing false is ever displayed.
+ */
+export function galleryLeadImage(
+  media: Array<{kind?: string; image?: {url?: string} | null}>,
+  selectedImageUrl?: string | null,
+): string | undefined {
+  if (!selectedImageUrl) return undefined;
+  return media.some((item) => item.image?.url === selectedImageUrl)
+    ? selectedImageUrl
+    : undefined;
+}

@@ -4,7 +4,11 @@
  * ponytail: plain asserts, no runner.
  */
 import assert from 'node:assert/strict';
-import {mediaForSelectedOptions, mediaOptionTag} from './variantMedia.ts';
+import {
+  galleryLeadImage,
+  mediaForSelectedOptions,
+  mediaOptionTag,
+} from './variantMedia.ts';
 
 const options = [
   {name: 'Metal', optionValues: [{name: '14K Yellow Gold'}, {name: '14K White Gold'}]},
@@ -41,5 +45,12 @@ assert.equal(
   media.length,
 );
 assert.equal(mediaForSelectedOptions([], options, []).length, 0);
+
+// A variant whose own image belongs to the other metal (real data: EDR9-4's
+// white variant points at the yellow photo) must not lead the gallery.
+const whiteGroup = [{image: {url: 'white.jpg'}}];
+assert.equal(galleryLeadImage(whiteGroup, 'yellow.jpg'), undefined);
+assert.equal(galleryLeadImage(whiteGroup, 'white.jpg'), 'white.jpg');
+assert.equal(galleryLeadImage(whiteGroup, undefined), undefined);
 
 console.log('variantMedia: all assertions passed');
