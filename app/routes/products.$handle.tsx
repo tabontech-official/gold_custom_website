@@ -32,6 +32,7 @@ import {
   isRingProduct,
 } from '~/lib/ringSizes';
 import {isPicturePendantProduct} from '~/lib/pendantPhoto';
+import {mediaForSelectedOptions} from '~/lib/variantMedia';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
 import {
@@ -403,12 +404,24 @@ export default function Product() {
   // write one. Two systems for the same numbers is what read as
   // inconsistent; one system that always runs is the fix.
   const descriptionHtml = stripSizeWeightSection(product.descriptionHtml);
-  const mediaItems = normalizeMedia(product.media?.nodes ?? [], title);
+  const allMedia = normalizeMedia(product.media?.nodes ?? [], title);
+  // Products photographed per metal carry a whole media GROUP per option
+  // value, tagged in each item's alt text — see variantMedia.ts. Switching
+  // Metal has to swap the photos AND the videos, not just the one variant
+  // image Shopify hands back, or a white-gold selection still plays the
+  // yellow-gold clip.
+  const mediaItems = mediaForSelectedOptions(
+    allMedia,
+    product.options ?? [],
+    selectedVariant?.selectedOptions ?? [],
+  );
   const productOrigin = siteOrigin(root);
   const productJsonLd = buildProductJsonLd({
     product,
     selectedVariant,
-    mediaItems,
+    // Structured data describes the PRODUCT, so it lists every image and
+    // video the product has, not just the selected metal's group.
+    mediaItems: allMedia,
     origin: productOrigin,
     priceValidUntil,
     validFrom,
@@ -419,7 +432,7 @@ export default function Product() {
   // the field, so the closest true date the page holds stands in for it.
   // ponytail: swap in a real per-video date if one ever lands on a metafield.
   const videoJsonLd = buildVideoJsonLd({
-    media: mediaItems,
+    media: allMedia,
     name: title,
     description: metaDescription(product.seo?.description || product.description),
     uploadDate: product.publishedAt,

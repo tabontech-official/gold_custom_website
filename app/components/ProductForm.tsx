@@ -54,6 +54,22 @@ export function ProductForm({
   const {pathname} = useLocation();
   const {open} = useAside();
 
+  // Switching a group value (Center Diamond Carat) opens a SIBLING PRODUCT, so
+  // the variant options live in the URL and used to be dropped on the way —
+  // picking a different carat while on White Gold landed on the next
+  // product's default, Yellow. Siblings in a group carry the same option
+  // names, so the current selection is carried across; anything the sibling
+  // doesn't have is ignored by the loader (`ignoreUnknownOptions: true`).
+  //
+  // Read from the SELECTED VARIANT, not the URL: the first choice a shopper
+  // makes on a page they landed on cleanly is not in the query string yet,
+  // and that is exactly the case where the reset was most visible.
+  const carriedOptions = new URLSearchParams(
+    (selectedVariant?.selectedOptions ?? []).map(
+      (option) => [option.name, option.value] as [string, string],
+    ),
+  ).toString();
+
   // Shopify options with more than one value become premium dropdowns.
   const optionSelects = productOptions
     .filter((option) => option.optionValues.length > 1)
@@ -130,7 +146,9 @@ export function ProductForm({
                   // A sibling product, so this is a real navigation — `to`
                   // makes it a Link, which prefetches the other product's
                   // data on hover instead of after the click.
-                  to: replaceProductHandleInPath(pathname, o.handle),
+                  to:
+                    replaceProductHandleInPath(pathname, o.handle) +
+                    (carriedOptions ? `?${carriedOptions}` : ''),
                 }))}
               />
             )}
