@@ -2136,11 +2136,15 @@ F
   z-index: 1999 !important;
 }
 
+/* Same family, weight and tracking as the page headings above — only the
+   size is smaller, because these are column labels in site furniture rather
+   than headings of the page's content. Was 800, which read as a third weight
+   on any page that also showed an h1 and an h2. */
 .footer-col h4 {
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: clamp(1rem, 1.25vw, 1.35rem);
-  font-weight: 800;
+  font-weight: 600;
   letter-spacing: -0.01em;
   text-transform: none;
   margin-bottom: 1.1rem;
@@ -2213,10 +2217,11 @@ F
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: clamp(1.35rem, 1.8vw, 1.75rem);
-  font-weight: 800;
+  /* 600, matching every other heading on the page — see .footer-col h4. */
+  font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.1;
-  margin-bottom: 0.35rem;
+  /* margin-bottom: 0.35rem; */
 }
 
 .footer-left > p {
@@ -2233,7 +2238,7 @@ F
   border-bottom: 1px solid rgba(0, 0, 0, 0.32);
   display: flex;
   gap: 0.75rem;
-  margin-top: 0.55rem;
+  /* margin-top: 0.55rem; */
   max-width: 31rem;
   padding-bottom: 0.45rem;
 }
@@ -7833,16 +7838,40 @@ html.header-primary-hidden
 /* Selector follows the h1, which now lives in .product-heading. Keeping the
    old `.product-main h1` here would have matched nothing and dropped the
    title back to the global heading style. */
+/* ONE heading style for the whole product page.
+
+   The page used to carry three: the product title at 1.3-1.6rem/700, the
+   section headings ("Frequently Bought Together", "You May Also Like",
+   "FAQs") at the global h2 scale/600, and on a phone a title that shrank to
+   ~14px while those same section headings stayed at 22px — so the name of the
+   thing being sold was the SMALLEST heading on its own page.
+
+   All four now take the global h2 scale, weight and tracking, so they are
+   identical to each other at every width. `--font-classic`, `--font-display`
+   and `--font-body` all resolve to the same family already, so the family is
+   named once here rather than repeated per rule. */
+.product-heading h1,
+.fbt-title,
+.pdp-similar-title,
+.pdp-faq-title {
+  font-family: var(--font-body);
+  font-size: clamp(1.375rem, 2.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+/* The title is the one heading that does NOT take the section size, because
+   it is the only one that shares a card with the price. At the section scale
+   it came out 32px against the price's 34.4px — two lines of near-identical
+   type stacked, with nothing saying which one the eye should land on. Sized
+   to about three-quarters of the price instead, so the price stays the
+   loudest thing in the buy panel and the title reads as its label.
+   Weight, family and tracking are still the shared ones above: same voice,
+   different rank. */
 .product-heading h1 {
   margin: 0;
-  font-family: var(--font-body);
-  /* Down from clamp(1.55rem,2.1vw,2rem) — smaller, but a step up in weight
-     and a hair of negative tracking keeps it reading as confident rather
-     than just shrunk. */
-  font-size: clamp(1.3rem, 1.7vw, 1.6rem);
-  font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.15rem, 1.9vw, 1.65rem);
 }
 
 .product-metal-label {
@@ -7957,12 +7986,10 @@ html.header-primary-hidden
     stroke-width: 2.4;
   }
 
+  /* Wrapping only. Size, weight and tracking come from the shared heading
+     rule above — this used to restate them at ~14px, which is what made the
+     title smaller than "You May Also Like" on a phone. */
   .product-heading h1 {
-    font-family: var(--font-classic);
-    font-size: clamp(0.82rem, 3.6vw, 1rem);
-    font-weight: 700;
-    letter-spacing: 0;
-    line-height: 1.16;
     max-width: 100%;
     min-width: 0;
     overflow-wrap: anywhere;
@@ -9399,8 +9426,8 @@ html.header-primary-hidden
   position: static;
 }
 
-.pdp-similar .slider-carousel .hcarousel-track {
-  padding-inline: var(--section-pad);
+.pdp-similar .slider-carousel {
+  --hcarousel-gutter: var(--section-pad);
 }
 
 .pdp-similar .hcarousel-btn {
@@ -11024,6 +11051,13 @@ html.header-primary-hidden
 .hcarousel-viewport {
   overflow-x: auto;
   overflow-y: hidden;
+  /* Where a snapped card comes to rest. Without it, `scroll-snap-align: start`
+     aligns each card to the SCROLLER's edge, which is the screen edge — so the
+     rail's left gutter was there on load and gone the moment a shopper swiped,
+     with the cards running flush off the side of the phone while everything
+     above them stayed inset. The track's padding draws the gutter; this is
+     what stops scrolling from eating it. 0 for rails that have no gutter. */
+  scroll-padding-inline: var(--hcarousel-gutter, 0px);
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   overscroll-behavior-x: contain;
@@ -11129,16 +11163,24 @@ html.header-primary-hidden
   right: 0.5rem;
 }
 
-/* Per-context spacing; item widths keep using .slider-item / .carousel-item */
-.slider-carousel .hcarousel-track {
-  gap: 1.5rem;
-  padding: 0 1.5rem 0.5rem;
+/* Per-context spacing; item widths keep using .slider-item / .carousel-item.
+
+   The gutter is a variable because TWO properties need it and they must not
+   drift: the track's padding (which draws it) and the viewport's
+   scroll-padding (which makes snapping respect it). */
+.slider-carousel {
+  --hcarousel-gutter: 1.5rem;
 }
 
 @media (min-width: 48em) {
-  .slider-carousel .hcarousel-track {
-    padding: 0 3rem 0.5rem;
+  .slider-carousel {
+    --hcarousel-gutter: 3rem;
   }
+}
+
+.slider-carousel .hcarousel-track {
+  gap: 1.5rem;
+  padding: 0 var(--hcarousel-gutter) 0.5rem;
 }
 
 .category-carousel .hcarousel-track {
