@@ -14,7 +14,9 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {productCanonicalPath} from '~/lib/categories';
 import {analyticsProduct} from '~/lib/analytics';
 import {
+  SITE,
   absoluteUrl,
+  cleanSku,
   breadcrumbJsonLd,
   metaDescription,
   pageSeo,
@@ -172,17 +174,38 @@ function collectionPageJsonLd(origin: string, collection: any, title: string) {
 }
 
 /**
- * ItemList naming the products on this page, in the order they are rendered.
+ * ItemList naming the products on this page, in the order they are rendered,
+ * with each one's price, image and availability attached.
  *
  * Without it a category page is just prose to a crawler — the grid is the
  * page's actual content, and nothing in the markup says these thirty links
  * are one ranked set of products. `position` is what makes it a list rather
  * than a bag of URLs.
  *
- * Only the first page of results is described. `Pagination` appends further
- * pages client-side, so the server-rendered meta cannot see them, and
- * inventing entries for products not present in the HTML would contradict the
- * page. Deep pages are reached through the sitemap instead.
+ * It describes exactly what the server rendered, whatever that is: the first
+ * 20, or the 300 a shopper has clicked Load More up to, or a filtered 12.
+ * `?show=N` is resolved in the loader, so the markup and the grid are built
+ * from the same list — there is no client-side appending for the meta to miss,
+ * and no entry for a product the HTML does not contain. Verify with
+ * `node scripts/verify-collection-schema.mjs`, which counts the cards in the
+ * markup and checks the ItemList against them.
+ *
+ * WHY EACH ENTRY CARRIES A FULL Product NODE
+ *
+ * A bare list of URLs answers "what is on this page". It cannot answer "gold
+ * Cuban chains under $500, in stock" — which is the question an assistant is
+ * actually asked, and the one it currently has to open thirty product pages
+ * to answer, if it bothers. Price, currency, availability and image inline
+ * mean the category page is the complete, self-contained answer.
+ *
+ * Every `@id` here is the SAME `<product url>#product` the product page's own
+ * Product node uses, so the two are one entity in a knowledge graph rather
+ * than two descriptions that have to be matched up by name.
+ *
+ * Everything published is served straight off the card being rendered beside
+ * it: the same price, the same photo, the same in-stock state a shopper sees.
+ * Structured data that disagrees with the visible page is a manual action, so
+ * this deliberately has no source of its own to drift from.
  */
 function collectionItemListJsonLd(origin: string, collection: any) {
   const nodes: any[] = collection.products?.nodes ?? [];
@@ -193,15 +216,56 @@ function collectionItemListJsonLd(origin: string, collection: any) {
     '@id': `${absoluteUrl(origin, `/collections/${collection.handle}`)}#products`,
     name: collection.seo?.title || displayTitle(collection),
     numberOfItems: nodes.length,
-    itemListElement: nodes.map((product, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
+    itemListElement: nodes.map((product, index) => {
       // Must be the canonical /collections/<category>/products/<handle>, not
       // the flat /products/<handle>, which 301s. See the productType/category
       // fields on the ProductItem fragment.
-      url: absoluteUrl(origin, productCanonicalPath(product)),
-      name: product.title,
-    })),
+      const url = absoluteUrl(origin, productCanonicalPath(product));
+      const variant = product.selectedOrFirstAvailableVariant;
+      // The variant's own price where there is one, the range's floor
+      // otherwise — the same number the card prints, in the same order of
+      // preference ProductPrice uses.
+      const price = variant?.price ?? product.priceRange?.minVariantPrice;
+      const sku = cleanSku(variant?.sku);
+
+      return {
+        '@type': 'ListItem',
+        position: index + 1,
+        // Kept alongside `item` rather than replaced by it: a consumer that
+        // reads only the list still gets a working link and a name, which is
+        // what the plain summary-page form of an ItemList is.
+        url,
+        name: product.title,
+        item: {
+          '@type': 'Product',
+          '@id': `${url}#product`,
+          name: product.title,
+          url,
+          image: product.featuredImage?.url || undefined,
+          // Only when the merchant has actually set one — an invented
+          // identifier is worse than none, and cleanSku drops the
+          // placeholders this catalogue carries.
+          sku: sku || undefined,
+          brand: {'@type': 'Brand', name: SITE.name},
+          offers: price
+            ? {
+                '@type': 'Offer',
+                url,
+                // A bare decimal from the API ("440.0") published as "440.00",
+                // matching the product page's own Offer so the two agree
+                // character for character.
+                price: Number(price.amount).toFixed(2),
+                priceCurrency: price.currencyCode,
+                availability: variant?.availableForSale
+                  ? 'https://schema.org/InStock'
+                  : 'https://schema.org/OutOfStock',
+                itemCondition: 'https://schema.org/NewCondition',
+                seller: {'@id': `${origin}/#organization`},
+              }
+            : undefined,
+        },
+      };
+    }),
   };
 }
 
@@ -862,6 +926,10 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     selectedOrFirstAvailableVariant {
       id
       availableForSale
+      # The one real identifier in the ItemList's Product nodes — what an
+      # agent or a feed matches this piece by when the title is ambiguous.
+      # See collectionItemListJsonLd.
+      sku
       # Card badges: a Sale badge must come from a real
       # compare-at price, never from a tag someone typed.
       price {
