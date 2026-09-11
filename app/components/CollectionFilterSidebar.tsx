@@ -44,9 +44,13 @@ function normalize(input: string) {
 }
 
 function stripPagination(params: URLSearchParams) {
-  // `page` is the live one — see productsToShow() in collections.$handle.
-  // cursor/direction are the retired cursor scheme, deleted so any old
-  // bookmark or inbound link carrying them cannot pin the grid to one page.
+  // `show` is the live one — see productsToShow() in collections.$handle.
+  // Changing a filter or a sort changes WHICH products these are, so carrying
+  // a count of 300 across would make the new first page cost four Storefront
+  // queries to render a result set the shopper has not even looked at yet.
+  // page/cursor/direction are retired schemes, deleted so any old bookmark or
+  // inbound link carrying them cannot pin the grid.
+  params.delete('show');
   params.delete('page');
   params.delete('cursor');
   params.delete('direction');
@@ -499,11 +503,16 @@ function categoryEntries(categories: SidebarCategory[]): CategoryEntry[] {
 
   // A tag the collection list already covers must not appear twice. Matched on
   // a loose key so "mens-bracelets" and "Men's Bracelets" collapse together.
-  const taken = new Set(categories.map((category) => browseNameKey(category.title)));
+  const taken = new Set(
+    categories.map((category) => browseNameKey(category.title)),
+  );
 
   for (const entry of BROWSE_GROUPS.flatMap((group) => group.tags)) {
     const label = browseLabel(entry);
-    if (taken.has(browseNameKey(label)) || taken.has(browseNameKey(entry.tag))) {
+    if (
+      taken.has(browseNameKey(label)) ||
+      taken.has(browseNameKey(entry.tag))
+    ) {
       continue;
     }
     taken.add(browseNameKey(label));
@@ -663,7 +672,11 @@ function FilterIcon() {
 
 function ChevronIcon() {
   return (
-    <svg className="collection-sort-caret" viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      className="collection-sort-caret"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path
         d="m6 9 6 6 6-6"
         fill="none"
@@ -678,7 +691,11 @@ function ChevronIcon() {
 
 function CheckIcon() {
   return (
-    <svg className="collection-sort-check" viewBox="0 0 24 24" aria-hidden="true">
+    <svg
+      className="collection-sort-check"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path
         d="M5 12.5 9.5 17 19 7"
         fill="none"

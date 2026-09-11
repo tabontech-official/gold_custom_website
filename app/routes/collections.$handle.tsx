@@ -1,3 +1,4 @@
+import {useRef} from 'react';
 import {
   Link,
   redirect,
@@ -27,7 +28,11 @@ import {ShareButtons} from '~/components/ShareButtons';
 import {CollectionStickyHead} from '~/components/CollectionStickyHead';
 import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
-import {getFiltersFromParam, getSortFromParam} from '~/lib/collectionFilter';
+import {
+  collectionProductCount,
+  getFiltersFromParam,
+  getSortFromParam,
+} from '~/lib/collectionFilter';
 import {
   CATEGORY_MENU_HANDLES,
   MERGED_CUBAN_HANDLES,
@@ -49,6 +54,12 @@ import {
   type Faq,
 } from '~/lib/faqs';
 import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
+import {
+  batchSize,
+  DEFAULT_COLUMNS,
+  ROWS_PER_LOAD,
+  useGridColumns,
+} from '~/lib/gridColumns';
 
 function displayTitle(collection?: {handle: string; title: string} | null) {
   if (!collection) return '';
@@ -140,11 +151,7 @@ function collectionParentCrumb(
  * the sitewide #website node from seo.ts so this resolves into one graph
  * instead of a loose fragment.
  */
-function collectionPageJsonLd(
-  origin: string,
-  collection: any,
-  title: string,
-) {
+function collectionPageJsonLd(origin: string, collection: any, title: string) {
   const url = absoluteUrl(origin, `/collections/${collection.handle}`);
   return {
     '@context': 'https://schema.org',
@@ -212,25 +219,37 @@ export async function loader(args: Route.LoaderArgs) {
  * Stands in for Hydrogen's `<Pagination>`, which this page no longer uses.
  *
  * Same render-prop shape, minus `PreviousLink`/`hasPreviousPage` — there is no
- * "previous" any more, because page N renders products 1..N*24 rather than
- * just page N. `nodes` therefore comes straight from the loader instead of
- * being stitched together from `location.state`, which is what used to be lost
- * on a reload.
+ * "previous" any more, because the URL says how many products to render from
+ * the first one, not which page to render. `nodes` therefore comes straight
+ * from the loader instead of being stitched together from `location.state`,
+ * which is what used to be lost on a reload.
  *
- * "Load More" is a real `<Link>` to `?page=N+1`, so it works without
- * JavaScript, is crawlable, and restores correctly on back/forward.
- * `preventScrollReset` keeps the viewport where it is while the next batch
- * appends, and `replace` keeps 10 clicks from becoming 10 history entries.
+ * "Load More" is a real `<Link>` to `?show=N`, so it works without JavaScript,
+ * is crawlable, and restores correctly on back/forward. `preventScrollReset`
+ * keeps the viewport where it is while the next batch appends, and `replace`
+ * keeps 10 clicks from becoming 10 history entries.
+ *
+ * A COUNT rather than a page number is what makes the batch size responsive.
+ * With `?page=N` the server had to multiply by a page size it could not know,
+ * so a phone showing 2 columns and a desktop showing 5 shared one fixed 24 —
+ * four clean rows of six, a ragged 4.8 rows of five. The count is layout
+ * independent: the browser measures the grid it actually rendered, adds five
+ * rows of it, and asks for that many.
  */
 function ProductGrid({
   connection,
+  total,
   children,
 }: {
   connection: {nodes: any[]; pageInfo: {hasNextPage: boolean}};
+  /** Every product in this collection under the active filters, from Shopify. */
+  total?: number;
   children: (props: {
     nodes: any[];
     isLoading: boolean;
     hasNextPage: boolean;
+    columns: number;
+    gridRef: React.MutableRefObject<HTMLDivElement | null>;
     LoadMoreLink: (props: {
       className?: string;
       children: React.ReactNode;
@@ -240,16 +259,31 @@ function ProductGrid({
   const [searchParams] = useSearchParams();
   const navigation = useNavigation();
   const nodes = connection.nodes ?? [];
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const columns = useGridColumns(gridRef);
 
-  const currentPage = Math.max(
-    1,
-    Math.floor(Number(searchParams.get('page')) || 1),
+  // Five more rows of whatever is on screen, never past the end of the
+  // collection — asking for more than exists is harmless but makes the URL
+  // claim a number the page cannot show.
+  const nextShow = Math.min(
+    nodes.length + batchSize(columns),
+    total ?? Number.MAX_SAFE_INTEGER,
   );
-  // Only true while THIS page's next batch is loading — not while an unrelated
+
+  // Only true while THIS grid's next batch is loading — not while an unrelated
   // navigation (a filter, a product click) is in flight.
   const isLoading =
     navigation.state === 'loading' &&
-    navigation.location?.search.includes(`page=${currentPage + 1}`) === true;
+    navigation.location?.search.includes(`show=${nextShow}`) === true;
+
+  const linkTo = (count: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('show', String(count));
+    // Retired scheme: a stale `page` left alongside `show` would be ignored by
+    // the loader but kept in the URL, and shared onward from there forever.
+    params.delete('page');
+    return `?${params.toString()}`;
+  };
 
   const LoadMoreLink = ({
     className,
@@ -258,12 +292,10 @@ function ProductGrid({
     className?: string;
     children: React.ReactNode;
   }) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', String(currentPage + 1));
     return (
       <Link
         className={className}
-        to={`?${params.toString()}`}
+        to={linkTo(nextShow)}
         replace
         preventScrollReset
       >
@@ -275,33 +307,34 @@ function ProductGrid({
   return children({
     nodes,
     isLoading,
-    // Real pageInfo AND under the ceiling — otherwise a 500-product collection
-    // offers a "Load More" at 240 that would fetch exactly the same page again.
-    hasNextPage:
-      (connection.pageInfo?.hasNextPage ?? false) &&
-      nodes.length < MAX_PRODUCTS,
+    columns,
+    gridRef,
+    // Shopify's own answer, and nothing else: the page stops offering more
+    // products exactly when the collection runs out of them.
+    hasNextPage: connection.pageInfo?.hasNextPage ?? false,
     LoadMoreLink,
   });
 }
 
-/** Products per "Load More" click. */
-export const PAGE_SIZE = 24;
-
 /**
- * Hard ceiling on how many products one page renders.
+ * The server-rendered first batch, in products.
  *
- * ponytail: 240 = 10 pages in ONE Storefront query (the API caps a connection
- * at 250). Past that, "Load More" stops and the empty-state copy points at the
- * filters. Raising it means looping cursor queries and shipping >240 product
- * cards in one document, which costs more than deep browsing is worth — the
- * sitemap and search are how the far end of a 5,000-product catalogue gets
- * found, not 200 clicks of Load More.
+ * There is no viewport to measure yet, so this is the one assumed number on
+ * the page: five rows of a desktop grid. A phone renders the same 20 products
+ * as ten rows of two — more than a first screen either way, and every batch
+ * after it is measured rather than assumed.
  */
-export const MAX_PRODUCTS = 240;
+const FIRST_BATCH = DEFAULT_COLUMNS * ROWS_PER_LOAD;
 
 /**
- * How many products this request should render: `?page=N` means "everything
- * from the first product through page N", not "page N".
+ * The largest connection the Storefront API returns in one query. Bigger
+ * counts are assembled by following `endCursor` — see loadCollectionProducts.
+ */
+const PAGE_LIMIT = 250;
+
+/**
+ * How many products this request should render: `?show=N` means "the first N",
+ * not "the Nth page".
  *
  * That is the whole fix for products vanishing on the way back up. The cursor
  * pagination this replaces put `?direction=next&cursor=…` in the URL and kept
@@ -312,14 +345,91 @@ export const MAX_PRODUCTS = 240;
  * /collections/chains served 24 products and no "Load previous"; the same URL
  * with ?direction=next&cursor=… served a different 24 and did show one.
  *
- * A page number survives all of that because it is not a pointer into a
- * result set, it is a count. Nothing to lose and nothing to restore.
+ * A count survives all of that because it is not a pointer into a result set.
+ * It is also what lets the batch size follow the column count — see
+ * ProductGrid.
  */
 function productsToShow(request: Request): number {
-  const raw = Number(new URL(request.url).searchParams.get('page'));
-  // Non-numeric, zero, negative and NaN all collapse to page 1.
-  const page = Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
-  return Math.min(page * PAGE_SIZE, MAX_PRODUCTS);
+  const params = new URL(request.url).searchParams;
+
+  const show = Number(params.get('show'));
+  if (Number.isFinite(show) && show >= 1) return Math.floor(show);
+
+  // `?page=N` is the retired scheme, still live in bookmarks, inbound links
+  // and anything already indexed. Read as N batches so those URLs keep
+  // rendering roughly what they used to instead of snapping back to one batch.
+  const page = Number(params.get('page'));
+  if (Number.isFinite(page) && page >= 1) {
+    return Math.floor(page) * FIRST_BATCH;
+  }
+
+  return FIRST_BATCH;
+}
+
+/**
+ * The collection, with `count` products in it — following `endCursor` for as
+ * many extra queries as that takes.
+ *
+ * One query returns at most 250; a shopper who keeps clicking is no longer
+ * capped there. Each page is its own cached subrequest, so going deep re-uses
+ * every earlier page rather than re-fetching the lot, and the continuation
+ * query is products-only: the description, FAQs, filters and best-sellers come
+ * from the first page and are never fetched again.
+ */
+async function loadCollectionProducts(
+  storefront: Route.LoaderArgs['context']['storefront'],
+  variables: {
+    handle: string;
+    filters: any;
+    sortKey: any;
+    reverse: boolean;
+    count: number;
+  },
+) {
+  const {handle, filters, sortKey, reverse, count} = variables;
+  const {collection} = await storefront.query(COLLECTION_QUERY, {
+    variables: {
+      handle,
+      filters,
+      sortKey,
+      reverse,
+      first: Math.min(count, PAGE_LIMIT),
+      last: null,
+      after: null,
+    },
+    // The grid, with prices. Was on the 24h default, which meant a price edit
+    // or a product added to this collection could stay invisible for a day.
+    // Catalog tier = 5 min fresh, 20 min worst case.
+    cache: CacheCatalog(),
+  });
+
+  if (!collection) return null;
+
+  const nodes = [...collection.products.nodes];
+  let pageInfo = collection.products.pageInfo;
+
+  while (nodes.length < count && pageInfo?.hasNextPage && pageInfo?.endCursor) {
+    const data = await storefront.query(COLLECTION_PRODUCTS_QUERY, {
+      variables: {
+        handle,
+        filters,
+        sortKey,
+        reverse,
+        first: Math.min(count - nodes.length, PAGE_LIMIT),
+        after: pageInfo.endCursor,
+      },
+      cache: CacheCatalog(),
+    });
+    const next = data?.collection?.products;
+    // A collection that changed under us (or a page that failed) ends the walk
+    // rather than looping: `hasNextPage` from the last good page still tells
+    // the grid truthfully whether to offer Load More.
+    if (!next?.nodes?.length) break;
+    nodes.push(...next.nodes);
+    pageInfo = next.pageInfo;
+  }
+
+  return {...collection, products: {...collection.products, nodes, pageInfo}};
 }
 
 /**
@@ -329,7 +439,6 @@ function productsToShow(request: Request): number {
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {handle} = params;
   const {storefront} = context;
-  const paginationVariables = {first: productsToShow(request), last: null};
   const url = new URL(request.url);
   // No hardcoded {available: true} — that silently dropped every out-of-stock
   // product from the grid, so a collection with 40 products in the admin only
@@ -390,19 +499,13 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     })
     .catch(() => null);
 
-  const [{collection}, allCollections] = await Promise.all([
-    storefront.query(COLLECTION_QUERY, {
-      variables: {
-        handle,
-        filters,
-        sortKey: sort.sortKey,
-        reverse: sort.reverse,
-        ...paginationVariables,
-      },
-      // The grid: 24 products with prices. Was on the 24h default, which meant
-      // a price edit or a product added to this collection could stay
-      // invisible for a day. Catalog tier = 5 min fresh, 20 min worst case.
-      cache: CacheCatalog(),
+  const [collection, allCollections] = await Promise.all([
+    loadCollectionProducts(storefront, {
+      handle,
+      filters,
+      sortKey: sort.sortKey,
+      reverse: sort.reverse,
+      count: productsToShow(request),
     }),
     // Backs the sidebar's category list. Cached and non-fatal: the page still
     // renders if it fails.
@@ -515,11 +618,15 @@ export default function Collection() {
     .map((node) => ({handle: node.handle, title: node.title}));
 
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
-  const filters = (collection.products.filters ?? []).map((filter) => ({
+  // The collection's true size, from the facet counts that came back with the
+  // products — no extra query, and it narrows with the filters.
+  const productCount = collectionProductCount(collection.products.filters);
+
+  const filters = (collection.products.filters ?? []).map((filter: any) => ({
     id: filter.id,
     label: filter.label,
     type: filter.type,
-    values: filter.values.map((value) => ({
+    values: filter.values.map((value: any) => ({
       id: value.id,
       label: value.label,
       count: value.count,
@@ -576,8 +683,15 @@ export default function Collection() {
                 names the region: an agent looking for the products on a
                 collection page had only an unlabelled <div> to go on. */}
             <h2 className="visually-hidden">Products</h2>
-            <ProductGrid connection={collection.products}>
-              {({nodes, isLoading, LoadMoreLink, hasNextPage}) => {
+            <ProductGrid connection={collection.products} total={productCount}>
+              {({
+                nodes,
+                isLoading,
+                LoadMoreLink,
+                hasNextPage,
+                columns,
+                gridRef,
+              }) => {
                 return (
                   <div className="load-more">
                     {/* No "Load previous". Every product from the first one
@@ -594,7 +708,7 @@ export default function Collection() {
                          laying out independently — at 5 columns every grid
                          rendered 5 then 3, leaving a ragged half-empty row
                          after every eighth card. */
-                      <div className="products-grid">
+                      <div className="products-grid" ref={gridRef}>
                         {nodes.map((product, index) => (
                           <ProductItem
                             key={product.id}
@@ -611,7 +725,7 @@ export default function Collection() {
                         className="products-grid collection-load-more-skeleton"
                         aria-label="Loading more products"
                       >
-                        {Array.from({length: 4}).map((_, index) => (
+                        {Array.from({length: columns}).map((_, index) => (
                           <article
                             className="product-item product-skeleton"
                             key={index}
@@ -627,8 +741,14 @@ export default function Collection() {
                     )}
 
                     <div className="load-more-bar">
+                      {/* The real size of the collection, straight off
+                          Shopify's own facet counts — see
+                          collectionProductCount. It tracks the active filters,
+                          so it reads "23 of 23" once one is applied. */}
                       <span className="load-more-count">
-                        {nodes.length} pieces shown
+                        {productCount
+                          ? `${nodes.length} of ${productCount} pieces shown`
+                          : `${nodes.length} pieces shown`}
                       </span>
                       {hasNextPage ? (
                         <LoadMoreLink className="load-more-btn">
@@ -637,9 +757,7 @@ export default function Collection() {
                       ) : (
                         nodes.length > 0 && (
                           <span className="load-more-end">
-                            {nodes.length >= MAX_PRODUCTS
-                              ? 'Showing the first 240 — use the filters to narrow this down'
-                              : 'That’s the whole collection'}
+                            That’s the whole collection
                           </span>
                         )
                       )}
@@ -849,6 +967,51 @@ const PARENT_COLLECTION_CONTENT_QUERY = `#graphql
 ` as const;
 
 // NOTE: https://shopify.dev/docs/api/storefront/2022-04/objects/collection
+/**
+ * Products beyond the first page, for collections deeper than one query's 250.
+ *
+ * Deliberately NOT the full COLLECTION_QUERY: everything else on the page —
+ * description, SEO, image, FAQs, the facet list, best-sellers — is a property
+ * of the collection, not of the page of products, and re-fetching all of it
+ * per 250 products would triple the cost of browsing deep for nothing.
+ */
+const COLLECTION_PRODUCTS_QUERY = `#graphql
+  ${PRODUCT_ITEM_FRAGMENT}
+  query CollectionProductsPage(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
+    $first: Int
+    $after: String
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(
+        first: $first,
+        after: $after,
+        filters: $filters,
+        sortKey: $sortKey,
+        reverse: $reverse
+      ) {
+        nodes {
+          ...ProductItem
+        }
+        # Same four fields the first page returns, so the walked-to pageInfo
+        # is interchangeable with it rather than a narrower shape the grid
+        # would have to special-case.
+        pageInfo {
+          hasPreviousPage
+          hasNextPage
+          endCursor
+          startCursor
+        }
+      }
+    }
+  }
+` as const;
+
 const COLLECTION_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
   ${COLLECTION_CONTENT_FRAGMENT}
@@ -861,6 +1024,7 @@ const COLLECTION_QUERY = `#graphql
     $reverse: Boolean
     $first: Int
     $last: Int
+    $after: String
   ) @inContext(country: $country, language: $language) {
     collection(handle: $handle) {
       id
@@ -890,6 +1054,7 @@ const COLLECTION_QUERY = `#graphql
       products(
         first: $first,
         last: $last,
+        after: $after,
         filters: $filters,
         sortKey: $sortKey,
         reverse: $reverse

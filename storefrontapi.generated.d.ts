@@ -2222,6 +2222,65 @@ export type ParentCollectionContentQuery = {
   >;
 };
 
+export type CollectionProductsPageQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  filters?: StorefrontAPI.InputMaybe<
+    Array<StorefrontAPI.ProductFilter> | StorefrontAPI.ProductFilter
+  >;
+  sortKey?: StorefrontAPI.InputMaybe<StorefrontAPI.ProductCollectionSortKeys>;
+  reverse?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Boolean']['input']>;
+  first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
+}>;
+
+export type CollectionProductsPageQuery = {
+  collection?: StorefrontAPI.Maybe<{
+    products: {
+      nodes: Array<
+        Pick<
+          StorefrontAPI.Product,
+          'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+        > & {
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'altText' | 'url' | 'width' | 'height'
+            >
+          >;
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+            }
+          >;
+          priceRange: {
+            minVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+            maxVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+          };
+        }
+      >;
+      pageInfo: Pick<
+        StorefrontAPI.PageInfo,
+        'hasPreviousPage' | 'hasNextPage' | 'endCursor' | 'startCursor'
+      >;
+    };
+  }>;
+};
+
 export type CollectionQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -2233,6 +2292,7 @@ export type CollectionQueryVariables = StorefrontAPI.Exact<{
   reverse?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Boolean']['input']>;
   first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
   last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
+  after?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['String']['input']>;
 }>;
 
 export type CollectionQuery = {
@@ -3468,7 +3528,11 @@ interface GeneratedQueryTypes {
     return: ParentCollectionContentQuery;
     variables: ParentCollectionContentQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
+  "#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Only used to resolve each product's canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query CollectionProductsPage(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(\n        first: $first,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        # Same four fields the first page returns, so the walked-to pageInfo\n        # is interchangeable with it rather than a narrower shape the grid\n        # would have to special-case.\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n": {
+    return: CollectionProductsPageQuery;
+    variables: CollectionProductsPageQueryVariables;
+  };
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };

@@ -849,6 +849,20 @@ button.reset:hover:not(:has(> *)) {
   text-align: center;
 }
 
+/* Once the offer is dismissed there is no close button, and its reserved
+   fourth track becomes 2.25rem of dead space on the right — so "Visit
+   Showroom" sat a button's width in from the edge while "Book Appointment"
+   was flush against the gutter, and the pair read as misaligned. Dropping the
+   track puts both links on the same `--section-pad` gutter.
+
+   Keyed off the button being absent rather than a modifier class, so the bar
+   cannot end up in one state with the other's grid — the two are the same
+   fact. The reserved track still does its job while the offer IS up: see the
+   note above about dismissing not reflowing the links. */
+.announcement-bar:not(:has(.announcement-close)) {
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+}
+
 /* The shimmer used to animate `background-position` on the bar itself, which
    the compositor cannot run — so the topmost strip of the page repainted 60
    times a second, forever, competing with the sticky header directly below it
@@ -1033,6 +1047,11 @@ button.announcement-link {
        phones (--announce-h, .overlay--mobile) is updated with it. */
     min-height: 2rem;
     padding: 0.22rem 0.4rem;
+  }
+
+  /* Same on the phone row — the close button's track is 1.1rem here. */
+  .announcement-bar:not(:has(.announcement-close)) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   /* Phones get the short form — "10% off — claim your code" — on ONE line.
@@ -6093,9 +6112,36 @@ F
    to fill the row or piling up against the left edge. auto-fit + `1fr` used
    to be here to avoid a gappy last row, but that traded it for the worse
    bug — a small collection's cards ballooning to cover the page. */
+/* Tablet (and a phone in landscape): three. The global rule between the two
+   breakpoints is built around a 355px minimum, which at 800px wide can only
+   fit two — so an iPad showed the same two enormous cards a phone does. Three
+   is what that width actually holds at this card size. */
+@media (min-width: 48em) and (max-width: 59.99em) {
+  .collection-layout .products-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* Desktop: one column per ~230px of grid, so the count follows the window
+   with no breakpoint per count. Measured on this layout (16rem sidebar + 5vw
+   gutters): 2 at 1024, 3 at 1280, 4 at 1512, 5 at 1920.
+
+   The `1fr` maximum is the fix, and it is a spec detail rather than a taste
+   call: `auto-fill` picks its repetition count from the track's MAXIMUM when
+   that maximum is definite. With `minmax(270px, 300px)` a 1280px laptop —
+   856px of grid — could fit only floor((856+24) / (300+24)) = 2 columns, and
+   left 230px of empty page beside them. The minimum never got a say. An
+   indefinite `1fr` maximum makes the count come from the 230px minimum
+   instead, and the tracks then share the row evenly (269px each at 1280).
+
+   `auto-fill` (not auto-fit) is load-bearing twice over: it KEEPS the empty
+   tracks, so a collection with three products gets three card-sized items and
+   empty space rather than three items stretched across the page — which is
+   what auto-fit + 1fr used to do here — and those empty tracks are what
+   useGridColumns counts to size the next Load More batch. */
 @media (min-width: 60em) {
   .collection-layout .products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(min(270px, 100%), 300px));
+    grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr));
   }
 }
 
