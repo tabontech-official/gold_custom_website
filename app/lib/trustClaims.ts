@@ -32,7 +32,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
   // shipping on the customer.
   {
     title: '14 Day Returns',
-    sub: 'Exchange or store credit · Return shipping fees apply',
+    sub: 'Exchange or store credit',
     icon: 'returns',
   },
   {title: 'Made in U.S.A', sub: 'From our factory to you', icon: 'usa'},

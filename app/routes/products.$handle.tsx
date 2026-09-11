@@ -31,7 +31,15 @@ import {
   RING_SIZE_ATTRIBUTE_KEY,
   isRingProduct,
 } from '~/lib/ringSizes';
-import {isPicturePendantProduct} from '~/lib/pendantPhoto';
+import {
+  isPicturePendantProduct,
+  PENDANT_PHOTO_ATTRIBUTE_KEY,
+} from '~/lib/pendantPhoto';
+import {pieceKind, PAIRS, bestMatch} from '~/lib/pairing';
+import {
+  FrequentlyBoughtTogether,
+  type BundleItem,
+} from '~/components/FrequentlyBoughtTogether';
 import {galleryLeadImage, mediaForSelectedOptions} from '~/lib/variantMedia';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
@@ -155,7 +163,14 @@ export async function loader(args: Route.LoaderArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return {...deferredData, ...criticalData};
+  return {
+    ...deferredData,
+    ...criticalData,
+    // Deferred like the rail above, but it can only be STARTED once the
+    // product is known — which side of the pair it is on decides which
+    // collection to ask for. Not awaited, so it still never blocks the page.
+    bundlePartner: loadBundlePartner(args.context, criticalData.product),
+  };
 }
 
 type VariantGroupOption = {
@@ -317,10 +332,85 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   return {recommendedProducts};
 }
 
+/**
+ * The other half of the pair — a pendant for a chain, a chain for a pendant.
+ *
+ * Best-selling first, first one that can actually be bought wins: an
+ * out-of-stock suggestion with a dead Add button is worse than no suggestion,
+ * and the shopper cannot tell the difference between "nothing to suggest" and
+ * "we chose badly" anyway.
+ */
+async function loadBundlePartner(
+  context: Route.LoaderArgs['context'],
+  product: {
+    handle?: string;
+    title?: string | null;
+    productType?: string | null;
+    category?: {name?: string | null} | null;
+    selectedOrFirstAvailableVariant?: {price?: {amount: string}} | null;
+  },
+): Promise<BundleItem | null> {
+  const kind = pieceKind(product);
+  if (!kind) return null;
+  const pair = PAIRS[kind];
+  const price = product.selectedOrFirstAvailableVariant?.price;
+
+  try {
+    const data = await context.storefront.query(BUNDLE_PARTNER_QUERY, {
+      variables: {handle: pair.collection},
+      // Merchandising, not the buy box — same tier as the related rail.
+      cache: CacheCatalog(),
+    });
+    // `pieceKind` again on the candidate, not just trust of the collection:
+    // merchants file pieces where they sell, not where they belong (the
+    // best-selling product in `pendants` is a RING), and offering a ring as
+    // the pendant for a chain is worse than offering nothing.
+    const candidates = (data?.collection?.products?.nodes ?? [])
+      .filter(
+        (candidate: any) =>
+          candidate?.selectedOrFirstAvailableVariant?.availableForSale &&
+          pieceKind(candidate) === pair.kind,
+      )
+      .map((candidate: any) => ({
+        ...candidate,
+        // Price is part of the match, not just the label: a $4,000 chain is
+        // not what a $200 pendant is bought with.
+        price: Number(candidate.selectedOrFirstAvailableVariant?.price?.amount),
+      }));
+    // Best real match, and NO match is a valid answer — a piece in another
+    // karat or another gold is not something to wear with this one, and a
+    // filler suggestion is worth less than an empty space.
+    const node: any = bestMatch(
+      // The handle is what spreads the tie — see bestMatch. Without it every
+      // chain in the catalog is handed the same best-selling pendant.
+      {
+        handle: product.handle,
+        title: product.title,
+        price: Number(price?.amount),
+      },
+      candidates,
+    );
+    if (!node) return null;
+    return {
+      id: node.id,
+      title: node.title,
+      to: productCanonicalPath(node),
+      imageUrl: node.featuredImage?.url,
+      imageAlt: node.featuredImage?.altText,
+      price: node.selectedOrFirstAvailableVariant?.price,
+      variantId: node.selectedOrFirstAvailableVariant?.id,
+    };
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
+
 export default function Product() {
   const {
     product,
     recommendedProducts,
+    bundlePartner,
     breadcrumbContext,
     priceValidUntil,
     validFrom,
@@ -546,6 +636,30 @@ export default function Product() {
             title={title}
           />
           <ProductTrustBadges />
+          {/* Under the gallery, not in the buy column: it is a picture of
+              the pair, and it belongs with the pictures. Skipped for a
+              Picture Pendant still waiting on its photo — its line cannot be
+              built without one, and a bundle button that quietly adds a blank
+              pendant is exactly the bypass the upload gate in ProductForm
+              exists to prevent. */}
+          {!(needsPhoto && !photoUrl) && (
+            <FrequentlyBoughtTogether
+              current={{
+                id: product.id,
+                title: product.title,
+                imageUrl: selectedVariant?.image?.url,
+                imageAlt: selectedVariant?.image?.altText,
+                price: selectedVariant?.price,
+                variantId: selectedVariant?.availableForSale
+                  ? selectedVariant.id
+                  : null,
+                attributes: photoUrl
+                  ? [{key: PENDANT_PHOTO_ATTRIBUTE_KEY, value: photoUrl}]
+                  : undefined,
+              }}
+              partner={bundlePartner}
+            />
+          )}
         </div>
 
         {/* Wrapper exists for mobile only: it is `display: contents` below 48em
@@ -1633,6 +1747,42 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
   ) @inContext(country: $country, language: $language) {
     productRecommendations(productHandle: $productHandle) {
       ...RecommendedItem
+    }
+  }
+` as const;
+
+const BUNDLE_PARTNER_QUERY = `#graphql
+  query BundlePartner(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(first: 250, sortKey: BEST_SELLING) {
+        nodes {
+          id
+          title
+          handle
+          # Resolve the card's canonical /collections/<category>/products/<handle>
+          # link — same reason as the recommendations query above.
+          productType
+          category {
+            name
+          }
+          featuredImage {
+            url
+            altText
+          }
+          selectedOrFirstAvailableVariant {
+            id
+            availableForSale
+            price {
+              amount
+              currencyCode
+            }
+          }
+        }
+      }
     }
   }
 ` as const;

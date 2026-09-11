@@ -2886,6 +2886,37 @@ export type ProductRecommendationsQuery = {
   >;
 };
 
+export type BundlePartnerQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type BundlePartnerQuery = {
+  collection?: StorefrontAPI.Maybe<{
+    products: {
+      nodes: Array<
+        Pick<
+          StorefrontAPI.Product,
+          'id' | 'title' | 'handle' | 'productType'
+        > & {
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Image, 'url' | 'altText'>
+          >;
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            }
+          >;
+        }
+      >;
+    };
+  }>;
+};
+
 export type AjaxProductQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -3460,6 +3491,10 @@ interface GeneratedQueryTypes {
   "#graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n": {
     return: ProductRecommendationsQuery;
     variables: ProductRecommendationsQueryVariables;
+  };
+  "#graphql\n  query BundlePartner(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 250, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          title\n          handle\n          # Resolve the card's canonical /collections/<category>/products/<handle>\n          # link — same reason as the recommendations query above.\n          productType\n          category {\n            name\n          }\n          featuredImage {\n            url\n            altText\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n": {
+    return: BundlePartnerQuery;
+    variables: BundlePartnerQueryVariables;
   };
   '#graphql\n  query AjaxProduct($country: CountryCode, $language: LanguageCode, $handle: String!)\n  @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      id\n      title\n      handle\n      descriptionHtml\n      vendor\n      productType\n      createdAt\n      updatedAt\n      publishedAt\n      options {\n        name\n        optionValues {\n          name\n        }\n      }\n      images(first: 100) {\n        nodes {\n          id\n          url\n          altText\n        }\n      }\n      variants(first: 100) {\n        nodes {\n          id\n          title\n          sku\n          availableForSale\n          requiresShipping\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n          selectedOptions {\n            name\n            value\n          }\n          image {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
     return: AjaxProductQuery;

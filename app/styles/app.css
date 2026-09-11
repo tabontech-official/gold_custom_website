@@ -7328,6 +7328,13 @@ html.header-primary-hidden
   width: 100%;
   max-width: 48rem;
   justify-self: center;
+  /* The gallery's thumbnail rail, declared on the COLUMN so everything under
+     the image can line up with the image card rather than with the rail.
+     .product-grid-gallery reads both of these too (custom properties
+     inherit), so the rail and the things aligned to it cannot drift apart. */
+  --pgg-rail-w: 3.5rem;
+  --pgg-rail-gap: 0.9rem;
+  --pgg-stage-offset: calc(var(--pgg-rail-w) + var(--pgg-rail-gap));
 }
 
 .product-image img {
@@ -7342,11 +7349,10 @@ html.header-primary-hidden
   /* Thumbnails are an index, not a second gallery — small enough that the
      stage stays the only thing competing for attention. Kept deliberately
      small (premium PDPs treat the rail as a quiet index, not a filmstrip). */
-  --pgg-rail-w: 3.5rem;
   position: relative;
   display: flex;
   align-items: stretch;
-  gap: 0.9rem;
+  gap: var(--pgg-rail-gap);
   align-self: start;
   /* Matches the buy column's own cap so neither side runs away from the
      other on a wide screen — the gallery's grid track otherwise has no
@@ -7819,6 +7825,20 @@ html.header-primary-hidden
   .product-gallery-column,
   .product-buy-column {
     display: contents;
+  }
+
+  /* No thumbnail rail at this width, so nothing to clear: the badges and the
+     Frequently Bought Together card go back to the full page width.
+
+     Zeroed HERE, on the token, rather than with `margin-left: 0` on each
+     card — those rules live later in the file, and a media query adds no
+     specificity, so a later `margin-left: var(--pgg-stage-offset)` wins over
+     an earlier override and left the badges indented on every phone. The
+     custom property is read at use time, so setting it here is what actually
+     reaches them. The column is `display: contents`, which changes nothing
+     about inheritance. */
+  .product-gallery-column {
+    --pgg-stage-offset: 0px;
   }
 
   .product-heading {
@@ -8906,12 +8926,13 @@ html.header-primary-hidden
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(0.5rem, 1.2vw, 0.85rem);
-  /* Same cap as .product-grid-gallery right above it in the same column —
-     neither has a container of its own that bounds them, so without this
-     the badges row (nothing else stopping it) stretched wider than the
-     image on a wide screen while the gallery stayed capped. */
-  max-width: 48rem;
-  width: 100%;
+  /* Flush with the IMAGE CARD, not with the gallery: the column is capped
+     at the same 48rem the gallery is, so stretching to it and pushing right
+     past the thumbnail rail leaves both edges level with the big image. The
+     badges used to sit a rail-width wider on the left than the picture above
+     them. */
+  align-self: stretch;
+  margin-left: var(--pgg-stage-offset);
   box-sizing: border-box;
   /* .pdp-card's own uniform padding — this rule comes after it in the file,
      so this wins outright; kept as its own value rather than the shared
@@ -9140,6 +9161,170 @@ html.header-primary-hidden
   .pdp-faq p {
     font-size: 0.82rem;
     padding-right: 0.9rem;
+  }
+}
+
+/* Frequently Bought Together — a picture of the pair, under the gallery.
+   The whole section — heading included — is a .pdp-card, the same surface
+   the trust badges and the buy panel use. The heading is still the page's
+   plain h2, the one "You May Also Like" uses.
+
+   Same edges as the badges above it — level with the IMAGE CARD, clear of
+   the thumbnail rail. Both read --pgg-stage-offset, so the three of them
+   move together if the rail ever changes width. */
+.fbt {
+  align-self: stretch;
+  margin-left: var(--pgg-stage-offset);
+  margin-top: clamp(0.25rem, 1vw, 0.75rem);
+}
+
+.fbt-title {
+  margin: 0 0 0.9rem;
+}
+
+.fbt-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem clamp(1rem, 3vw, 2rem);
+}
+
+.fbt-thumbs {
+  display: flex;
+  align-items: center;
+  /* The `+` between the thumbs owns the gap, so no column gap here. */
+  gap: 0;
+}
+
+.fbt-thumb-cell {
+  display: flex;
+  align-items: center;
+}
+
+.fbt-plus {
+  padding: 0 0.6rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-ink-soft);
+}
+
+.fbt-thumb {
+  display: block;
+  width: clamp(78px, 20vw, 108px);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.fbt-thumb img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.fbt-buy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  /* Takes the leftover row when both fit, drops to its own full-width row
+     when they don't — which is what keeps the button reachable on a phone
+     without a second set of breakpoint rules. */
+  flex: 1 1 12rem;
+  min-width: 11rem;
+}
+
+.fbt-total {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.fbt-total strong {
+  font-size: 1.25rem;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--color-ink);
+}
+
+.fbt-add {
+  width: 100%;
+  min-height: 2.75rem;
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: #fff;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 48em) {
+  /* The gallery column dissolves on mobile (display: contents), so this
+     needs its own place in the ordered stack: after the trust badges. The
+     thumbnail rail is hidden at this width, so there is nothing to clear. */
+  .fbt {
+    order: 5;
+    margin-left: 0;
+  }
+
+  .fbt.pdp-card {
+    padding: 0.9rem;
+  }
+
+  .fbt-title {
+    margin-bottom: 0.7rem;
+  }
+
+  /* One row on a phone too — pictures, price, button — rather than the
+     button dropping to a line of its own. Everything below is what buys the
+     horizontal room for that: smaller thumbs, a tighter `+`, and a button
+     sized to the space that is left rather than to the label. */
+  .fbt-body {
+    flex-wrap: nowrap;
+    gap: 0.7rem;
+  }
+
+  .fbt-thumbs {
+    flex: 0 0 auto;
+  }
+
+  .fbt-thumb {
+    width: clamp(58px, 17vw, 84px);
+  }
+
+  .fbt-plus {
+    padding: 0 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  /* min-width: 0 is the load-bearing one: without it the flex item refuses
+     to shrink below its content and pushes the row wide enough to wrap. */
+  .fbt-buy {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.4rem;
+  }
+
+  .fbt-total {
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+  }
+
+  .fbt-total strong {
+    font-size: 1rem;
+  }
+
+  .fbt-add {
+    min-height: 2.2rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.65rem;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
   }
 }
 
