@@ -38,7 +38,7 @@ export function isPageChange(next: string, current: string) {
  * window the skeleton exists to close.
  */
 export function shouldShowSkeleton(next: string, current: string) {
-A A A A A A A A   A A AbortControllerA  ssrWSWSWSW  SWSXEDWS3SXWSXSX WSSDSDWSWSAQAWSSWEDEDFRFRTGTGTGTGUJ,  if (!isPageChange(next, current)) return false;
+  // AbortControllerA  ssrWSWSWSW  SWSXEDWS3SXWSXSX WSSDSDWSWSAQAWSSWEDEDFRFRTGTGTGTGUJ,  if (!isPageChange(next, current)) return false;
   const from = routeSkeletonVariant(current);
   const to = routeSkeletonVariant(next);
   return !(from === 'product' && to === 'product');
