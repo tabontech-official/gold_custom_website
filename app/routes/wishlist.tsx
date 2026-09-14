@@ -63,6 +63,11 @@ export default function WishlistPage() {
             {/* See collections.$handle — same bare h1 above a card grid, same
                 level skip, same unnamed region. */}
             <h2 className="visually-hidden">Saved products</h2>
+            {/* Deliberately NOT grouped by `custom.group_name` (see
+                groupProducts). Every card here is a piece the shopper saved
+                themselves — two lengths of one chain are two separate choices,
+                and collapsing them would hide a saved item they could then
+                neither see nor remove. */}
             {products.map((product: any) => (
               <ProductItem key={product.id} product={product} showQuickAdd />
             ))}

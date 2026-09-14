@@ -56,6 +56,7 @@ import {
   type Faq,
 } from '~/lib/faqs';
 import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
+import {groupProducts} from '~/lib/productGroups';
 import {
   batchSize,
   DEFAULT_COLUMNS,
@@ -469,17 +470,28 @@ async function loadCollectionProducts(
 
   if (!collection) return null;
 
-  const nodes = [...collection.products.nodes];
+  // `count` is a number of CARDS, not raw products: products sharing a
+  // `custom.group_name` render once (see groupProducts). Grouping always runs
+  // over the whole walk from the first product, so a group's representative is
+  // its first product in the active sort, and no later Load More can bring a
+  // second member of a group back.
+  const raw = [...collection.products.nodes];
+  let nodes = groupProducts(raw);
   let pageInfo = collection.products.pageInfo;
 
   while (nodes.length < count && pageInfo?.hasNextPage && pageInfo?.endCursor) {
+    // Grouping can collapse part of every page, so the exact shortfall is not
+    // enough to fill the batch; a full page makes that one round trip rather
+    // than a shrinking series of them. The extra cards are sliced off below.
+    // ponytail: fixed 250 continuation pages, size them from observed
+    // collapse rate if continuation payloads ever matter.
     const data = await storefront.query(COLLECTION_PRODUCTS_QUERY, {
       variables: {
         handle,
         filters,
         sortKey,
         reverse,
-        first: Math.min(count - nodes.length, PAGE_LIMIT),
+        first: PAGE_LIMIT,
         after: pageInfo.endCursor,
       },
       cache: CacheCatalog(),
@@ -489,11 +501,29 @@ async function loadCollectionProducts(
     // rather than looping: `hasNextPage` from the last good page still tells
     // the grid truthfully whether to offer Load More.
     if (!next?.nodes?.length) break;
-    nodes.push(...next.nodes);
+    raw.push(...next.nodes);
+    nodes = groupProducts(raw);
     pageInfo = next.pageInfo;
   }
 
-  return {...collection, products: {...collection.products, nodes, pageInfo}};
+  // Cards beyond `count` were fetched but not asked for. They are real,
+  // unseen products, so their existence alone means there is more to load.
+  const hasMore = nodes.length > count;
+  const groupedAway = raw.length - nodes.length;
+  nodes = nodes.slice(0, count);
+
+  return {
+    ...collection,
+    products: {
+      ...collection.products,
+      nodes,
+      pageInfo: {...pageInfo, hasNextPage: hasMore || pageInfo.hasNextPage},
+      // Products hidden behind a group representative so far. Non-zero means
+      // Shopify's facet total counts products, not cards, and is not a total
+      // this grid can ever reach.
+      groupedAway,
+    },
+  };
 }
 
 /**
@@ -810,7 +840,10 @@ export default function Collection() {
                           collectionProductCount. It tracks the active filters,
                           so it reads "23 of 23" once one is applied. */}
                       <span className="load-more-count">
-                        {productCount
+                        {/* Shopify's total counts products; once a group has
+                            collapsed several into one card it overstates what
+                            this grid can show, so the bare count is used. */}
+                        {productCount && !collection.products.groupedAway
                           ? `${nodes.length} of ${productCount} pieces shown`
                           : `${nodes.length} pieces shown`}
                       </span>
@@ -898,6 +931,10 @@ const PRODUCT_ITEM_FRAGMENT = `#graphql
     title
     # New Arrival badge — see cardBadges() in ProductItem.tsx.
     publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # Only used to resolve each product's canonical
     # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
     # Without them productCanonicalPath falls back to the flat

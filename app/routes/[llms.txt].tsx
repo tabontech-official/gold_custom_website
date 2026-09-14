@@ -2,6 +2,7 @@ import type {Route} from './+types/[llms.txt]';
 import {CATEGORIES, productCanonicalPath} from '~/lib/categories';
 import {siteOrigin} from '~/lib/seo';
 import {CacheCatalog, CacheStatic} from '~/lib/cache';
+import {groupProducts} from '~/lib/productGroups';
 
 /**
  * /llms.txt — a machine-readable store summary for LLM agents.
@@ -103,11 +104,12 @@ function productSection(
     productType?: string | null;
     category?: {name?: string | null} | null;
     priceRange?: {minVariantPrice?: {amount?: string; currencyCode?: string}};
+    groupName?: {value?: string | null} | null;
   }>,
 ) {
   if (!products.length) return '';
 
-  const lines = products.map((product) => {
+  const lines = groupProducts(products).map((product) => {
     const price = product.priceRange?.minVariantPrice;
     const amount = price?.amount ? Number(price.amount) : null;
     // Canonical /collections/<category>/products/<handle>, matching the
@@ -138,6 +140,10 @@ const LLMS_PRODUCTS_QUERY = `#graphql
       nodes {
         handle
         title
+        # Products sharing a group name are listed once — see groupProducts.
+        groupName: metafield(namespace: "custom", key: "group_name") {
+          value
+        }
         productType
         category {
           name

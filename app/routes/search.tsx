@@ -20,6 +20,7 @@ import {
   getSearchSortFromParam,
 } from '~/lib/collectionFilter';
 import {CacheCatalog} from '~/lib/cache';
+import {groupProducts} from '~/lib/productGroups';
 
 // Result pages are thin/duplicative and would burn crawl budget across every
 // query permutation, so the route is noindex — but still followable so
@@ -177,6 +178,10 @@ const SEARCH_PRODUCT_FRAGMENT = `#graphql
       name
     }
     publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     title
     trackingParameters
     vendor
@@ -430,12 +435,16 @@ async function regularSearch({
     pages,
     products: {
       ...products,
-      nodes: sortSearchProducts(
-        [
-          ...(bySku?.nodes ?? []),
-          ...wordMatched.filter((product) => !seenViaSku.has(product.id)),
-        ],
-        sort,
+      // Grouped last, so each group's card is its first product in the order
+      // the shopper actually sees — including a price sort.
+      nodes: groupProducts(
+        sortSearchProducts(
+          [
+            ...(bySku?.nodes ?? []),
+            ...wordMatched.filter((product) => !seenViaSku.has(product.id)),
+          ],
+          sort,
+        ),
       ),
     },
   };
@@ -462,6 +471,10 @@ const PREDICTIVE_SEARCH_PRODUCT_FRAGMENT = `#graphql
     id
     title
     handle
+    # Products sharing a group name show once — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # Resolve each suggestion's canonical
     # /collections/<category>/products/<handle> link, so picking one out of the
     # dropdown doesn't cost a redirect.
@@ -669,12 +682,14 @@ async function predictiveSearch({
   // SKU hits are already exact — same reasoning as regularSearch — so they
   // skip productsMatchingTerm and go in first.
   const seenViaSku = new Set(bySku?.nodes.map((product) => product.id));
-  const matching = [
+  // Grouped before the cap, in ranked order, so each group is represented by
+  // its best-ranked member and the dropdown's slots go to distinct pieces.
+  const matching = groupProducts([
     ...(bySku?.nodes ?? []),
     ...productsMatchingTerm(term, pool).filter(
       (product) => !seenViaSku.has(product.id),
     ),
-  ].slice(0, MAX_DROPDOWN_PRODUCTS);
+  ]).slice(0, MAX_DROPDOWN_PRODUCTS);
 
   return {
     type,

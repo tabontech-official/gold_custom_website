@@ -1124,6 +1124,7 @@ export type LlmsProductsQuery = {
   products: {
     nodes: Array<
       Pick<StorefrontAPI.Product, 'handle' | 'title' | 'productType'> & {
+        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         category?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.TaxonomyCategory, 'name'>
         >;
@@ -1166,6 +1167,7 @@ export type FeaturedCollectionFragment = Pick<
   products: {
     nodes: Array<
       Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         priceRange: {
           minVariantPrice: Pick<
             StorefrontAPI.MoneyV2,
@@ -1206,6 +1208,9 @@ export type FeaturedCollectionQuery = {
       products: {
         nodes: Array<
           Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
             priceRange: {
               minVariantPrice: Pick<
                 StorefrontAPI.MoneyV2,
@@ -1386,6 +1391,7 @@ export type RecommendedProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
     minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
@@ -1417,6 +1423,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1452,6 +1461,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1487,6 +1499,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1522,6 +1537,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1557,6 +1575,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1592,6 +1613,9 @@ export type RecommendedProductsQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1626,6 +1650,7 @@ export type BestSellingProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
     minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
@@ -1658,6 +1683,9 @@ export type BestSellingProductsQuery = {
             StorefrontAPI.Product,
             'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
           > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
             >;
@@ -1695,6 +1723,7 @@ export type GenderArrivalProductFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
     minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
@@ -1726,6 +1755,9 @@ export type NewArrivalsByGenderQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1761,6 +1793,9 @@ export type NewArrivalsByGenderQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -1844,6 +1879,7 @@ export type ProductNodeFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
   selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
@@ -1874,6 +1910,7 @@ export type CollectionProductsQuery = {
   products: {
     nodes: Array<
       Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
         selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
@@ -1916,6 +1953,9 @@ export type MenuDisplayProductsQuery = {
     products: {
       nodes: Array<
         Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle'> & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           priceRange: {
             minVariantPrice: Pick<
               StorefrontAPI.MoneyV2,
@@ -1947,6 +1987,9 @@ export type CollectionByHandleQuery = {
     products: {
       nodes: Array<
         Pick<StorefrontAPI.Product, 'id' | 'title' | 'handle' | 'tags'> & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
           selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
@@ -2110,6 +2153,7 @@ export type ProductItemFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   featuredImage?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Image, 'id' | 'altText' | 'url' | 'width' | 'height'>
@@ -2243,6 +2287,9 @@ export type CollectionProductsPageQuery = {
           StorefrontAPI.Product,
           'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -2324,6 +2371,9 @@ export type CollectionQuery = {
             StorefrontAPI.Product,
             'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
           > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
             >;
@@ -2370,6 +2420,9 @@ export type CollectionQuery = {
             StorefrontAPI.Product,
             'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
           > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
             category?: StorefrontAPI.Maybe<
               Pick<StorefrontAPI.TaxonomyCategory, 'name'>
             >;
@@ -2550,6 +2603,7 @@ export type ProductFragment = Pick<
   faqs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantLabel?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantGroup?: StorefrontAPI.Maybe<{
     references?: StorefrontAPI.Maybe<{
       nodes: Array<
@@ -2734,6 +2788,7 @@ export type ProductQuery = {
         Pick<StorefrontAPI.Metafield, 'value'>
       >;
       variantName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
       variantGroup?: StorefrontAPI.Maybe<{
         references?: StorefrontAPI.Maybe<{
           nodes: Array<
@@ -2893,6 +2948,7 @@ export type RecommendedItemFragment = Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
 > & {
+  groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   category?: StorefrontAPI.Maybe<Pick<StorefrontAPI.TaxonomyCategory, 'name'>>;
   priceRange: {
     minVariantPrice: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
@@ -2926,6 +2982,7 @@ export type ProductRecommendationsQuery = {
         StorefrontAPI.Product,
         'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
       > & {
+        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         category?: StorefrontAPI.Maybe<
           Pick<StorefrontAPI.TaxonomyCategory, 'name'>
         >;
@@ -2955,6 +3012,53 @@ export type ProductRecommendationsQuery = {
   >;
 };
 
+export type RecommendationTopUpQueryVariables = StorefrontAPI.Exact<{
+  handle: StorefrontAPI.Scalars['String']['input'];
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+}>;
+
+export type RecommendationTopUpQuery = {
+  collection?: StorefrontAPI.Maybe<{
+    products: {
+      nodes: Array<
+        Pick<
+          StorefrontAPI.Product,
+          'id' | 'title' | 'handle' | 'publishedAt' | 'productType' | 'tags'
+        > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          category?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+          >;
+          priceRange: {
+            minVariantPrice: Pick<
+              StorefrontAPI.MoneyV2,
+              'amount' | 'currencyCode'
+            >;
+          };
+          featuredImage?: StorefrontAPI.Maybe<
+            Pick<
+              StorefrontAPI.Image,
+              'id' | 'url' | 'altText' | 'width' | 'height'
+            >
+          >;
+          collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
+          selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+              price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              compareAtPrice?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+              >;
+            }
+          >;
+        }
+      >;
+    };
+  }>;
+};
+
 export type BundlePartnerQueryVariables = StorefrontAPI.Exact<{
   handle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -2969,6 +3073,9 @@ export type BundlePartnerQuery = {
           StorefrontAPI.Product,
           'id' | 'title' | 'handle' | 'productType'
         > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -3048,6 +3155,7 @@ export type SearchProductFragment = {__typename: 'Product'} & Pick<
     category?: StorefrontAPI.Maybe<
       Pick<StorefrontAPI.TaxonomyCategory, 'name'>
     >;
+    groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
     featuredImage?: StorefrontAPI.Maybe<
       Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
     >;
@@ -3114,6 +3222,9 @@ export type RegularSearchQuery = {
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           featuredImage?: StorefrontAPI.Maybe<
             Pick<
               StorefrontAPI.Image,
@@ -3169,6 +3280,9 @@ export type RegularSearchQuery = {
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           featuredImage?: StorefrontAPI.Maybe<
             Pick<
               StorefrontAPI.Image,
@@ -3217,6 +3331,9 @@ export type RegularSearchQuery = {
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           featuredImage?: StorefrontAPI.Maybe<
             Pick<
               StorefrontAPI.Image,
@@ -3256,6 +3373,7 @@ export type PredictiveProductFragment = {__typename: 'Product'} & Pick<
   StorefrontAPI.Product,
   'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
 > & {
+    groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
     category?: StorefrontAPI.Maybe<
       Pick<StorefrontAPI.TaxonomyCategory, 'name'>
     >;
@@ -3292,6 +3410,9 @@ export type QuickSearchQuery = {
         StorefrontAPI.Product,
         'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
       > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -3315,6 +3436,9 @@ export type QuickSearchQuery = {
         StorefrontAPI.Product,
         'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
       > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -3338,6 +3462,9 @@ export type QuickSearchQuery = {
         StorefrontAPI.Product,
         'id' | 'title' | 'handle' | 'productType' | 'trackingParameters'
       > & {
+          groupName?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
           category?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.TaxonomyCategory, 'name'>
           >;
@@ -3461,7 +3588,7 @@ interface GeneratedQueryTypes {
     return: ShopPayInstallmentsQuery;
     variables: ShopPayInstallmentsQueryVariables;
   };
-  '#graphql\n  query LlmsProducts($country: CountryCode, $language: LanguageCode)\n   @inContext(country: $country, language: $language) {\n    products(first: 20, sortKey: BEST_SELLING) {\n      nodes {\n        handle\n        title\n        productType\n        category {\n          name\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query LlmsProducts($country: CountryCode, $language: LanguageCode)\n   @inContext(country: $country, language: $language) {\n    products(first: 20, sortKey: BEST_SELLING) {\n      nodes {\n        handle\n        title\n        # Products sharing a group name are listed once — see groupProducts.\n        groupName: metafield(namespace: "custom", key: "group_name") {\n          value\n        }\n        productType\n        category {\n          name\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
     return: LlmsProductsQuery;
     variables: LlmsProductsQueryVariables;
   };
@@ -3473,7 +3600,7 @@ interface GeneratedQueryTypes {
     return: StoreRobotsQuery;
     variables: StoreRobotsQueryVariables;
   };
-  '#graphql\n  fragment FeaturedCollection on Collection {\n    id\n    title\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    handle\n    # No sortKey: the default is COLLECTION_DEFAULT, which is the collection\'s\n    # OWN order — the manual arrangement set in the admin. Naming MANUAL here\n    # instead would break the rail the day someone switches "All" to sort by\n    # best-selling or price, because MANUAL returns nothing then.\n    #\n    # 24, not 12: the rail reveals RAIL_BATCH (8) at a time as you scroll, so\n    # 12 ran dry after a single reveal.\n    products(first: 24) {\n      nodes {\n        id\n        title\n        handle\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n  query FeaturedCollection($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "all") {\n      ...FeaturedCollection\n    }\n  }\n': {
+  '#graphql\n  fragment FeaturedCollection on Collection {\n    id\n    title\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    handle\n    # No sortKey: the default is COLLECTION_DEFAULT, which is the collection\'s\n    # OWN order — the manual arrangement set in the admin. Naming MANUAL here\n    # instead would break the rail the day someone switches "All" to sort by\n    # best-selling or price, because MANUAL returns nothing then.\n    #\n    # 24, not 12: the rail reveals RAIL_BATCH (8) at a time as you scroll, so\n    # 12 ran dry after a single reveal.\n    products(first: 24) {\n      nodes {\n        id\n        title\n        handle\n        # Products sharing a group name render as one card — see groupProducts.\n        groupName: metafield(namespace: "custom", key: "group_name") {\n          value\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n  query FeaturedCollection($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "all") {\n      ...FeaturedCollection\n    }\n  }\n': {
     return: FeaturedCollectionQuery;
     variables: FeaturedCollectionQueryVariables;
   };
@@ -3485,15 +3612,15 @@ interface GeneratedQueryTypes {
     return: HeroContentQuery;
     variables: HeroContentQueryVariables;
   };
-  '#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Resolve each card\'s canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  # One newest-first slice per department, not one flat newest-first query\n  # across the whole catalogue. A flat query reads as "New Arrivals" but is\n  # really "whatever category got bulk-uploaded most recently" — a single\n  # same-day batch of earrings can fill all 24 slots and shut out every other\n  # department for as long as it stays the most recent thing in the store.\n  # Six aliased department collections, four each, interleaved client-side\n  # (see balancedNewArrivals below), keeps the rail representative of the\n  # whole catalogue instead of whichever category shipped last.\n  #\n  # Not engagement-rings or diamond: both are cross-cuts of the six below\n  # (57/144 engagement-rings products are also in rings; 184/309 diamond\n  # products are also in pendants) rather than distinct product types, so\n  # including them risks the same product filling two of the rail\'s slots.\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    bracelets: collection(handle: "bracelets") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    chains: collection(handle: "chains") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    necklaces: collection(handle: "necklaces") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    earrings: collection(handle: "earrings") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    pendants: collection(handle: "pendants") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    rings: collection(handle: "rings") {\n      products(first: 4, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment RecommendedProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Resolve each card\'s canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  # One newest-first slice per department, not one flat newest-first query\n  # across the whole catalogue. A flat query reads as "New Arrivals" but is\n  # really "whatever category got bulk-uploaded most recently" — a single\n  # same-day batch of earrings can fill all 24 slots and shut out every other\n  # department for as long as it stays the most recent thing in the store.\n  # Six aliased department collections, eight each, interleaved client-side\n  # (see balancedNewArrivals below), keeps the rail representative of the\n  # whole catalogue instead of whichever category shipped last.\n  #\n  # Not engagement-rings or diamond: both are cross-cuts of the six below\n  # (57/144 engagement-rings products are also in rings; 184/309 diamond\n  # products are also in pendants) rather than distinct product types, so\n  # including them risks the same product filling two of the rail\'s slots.\n  query RecommendedProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    bracelets: collection(handle: "bracelets") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    chains: collection(handle: "chains") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    necklaces: collection(handle: "necklaces") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    earrings: collection(handle: "earrings") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    pendants: collection(handle: "pendants") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n    rings: collection(handle: "rings") {\n      products(first: 8, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...RecommendedProduct\n        }\n      }\n    }\n  }\n': {
     return: RecommendedProductsQuery;
     variables: RecommendedProductsQueryVariables;
   };
-  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "best-sellers") {\n      handle\n      products(first: 24) {\n        nodes {\n          ...BestSellingProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment BestSellingProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query BestSellingProducts ($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collection(handle: "best-sellers") {\n      handle\n      products(first: 24) {\n        nodes {\n          ...BestSellingProduct\n        }\n      }\n    }\n  }\n': {
     return: BestSellingProductsQuery;
     variables: BestSellingProductsQueryVariables;
   };
-  '#graphql\n  fragment GenderArrivalProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query NewArrivalsByGender($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    womens: collection(handle: "womens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n    mens: collection(handle: "mens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  fragment GenderArrivalProduct on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # See RecommendedProduct — canonical link resolution.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query NewArrivalsByGender($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    womens: collection(handle: "womens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n    mens: collection(handle: "mens") {\n      products(first: 24, sortKey: CREATED, reverse: true) {\n        nodes {\n          ...GenderArrivalProduct\n        }\n      }\n    }\n  }\n': {
     return: NewArrivalsByGenderQuery;
     variables: NewArrivalsByGenderQueryVariables;
   };
@@ -3505,15 +3632,15 @@ interface GeneratedQueryTypes {
     return: AppointmentProductQuery;
     variables: AppointmentProductQueryVariables;
   };
-  '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          tags\n          # Card badges. Tags drive Karat/Diamond and best-sellers\n          # membership drives Best Seller. See cardBadges() in\n          # ProductItem.tsx for why only those, and only from here.\n          tags\n          collections(first: 15) {\n            nodes {\n              handle\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            # Card badges: a Sale badge must come from a real\n            # compare-at price, never from a tag someone typed.\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
+  '#graphql\n        fragment ProductNode on Product {\n          id\n          title\n          handle\n          # Products sharing a group name show once — see groupProducts.\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          tags\n          # Card badges. Tags drive Karat/Diamond and best-sellers\n          # membership drives Best Seller. See cardBadges() in\n          # ProductItem.tsx for why only those, and only from here.\n          tags\n          collections(first: 15) {\n            nodes {\n              handle\n            }\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            # Card badges: a Sale badge must come from a real\n            # compare-at price, never from a tag someone typed.\n            price {\n              amount\n              currencyCode\n            }\n            compareAtPrice {\n              amount\n              currencyCode\n            }\n          }\n          variants(first: 1) {\n            nodes {\n              id\n              availableForSale\n            }\n          }\n          priceRange {\n            minVariantPrice {\n              amount\n              currencyCode\n            }\n          }\n          featuredImage {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n\n        query CollectionProducts($q: String, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          products(first: 48, query: $q) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      ': {
     return: CollectionProductsQuery;
     variables: CollectionProductsQueryVariables;
   };
-  '#graphql\n        query MenuDisplayProducts($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          collection(handle: $handle) {\n            products(first: 100) {\n              nodes {\n                id\n                title\n                handle\n                priceRange {\n                  minVariantPrice {\n                    amount\n                    currencyCode\n                  }\n                }\n                featuredImage {\n                  id\n                  url\n                  altText\n                  width\n                  height\n                }\n                collections(first: 50) {\n                  nodes {\n                    handle\n                  }\n                }\n              }\n            }\n          }\n        }\n      ': {
+  '#graphql\n        query MenuDisplayProducts($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n          collection(handle: $handle) {\n            products(first: 100) {\n              nodes {\n                id\n                title\n                handle\n                # Products sharing a group name show once — see groupProducts.\n                groupName: metafield(namespace: "custom", key: "group_name") {\n                  value\n                }\n                priceRange {\n                  minVariantPrice {\n                    amount\n                    currencyCode\n                  }\n                }\n                featuredImage {\n                  id\n                  url\n                  altText\n                  width\n                  height\n                }\n                collections(first: 50) {\n                  nodes {\n                    handle\n                  }\n                }\n              }\n            }\n          }\n        }\n      ': {
     return: MenuDisplayProductsQuery;
     variables: MenuDisplayProductsQueryVariables;
   };
-  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        tags\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
+  '#graphql\n      fragment ProductNode on Product {\n        id\n        title\n        handle\n        # Products sharing a group name show once — see groupProducts.\n        groupName: metafield(namespace: "custom", key: "group_name") {\n          value\n        }\n        tags\n        # Card badges. Tags drive Karat/Diamond and best-sellers\n        # membership drives Best Seller. See cardBadges() in\n        # ProductItem.tsx for why only those, and only from here.\n        tags\n        collections(first: 15) {\n          nodes {\n            handle\n          }\n        }\n        selectedOrFirstAvailableVariant {\n          id\n          availableForSale\n          # Card badges: a Sale badge must come from a real\n          # compare-at price, never from a tag someone typed.\n          price {\n            amount\n            currencyCode\n          }\n          compareAtPrice {\n            amount\n            currencyCode\n          }\n        }\n        variants(first: 1) {\n          nodes {\n            id\n            availableForSale\n          }\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n        featuredImage {\n          id\n          url\n          altText\n          width\n          height\n        }\n      }\n\n      query CollectionByHandle($handle: String!, $country: CountryCode, $language: LanguageCode) @inContext(country: $country, language: $language) {\n        collection(handle: $handle) {\n          image {\n            url\n            altText\n          }\n          products(first: 48, filters: {available: true}) {\n            nodes {\n              ...ProductNode\n            }\n          }\n        }\n      }\n    ': {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };
@@ -3537,11 +3664,11 @@ interface GeneratedQueryTypes {
     return: ParentCollectionContentQuery;
     variables: ParentCollectionContentQueryVariables;
   };
-  "#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Only used to resolve each product's canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList's Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query CollectionProductsPage(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(\n        first: $first,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        # Same four fields the first page returns, so the walked-to pageInfo\n        # is interchangeable with it rather than a narrower shape the grid\n        # would have to special-case.\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n": {
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  query CollectionProductsPage(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(\n        first: $first,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          ...ProductItem\n        }\n        # Same four fields the first page returns, so the walked-to pageInfo\n        # is interchangeable with it rather than a narrower shape the grid\n        # would have to special-case.\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n    }\n  }\n': {
     return: CollectionProductsPageQuery;
     variables: CollectionProductsPageQueryVariables;
   };
-  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product\'s canonical\n    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.\n    # Without them productCanonicalPath falls back to the flat\n    # /products/<handle>, which 301s — and a structured-data list of redirects\n    # is worth less than no list at all.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n  #graphql\n  fragment CollectionContent on Collection {\n    collectionFaqs: metafield(namespace: "custom", key: "collections_faqs") {\n      # Today this is a metaobject reference and value is just the gid. If the\n      # metafield is ever retyped to a plain json one holding the array itself,\n      # value carries it and the loader reads that instead.\n      value\n      reference {\n        ... on Metaobject {\n          handle\n          fields {\n            key\n            value\n          }\n        }\n      }\n    }\n  }\n\n  query Collection(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $first: Int\n    $last: Int\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      id\n      handle\n      title\n      description\n      # Rendered on the page below the grid. The flat description above stays\n      # for meta tags; this keeps the editor\'s headings, lists and links so the\n      # copy can be laid out properly.\n      descriptionHtml\n      # Merchant-authored SEO overrides from the Shopify admin; these win over\n      # the raw title/description in the page\'s meta tags.\n      seo {\n        title\n        description\n      }\n      image {\n        url\n        altText\n        # width/height are for the share card, not the page: pageSeo needs them\n        # to tell a usable collection image from one too small to render as a\n        # large preview (rings.webp is 400x363) and fall back to the brand shot.\n        width\n        height\n      }\n      ...CollectionContent\n      products(\n        first: $first,\n        last: $last,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        filters {\n          id\n          label\n          type\n          values {\n            id\n            label\n            count\n            input\n          }\n        }\n        nodes {\n          ...ProductItem\n        }\n        pageInfo {\n          hasPreviousPage\n          hasNextPage\n          endCursor\n          startCursor\n        }\n      }\n      bestSelling: products(first: 8, sortKey: BEST_SELLING) {\n        nodes {\n          ...ProductItem\n        }\n      }\n    }\n  }\n': {
     return: CollectionQuery;
     variables: CollectionQueryVariables;
   };
@@ -3557,15 +3684,19 @@ interface GeneratedQueryTypes {
     return: PolicyQuery;
     variables: PolicyQueryVariables;
   };
-  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    productType\n    # Drives the Picture Pendant photo upload — see isPicturePendantProduct.\n    tags\n    descriptionHtml\n    description\n    # VideoObject.uploadDate. See buildVideoJsonLd\'s caller for why this\n    # stands in for the real upload date.\n    publishedAt\n    encodedVariantExistence\n    encodedVariantAvailability\n    category {\n      name\n    }\n    faqs: metafield(namespace: "custom", key: "ai_faq") {\n      value\n    }\n    variantLabel: metafield(namespace: "custom", key: "variant_label") {\n      value\n    }\n    variantName: metafield(namespace: "custom", key: "variant_name") {\n      value\n    }\n    variantGroup: metafield(namespace: "custom", key: "varianthandle") {\n      references(first: 30) {\n        nodes {\n          ... on Product {\n            handle\n            availableForSale\n            variantName: metafield(namespace: "custom", key: "variant_name") {\n              value\n            }\n          }\n        }\n      }\n    }\n    media(first: 25) {\n      nodes {\n        __typename\n        id\n        alt\n        mediaContentType\n        previewImage {\n          url\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n        ... on Video {\n          sources {\n            url\n            mimeType\n          }\n        }\n        ... on ExternalVideo {\n          embedUrl\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n    weight\n    weightUnit\n  }\n\n\n': {
+  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    productType\n    # Drives the Picture Pendant photo upload — see isPicturePendantProduct.\n    tags\n    descriptionHtml\n    description\n    # VideoObject.uploadDate. See buildVideoJsonLd\'s caller for why this\n    # stands in for the real upload date.\n    publishedAt\n    encodedVariantExistence\n    encodedVariantAvailability\n    category {\n      name\n    }\n    faqs: metafield(namespace: "custom", key: "ai_faq") {\n      value\n    }\n    variantLabel: metafield(namespace: "custom", key: "variant_label") {\n      value\n    }\n    variantName: metafield(namespace: "custom", key: "variant_name") {\n      value\n    }\n    # Keeps other products of this group out of the recommendation rail and\n    # the bundle partner — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    variantGroup: metafield(namespace: "custom", key: "varianthandle") {\n      references(first: 30) {\n        nodes {\n          ... on Product {\n            handle\n            availableForSale\n            variantName: metafield(namespace: "custom", key: "variant_name") {\n              value\n            }\n          }\n        }\n      }\n    }\n    media(first: 25) {\n      nodes {\n        __typename\n        id\n        alt\n        mediaContentType\n        previewImage {\n          url\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n        ... on Video {\n          sources {\n            url\n            mimeType\n          }\n        }\n        ... on ExternalVideo {\n          embedUrl\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n    weight\n    weightUnit\n  }\n\n\n': {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };
-  "#graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Resolve each card's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n": {
+  '#graphql\n  #graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Resolve each card\'s canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  query ProductRecommendations(\n    $productHandle: String\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    productRecommendations(productHandle: $productHandle) {\n      ...RecommendedItem\n    }\n  }\n': {
     return: ProductRecommendationsQuery;
     variables: ProductRecommendationsQueryVariables;
   };
-  "#graphql\n  query BundlePartner(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 250, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          title\n          handle\n          # Resolve the card's canonical /collections/<category>/products/<handle>\n          # link — same reason as the recommendations query above.\n          productType\n          category {\n            name\n          }\n          featuredImage {\n            url\n            altText\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n": {
+  '#graphql\n  #graphql\n  fragment RecommendedItem on Product {\n    id\n    title\n    handle\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Resolve each card\'s canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  query RecommendationTopUp(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 48) {\n        nodes {\n          ...RecommendedItem\n        }\n      }\n    }\n  }\n': {
+    return: RecommendationTopUpQuery;
+    variables: RecommendationTopUpQueryVariables;
+  };
+  '#graphql\n  query BundlePartner(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 250, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          title\n          handle\n          # Excludes the viewed product\'s own group — see loadBundlePartner.\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          # Resolve the card\'s canonical /collections/<category>/products/<handle>\n          # link — same reason as the recommendations query above.\n          productType\n          category {\n            name\n          }\n          featuredImage {\n            url\n            altText\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: BundlePartnerQuery;
     variables: BundlePartnerQueryVariables;
   };
@@ -3573,11 +3704,11 @@ interface GeneratedQueryTypes {
     return: AjaxProductQuery;
     variables: AjaxProductQueryVariables;
   };
-  "#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $first: Int\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      first: $first,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n    }\n    # Same wildcarded, in-progress-word pass the dropdown already runs (see\n    # QUICK_SEARCH_QUERY) — without it this page and the dropdown gather\n    # candidates two different ways for the identical term, so a product the\n    # dropdown found could be ranked outside this query's own top $first and\n    # never make it here. Unioned into the candidate pool before filtering,\n    # same as the dropdown does.\n    partial: search(\n      query: $partialTerm,\n      first: $first,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n    # SKU is not one of the fields Shopify's plain-text search matches — a\n    # shopper pasting a SKU code got the same OR-every-word noise as a title\n    # search, with the actual product often not even in it. variants.sku: is\n    # the field-qualified query that actually reaches it; see regularSearch\n    # for how these results skip the word-matching filter everything else\n    # here goes through, since a SKU hit is already exact.\n    bySku: search(\n      query: $skuTerm,\n      first: 10,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result's canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n": {
+  '#graphql\n  query RegularSearch(\n    $country: CountryCode\n    $first: Int\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productFilters: [ProductFilter!]\n    $sortKey: SearchSortKeys\n    $reverse: Boolean\n  ) @inContext(country: $country, language: $language) {\n    pages: search(\n      query: $term,\n      types: [PAGE],\n      first: $first,\n    ) {\n      nodes {\n        ...on Page {\n          ...SearchPage\n        }\n      }\n    }\n    products: search(\n      first: $first,\n      query: $term,\n      sortKey: $sortKey,\n      reverse: $reverse,\n      productFilters: $productFilters,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n      # The facets available for THIS result set, so the rail offers only\n      # filters that can actually narrow the current search.\n      productFilters {\n        id\n        label\n        type\n        values {\n          id\n          label\n          count\n          input\n        }\n      }\n    }\n    # Same wildcarded, in-progress-word pass the dropdown already runs (see\n    # QUICK_SEARCH_QUERY) — without it this page and the dropdown gather\n    # candidates two different ways for the identical term, so a product the\n    # dropdown found could be ranked outside this query\'s own top $first and\n    # never make it here. Unioned into the candidate pool before filtering,\n    # same as the dropdown does.\n    partial: search(\n      query: $partialTerm,\n      first: $first,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n    # SKU is not one of the fields Shopify\'s plain-text search matches — a\n    # shopper pasting a SKU code got the same OR-every-word noise as a title\n    # search, with the actual product often not even in it. variants.sku: is\n    # the field-qualified query that actually reaches it; see regularSearch\n    # for how these results skip the word-matching filter everything else\n    # here goes through, since a SKU hit is already exact.\n    bySku: search(\n      query: $skuTerm,\n      first: 10,\n      types: [PRODUCT],\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...SearchProduct\n        }\n      }\n    }\n  }\n  #graphql\n  fragment SearchProduct on Product {\n    __typename\n    handle\n    id\n    # Resolve each result\'s canonical /collections/<category>/products/<handle>\n    # link. Without them the card falls back to the flat path, which 301s.\n    productType\n    category {\n      name\n    }\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    title\n    trackingParameters\n    vendor\n    featuredImage {\n      id\n      url\n      altText\n      width\n      height\n    }\n    priceRange {\n      minVariantPrice {\n        amount\n        currencyCode\n      }\n    }\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n      selectedOptions {\n        name\n        value\n      }\n      product {\n        handle\n        title\n      }\n    }\n  }\n\n  #graphql\n  fragment SearchPage on Page {\n     __typename\n     handle\n    id\n    title\n    trackingParameters\n  }\n\n': {
     return: RegularSearchQuery;
     variables: RegularSearchQueryVariables;
   };
-  '#graphql\n  query QuickSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $term,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      totalCount\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # Same search with the in-progress word wildcarded. Shopify matches whole\n    # tokens, so a shopper on their way to "oval" gets exactly zero results for\n    # "ova" — this alias is what keeps the list alive mid-word.\n    partial: search(\n      query: $partialTerm,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # SKU is not a field Shopify\'s plain-text search matches — variants.sku:\n    # is (see skuQuery). A shopper who pastes a code deserves the same exact\n    # hit here as on the results page, not the OR-every-word noise everything\n    # above returns for it.\n    bySku: search(\n      query: $skuTerm,\n      types: [PRODUCT],\n      first: 10,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    predictiveSearch(\n      limit: 10,\n      limitScope: EACH,\n      query: $term,\n      types: [QUERY],\n    ) {\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Resolve each suggestion\'s canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn\'t cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n': {
+  '#graphql\n  query QuickSearch(\n    $country: CountryCode\n    $language: LanguageCode\n    $term: String!\n    $partialTerm: String!\n    $skuTerm: String!\n    $productCount: Int!\n  ) @inContext(country: $country, language: $language) {\n    products: search(\n      query: $term,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      totalCount\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # Same search with the in-progress word wildcarded. Shopify matches whole\n    # tokens, so a shopper on their way to "oval" gets exactly zero results for\n    # "ova" — this alias is what keeps the list alive mid-word.\n    partial: search(\n      query: $partialTerm,\n      types: [PRODUCT],\n      first: $productCount,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    # SKU is not a field Shopify\'s plain-text search matches — variants.sku:\n    # is (see skuQuery). A shopper who pastes a code deserves the same exact\n    # hit here as on the results page, not the OR-every-word noise everything\n    # above returns for it.\n    bySku: search(\n      query: $skuTerm,\n      types: [PRODUCT],\n      first: 10,\n      unavailableProducts: LAST,\n    ) {\n      nodes {\n        ...on Product {\n          ...PredictiveProduct\n        }\n      }\n    }\n    predictiveSearch(\n      limit: 10,\n      limitScope: EACH,\n      query: $term,\n      types: [QUERY],\n    ) {\n      queries {\n        ...PredictiveQuery\n      }\n    }\n  }\n  #graphql\n  fragment PredictiveProduct on Product {\n    __typename\n    id\n    title\n    handle\n    # Products sharing a group name show once — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Resolve each suggestion\'s canonical\n    # /collections/<category>/products/<handle> link, so picking one out of the\n    # dropdown doesn\'t cost a redirect.\n    productType\n    category {\n      name\n    }\n    trackingParameters\n    selectedOrFirstAvailableVariant(\n      selectedOptions: []\n      ignoreUnknownOptions: true\n      caseInsensitiveMatch: true\n    ) {\n      id\n      image {\n        url\n        altText\n        width\n        height\n      }\n      price {\n        amount\n        currencyCode\n      }\n    }\n  }\n\n  #graphql\n  fragment PredictiveQuery on SearchQuerySuggestion {\n    __typename\n    text\n    styledText\n    trackingParameters\n  }\n\n': {
     return: QuickSearchQuery;
     variables: QuickSearchQueryVariables;
   };

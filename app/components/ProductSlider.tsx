@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import {ProductItem} from '~/components/ProductItem';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
+import {groupProducts} from '~/lib/productGroups';
 import type {
   ProductItemFragment,
   RecommendedProductFragment,
@@ -28,6 +29,9 @@ export function ProductSlider({
   showHeading?: boolean;
 }) {
   if (!products.length) return null;
+  // ponytail: not rendered anywhere today; guarded so reviving it cannot
+  // bypass group collapsing — see groupProducts.
+  products = groupProducts(products);
 
   return (
     <section className="slider-section">

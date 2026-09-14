@@ -35,6 +35,7 @@ import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
 import {getGoldRates} from '~/lib/goldRates';
 import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 import {CacheCatalog, CacheContent} from '~/lib/cache';
+import {groupProducts} from '~/lib/productGroups';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
@@ -795,7 +796,7 @@ const RAIL_BATCH = 8; // products shown initially and revealed per scroll-to-end
 // A single-row, swipeable product rail. Renders a batch and appends the next
 // batch as the end scrolls into view, so more pieces appear as you scroll.
 function ProductRail({
-  products,
+  products: ungrouped,
   ariaLabel,
   emptyMessage = 'No products to show right now.',
   collectionHandle,
@@ -806,6 +807,11 @@ function ProductRail({
   /** Set when the rail IS a collection's products, so cards link into it. */
   collectionHandle?: string;
 }) {
+  // Every homepage rail renders through here, so this is the one place they
+  // all collapse products sharing a `custom.group_name` — see groupProducts.
+  // Grouped before the reveal batching, so a group can never come back in a
+  // later scroll-to-end batch.
+  const products = groupProducts(ungrouped);
   const [shown, setShown] = useState(RAIL_BATCH);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
@@ -1096,6 +1102,10 @@ const FEATURED_COLLECTION_QUERY = `#graphql
         id
         title
         handle
+        # Products sharing a group name render as one card — see groupProducts.
+        groupName: metafield(namespace: "custom", key: "group_name") {
+          value
+        }
         priceRange {
           minVariantPrice {
             amount
@@ -1256,6 +1266,10 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
     handle
     # New Arrival badge — see cardBadges() in ProductItem.tsx.
     publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # Resolve each card's canonical /collections/<category>/products/<handle>
     # link. Without them the card falls back to the flat path, which 301s.
     productType
@@ -1304,7 +1318,7 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   # really "whatever category got bulk-uploaded most recently" — a single
   # same-day batch of earrings can fill all 24 slots and shut out every other
   # department for as long as it stays the most recent thing in the store.
-  # Six aliased department collections, four each, interleaved client-side
+  # Six aliased department collections, eight each, interleaved client-side
   # (see balancedNewArrivals below), keeps the rail representative of the
   # whole catalogue instead of whichever category shipped last.
   #
@@ -1315,42 +1329,42 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   query RecommendedProducts ($country: CountryCode, $language: LanguageCode)
     @inContext(country: $country, language: $language) {
     bracelets: collection(handle: "bracelets") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
       }
     }
     chains: collection(handle: "chains") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
       }
     }
     necklaces: collection(handle: "necklaces") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
       }
     }
     earrings: collection(handle: "earrings") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
       }
     }
     pendants: collection(handle: "pendants") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
       }
     }
     rings: collection(handle: "rings") {
-      products(first: 4, sortKey: CREATED, reverse: true) {
+      products(first: 8, sortKey: CREATED, reverse: true) {
         nodes {
           ...RecommendedProduct
         }
@@ -1371,6 +1385,11 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
  * overlap (see the query comment), but "barely" is not "never", and one
  * product occupying two of the rail's 24 slots would just reintroduce the
  * imbalance this exists to fix.
+ *
+ * Grouped (see groupProducts) BEFORE the 24 cap, not after: a bulk upload is
+ * usually one piece in six lengths sharing a group name, so four newest per
+ * department collapsed to as few as three and the rail came up short. Eight per
+ * department, interleaved, grouped, then capped keeps all 24 slots filled.
  */
 function balancedNewArrivals(
   response: RecommendedProductsQuery | null | undefined,
@@ -1386,7 +1405,7 @@ function balancedNewArrivals(
 
   const seen = new Set<string>();
   const merged: RecommendedProductFragment[] = [];
-  for (let row = 0; merged.length < 24 && lanes.some((lane) => row < lane.length); row++) {
+  for (let row = 0; lanes.some((lane) => row < lane.length); row++) {
     for (const lane of lanes) {
       const product = lane[row];
       if (!product || seen.has(product.id)) continue;
@@ -1394,7 +1413,7 @@ function balancedNewArrivals(
       merged.push(product);
     }
   }
-  return merged;
+  return groupProducts(merged).slice(0, 24);
 }
 
 // ponytail: 24 fetched up front; the rail reveals them in batches as you
@@ -1406,6 +1425,10 @@ const BEST_SELLING_PRODUCTS_QUERY = `#graphql
     handle
     # New Arrival badge — see cardBadges() in ProductItem.tsx.
     publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # See RecommendedProduct — canonical link resolution.
     productType
     category {
@@ -1469,6 +1492,10 @@ const NEW_ARRIVALS_BY_GENDER_QUERY = `#graphql
     handle
     # New Arrival badge — see cardBadges() in ProductItem.tsx.
     publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # See RecommendedProduct — canonical link resolution.
     productType
     category {

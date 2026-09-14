@@ -1,4 +1,5 @@
 import {CacheCatalog} from '~/lib/cache';
+import {groupProducts} from '~/lib/productGroups';
 export async function loader({request, context}: any) {
   try {
     const url = new URL(request.url);
@@ -19,6 +20,10 @@ export async function loader({request, context}: any) {
           id
           title
           handle
+          # Products sharing a group name show once — see groupProducts.
+          groupName: metafield(namespace: "custom", key: "group_name") {
+            value
+          }
           tags
           # Card badges. Tags drive Karat/Diamond and best-sellers
           # membership drives Best Seller. See cardBadges() in
@@ -78,7 +83,7 @@ export async function loader({request, context}: any) {
         cache: CacheCatalog(),
       });
 
-      const products = result?.products?.nodes ?? [];
+      const products = groupProducts(result?.products?.nodes ?? []);
       return new Response(JSON.stringify({products}), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -100,6 +105,10 @@ export async function loader({request, context}: any) {
                 id
                 title
                 handle
+                # Products sharing a group name show once — see groupProducts.
+                groupName: metafield(namespace: "custom", key: "group_name") {
+                  value
+                }
                 priceRange {
                   minVariantPrice {
                     amount
@@ -130,7 +139,9 @@ export async function loader({request, context}: any) {
       });
 
       return new Response(
-        JSON.stringify({products: menuResult?.collection?.products?.nodes ?? []}),
+        JSON.stringify({
+          products: groupProducts(menuResult?.collection?.products?.nodes ?? []),
+        }),
         {headers: {'Content-Type': 'application/json'}},
       );
     }
@@ -141,6 +152,10 @@ export async function loader({request, context}: any) {
         id
         title
         handle
+        # Products sharing a group name show once — see groupProducts.
+        groupName: metafield(namespace: "custom", key: "group_name") {
+          value
+        }
         tags
         # Card badges. Tags drive Karat/Diamond and best-sellers
         # membership drives Best Seller. See cardBadges() in
@@ -206,7 +221,7 @@ export async function loader({request, context}: any) {
       cache: CacheCatalog(),
     });
 
-    const products = result?.collection?.products?.nodes ?? [];
+    const products = groupProducts(result?.collection?.products?.nodes ?? []);
     const image = result?.collection?.image ?? null;
 
     return new Response(JSON.stringify({products, image}), {

@@ -10,8 +10,12 @@ import {
   useSelectedOptionInUrlParam,
   useAnalytics,
 } from '@shopify/hydrogen';
-import type {ProductRecommendationsQuery} from 'storefrontapi.generated';
+import type {
+  ProductRecommendationsQuery,
+  RecommendedItemFragment,
+} from 'storefrontapi.generated';
 import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
+import {groupProducts, productGroupKey} from '~/lib/productGroups';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -166,6 +170,13 @@ export async function loader(args: Route.LoaderArgs) {
   return {
     ...deferredData,
     ...criticalData,
+    // Still deferred: Shopify's recommendations started above, in parallel with
+    // the product; this only waits on them to finish the rail.
+    recommendedProducts: recommendationCards(
+      args.context,
+      criticalData.product,
+      deferredData.recommendedProducts,
+    ),
     // Deferred like the rail above, but it can only be STARTED once the
     // product is known — which side of the pair it is on decides which
     // collection to ask for. Not awaited, so it still never blocks the page.
@@ -332,6 +343,61 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   return {recommendedProducts};
 }
 
+/** Cards the "You May Also Like" rail shows. */
+const RECOMMENDATION_LIMIT = 8;
+
+/**
+ * The "You May Also Like" cards: Shopify's recommendations first, in Shopify's
+ * order, topped up from the product's own category collection when there are
+ * not enough.
+ *
+ * Shopify returns at most ten, and many of those are other lengths of the
+ * piece being viewed. Once the current product's group and repeated groups are
+ * removed (see groupProducts), a Miami Cuban chain page was left with four
+ * cards and a bracelet page with one. The category collection is the same one
+ * the page's own "similar" link points at, so the top-up is the most closely
+ * related stock the store has; it is only fetched when the rail is short.
+ *
+ * Grouping runs over recommendations and top-up together, so a top-up product
+ * can never repeat a group already in the rail or bring back the current
+ * product's group. Blank group names stay independent, and ids are deduped
+ * because a blank-group product can be in both lists.
+ */
+async function recommendationCards(
+  context: Route.LoaderArgs['context'],
+  product: Parameters<typeof getProductCategoryMatch>[0] & {
+    id: string;
+    groupName?: {value?: string | null} | null;
+  },
+  recommendations: Promise<ProductRecommendationsQuery | null>,
+): Promise<RecommendedItemFragment[]> {
+  const pick = (candidates: RecommendedItemFragment[]) =>
+    groupProducts(
+      candidates.filter(
+        (candidate, index) =>
+          candidate.id !== product.id &&
+          candidates.findIndex((other) => other.id === candidate.id) === index,
+      ),
+      [product],
+    ).slice(0, RECOMMENDATION_LIMIT);
+
+  const recommended = (await recommendations)?.productRecommendations ?? [];
+  const cards = pick(recommended);
+  if (cards.length >= RECOMMENDATION_LIMIT) return cards;
+
+  try {
+    const data = await context.storefront.query(RECOMMENDATION_TOP_UP_QUERY, {
+      variables: {handle: getProductCategoryMatch(product)?.handle ?? 'all'},
+      cache: CacheCatalog(),
+    });
+    return pick([...recommended, ...(data?.collection?.products.nodes ?? [])]);
+  } catch (error) {
+    // A failed top-up still leaves the rail Shopify's own recommendations.
+    console.error(error);
+    return cards;
+  }
+}
+
 /**
  * The other half of the pair — a pendant for a chain, a chain for a pendant.
  *
@@ -348,6 +414,7 @@ async function loadBundlePartner(
     productType?: string | null;
     category?: {name?: string | null} | null;
     selectedOrFirstAvailableVariant?: {price?: {amount: string}} | null;
+    groupName?: {value?: string | null} | null;
   },
 ): Promise<BundleItem | null> {
   const kind = pieceKind(product);
@@ -369,7 +436,16 @@ async function loadBundlePartner(
       .filter(
         (candidate: any) =>
           candidate?.selectedOrFirstAvailableVariant?.availableForSale &&
-          pieceKind(candidate) === pair.kind,
+          pieceKind(candidate) === pair.kind &&
+          // Never another version of the piece being viewed. Only the current
+          // group is excluded — candidates are not collapsed among themselves,
+          // because this picks ONE partner by price match (bestMatch), and
+          // limiting it to each group's first member would pick worse matches
+          // for a section that can never show two cards of one group anyway.
+          !(
+            productGroupKey(product) &&
+            productGroupKey(candidate) === productGroupKey(product)
+          ),
       )
       .map((candidate: any) => ({
         ...candidate,
@@ -1295,7 +1371,8 @@ function RelatedProducts({
   products,
   viewAllTo,
 }: {
-  products: Promise<ProductRecommendationsQuery | null>;
+  /** Already grouped, topped up and capped — see recommendationCards. */
+  products: Promise<RecommendedItemFragment[]>;
   viewAllTo: string;
 }) {
   return (
@@ -1307,8 +1384,7 @@ function RelatedProducts({
       </div>
       <Suspense fallback={<RelatedProductsSkeleton />}>
         <Await resolve={products}>
-          {(data) => {
-            const items = (data?.productRecommendations ?? []).slice(0, 8);
+          {(items) => {
             if (!items.length) return null;
             return (
               <HorizontalCarousel
@@ -1603,6 +1679,11 @@ const PRODUCT_FRAGMENT = `#graphql
     variantName: metafield(namespace: "custom", key: "variant_name") {
       value
     }
+    # Keeps other products of this group out of the recommendation rail and
+    # the bundle partner — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     variantGroup: metafield(namespace: "custom", key: "varianthandle") {
       references(first: 30) {
         nodes {
@@ -1690,11 +1771,17 @@ const PRODUCT_QUERY = `#graphql
   ${PRODUCT_FRAGMENT}
 ` as const;
 
-const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+// Shared by the recommendations and their top-up, so both render identical
+// cards.
+const RECOMMENDED_ITEM_FRAGMENT = `#graphql
   fragment RecommendedItem on Product {
     id
     title
     handle
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
     # New Arrival badge — see cardBadges() in ProductItem.tsx.
     publishedAt
     # Resolve each card's canonical /collections/<category>/products/<handle>
@@ -1740,6 +1827,10 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
       }
     }
   }
+` as const;
+
+const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
+  ${RECOMMENDED_ITEM_FRAGMENT}
   query ProductRecommendations(
     $productHandle: String
     $country: CountryCode
@@ -1747,6 +1838,29 @@ const PRODUCT_RECOMMENDATIONS_QUERY = `#graphql
   ) @inContext(country: $country, language: $language) {
     productRecommendations(productHandle: $productHandle) {
       ...RecommendedItem
+    }
+  }
+` as const;
+
+/**
+ * Top-up for a short "You May Also Like" rail — see recommendationCards. The
+ * category collection in its own order, the same list its collection page
+ * shows. 48 so that heavy grouping (six lengths of one chain in a row) still
+ * leaves enough distinct pieces to fill the rail.
+ */
+const RECOMMENDATION_TOP_UP_QUERY = `#graphql
+  ${RECOMMENDED_ITEM_FRAGMENT}
+  query RecommendationTopUp(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(first: 48) {
+        nodes {
+          ...RecommendedItem
+        }
+      }
     }
   }
 ` as const;
@@ -1763,6 +1877,10 @@ const BUNDLE_PARTNER_QUERY = `#graphql
           id
           title
           handle
+          # Excludes the viewed product's own group — see loadBundlePartner.
+          groupName: metafield(namespace: "custom", key: "group_name") {
+            value
+          }
           # Resolve the card's canonical /collections/<category>/products/<handle>
           # link — same reason as the recommendations query above.
           productType
