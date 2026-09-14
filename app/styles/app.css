@@ -7926,14 +7926,32 @@ html.header-primary-hidden
     padding: 0.5rem 0 0.5rem 0.6rem;
   }
 
+  /* Dissolves like the two column wrappers above, so its three cards join the
+     same ordered stack. That is what lets Frequently Bought Together — which
+     lives in the gallery column in the DOM — sit directly above the
+     description card here without moving it in the markup. Its own gap and
+     padding are the column's already (same --pdp-mobile-gap, and padding was
+     0), so nothing changes but the ordering. */
   .product-main {
+    display: contents;
+  }
+
+  .product-financing {
     order: 3;
-    gap: var(--pdp-mobile-gap);
-    padding: 0;
+  }
+
+  .product-purchase-card {
+    order: 4;
+  }
+
+  /* .fbt is order 5 — set with the rest of its mobile rules further down. */
+
+  .product-details-card {
+    order: 6;
   }
 
   .product-trust-badges {
-    order: 4;
+    order: 7;
     margin-inline: 0;
   }
 
@@ -9338,8 +9356,10 @@ html.header-primary-hidden
 
 @media (max-width: 48em) {
   /* The gallery column dissolves on mobile (display: contents), so this
-     needs its own place in the ordered stack: after the trust badges. The
-     thumbnail rail is hidden at this width, so there is nothing to clear. */
+     needs its own place in the ordered stack: directly above the description
+     card (order 6), which .product-main dissolving puts in the same stack.
+     The thumbnail rail is hidden at this width, so there is nothing to
+     clear. */
   .fbt {
     order: 5;
     margin-left: 0;
