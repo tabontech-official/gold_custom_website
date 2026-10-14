@@ -1,7 +1,6 @@
 # Design Spec — Gold Jewelry Storefront
 
-Reference: [bayamjewelry.com](https://bayamjewelry.com/) (fine jewelry & watches retailer, NYC showroom).
-This document translates that reference into a design system implemented on top of the Shopify Hydrogen skeleton in this repo.
+This document describes the Gold Custom design system implemented on top of the Shopify Hydrogen skeleton in this repo.
 
 ## 1. Brand Mood
 

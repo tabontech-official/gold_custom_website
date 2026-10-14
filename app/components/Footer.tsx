@@ -2,6 +2,7 @@ import {Suspense} from 'react';
 import {Await, Link, NavLink, useFetcher} from 'react-router';
 import type {FooterQuery, HeaderQuery} from 'storefrontapi.generated';
 import {useTrackConversion} from '~/hooks/useTrackConversion';
+import {PHONE} from '~/lib/seo';
 
 interface FooterProps {
   footer: Promise<FooterQuery | null>;
@@ -148,10 +149,10 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                           <li>
                             <a
                               className="footer-contact-link"
-                              href="tel:+13236888837"
+                              href={PHONE.tel}
                             >
                               <PhoneIcon />
-                              <span>+1 (323) 688-8837</span>
+                              <span>{PHONE.display}</span>
                             </a>
                           </li>
                           <li>

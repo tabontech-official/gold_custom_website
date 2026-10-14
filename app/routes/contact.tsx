@@ -2,7 +2,7 @@ import {Link} from 'react-router';
 import {useAnalytics} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {Route} from './+types/contact';
-import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -92,11 +92,11 @@ export default function Contact() {
           <div className="contact-cards">
             <a
               className="contact-card"
-              href="tel:+13236888837"
+              href={PHONE.tel}
               onClick={trackContactClick('phone')}
             >
               <span className="contact-card-label">Call us</span>
-              <strong>+1 (323) 688-8837</strong>
+              <strong>{PHONE.display}</strong>
               <span>Fastest for anything time-sensitive</span>
             </a>
             <a

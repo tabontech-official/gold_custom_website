@@ -4,7 +4,7 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/showroom';
 import {AppointmentModal} from '~/components/AppointmentModal';
-import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -132,8 +132,8 @@ export default function Showroom() {
               Pershing Square station is a four-minute walk.
             </p>
             <div className="svc-actions svc-actions-tight">
-              <a className="btn btn-primary svc-cta" href="tel:+13236888837">
-                +1 (323) 688-8837
+              <a className="btn btn-primary svc-cta" href={PHONE.tel}>
+                {PHONE.display}
               </a>
               <a
                 className="btn svc-cta svc-cta-dark"

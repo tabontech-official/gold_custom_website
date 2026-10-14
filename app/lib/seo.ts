@@ -555,9 +555,17 @@ export function pageSeo(
  * delete `openingHoursSpecification` rather than let the markup claim more
  * than the page does.
  */
+/** The one store phone number — header, footer, pages and schema all read it. */
+export const PHONE = {
+  tel: 'tel:+13236888837',
+  e164: '+13236888837',
+  display: '+1 (323) 688-8837',
+  local: '(323) 688-8837',
+} as const;
+
 const STORE = {
   name: 'Gold Custom LA',
-  telephone: '+1-323-688-8837',
+  telephone: PHONE.e164,
   email: 'mr10k@goldcustom.com',
   streetAddress: '550 S Hill Street Suite 660',
   addressLocality: 'Los Angeles',

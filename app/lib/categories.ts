@@ -29,7 +29,7 @@ export const CATEGORIES: StorefrontCategory[] = [
     handle: 'chains',
     tags: [
       'All Products',
-      'Cuban Link',
+      'Cuban Link',                                                                                                                      
       'Figaro Chain',
       'Rope Chain',
       'Box Chain',

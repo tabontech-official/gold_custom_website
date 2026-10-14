@@ -21,6 +21,7 @@ import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
 import {SignupModal} from '~/components/SignupModal';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
+import {PHONE} from '~/lib/seo';
 import {
   MEGA_MENU,
   departmentLinkState,
@@ -1006,7 +1007,11 @@ function HeaderCtas({
       >
         <UserIcon />
       </NavLink>
-      <a className="header-cta-icon" href="tel:9299305655" aria-label="Call us">
+      <a
+        className="header-cta-icon"
+        href={PHONE.tel}
+        aria-label={`Call Gold Custom ${PHONE.local}`}
+      >
         <PhoneIcon />
       </a>
       <CartToggle cart={cart} />

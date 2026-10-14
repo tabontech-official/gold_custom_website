@@ -4,7 +4,7 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/repairs';
 import {AppointmentModal} from '~/components/AppointmentModal';
-import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -124,7 +124,7 @@ export default function Repairs() {
               anyone picks up a torch.
             </p>
             <div className="svc-actions">
-              <a className="btn btn-primary svc-cta" href="tel:+13236888837">
+              <a className="btn btn-primary svc-cta" href={PHONE.tel}>
                 Call for an estimate
               </a>
               <Link className="btn svc-cta svc-cta-ghost" to="/showroom">
@@ -225,7 +225,7 @@ export default function Repairs() {
             <br />
             Los Angeles, CA 90013
             <br />
-            <a href="tel:+13236888837">+1 (323) 688-8837</a>
+            <a href={PHONE.tel}>{PHONE.display}</a>
           </address>
         </div>
       </section>

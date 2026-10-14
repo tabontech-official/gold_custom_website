@@ -4,7 +4,7 @@ import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/custom-jewelry';
 import {CustomDesignBuilder} from '~/components/CustomDesignBuilder';
-import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import customDesignStyles from '~/styles/custom-design.css?url';
 
 export const links: Route.LinksFunction = () => [
@@ -66,9 +66,9 @@ export default function CustomJewelry() {
                 </button>
                 <a
                   className="btn svc-cta svc-cta-ghost"
-                  href="tel:+13236888837"
+                  href={PHONE.tel}
                 >
-                  Call +1 (323) 688-8837
+                  Call {PHONE.display}
                 </a>
               </div>
               <ul className="svc-facts">

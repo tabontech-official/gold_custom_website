@@ -4404,12 +4404,6 @@ F
     height: 2.4rem;
   }
 
-  /* Phone CTA eats space icons need on narrow screens; tel: link is still
-     reachable from the footer / contact page. */
-  a.header-cta-icon[href^='tel:'] {
-    display: none;
-  }
-
   .hero {
     min-height: auto;
     padding: 0;
