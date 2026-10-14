@@ -2,6 +2,15 @@ import * as serverBuild from 'virtual:react-router/server-build';
 import {createRequestHandler, storefrontRedirect} from '@shopify/hydrogen';
 import {createHydrogenRouterContext} from '~/lib/context';
 
+// ponytail: a literal map. Shopify Admin > Navigation > URL redirects (read by
+// storefrontRedirect below) is the place for anything a merchant should edit.
+const LEGACY_REDIRECTS: Record<string, string> = {
+  '/pages/contact': '/contact',
+  '/pages/custom-jewelry': '/custom-jewelry',
+  '/policies/contact-information': '/contact',
+  '/agents.md': '/llms.txt',
+};
+
 /**
  * Export a fetch handler in module format.
  */
@@ -38,6 +47,14 @@ export default {
       }
 
       if (response.status === 404) {
+        // Old Liquid theme paths with no 1:1 route here. The theme now sends
+        // every visitor to the same path on goldcustom.com, so these must land.
+        const url = new URL(request.url);
+        const legacy = LEGACY_REDIRECTS[url.pathname.replace(/\/$/, '')];
+        if (legacy) {
+          return Response.redirect(new URL(legacy + url.search, url), 301);
+        }
+
         /**
          * Check for redirects only when there's a 404 from the app.
          * If the redirect doesn't exist, then `storefrontRedirect`
