@@ -191,7 +191,11 @@ export function ProductForm({
           {!needsPhoto && (
           <AddToCartButton
             className="btn product-atc product-purchase-action"
-            disabled={!selectedVariant || !selectedVariant.availableForSale}
+            disabled={
+              !selectedVariant ||
+              !selectedVariant.availableForSale ||
+              !(Number(selectedVariant.price?.amount) > 0)
+            }
             onClick={() => {
               open('cart');
             }}

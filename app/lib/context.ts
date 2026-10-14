@@ -5,6 +5,7 @@ import {
 } from '@shopify/hydrogen';
 import {AppSession} from '~/lib/session';
 import {CART_QUERY_FRAGMENT} from '~/lib/fragments';
+import {guardZeroPrice} from '~/lib/zeroPriceGuard';
 
 // Define the additional context object
 const additionalContext = {
@@ -64,6 +65,10 @@ export async function createHydrogenRouterContext(
       withCache: createWithCache({cache, waitUntil, request}),
     },
   );
+
+  // Every cart write (/cart, /cart/add.js, /cart/<id>:<qty>) goes through this
+  // one object, so one wrap blocks $0 / draft variants on all of them.
+  guardZeroPrice(hydrogenContext.cart, hydrogenContext.storefront as any);
 
   return hydrogenContext;
 }

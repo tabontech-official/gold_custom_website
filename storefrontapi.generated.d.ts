@@ -1115,6 +1115,22 @@ export type ShopPayInstallmentsQuery = {
   };
 };
 
+export type ZeroPriceGuardQueryVariables = StorefrontAPI.Exact<{
+  ids:
+    | Array<StorefrontAPI.Scalars['ID']['input']>
+    | StorefrontAPI.Scalars['ID']['input'];
+}>;
+
+export type ZeroPriceGuardQuery = {
+  nodes: Array<
+    StorefrontAPI.Maybe<
+      Pick<StorefrontAPI.ProductVariant, 'id'> & {
+        price: Pick<StorefrontAPI.MoneyV2, 'amount'>;
+      }
+    >
+  >;
+};
+
 export type LlmsProductsQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -3587,6 +3603,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query ShopPayInstallments($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    shop {\n      shopPayInstallmentsPricing {\n        minPrice { amount currencyCode }\n        maxPrice { amount currencyCode }\n        financingPlans {\n          minPrice { amount currencyCode }\n          maxPrice { amount currencyCode }\n          terms {\n            apr\n            loanType\n            installmentsCount { count }\n          }\n        }\n      }\n    }\n  }\n': {
     return: ShopPayInstallmentsQuery;
     variables: ShopPayInstallmentsQueryVariables;
+  };
+  '#graphql\n  query ZeroPriceGuard($ids: [ID!]!) {\n    nodes(ids: $ids) {\n      ... on ProductVariant {\n        id\n        price {\n          amount\n        }\n      }\n    }\n  }\n': {
+    return: ZeroPriceGuardQuery;
+    variables: ZeroPriceGuardQueryVariables;
   };
   '#graphql\n  query LlmsProducts($country: CountryCode, $language: LanguageCode)\n   @inContext(country: $country, language: $language) {\n    products(first: 20, sortKey: BEST_SELLING) {\n      nodes {\n        handle\n        title\n        # Products sharing a group name are listed once — see groupProducts.\n        groupName: metafield(namespace: "custom", key: "group_name") {\n          value\n        }\n        productType\n        category {\n          name\n        }\n        priceRange {\n          minVariantPrice {\n            amount\n            currencyCode\n          }\n        }\n      }\n    }\n  }\n': {
     return: LlmsProductsQuery;
