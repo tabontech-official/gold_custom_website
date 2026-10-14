@@ -43,13 +43,13 @@ Gold is used sparingly — as an underline, a border, a button, an icon — neve
 Two-tier sticky header:
 
 1. **Utility bar** (dark, `--color-charcoal`, small text): phone number (left), rotating promo message + code (center), financing / book-appointment link (right). Hidden on very small screens down to just the promo message.
-2. **Main bar** (white, sticky): hamburger (mobile) — logo (left, serif wordmark) — primary nav (desktop only, centered/left-aligned): *Men's, Women's, Watches, Diamonds, Sale* (sale in `--color-sale`) — icon cluster (right): search, account, cart with item-count badge.
+2. **Main bar** (white, sticky): hamburger (mobile) — logo (left, serif wordmark) — primary nav (desktop only, centered/left-aligned): *Rings, Chains, Bracelets, Necklaces, Pendants, Earrings, Engagement Rings, Diamond* — icon cluster (right): search, account, cart with item-count badge.
 
 ## 6. Homepage Sections (top → bottom)
 
 1. **Hero banner** — full-width, gold-tinted gradient background, serif headline + subcopy + two CTAs ("Shop Men's" / "Shop Women's").
 2. **Feature strip** — 4 icon+label badges: Lifetime Warranty · Free Shipping & Returns · Lifetime Upgrade · Financing Available. Thin bordered strip, repeats lower on the page after products.
-3. **Shop by Category** — eyebrow + heading, horizontal-scroll/grid of circular category tiles (Rings, Necklaces, Bracelets, Earrings, Pendants, Chains, Watches, Diamonds, Custom) in gold-soft circles with a label underneath.
+3. **Shop by Category** — eyebrow + heading, horizontal-scroll/grid of circular category tiles (Rings, Necklaces, Bracelets, Earrings, Pendants, Chains, Diamonds, Custom) in gold-soft circles with a label underneath.
 4. **Featured Collection** — real Shopify collection data, large image + title banner linking to the collection.
 5. **Best Sellers / New Arrivals** — real Shopify product data (`ProductItem` grid), 4-up on desktop, card style: image, name, price, subtle hover lift.
 6. **Second feature strip** — repeat of section 2 for reinforcement (mirrors reference site's repeated trust badges).

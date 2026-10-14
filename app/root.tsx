@@ -445,7 +445,7 @@ export function ErrorBoundary() {
     errorMessage = error.message;
   }
 
-  return (
+  const content = (
     <div className="route-error">
       <h1>Oops</h1>
       <h2>{errorStatus}</h2>
@@ -455,5 +455,21 @@ export function ErrorBoundary() {
         </fieldset>
       )}
     </div>
+  );
+
+  // A 404 or a failed child loader still has root data — keep the header and
+  // footer (and the phone CTA) on those pages. Only a root-loader failure
+  // falls back to the bare shell.
+  const data = useRouteLoaderData<RootLoader>('root');
+  if (!data) return content;
+
+  return (
+    <Analytics.Provider
+      cart={data.cart}
+      shop={data.shop}
+      consent={data.consent}
+    >
+      <PageLayout {...data}>{content}</PageLayout>
+    </Analytics.Provider>
   );
 }
