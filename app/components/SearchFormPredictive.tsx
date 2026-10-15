@@ -1,5 +1,6 @@
 import {
   useFetcher,
+  useLocation,
   useNavigate,
   type FormProps,
   type Fetcher,
@@ -32,7 +33,10 @@ export function SearchFormPredictive({
   const fetcher = useFetcher<PredictiveSearchReturn>({key: 'search'});
   const inputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
   const aside = useAside();
+  const wasSearchOpen = useRef(aside.type === 'search');
+  const previousLocationKey = useRef(location.key);
 
   /** Reset the input value and blur the input */
   function resetInput(event: React.FormEvent<HTMLFormElement>) {
@@ -57,6 +61,28 @@ export function SearchFormPredictive({
       {method: 'GET', action: SEARCH_ENDPOINT},
     );
   }
+
+  useEffect(() => {
+    const isSearchOpen = aside.type === 'search';
+    const navigated = previousLocationKey.current !== location.key;
+    const leftSearch = wasSearchOpen.current && !isSearchOpen;
+    const navigatedFromSearch =
+      navigated && (wasSearchOpen.current || isSearchOpen);
+
+    previousLocationKey.current = location.key;
+    wasSearchOpen.current = isSearchOpen && !navigated;
+
+    if (!leftSearch && !navigatedFromSearch) return;
+
+    inputRef.current?.blur();
+    if (inputRef.current) inputRef.current.value = '';
+    void fetcher.submit(
+      {q: '', predictive: true},
+      {method: 'GET', action: SEARCH_ENDPOINT},
+    );
+
+    if (navigated && isSearchOpen) aside.close();
+  }, [aside, fetcher, location.key]);
 
   // ensure the passed input has a type of search, because SearchResults
   // will select the element based on the input
