@@ -13,7 +13,8 @@ export const links: Route.LinksFunction = () => [
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
-    title: 'Custom Jewelry',
+    title: 'Custom Gold Jewelry in Los Angeles | Gold Custom',
+    preserveBrandSuffix: true,
     description: `Design a one-of-a-kind piece with ${SITE.name}. Free consultation, 3D CAD preview before we cast, made in 10K, 14K or 18K gold in downtown Los Angeles.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/custom-jewelry'),
   });

@@ -400,6 +400,7 @@ export function stripBrandSuffix(title: string): string {
 export function pageSeo(
   config: SeoConfig & {
     noIndex?: boolean;
+    preserveBrandSuffix?: boolean;
     /** `product` on PDPs, `article` on blog posts, `website` everywhere else. */
     ogType?: 'website' | 'product' | 'article';
     /**
@@ -419,7 +420,14 @@ export function pageSeo(
     shareImage?: ShareImage | null;
   },
 ) {
-  const {noIndex, ogType = 'website', price, shareImage, ...seo} = config;
+  const {
+    noIndex,
+    preserveBrandSuffix,
+    ogType = 'website',
+    price,
+    shareImage,
+    ...seo
+  } = config;
 
   // No brand suffix on titles, anywhere.
   //
@@ -448,7 +456,9 @@ export function pageSeo(
   // silently does nothing at all.
   const titleTemplate = seo.titleTemplate ?? '%s';
   const title =
-    typeof seo.title === 'string' ? stripBrandSuffix(seo.title) : seo.title;
+    typeof seo.title === 'string' && !preserveBrandSuffix
+      ? stripBrandSuffix(seo.title)
+      : seo.title;
 
   // Order: a measured image wins, then the route's own media, then the brand
   // logo. There is deliberately NO size check on `media` any more — one used to
