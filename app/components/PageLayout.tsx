@@ -1,5 +1,5 @@
 import {Await} from 'react-router';
-import {Suspense, useId} from 'react';
+import {Suspense} from 'react';
 import type {
   CartApiQueryFragment,
   FooterQuery,
@@ -86,7 +86,6 @@ function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
 }
 
 function SearchAside() {
-  const queriesDatalistId = useId();
   return (
     <Aside type="search" heading="SEARCH">
       <div className="predictive-search">
@@ -101,7 +100,10 @@ function SearchAside() {
                 placeholder="Search"
                 ref={inputRef}
                 type="search"
-                list={queriesDatalistId}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
+                enterKeyHint="search"
               />
               &nbsp;
               <button onClick={goToSearch}>Search</button>
@@ -110,29 +112,23 @@ function SearchAside() {
         </SearchFormPredictive>
 
         <SearchResultsPredictive>
-          {({items, total, term, state, closeSearch}) => {
-            const {products, queries} = items;
+          {({items, term, state, closeSearch}) => {
+            const {products} = items;
 
             if (state === 'loading' && term.current) {
               return <div>Loading...</div>;
             }
 
-            if (!total) {
+            if (!products.length) {
               return <SearchResultsPredictive.Empty term={term} />;
             }
 
             return (
-              <>
-                <SearchResultsPredictive.Queries
-                  queries={queries}
-                  queriesDatalistId={queriesDatalistId}
-                />
-                <SearchResultsPredictive.Products
-                  products={products}
-                  closeSearch={closeSearch}
-                  term={term}
-                />
-              </>
+              <SearchResultsPredictive.Products
+                products={products}
+                closeSearch={closeSearch}
+                term={term}
+              />
             );
           }}
         </SearchResultsPredictive>

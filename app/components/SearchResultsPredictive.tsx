@@ -76,7 +76,6 @@ export function SearchResultsPredictive({
 }
 
 SearchResultsPredictive.Products = SearchResultsPredictiveProducts;
-SearchResultsPredictive.Queries = SearchResultsPredictiveQueries;
 SearchResultsPredictive.Empty = SearchResultsPredictiveEmpty;
 
 function SearchResultsPredictiveProducts({
@@ -121,25 +120,6 @@ function SearchResultsPredictiveProducts({
         })}
       </ul>
     </div>
-  );
-}
-
-function SearchResultsPredictiveQueries({
-  queries,
-  queriesDatalistId,
-}: PartialPredictiveSearchResult<'queries', never> & {
-  queriesDatalistId: string;
-}) {
-  if (!queries.length) return null;
-
-  return (
-    <datalist id={queriesDatalistId}>
-      {queries.map((suggestion) => {
-        if (!suggestion) return null;
-
-        return <option key={suggestion.text} value={suggestion.text} />;
-      })}
-    </datalist>
   );
 }
 

@@ -3324,9 +3324,8 @@ F
   border-color: var(--color-gold);
 }
 
-/* Native search chrome — the clear ✕ and the datalist ▼ — paint in the
-   browser's own blue and read as an unfinished form next to everything else
-   here. The live result list below already does both jobs better. */
+/* Keep native search controls from introducing browser-specific chrome; the
+   live result list below provides the relevant search feedback. */
 .predictive-search-form input::-webkit-search-cancel-button,
 .predictive-search-form input::-webkit-calendar-picker-indicator {
   appearance: none;
