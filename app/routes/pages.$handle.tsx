@@ -62,7 +62,7 @@ export async function loader(args: Route.LoaderArgs) {
  */
 async function loadCriticalData({
   context,
-  request,
+  request,                                                                                                                                                                                       
   params,
 }: Route.LoaderArgs) {
   if (!params.handle) {

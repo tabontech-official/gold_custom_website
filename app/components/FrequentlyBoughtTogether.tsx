@@ -6,6 +6,22 @@ import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import {cdnLoader} from '~/lib/cdnImage';
 
+type OptimisticVariant = {
+  id: string;
+  availableForSale: boolean;
+  title: string;
+  price: MoneyV2;
+  image?: {
+    id?: string | null;
+    url: string;
+    altText?: string | null;
+    width?: number | null;
+    height?: number | null;
+  } | null;
+  product: {title: string; handle: string};
+  selectedOptions: Array<{name: string; value: string}>;
+};
+
 export type BundleItem = {
   id: string;
   title: string;
@@ -14,6 +30,7 @@ export type BundleItem = {
   imageAlt?: string | null;
   price?: MoneyV2 | null;
   variantId?: string | null;
+  selectedVariant?: OptimisticVariant | null;
   /** Line item properties for this line (ring size, photo). */
   attributes?: Array<{key: string; value: string}>;
 };
@@ -99,6 +116,9 @@ function Bundle({items}: {items: BundleItem[]}) {
             lines={lines.map((item) => ({
               merchandiseId: item.variantId as string,
               quantity: 1,
+              ...(item.selectedVariant && {
+                selectedVariant: item.selectedVariant,
+              }),
               ...(item.attributes?.length && {attributes: item.attributes}),
             }))}
           >

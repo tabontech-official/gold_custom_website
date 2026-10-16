@@ -467,14 +467,21 @@ async function loadBundlePartner(
       candidates,
     );
     if (!node) return null;
+    const selectedVariant = node.selectedOrFirstAvailableVariant;
     return {
       id: node.id,
       title: node.title,
       to: productCanonicalPath(node),
       imageUrl: node.featuredImage?.url,
       imageAlt: node.featuredImage?.altText,
-      price: node.selectedOrFirstAvailableVariant?.price,
-      variantId: node.selectedOrFirstAvailableVariant?.id,
+      price: selectedVariant?.price,
+      variantId: selectedVariant?.id,
+      selectedVariant: selectedVariant
+        ? {
+            ...selectedVariant,
+            product: {title: node.title, handle: node.handle},
+          }
+        : null,
     };
   } catch (error) {
     console.error(error);
@@ -729,6 +736,7 @@ export default function Product() {
                 variantId: selectedVariant?.availableForSale
                   ? selectedVariant.id
                   : null,
+                selectedVariant,
                 attributes: photoUrl
                   ? [{key: PENDANT_PHOTO_ATTRIBUTE_KEY, value: photoUrl}]
                   : undefined,
@@ -1894,9 +1902,21 @@ const BUNDLE_PARTNER_QUERY = `#graphql
           selectedOrFirstAvailableVariant {
             id
             availableForSale
+            title
             price {
               amount
               currencyCode
+            }
+            image {
+              id
+              url
+              altText
+              width
+              height
+            }
+            selectedOptions {
+              name
+              value
             }
           }
         }

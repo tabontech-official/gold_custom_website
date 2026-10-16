@@ -20,11 +20,11 @@ import {
 
 export type ActionResponse = {
   addressId?: string | null;
+  updatedAddress?: AddressFragment;
   createdAddress?: AddressFragment;
   defaultAddress?: string | null;
   deletedAddress?: string | null;
   error: Record<AddressFragment['id'], string> | null;
-  updatedAddress?: AddressFragment;
 };
 
 export const meta: Route.MetaFunction = () => {

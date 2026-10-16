@@ -3099,8 +3099,20 @@ export type BundlePartnerQuery = {
             Pick<StorefrontAPI.Image, 'url' | 'altText'>
           >;
           selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-            Pick<StorefrontAPI.ProductVariant, 'id' | 'availableForSale'> & {
+            Pick<
+              StorefrontAPI.ProductVariant,
+              'id' | 'availableForSale' | 'title'
+            > & {
               price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+              image?: StorefrontAPI.Maybe<
+                Pick<
+                  StorefrontAPI.Image,
+                  'id' | 'url' | 'altText' | 'width' | 'height'
+                >
+              >;
+              selectedOptions: Array<
+                Pick<StorefrontAPI.SelectedOption, 'name' | 'value'>
+              >;
             }
           >;
         }
@@ -3716,7 +3728,7 @@ interface GeneratedQueryTypes {
     return: RecommendationTopUpQuery;
     variables: RecommendationTopUpQueryVariables;
   };
-  '#graphql\n  query BundlePartner(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 250, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          title\n          handle\n          # Excludes the viewed product\'s own group — see loadBundlePartner.\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          # Resolve the card\'s canonical /collections/<category>/products/<handle>\n          # link — same reason as the recommendations query above.\n          productType\n          category {\n            name\n          }\n          featuredImage {\n            url\n            altText\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            price {\n              amount\n              currencyCode\n            }\n          }\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query BundlePartner(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(first: 250, sortKey: BEST_SELLING) {\n        nodes {\n          id\n          title\n          handle\n          # Excludes the viewed product\'s own group — see loadBundlePartner.\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          # Resolve the card\'s canonical /collections/<category>/products/<handle>\n          # link — same reason as the recommendations query above.\n          productType\n          category {\n            name\n          }\n          featuredImage {\n            url\n            altText\n          }\n          selectedOrFirstAvailableVariant {\n            id\n            availableForSale\n            title\n            price {\n              amount\n              currencyCode\n            }\n            image {\n              id\n              url\n              altText\n              width\n              height\n            }\n            selectedOptions {\n              name\n              value\n            }\n          }\n        }\n      }\n    }\n  }\n': {
     return: BundlePartnerQuery;
     variables: BundlePartnerQueryVariables;
   };
