@@ -1,27 +1,27 @@
 // Run with: node --test app/lib/cartLines.test.ts
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {cartLineAttribute, isInCart} from './cartLines.ts';
+import {cartLineAttribute, isInCart, linesNotInCart} from './cartLines.ts';
 
 const line = (id: string, attributes?: Array<{key: string; value: string}>) => ({
   merchandise: {id},
   attributes: attributes ?? [],
 });
 
-test('matches on the variant id', () => {
+await test('matches on the variant id', () => {
   const cart = {lines: {nodes: [line('gid://Variant/1')]}};
   assert.ok(isInCart(cart, [{merchandiseId: 'gid://Variant/1'}]));
   assert.ok(!isInCart(cart, [{merchandiseId: 'gid://Variant/2'}]));
 });
 
-test('an empty or missing cart holds nothing', () => {
+await test('an empty or missing cart holds nothing', () => {
   assert.ok(!isInCart(null, [{merchandiseId: 'gid://Variant/1'}]));
   assert.ok(!isInCart({lines: {nodes: []}}, [{merchandiseId: 'gid://Variant/1'}]));
   // No lines requested — nothing to lock the button for.
   assert.ok(!isInCart({lines: {nodes: [line('gid://Variant/1')]}}, []));
 });
 
-test('the same ring in another size is a different line', () => {
+await test('the same ring in another size is a different line', () => {
   const cart = {
     lines: {nodes: [line('gid://Variant/1', [{key: 'Ring size', value: '7'}])]},
   };
@@ -37,7 +37,7 @@ test('the same ring in another size is a different line', () => {
   );
 });
 
-test('reads back the size a variant sits in the bag with', () => {
+await test('reads back the size a variant sits in the bag with', () => {
   const cart = {
     lines: {
       nodes: [
@@ -56,7 +56,7 @@ test('reads back the size a variant sits in the bag with', () => {
   assert.equal(cartLineAttribute(cart, undefined, 'Ring size'), undefined);
 });
 
-test('extra attributes on the cart line are ignored', () => {
+await test('extra attributes on the cart line are ignored', () => {
   const cart = {
     lines: {
       nodes: [
@@ -68,4 +68,48 @@ test('extra attributes on the cart line are ignored', () => {
     },
   };
   assert.ok(isInCart(cart, [{merchandiseId: 'gid://Variant/1'}]));
+});
+
+await test('bundle add omits items that are already in the cart', () => {
+  const cart = {
+    lines: {
+      nodes: [
+        line('gid://Variant/1', [{key: 'Ring Size', value: '7'}]),
+      ],
+    },
+  };
+  const bundle = [
+    {
+      merchandiseId: 'gid://Variant/1',
+      attributes: [{key: 'Ring Size', value: '7'}],
+    },
+    {merchandiseId: 'gid://Variant/2'},
+  ];
+
+  assert.deepEqual(linesNotInCart(cart, bundle), [bundle[1]]);
+});
+
+await test('bundle still adds a ring configured to a different size', () => {
+  const cart = {
+    lines: {
+      nodes: [
+        line('gid://Variant/1', [{key: 'Ring Size', value: '7'}]),
+      ],
+    },
+  };
+
+  assert.deepEqual(
+    linesNotInCart(cart, [
+      {
+        merchandiseId: 'gid://Variant/1',
+        attributes: [{key: 'Ring Size', value: '8'}],
+      },
+    ]),
+    [
+      {
+        merchandiseId: 'gid://Variant/1',
+        attributes: [{key: 'Ring Size', value: '8'}],
+      },
+    ],
+  );
 });

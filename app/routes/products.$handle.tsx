@@ -737,9 +737,14 @@ export default function Product() {
                   ? selectedVariant.id
                   : null,
                 selectedVariant,
-                attributes: photoUrl
-                  ? [{key: PENDANT_PHOTO_ATTRIBUTE_KEY, value: photoUrl}]
-                  : undefined,
+                attributes: [
+                  ...(isRing
+                    ? [{key: RING_SIZE_ATTRIBUTE_KEY, value: ringSize}]
+                    : []),
+                  ...(photoUrl
+                    ? [{key: PENDANT_PHOTO_ATTRIBUTE_KEY, value: photoUrl}]
+                    : []),
+                ],
               }}
               partner={bundlePartner}
             />

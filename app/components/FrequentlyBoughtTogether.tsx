@@ -1,10 +1,11 @@
 import {Suspense} from 'react';
 import {Await, Link} from 'react-router';
-import {Image, Money} from '@shopify/hydrogen';
+import {Image, Money, useAnalytics} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {AddToCartButton} from './AddToCartButton';
 import {useAside} from './Aside';
 import {cdnLoader} from '~/lib/cdnImage';
+import {linesNotInCart} from '~/lib/cartLines';
 
 type OptimisticVariant = {
   id: string;
@@ -75,7 +76,17 @@ export function FrequentlyBoughtTogether({
 
 function Bundle({items}: {items: BundleItem[]}) {
   const {open} = useAside();
+  const {cart} = useAnalytics();
   const lines = items.filter((item) => item.variantId);
+  const linesToAdd = linesNotInCart(
+    cart,
+    lines.map((item) => ({
+      merchandiseId: item.variantId!,
+      quantity: 1,
+      ...(item.selectedVariant && {selectedVariant: item.selectedVariant}),
+      ...(item.attributes?.length && {attributes: item.attributes}),
+    })),
+  );
   // Both halves or nothing: with no checkboxes there is no way to say "just
   // one", and one of the two is what the buy panel above already sells.
   if (lines.length < 2) return null;
@@ -113,16 +124,14 @@ function Bundle({items}: {items: BundleItem[]}) {
           <AddToCartButton
             className="btn fbt-add"
             onClick={() => open('cart')}
-            lines={lines.map((item) => ({
-              merchandiseId: item.variantId as string,
-              quantity: 1,
-              ...(item.selectedVariant && {
-                selectedVariant: item.selectedVariant,
-              }),
-              ...(item.attributes?.length && {attributes: item.attributes}),
-            }))}
+            disabled={linesToAdd.length === 0}
+            lines={linesToAdd}
           >
-            Add both to bag
+            {linesToAdd.length === 0
+              ? 'Already in bag'
+              : linesToAdd.length < lines.length
+                ? 'Add remaining item to bag'
+                : 'Add both to bag'}
           </AddToCartButton>
         </div>
       </div>

@@ -67,3 +67,30 @@ export function isInCart(
     )
   );
 }
+
+/**
+ * Keep bundle adds from adding a product line that is already in the cart.
+ * Attribute matching preserves distinct configurations such as another ring
+ * size while preventing an identical bundle item from being counted twice.
+ */
+export function linesNotInCart<T extends RequestedLine>(
+  cart: {lines?: {nodes?: Array<CartLineLike> | null} | null} | null | undefined,
+  lines: T[],
+): T[] {
+  const cartLines = cart?.lines?.nodes ?? [];
+
+  return lines.filter(
+    (line) =>
+      !cartLines.some(
+        (cartLine) =>
+          cartLine.merchandise?.id === line.merchandiseId &&
+          (line.attributes ?? []).every((attribute) =>
+            cartLine.attributes?.some(
+              (cartAttribute) =>
+                cartAttribute.key === attribute.key &&
+                cartAttribute.value === attribute.value,
+            ),
+          ),
+      ),
+  );
+}
