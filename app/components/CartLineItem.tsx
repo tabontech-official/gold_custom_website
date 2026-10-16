@@ -273,7 +273,7 @@ function CartLineRemoveButton({
 }) {
   return (
     <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
+      fetcherKey={getActionKey(CartForm.ACTIONS.LinesRemove, lineIds)}
       route="/cart"
       action={CartForm.ACTIONS.LinesRemove}
       inputs={{lineIds}}
@@ -322,7 +322,7 @@ function CartLineUpdateButton({
 
   return (
     <CartForm
-      fetcherKey={getUpdateKey(lineIds)}
+      fetcherKey={getActionKey(CartForm.ACTIONS.LinesUpdate, lineIds)}
       route="/cart"
       action={CartForm.ACTIONS.LinesUpdate}
       inputs={{lines}}
@@ -333,23 +333,24 @@ function CartLineUpdateButton({
 }
 
 /**
- * Returns a unique key for the update action. This is used to make sure actions modifying the same line
- * items are not run concurrently, but cancel each other. For example, if the user clicks "Increase quantity"
- * and "Decrease quantity" in rapid succession, the actions will cancel each other and only the last one will run.
+ * Actions on the same line share a key only when they have the same action,
+ * so rapid quantity changes cancel each other without colliding with removal.
  * @param lineIds - line ids affected by the update
  * @returns
  */
-function getUpdateKey(lineIds: string[]) {
-  return [CartForm.ACTIONS.LinesUpdate, ...lineIds].join('-');
+function getActionKey(action: string, lineIds: string[]) {
+  return [action, ...lineIds].join('-');
 }
 
 /**
  * True once Shopify has told us (via a LinesUpdate warning) that this line hit
- * its inventory ceiling. The update button submits under `getUpdateKey`, so we
+ * its inventory ceiling. The update button submits under `getActionKey`, so we
  * read that exact fetcher's last response.
  */
 function useAtStockMax(lineId: string) {
-  const fetcher = useFetcher({key: getUpdateKey([lineId])});
+  const fetcher = useFetcher({
+    key: getActionKey(CartForm.ACTIONS.LinesUpdate, [lineId]),
+  });
   const warnings = (fetcher.data as {warnings?: Array<{code?: string}>})
     ?.warnings;
   return Boolean(

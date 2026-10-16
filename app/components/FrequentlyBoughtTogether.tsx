@@ -1,5 +1,5 @@
 import {Suspense} from 'react';
-import {Await, Link} from 'react-router';
+import {Await, Link, useFetchers} from 'react-router';
 import {Image, Money, useAnalytics} from '@shopify/hydrogen';
 import type {MoneyV2} from '@shopify/hydrogen/storefront-api-types';
 import {AddToCartButton} from './AddToCartButton';
@@ -77,6 +77,12 @@ export function FrequentlyBoughtTogether({
 function Bundle({items}: {items: BundleItem[]}) {
   const {open} = useAside();
   const {cart} = useAnalytics();
+  const cartActionPending = useFetchers().some(
+    (fetcher) =>
+      fetcher.state !== 'idle' &&
+      fetcher.formMethod?.toLowerCase() !== 'get' &&
+      fetcher.formAction?.split('?')[0] === '/cart',
+  );
   const lines = items.filter((item) => item.variantId);
   const linesToAdd = linesNotInCart(
     cart,
@@ -124,10 +130,12 @@ function Bundle({items}: {items: BundleItem[]}) {
           <AddToCartButton
             className="btn fbt-add"
             onClick={() => open('cart')}
-            disabled={linesToAdd.length === 0}
+            disabled={cartActionPending || linesToAdd.length === 0}
             lines={linesToAdd}
           >
-            {linesToAdd.length === 0
+            {cartActionPending
+              ? 'Updating bag…'
+              : linesToAdd.length === 0
               ? 'Already in bag'
               : linesToAdd.length < lines.length
                 ? 'Add remaining item to bag'
