@@ -2098,6 +2098,21 @@ export type ArticleQuery = {
   };
 };
 
+export type ArticleUpdatedQueryVariables = StorefrontAPI.Exact<{
+  [key: string]: never;
+}>;
+
+export type ArticleUpdatedQuery = {
+  sitemap: {
+    resources?: StorefrontAPI.Maybe<{
+      items: Array<
+        | Pick<StorefrontAPI.SitemapResource, 'handle' | 'updatedAt'>
+        | Pick<StorefrontAPI.SitemapResourceMetaobject, 'handle' | 'updatedAt'>
+      >;
+    }>;
+  };
+};
+
 export type BlogArticlesQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
@@ -3679,6 +3694,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Article(\n    $articleHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blogs(first: 1) {\n      nodes {\n        handle\n        articleByHandle(handle: $articleHandle) {\n          handle\n          title\n          contentHtml\n          publishedAt\n          tags\n          author: authorV2 {\n            name\n          }\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n          seo {\n            description\n            title\n          }\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;
     variables: ArticleQueryVariables;
+  };
+  '#graphql\n  query ArticleUpdated {\n    sitemap(type: ARTICLE) {\n      resources(page: 1) {\n        items {\n          handle\n          updatedAt\n        }\n      }\n    }\n  }\n': {
+    return: ArticleUpdatedQuery;
+    variables: ArticleUpdatedQueryVariables;
   };
   '#graphql\n  query BlogArticles(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    blogs(first: 1) {\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n        articles(\n          first: $first,\n          last: $last,\n          before: $startCursor,\n          after: $endCursor\n        ) {\n          nodes {\n            ...ArticleItem\n          }\n          pageInfo {\n            hasPreviousPage\n            hasNextPage\n            endCursor\n            startCursor\n          }\n        }\n      }\n    }\n  }\n  fragment ArticleItem on Article {\n    author: authorV2 {\n      name\n    }\n    contentHtml\n    excerpt\n    handle\n    id\n    image {\n      id\n      altText\n      url\n      width\n      height\n    }\n    publishedAt\n    title\n  }\n': {
     return: BlogArticlesQuery;

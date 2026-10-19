@@ -43,18 +43,9 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
             url,
             mainEntityOfPage: url,
             datePublished: article.publishedAt,
-            // Google lists dateModified among the Article rich result's
-            // recommended properties, and the Storefront API's Article type has
-            // no updated timestamp — only `publishedAt` (the Admin API has
-            // `updatedAt`, but that needs read_content and a per-render admin
-            // call for a field that is usually the publish date anyway). An
-            // unmodified article's dateModified IS its datePublished, which is
-            // what Google's own guidance says to send.
-            //
-            // Edit a post after publishing and this will understate it. If that
-            // starts to matter, set an article metafield on edit and prefer it
-            // here — Storefront can read article metafields.
-            dateModified: article.publishedAt,
+            // Storefront's Article has no updatedAt; the sitemap resource
+            // does (the same value the articles sitemap prints as lastmod).
+            dateModified: data?.dateModified ?? article.publishedAt,
             // ImageObject rather than a bare URL: the dimensions are already
             // in the query, and a consumer that has them does not have to
             // fetch the file to know whether it can use the image.
@@ -169,7 +160,16 @@ async function loadCriticalData({context, params}: Route.LoaderArgs) {
     throw new Response('Not found', {status: 404});
   }
 
-  return {article};
+  // Same source as the articles sitemap's <lastmod>. A failure only costs the
+  // "Updated" line, never the page.
+  const {sitemap} = await context.storefront
+    .query(ARTICLE_UPDATED_QUERY, {cache: CacheContent()})
+    .catch(() => ({sitemap: null}));
+  const dateModified =
+    sitemap?.resources?.items.find((item) => item.handle === articleHandle)
+      ?.updatedAt ?? null;
+
+  return {article, dateModified};
 }
 
 /**
@@ -182,14 +182,22 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Article() {
-  const {article} = useLoaderData<typeof loader>();
+  const {article, dateModified} = useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
 
-  const publishedDate = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }).format(new Date(article.publishedAt));
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(new Date(iso));
+  const publishedDate = formatDate(article.publishedAt);
+  // Only when it is a different day: "Updated" on the publish date says nothing.
+  const updatedDate =
+    dateModified && formatDate(dateModified) !== publishedDate
+      ? formatDate(dateModified)
+      : null;
 
   return (
     <>
@@ -207,16 +215,29 @@ export default function Article() {
 
       <article className="article">
         <header className="article-header">
-          <span className="eyebrow">Blog</span>
           <h1 className="article-title">{title}</h1>
-          <div className="article-meta">
-            <time dateTime={article.publishedAt}>{publishedDate}</time>
+          <div className="article-byline">
             {author?.name && (
-              <>
-                <span aria-hidden="true">&middot;</span>
-                <address>{author.name}</address>
-              </>
+              <p className="article-author">
+                By <span className="article-author-name">{author.name}</span>
+              </p>
             )}
+            <dl className="article-dates">
+              <div>
+                <dt>Published</dt>
+                <dd>
+                  <time dateTime={article.publishedAt}>{publishedDate}</time>
+                </dd>
+              </div>
+              {updatedDate && dateModified && (
+                <div>
+                  <dt>Last updated</dt>
+                  <dd>
+                    <time dateTime={dateModified}>{updatedDate}</time>
+                  </dd>
+                </div>
+              )}
+            </dl>
           </div>
         </header>
 
@@ -270,6 +291,19 @@ const ARTICLE_QUERY = `#graphql
             description
             title
           }
+        }
+      }
+    }
+  }
+` as const;
+
+const ARTICLE_UPDATED_QUERY = `#graphql
+  query ArticleUpdated {
+    sitemap(type: ARTICLE) {
+      resources(page: 1) {
+        items {
+          handle
+          updatedAt
         }
       }
     }
