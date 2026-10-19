@@ -1,9 +1,8 @@
 import {Link, useLoaderData} from 'react-router';
 import type {Route} from './+types/blogs._index';
-import {Image, getPaginationVariables} from '@shopify/hydrogen';
+import {Image} from '@shopify/hydrogen';
 import {cdnLoader} from '~/lib/cdnImage';
 import {Breadcrumb} from '~/components/Breadcrumb';
-import {PaginatedResourceSection} from '~/components/PaginatedResourceSection';
 import type {ArticleItemFragment} from 'storefrontapi.generated';
 import {
   SITE,
@@ -81,20 +80,13 @@ export async function loader(args: Route.LoaderArgs) {
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
-async function loadCriticalData({context, request}: Route.LoaderArgs) {
-  const paginationVariables = getPaginationVariables(request, {
-    pageBy: 12,
-  });
-
+async function loadCriticalData({context}: Route.LoaderArgs) {
   // ponytail: the store runs a single blog, so /blogs IS that blog's post grid
   // and /blogs/<handle> redirects here — one page, one URL, no "News" level.
   // Add a second blog and this has to merge both feeds (or list blogs again).
   const [{blogs}] = await Promise.all([
     context.storefront.query(BLOG_ARTICLES_QUERY, {
       cache: CacheContent(),
-      variables: {
-        ...paginationVariables,
-      },
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
@@ -127,18 +119,15 @@ export default function Blogs() {
           other route's breadcrumb instead of hugging the viewport edge. */}
       <div className="section-inner">
         <Breadcrumb items={[{label: 'Home', to: '/'}, {label: 'Blog'}]} />
-        <PaginatedResourceSection<ArticleItemFragment>
-          connection={articles}
-          resourcesClassName="products-grid"
-        >
-          {({node: article, index}) => (
+        <div className="products-grid">
+          {articles.nodes.map((article, index) => (
             <ArticleItem
               article={article}
               key={article.id}
               loading={index < 3 ? 'eager' : 'lazy'}
             />
-          )}
-        </PaginatedResourceSection>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -207,10 +196,6 @@ const BLOG_ARTICLES_QUERY = `#graphql
   query BlogArticles(
     $country: CountryCode
     $language: LanguageCode
-    $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
   ) @inContext(country: $country, language: $language) {
     blogs(first: 1) {
       nodes {
@@ -220,20 +205,10 @@ const BLOG_ARTICLES_QUERY = `#graphql
           title
           description
         }
-        articles(
-          first: $first,
-          last: $last,
-          before: $startCursor,
-          after: $endCursor
-        ) {
+        # ponytail: all posts at once; past 250 this needs paging again.
+        articles(first: 250) {
           nodes {
             ...ArticleItem
-          }
-          pageInfo {
-            hasPreviousPage
-            hasNextPage
-            endCursor
-            startCursor
           }
         }
       }

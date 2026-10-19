@@ -2116,14 +2116,6 @@ export type ArticleUpdatedQuery = {
 export type BlogArticlesQueryVariables = StorefrontAPI.Exact<{
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
   language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  first?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  last?: StorefrontAPI.InputMaybe<StorefrontAPI.Scalars['Int']['input']>;
-  startCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
-  endCursor?: StorefrontAPI.InputMaybe<
-    StorefrontAPI.Scalars['String']['input']
-  >;
 }>;
 
 export type BlogArticlesQuery = {
@@ -2154,10 +2146,6 @@ export type BlogArticlesQuery = {
                 >
               >;
             }
-          >;
-          pageInfo: Pick<
-            StorefrontAPI.PageInfo,
-            'hasPreviousPage' | 'hasNextPage' | 'endCursor' | 'startCursor'
           >;
         };
       }
@@ -3699,7 +3687,7 @@ interface GeneratedQueryTypes {
     return: ArticleUpdatedQuery;
     variables: ArticleUpdatedQueryVariables;
   };
-  '#graphql\n  query BlogArticles(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int\n    $last: Int\n    $startCursor: String\n    $endCursor: String\n  ) @inContext(country: $country, language: $language) {\n    blogs(first: 1) {\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n        articles(\n          first: $first,\n          last: $last,\n          before: $startCursor,\n          after: $endCursor\n        ) {\n          nodes {\n            ...ArticleItem\n          }\n          pageInfo {\n            hasPreviousPage\n            hasNextPage\n            endCursor\n            startCursor\n          }\n        }\n      }\n    }\n  }\n  fragment ArticleItem on Article {\n    author: authorV2 {\n      name\n    }\n    contentHtml\n    excerpt\n    handle\n    id\n    image {\n      id\n      altText\n      url\n      width\n      height\n    }\n    publishedAt\n    title\n  }\n': {
+  '#graphql\n  query BlogArticles(\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    blogs(first: 1) {\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n        # ponytail: all posts at once; past 250 this needs paging again.\n        articles(first: 250) {\n          nodes {\n            ...ArticleItem\n          }\n        }\n      }\n    }\n  }\n  fragment ArticleItem on Article {\n    author: authorV2 {\n      name\n    }\n    contentHtml\n    excerpt\n    handle\n    id\n    image {\n      id\n      altText\n      url\n      width\n      height\n    }\n    publishedAt\n    title\n  }\n': {
     return: BlogArticlesQuery;
     variables: BlogArticlesQueryVariables;
   };
