@@ -23,7 +23,7 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
         <dt>Subtotal</dt>
         <dd>
           {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} />
+            <Money data={cart?.cost?.subtotalAmount} /> 
           ) : (
             '-'
           )}

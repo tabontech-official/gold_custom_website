@@ -83,6 +83,11 @@ function numericId(gid?: string | null): string {
   return match ? match[1] : gid;
 }
 
+/** `gid://shopify/Cart/Z2NwLXVz…?key=…` -> `Z2NwLXVz…` (the key is secret). */
+function numericCartId(gid?: string | null): string {
+  return gid?.split('/').pop()?.split('?')[0] || 'nocart';
+}
+
 function amount(value?: string | number | null): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : 0;
@@ -322,10 +327,21 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
      * allow measurement and refuse advertising; GA4 should still hear about
      * them and Meta should not.
      */
-    function meta(event: string, params?: Record<string, unknown>) {
+    /**
+     * Every event carries an `eventID`. It is what Meta deduplicates a browser
+     * event against its server (Conversions API) copy by — same event name +
+     * same ID within 48h = one event. Without it the two are counted twice.
+     * Pass a deterministic ID where a server sender can rebuild it; random
+     * otherwise.
+     */
+    function meta(
+      event: string,
+      params?: Record<string, unknown>,
+      eventId: string = crypto.randomUUID(),
+    ) {
       if (!metaPixelId || !marketingAllowed()) return;
       syncConsent();
-      window.fbq?.('track', event, params);
+      window.fbq?.('track', event, params ?? {}, {eventID: eventId});
     }
 
     subscribe('page_viewed', (payload: PageViewPayload) => {
@@ -397,14 +413,22 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
 
       const items = [itemFromLine(current, added)];
       ga4('add_to_cart', {currency, value: totalValue(items), items});
-      meta('AddToCart', {
-        content_type: 'product',
-        content_ids: items.map((item) => item.item_id),
-        content_name: items[0].item_name,
-        contents: metaContents(items),
-        currency,
-        value: totalValue(items),
-      });
+      meta(
+        'AddToCart',
+        {
+          content_type: 'product',
+          content_ids: items.map((item) => item.item_id),
+          content_name: items[0].item_name,
+          contents: metaContents(items),
+          currency,
+          value: totalValue(items),
+        },
+        // One ID per cart + variant + resulting quantity: stable for a server
+        // sender that sees the same cart change, distinct for each real add.
+        `atc_${numericCartId(payload.cart?.id)}_${items[0].item_id}_${
+          current?.quantity ?? 0
+        }`,
+      );
     });
 
     subscribe('product_removed_from_cart', (payload: CartLineUpdatePayload) => {
