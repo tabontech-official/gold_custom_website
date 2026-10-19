@@ -6292,8 +6292,28 @@ html.header-primary-hidden
     --announce-h: 2rem;
   }
 
-  html.page-scrolled body:has(.collection-toolbar) {
-    --announce-h: 0rem;
+  /* Collapsing the announcement MOVES the stack with `translate`, it does not
+     shrink --announce-h. Shrinking it changed .page-body's padding, which
+     shifted the whole page 32px each time the bar crossed (Search Console
+     CLS > 0.25 on mobile collections). A translate is not a layout shift,
+     and the padding it reserves stays put. */
+  html.page-scrolled body:has(.collection-toolbar) :is(
+      .announcement-bar,
+      .header-primary,
+      .collection-sticky-head,
+      .collection-toolbar
+    ) {
+    translate: 0 -2rem;
+  }
+
+  /* The strip's height before CollectionStickyHead measures it. With no
+     default the page rendered 150px short and jumped down after hydration —
+     the biggest single CLS hit (0.158 on a throttled phone). On phones it is
+     deterministic: one circle (.subnav-icon width) + its 2-line label and
+     paddings = 60px. The measured value replaces this (inline style on
+     <html> wins), within a pixel of it. */
+  html:has(.collection-sticky-head .subnav-icons) {
+    --sticky-head-height: calc(clamp(90px, 22.5vw, 120px) + 60px);
   }
 
   body:has(.collection-toolbar) .announcement-bar {
@@ -6369,7 +6389,7 @@ html.header-primary-hidden
   body:has(.collection-toolbar) .page-body {
     padding-top: calc(
       var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) +
-        var(--toolbar-height, 2.6rem)
+        var(--toolbar-height, 3.1rem)
     );
   }
 

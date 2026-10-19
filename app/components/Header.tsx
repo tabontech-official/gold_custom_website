@@ -505,7 +505,7 @@ function HeaderSearchBar() {
                           </span>
                           {price && (
                             <small>
-                              <Money data={price} />
+                              <Money as="span" data={price} />
                             </small>
                           )}
                         </span>
@@ -880,6 +880,7 @@ function MegaMenuItem({
                       {product.priceRange?.minVariantPrice && (
                         <span className="mega-menu-card-price">
                           <Money
+                            as="span"
                             data={product.priceRange.minVariantPrice as any}
                           />
                         </span>

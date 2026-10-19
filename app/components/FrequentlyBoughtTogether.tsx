@@ -124,7 +124,7 @@ function Bundle({items}: {items: BundleItem[]}) {
           <p className="fbt-total">
             <span>Total price</span>
             <strong>
-              <Money data={{amount: total.toFixed(2), currencyCode}} />
+              <Money as="span" data={{amount: total.toFixed(2), currencyCode}} />
             </strong>
           </p>
           <AddToCartButton

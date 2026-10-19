@@ -41,7 +41,7 @@ export function WishlistToast() {
     >
       <span>{toast.message}</span>
       <button type="button" aria-label="Close message" onClick={() => setToast(null)}>
-        x
+        x 
       </button>
     </div>
   );

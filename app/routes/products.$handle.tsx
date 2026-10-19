@@ -7,7 +7,6 @@ import {
   useOptimisticVariant,
   getProductOptions,
   getAdjacentAndFirstAvailableVariants,
-  useSelectedOptionInUrlParam,
   useAnalytics,
 } from '@shopify/hydrogen';
 import type {
@@ -60,7 +59,6 @@ import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {TrustClaimIconArt} from '~/components/TrustClaims';
 import {buildVideoJsonLd} from '~/lib/videoSchema';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {meaningfulSelectedOptions} from '~/lib/variants';
 import {DescriptionAccordions} from '~/components/DescriptionAccordions';
 import {
   MERCHANT_RETURN_POLICY,
@@ -540,13 +538,9 @@ export default function Product() {
     getAdjacentAndFirstAvailableVariants(product),
   );
 
-  // Sets the search param to the selected variant without navigation
-  // only when no search params are set in the url. Filtered, or a product with
-  // no real options stamps `?Title=Default+Title` onto its own URL on hydrate
-  // — see meaningfulSelectedOptions.
-  useSelectedOptionInUrlParam(
-    meaningfulSelectedOptions(selectedVariant.selectedOptions),
-  );
+  // No useSelectedOptionInUrlParam: it stamped ?Metal=… onto the URL after
+  // every first load (re-rendering the buy box mid-load). ProductForm's option
+  // links carry the params themselves, so the URL changes only on a pick.
 
   // This ring already in the bag? Show the size that's in there rather than the
   // default, so the picker matches the cart line and the button reads "Added to
