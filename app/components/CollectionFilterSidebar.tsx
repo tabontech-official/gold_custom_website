@@ -367,10 +367,17 @@ export function CollectionFilterSidebar({
           <span>Filter</span>
         </div>
 
-        <div className="collection-view-switcher" aria-label="Product view">
+        {/* `group`: aria-label is prohibited on a role-less div. The links
+            mark the active view with aria-current — aria-pressed is a button
+            state and invalid on a link (axe aria-allowed-attr). */}
+        <div
+          className="collection-view-switcher"
+          role="group"
+          aria-label="Product view"
+        >
           <Link
             aria-label="Grid view"
-            aria-pressed={view === 'grid'}
+            aria-current={view === 'grid' ? 'true' : undefined}
             className={view === 'grid' ? 'is-active' : ''}
             preventScrollReset
             to={viewHref('grid')}
@@ -380,7 +387,7 @@ export function CollectionFilterSidebar({
           </Link>
           <Link
             aria-label="List view"
-            aria-pressed={view === 'list'}
+            aria-current={view === 'list' ? 'true' : undefined}
             className={view === 'list' ? 'is-active' : ''}
             preventScrollReset
             to={viewHref('list')}

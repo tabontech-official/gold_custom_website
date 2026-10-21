@@ -3,6 +3,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useId,
   useState,
 } from 'react';
 
@@ -41,6 +42,7 @@ export function Aside({
 }) {
   const {type: activeType, close} = useAside();
   const expanded = type === activeType;
+  const headingId = useId();
 
   useEffect(() => {
     const abortController = new AbortController();
@@ -59,21 +61,39 @@ export function Aside({
     return () => abortController.abort();
   }, [close, expanded]);
 
+  /**
+   * A closed panel needs nothing extra to stay out of the tab order and the
+   * accessibility tree: `.overlay` is `visibility: hidden` until `.expanded`.
+   *
+   * - The dialog is named by its heading (axe aria-dialog-name).
+   * - The full-screen backdrop button is a pointer affordance only. It had no
+   *   name — an unlabeled button and an invisible second tab stop beside the
+   *   real × — so it is now hidden from assistive tech and the tab order.
+   *   Clicking it still closes, as do × and Escape.
+   * - The body is a `div`: a `<main>` here gave every page three extra main
+   *   landmarks, nested inside a complementary one.
+   */
   return (
     <div
       aria-modal
+      aria-labelledby={headingId}
       className={`overlay overlay--${type} ${expanded ? 'expanded' : ''}`}
       role="dialog"
     >
-      <button className="close-outside" onClick={close} />
+      <button
+        className="close-outside"
+        onClick={close}
+        aria-hidden="true"
+        tabIndex={-1}
+      />
       <aside>
         <header>
-          <h3>{heading}</h3>
+          <h3 id={headingId}>{heading}</h3>
           <button className="close reset" onClick={close} aria-label="Close">
             &times;
           </button>
         </header>
-        <main>{children}</main>
+        <div className="aside-body">{children}</div>
       </aside>
     </div>
   );

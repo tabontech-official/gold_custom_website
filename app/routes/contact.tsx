@@ -45,11 +45,13 @@ export default function Contact() {
   // there's no success response to gate on. GA4 event named for what it is
   // rather than the generic `generate_lead` used elsewhere. `Contact` is
   // Meta's own standard event for exactly this — a phone/email/chat contact
-  // with the business.
-  const trackContactClick = (method: 'phone' | 'email') => () =>
+  // with the business. Email only: the phone card is reported, like every
+  // tel: link on the site, by AnalyticsBridge's delegated listener — an
+  // onClick here as well would count each call twice.
+  const trackEmailClick = () =>
     publish('custom_ga4', {
       event: 'contact',
-      params: {method},
+      params: {method: 'email'},
       metaEvent: 'Contact',
     });
 
@@ -90,11 +92,7 @@ export default function Contact() {
           </div>
 
           <div className="contact-cards">
-            <a
-              className="contact-card"
-              href={PHONE.tel}
-              onClick={trackContactClick('phone')}
-            >
+            <a className="contact-card" href={PHONE.tel}>
               <span className="contact-card-label">Call us</span>
               <strong>{PHONE.display}</strong>
               <span>Fastest for anything time-sensitive</span>
@@ -102,7 +100,7 @@ export default function Contact() {
             <a
               className="contact-card"
               href="mailto:mr10k@goldcustom.com"
-              onClick={trackContactClick('email')}
+              onClick={trackEmailClick}
             >
               <span className="contact-card-label">Email us</span>
               <strong>mr10k@goldcustom.com</strong>

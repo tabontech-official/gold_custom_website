@@ -326,7 +326,11 @@ function GalleryTile({
   // transform-origin under the cursor, click again (or leave) to drop back.
   const [zoom, setZoom] = useState(false);
   const [origin, setOrigin] = useState('50% 50%');
-  const isZoomable = featured && m.kind === 'image' && !!m.image;
+  // Active only: the stacked, invisible tiles are `aria-hidden` (see below),
+  // and a role=button with tabIndex 0 inside one is a focusable control hidden
+  // from screen readers — keyboard users tabbed through a zoom button per
+  // photo in the set that nobody could see or hear.
+  const isZoomable = featured && active && m.kind === 'image' && !!m.image;
 
   // A tile that stops being the visible one must not come back still zoomed.
   useEffect(() => {
@@ -369,10 +373,12 @@ function GalleryTile({
        * image announced once per photo in the set: two here, twelve on a
        * product with twelve shots, every one with the identical alt text.
        *
-       * Safe to hide wholesale because a non-active tile is only ever an image:
-       * the parent mounts video and embed tiles solely while they are active,
-       * so there is never a focusable control sealed inside an `aria-hidden`
-       * subtree (which would be its own violation).
+       * Safe to hide wholesale because a non-active tile holds nothing
+       * focusable: the parent mounts video and embed tiles solely while they
+       * are active, and the click-to-zoom props (role=button, tabIndex 0) go
+       * on the active tile only — see isZoomable. Spreading them onto every
+       * tile, as this once did, sealed a focusable control inside each
+       * `aria-hidden` subtree, which is its own violation.
        */
       aria-hidden={!active}
       className={`${featured ? 'pgg-feature' : 'pgg-tile'}${

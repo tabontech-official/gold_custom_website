@@ -101,11 +101,9 @@ export function GoogleReviewsSection() {
     >
       <div className="section-inner">
         <div className="google-reviews-stage" ref={stage}>
-          <div
-            className={ELFSIGHT_WIDGET_ID}
-            data-elfsight-app-lazy=""
-            aria-live="polite"
-          />
+          {/* No aria-live: Elfsight mounts and rotates hundreds of nodes in
+              here, and a live region read every one of them aloud. */}
+          <div className={ELFSIGHT_WIDGET_ID} data-elfsight-app-lazy="" />
         </div>
       </div>
     </section>

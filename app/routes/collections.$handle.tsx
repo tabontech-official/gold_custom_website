@@ -48,7 +48,7 @@ import {
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {DescriptionAccordions} from '~/components/DescriptionAccordions';
-import {extractFaqsFromDescription} from '~/lib/description';
+import {extractFaqsFromDescription, localizeLinks} from '~/lib/description';
 import {
   buildFaqJsonLd,
   parseFaqMetaobject,
@@ -56,6 +56,7 @@ import {
   type Faq,
 } from '~/lib/faqs';
 import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
+import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {groupProducts} from '~/lib/productGroups';
 import {
   batchSize,
@@ -685,8 +686,9 @@ export default function Collection() {
   // render twice, and is used only where that collection has no metafield yet
   // — 9 collections are still in that state and would otherwise show nothing.
   // Once every collection is migrated, descriptionFaqs is simply always empty.
+  // Links localized before the split, so the FAQ answers carry them too.
   const {faqs: descriptionFaqs, rest: descriptionRest} =
-    extractFaqsFromDescription(collection.descriptionHtml);
+    extractFaqsFromDescription(localizeLinks(collection.descriptionHtml));
   const rootData = useRouteLoaderData<RootLoader>('root');
   const parentCrumb = getMegaMenuParentCrumb({
     handle: collection.handle,
@@ -803,12 +805,16 @@ export default function Collection() {
                          rendered 5 then 3, leaving a ragged half-empty row
                          after every eighth card. */
                       <div className="products-grid" ref={gridRef}>
+                        {/* Eager for the first screen only: two rows on a
+                            phone, one row of the assumed four-column desktop
+                            (DEFAULT_COLUMNS). Eight had the second desktop
+                            row competing with the first for bandwidth. */}
                         {nodes.map((product, index) => (
                           <ProductItem
                             key={product.id}
                             product={product}
                             collectionHandle={collection.handle}
-                            loading={index < 8 ? 'eager' : 'lazy'}
+                            loading={index < DEFAULT_COLUMNS ? 'eager' : 'lazy'}
                           />
                         ))}
                       </div>
@@ -920,74 +926,6 @@ export default function Collection() {
   );
 }
 
-const PRODUCT_ITEM_FRAGMENT = `#graphql
-  fragment MoneyProductItem on MoneyV2 {
-    amount
-    currencyCode
-  }
-  fragment ProductItem on Product {
-    id
-    handle
-    title
-    # New Arrival badge — see cardBadges() in ProductItem.tsx.
-    publishedAt
-    # Products sharing a group name render as one card — see groupProducts.
-    groupName: metafield(namespace: "custom", key: "group_name") {
-      value
-    }
-    # Only used to resolve each product's canonical
-    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
-    # Without them productCanonicalPath falls back to the flat
-    # /products/<handle>, which 301s — and a structured-data list of redirects
-    # is worth less than no list at all.
-    productType
-    category {
-      name
-    }
-    featuredImage {
-      id
-      altText
-      url
-      width
-      height
-    }
-    # Card badges. Tags drive Karat/Diamond and best-sellers
-    # membership drives Best Seller. See cardBadges() in
-    # ProductItem.tsx for why only those, and only from here.
-    tags
-    collections(first: 15) {
-      nodes {
-        handle
-      }
-    }
-    selectedOrFirstAvailableVariant {
-      id
-      availableForSale
-      # The one real identifier in the ItemList's Product nodes — what an
-      # agent or a feed matches this piece by when the title is ambiguous.
-      # See collectionItemListJsonLd.
-      sku
-      # Card badges: a Sale badge must come from a real
-      # compare-at price, never from a tag someone typed.
-      price {
-        amount
-        currencyCode
-      }
-      compareAtPrice {
-        amount
-        currencyCode
-      }
-    }
-    priceRange {
-      minVariantPrice {
-        ...MoneyProductItem
-      }
-      maxVariantPrice {
-        ...MoneyProductItem
-      }
-    }
-  }
-` as const;
 // Sidebar category list: every published collection, alphabetical. `products`
 // is only there to drop the empty tag-collections (same check as
 // collections._index) so the sidebar never links to a blank page.

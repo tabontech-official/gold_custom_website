@@ -1,4 +1,4 @@
-import {splitDescriptionByHeading} from '~/lib/description';
+import {localizeLinks, splitDescriptionByHeading} from '~/lib/description';
 
 /**
  * Shopify description HTML as a visible intro plus one collapsable panel per
@@ -13,7 +13,10 @@ export function DescriptionAccordions({
   html?: string | null;
   headingTag: 'h2' | 'h5';
 }) {
-  const {intro, sections} = splitDescriptionByHeading(html || '', headingTag);
+  const {intro, sections} = splitDescriptionByHeading(
+    localizeLinks(html || ''),
+    headingTag,
+  );
   if (!intro && !sections.length) return null;
 
   return (

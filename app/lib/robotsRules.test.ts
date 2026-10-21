@@ -105,8 +105,15 @@ const blocked = [
 ];
 
 // Googlebot and the catch-all group are generated from the same rules, so a
-// regression that only lands in one of them still has to fail here.
-for (const agent of ['Googlebot', 'Googlebot-Image', '*']) {
+// regression that only lands in one of them still has to fail here. The AI
+// crawlers share them too and are meant to stay allowed.
+for (const agent of [
+  'Googlebot',
+  'Googlebot-Image',
+  '*',
+  'GPTBot',
+  'OAI-SearchBot',
+]) {
   for (const path of crawlable) {
     assert.equal(isAllowed(path, agent), true, `${agent} must crawl: ${path}`);
   }
@@ -115,7 +122,11 @@ for (const agent of ['Googlebot', 'Googlebot-Image', '*']) {
   }
 }
 
-// The sitemap has to be advertised, or nothing above matters.
-assert.match(body, /^Sitemap: https:\/\/www\.goldcustom\.com\/sitemap\.xml$/m);
+// The sitemap has to be advertised, or nothing above matters — and exactly
+// once. A /m match alone let five identical copies through.
+assert.deepEqual(
+  body.split('\n').filter((line) => /^sitemap:/i.test(line.trim())),
+  ['Sitemap: https://www.goldcustom.com/sitemap.xml'],
+);
 
 console.log('robots rules self-check passed');

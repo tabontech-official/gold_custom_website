@@ -531,7 +531,7 @@ html:has(.overlay.expanded) {
     width: 1.9rem;
   }
 
-  .overlay--mobile aside main {
+  .overlay--mobile aside .aside-body {
     margin: 0;
     padding: 0 1rem 1.5rem;
   }
@@ -630,7 +630,7 @@ html:has(.overlay.expanded) {
   margin-top: 0;
 }
 
-.overlay aside main {
+.overlay aside .aside-body {
   margin: 1rem;
 }
 
@@ -731,7 +731,7 @@ html:has(.overlay.expanded) {
   line-height: 1;
 }
 
-.overlay--cart aside main {
+.overlay--cart aside .aside-body {
   flex: 1 1 auto;
   min-height: 0;
   margin: 0;
@@ -2139,14 +2139,21 @@ F
 /* Same family, weight and tracking as the page headings above — only the
    size is smaller, because these are column labels in site furniture rather
    than headings of the page's content. Was 800, which read as a third weight
-   on any page that also showed an h1 and an h2. */
-.footer-col h4 {
+   on any page that also showed an h1 and an h2.
+
+   These were h4s (heading order skipped a level); as h2s they pick up the
+   global h2's `margin: 0` and `line-height: 1.2`, so the h4 values they used
+   to compute — the global h4's 0.5rem top margin, the inherited line-height —
+   are restated here to keep the footer pixel-identical. */
+.footer-col h2 {
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: clamp(1rem, 1.25vw, 1.35rem);
   font-weight: 600;
   letter-spacing: -0.01em;
+  line-height: normal;
   text-transform: none;
+  margin-top: 0.5rem;
   margin-bottom: 1.1rem;
 }
 
@@ -2217,7 +2224,7 @@ F
   color: var(--color-ink);
   font-family: var(--font-display);
   font-size: clamp(1.35rem, 1.8vw, 1.75rem);
-  /* 600, matching every other heading on the page — see .footer-col h4. */
+  /* 600, matching every other heading on the page — see .footer-col h2. */
   font-weight: 600;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -3266,7 +3273,7 @@ F
 
 /* The panel manages its own edges so the field and the hairlines can run the
    full width; the 1rem inset every other aside uses would inset them. */
-.overlay--search aside main {
+.overlay--search aside .aside-body {
   flex: 1 1 auto;
   margin: 0;
   min-height: 0;
@@ -4286,6 +4293,15 @@ F
   }
   100% {
     transform: translate3d(-33.3333%, 0, 0);
+  }
+}
+
+/* Same as the gold-rate marquee: a visitor who asked for no motion gets the
+   first group standing still (the copies are aria-hidden, so nothing is
+   lost to a screen reader either). */
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track {
+    animation: none;
   }
 }
 
@@ -7962,15 +7978,18 @@ html.header-primary-hidden
     order: 4;
   }
 
-  /* .fbt is order 5 — set with the rest of its mobile rules further down. */
-
-  .product-details-card {
-    order: 6;
+  /* Straight after the buy box: the delivery, exchange and warranty
+     promises belong next to Add to bag, where the decision is made. At 7
+     they sat under the whole description, a long scroll past the button. */
+  .product-trust-badges {
+    order: 5;
+    margin-inline: 0;
   }
 
-  .product-trust-badges {
+  /* .fbt is order 6 — set with the rest of its mobile rules further down. */
+
+  .product-details-card {
     order: 7;
-    margin-inline: 0;
   }
 
   /* As a flex item of the stacked column, the gallery's cross-axis is width;
@@ -9375,11 +9394,11 @@ html.header-primary-hidden
 @media (max-width: 48em) {
   /* The gallery column dissolves on mobile (display: contents), so this
      needs its own place in the ordered stack: directly above the description
-     card (order 6), which .product-main dissolving puts in the same stack.
+     card (order 7), which .product-main dissolving puts in the same stack.
      The thumbnail rail is hidden at this width, so there is nothing to
      clear. */
   .fbt {
-    order: 5;
+    order: 6;
     margin-left: 0;
   }
 
@@ -15002,4 +15021,110 @@ html.header-primary-hidden
 .signup-form .appt-submit {
   width: 100%;
   padding-block: 0.85rem;
+}
+
+/* --------------------------------------------------
+ * components/StickyAddToCart — phone buy bar on the product page
+ * --------------------------------------------------
+ * Phones only, at the product page's own 48em stacking breakpoint. Above it
+ * the buy column is sticky, so the real Add to bag never leaves the screen.
+ */
+.sticky-atc {
+  display: none;
+}
+
+@media (max-width: 48em) {
+  :root {
+    /* The bar's height above the home indicator. Also read by the offer-tab
+       lift below, which is why it is a token and not a value on the bar. */
+    --sticky-atc-h: 4rem;
+  }
+
+  .sticky-atc {
+    align-items: center;
+    background: var(--color-bg);
+    border-top: 1px solid var(--color-border);
+    bottom: 0;
+    box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.06);
+    box-sizing: border-box;
+    display: flex;
+    gap: 0.75rem;
+    height: calc(var(--sticky-atc-h) + env(safe-area-inset-bottom));
+    left: 0;
+    /* The right end stays empty for Tidio's launcher. It owns the
+       bottom-right corner and stacks above this bar (#tidio-chat is pinned
+       at 1999), so it stays visible and tappable and never lands on Add to
+       bag. ponytail: 5.25rem clears Tidio's default bubble; re-measure on a
+       phone if the widget's position or size is changed in Tidio. */
+    padding: 0 5.25rem env(safe-area-inset-bottom) var(--section-pad);
+    position: fixed;
+    right: 0;
+    /* Fixed and transform-only, so showing it moves nothing else on the
+       page (no CLS). Hiding trails the slide by the same 250ms, so the bar
+       leaves the tab order and the accessibility tree once it is off screen
+       rather than vanishing mid-slide. */
+    transform: translateY(100%);
+    transition:
+      transform 250ms ease,
+      visibility 0s linear 250ms;
+    visibility: hidden;
+    /* Over page content, the offer tab (60) and the collection's sticky bars
+       (50/55); under the header (900), Tidio (1999) and every overlay
+       (2000), so the cart drawer and modals still cover it. */
+    z-index: 70;
+  }
+
+  .sticky-atc.is-visible {
+    transform: none;
+    transition: transform 250ms ease;
+    visibility: visible;
+  }
+
+  .sticky-atc-info {
+    display: grid;
+    flex: 1 1 auto;
+    gap: 0.1rem;
+    min-width: 0;
+  }
+
+  .sticky-atc-title {
+    font-size: 0.78rem;
+    line-height: 1.25;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sticky-atc-price {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  /* .product-atc's look at the main button's phone size. Later in the file
+     than .product-atc at equal weight, so `width: auto` undoes its
+     full-width default and the title keeps the room. */
+  .sticky-atc-btn {
+    flex: 0 0 auto;
+    font-size: 0.72rem;
+    height: 2.8rem;
+    min-height: 2.8rem;
+    padding: 0 1.1rem;
+    width: auto;
+  }
+
+  /* The 10%-off tab sits just above Tidio's launcher, which is exactly where
+     this bar's top edge lands. Lifted clear while the bar is up. */
+  body:has(.sticky-atc.is-visible) .offer-tab {
+    --offer-tab-bottom: calc(
+      var(--sticky-atc-h) + 0.75rem + env(safe-area-inset-bottom)
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sticky-atc,
+  .sticky-atc.is-visible {
+    transition: none;
+  }
 }

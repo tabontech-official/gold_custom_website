@@ -4,6 +4,7 @@ import {type Shop} from '@shopify/hydrogen/storefront-api-types';
 import {PolicyDocument} from '~/components/PolicyDocument';
 import {SITE, absoluteUrl, metaDescription, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {CacheStatic} from '~/lib/cache';
+import {localizeLinks} from '~/lib/description';
 
 type SelectedPolicies = keyof Pick<
   Shop,
@@ -59,7 +60,7 @@ export default function Policy() {
 
   return (
     <PolicyDocument title={policy.title}>
-      <div dangerouslySetInnerHTML={{__html: policy.body}} />
+      <div dangerouslySetInnerHTML={{__html: localizeLinks(policy.body)}} />
     </PolicyDocument>
   );
 }

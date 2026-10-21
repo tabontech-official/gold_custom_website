@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {useFetcher} from 'react-router';
+import {useAnalytics} from '@shopify/hydrogen';
 import {useTrackConversion} from '~/hooks/useTrackConversion';
 
 type ProductInfo = {
@@ -48,6 +49,7 @@ export function AppointmentModal({
   // a purchase, and it is the one Meta can optimise campaigns toward for a
   // product this considered — `Schedule` rather than a generic `Lead`.
   useTrackConversion(succeeded, 'generate_lead', 'appointment', 'Schedule');
+  const {publish} = useAnalytics();
   const fieldErrors = result && !result.ok ? result.errors : undefined;
   const formError = result && !result.ok ? result.error : undefined;
 
@@ -76,7 +78,17 @@ export function AppointmentModal({
       <button
         type="button"
         className={triggerClassName}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          // The top of the booking funnel, so opens can be compared with the
+          // booked requests above. GA4 only: Meta's `Schedule` already fires
+          // on success, and an event per open would teach its optimiser that
+          // opening the form is the conversion.
+          publish('custom_ga4', {
+            event: 'book_click',
+            params: {method: 'appointment'},
+          });
+          setOpen(true);
+        }}
       >
         {triggerLabel}
       </button>

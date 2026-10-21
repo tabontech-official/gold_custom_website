@@ -39,6 +39,26 @@ export function toText(html: string): string {
 }
 
 /**
+ * Own-site links in merchant HTML, made root-relative.
+ *
+ * The rich-text editor stores links as typed: 260 in the blog articles and
+ * ~400 more in collection copy point at the bare `https://goldcustom.com/...`.
+ * Every one is a crawlable vote for the apex host, which is exactly what keeps
+ * goldcustom.com indexed as a second site next to www. Root-relative links
+ * resolve to whatever host served the page, so they can never drift again.
+ *
+ * Only `href` values on this site's own hosts change. Paths that exist only on
+ * the Shopify-hosted domain (checkout, order status, /tools and app proxies)
+ * stay absolute — on www they would 404. Visible text and `src` are untouched.
+ */
+const OWN_HOST_HREF =
+  /href="https?:\/\/(?:www\.|checkout\.)?goldcustom\.com(?:\/(?!(?:checkouts|orders|tools|apps)(?=[/?#"]))|(?="))/g;
+
+export function localizeLinks(html: string): string {
+  return html.replace(OWN_HOST_HREF, 'href="/');
+}
+
+/**
  * Pull the FAQ block out of a collection description.
  *
  * The copy is authored as one rich-text field, with the FAQs written inline:

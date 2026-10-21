@@ -18,6 +18,7 @@ import {groupProducts, productGroupKey} from '~/lib/productGroups';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
+import {StickyAddToCart} from '~/components/StickyAddToCart';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
@@ -44,6 +45,7 @@ import {
   type BundleItem,
 } from '~/components/FrequentlyBoughtTogether';
 import {galleryLeadImage, mediaForSelectedOptions} from '~/lib/variantMedia';
+import {cdnLoader} from '~/lib/cdnImage';
 import {cartLineAttribute} from '~/lib/cartLines';
 import {FINANCE_LINKS} from '~/lib/finance';
 import {
@@ -120,20 +122,93 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     jsonLd: breadcrumbJsonLd(origin, crumbs),
   });
 
-  // If there is a main product image, add a preload link to speed LCP.
-  // Ensure absolute URL so the link works from any route.
-  const preloadLink = image?.url
-    ? {
-        rel: 'preload',
-        as: 'image',
-        href: image.url.startsWith('/')
-          ? absoluteUrl(origin, image.url)
-          : image.url,
-      }
-    : null;
-
-  return preloadLink ? [...tags, preloadLink] : tags;
+  const preload = galleryLeadPreload(product);
+  return preload ? [...tags, preload] : tags;
 };
+
+/**
+ * `sizes` on the gallery's featured photo — GalleryTile in ProductGallery.tsx.
+ * Copied because that component does not export it. The two must change
+ * together, or the preload below fetches a resize the <img> never uses.
+ */
+const GALLERY_FEATURE_SIZES = '(min-width: 48em) 52vw, 100vw';
+
+/**
+ * Preload for the photo the gallery leads with — the product page's LCP.
+ *
+ * This used to be `{rel: 'preload', as: 'image', href}` with no `tagName`,
+ * which React Router renders as `<meta rel="preload">` — a tag no browser
+ * acts on. Its href was also the untransformed original, while the <img> asks
+ * for a CDN resize out of a srcset, so as a real link it would have been a
+ * second download of a file nothing displays.
+ *
+ * So this reproduces what the gallery's first <img> requests, attribute for
+ * attribute. The same lead photo: the variant's image when it is in this
+ * variant's media group, else the group's first item (see galleryLeadImage).
+ * The same URLs: Hydrogen's <Image> with GalleryTile's props builds them with
+ * FluidImage's default srcSetOptions — widths 200 to 3000 in steps of 200,
+ * none wider or taller than the source, `1x/2x/3x` descriptors in the one case
+ * where exactly three survive — through cdnLoader. Hydrogen keeps those
+ * helpers internal, hence the copy; the arithmetic is kept verbatim so every
+ * rounded width and height lands on the same pixel.
+ *
+ * Nothing when the lead is a video — its poster is not this <img>.
+ *
+ * ponytail: a copy, so a Hydrogen upgrade that changes FluidImage's defaults
+ * breaks the match silently. After one, compare this tag's imagesrcset with
+ * the gallery <img>'s srcset in the page source.
+ */
+function galleryLeadPreload(product: any): Record<string, string> | null {
+  const variant = product.selectedOrFirstAvailableVariant;
+  const media = mediaForSelectedOptions(
+    normalizeMedia(product.media?.nodes ?? [], product.title),
+    product.options ?? [],
+    variant?.selectedOptions ?? [],
+  );
+  const leadUrl = galleryLeadImage(media, variant?.image?.url);
+  const lead =
+    (leadUrl && media.find((item) => item.image?.url === leadUrl)) || media[0];
+  if (lead?.kind !== 'image' || !lead.image) return null;
+
+  const {url} = lead.image;
+  // GalleryTile's fallbacks for a source with no recorded dimensions.
+  const width = lead.image.width ?? 1200;
+  const height = lead.image.height ?? 1200;
+  const ratio = 1 / (width / height);
+  const steps = Array.from({length: 15}, (_, i) => 200 + i * 200)
+    .map((step) => ({width: step, height: step * ratio}))
+    .filter((size) => size.width <= width && size.height <= height);
+  const srcSet = steps.length
+    ? steps
+        .map(
+          (size, i) =>
+            `${cdnLoader({src: url, ...size, crop: 'center'})} ${
+              steps.length === 3 ? `${i + 1}x` : `${size.width}w`
+            }`,
+        )
+        .join(', ')
+    : url;
+
+  return {
+    tagName: 'link',
+    rel: 'preload',
+    as: 'image',
+    // The <img>'s own `src`, Hydrogen's 100px placeholder. Only a browser
+    // without imagesrcset support reads it, and there the cost is one tiny
+    // image rather than a full-size guess at the wrong width.
+    href: cdnLoader({
+      src: url,
+      width: 100,
+      height: 100 * ratio,
+      crop: 'center',
+    }),
+    // camelCase for these two, lowercase for `fetchpriority` — which names
+    // React 18 knows; see heroPreloadTags in _index.tsx.
+    imageSrcSet: srcSet,
+    imageSizes: GALLERY_FEATURE_SIZES,
+    fetchpriority: 'high',
+  };
+}
 
 /**
  * Which param holds the product handle depends on which route is rendering.
@@ -201,7 +276,7 @@ type VariantGroup = {
  * and `custom.variant_label` names the selector (e.g. "Length"). Build the
  * dropdown from those so selecting a value opens that product.
  *
- * `parseLen` only decides sort order â€” the labels come straight from the
+ * `parseLen` only decides sort order — the labels come straight from the
  * metafield, so a non-numeric variant_name still renders, just unsorted.
  */
 function parseLen(value: string) {
@@ -232,6 +307,55 @@ function buildVariantGroup(product: any): VariantGroup | null {
 }
 
 /**
+ * The options the product query should select, read from the URL.
+ *
+ * Google Shopping links every offer as `?variant=<numeric id>`, the Liquid
+ * storefront's address shape, not as option params. Ignored, that param
+ * rendered the DEFAULT variant: the 14K Miami Cuban offer landed on a page
+ * whose price, og:price and Offer all said the 10K price — a landing-page
+ * price mismatch, which is what Merchant Center disapproves offers for.
+ *
+ * So a numeric `variant` is resolved to that variant's own options, but only
+ * when it belongs to this product; an id from any other product selects
+ * nothing here. Option params already in the URL win, so an explicit pick is
+ * never overridden by an id still riding along in the address. No redirect —
+ * the URL Google crawled is the one it gets an answer on.
+ *
+ * Only a `?variant=` request pays for the lookup, and it has to land before
+ * the product query can start, since its answer is that query's input. Every
+ * other product view resolves without a query.
+ */
+async function selectedOptionsFor(
+  storefront: Route.LoaderArgs['context']['storefront'],
+  request: Request,
+  handle: string,
+) {
+  const fromUrl = getSelectedProductOptions(request);
+  const id = new URL(request.url).searchParams.get('variant');
+  if (!id || !/^\d+$/.test(id)) return fromUrl;
+
+  const variant = await storefront
+    .query(VARIANT_OPTIONS_QUERY, {
+      variables: {id: `gid://shopify/ProductVariant/${id}`},
+      // Which options an id stands for changes only when the merchant
+      // restructures the product, so the catalog tier, not the price one.
+      cache: CacheCatalog(),
+    })
+    .then((data) => data?.node)
+    // A failed lookup costs the selection, never the page.
+    .catch(() => null);
+  if (variant?.product?.handle !== handle) return fromUrl;
+
+  const named = new Set(fromUrl.map((option) => option.name.toLowerCase()));
+  return [
+    ...fromUrl,
+    ...variant.selectedOptions.filter(
+      (option) => !named.has(option.name.toLowerCase()),
+    ),
+  ];
+}
+
+/**
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
@@ -255,14 +379,16 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   }
 
   const [{product}, installments] = await Promise.all([
-    storefront.query(PRODUCT_QUERY, {
-      variables: {handle, selectedOptions: getSelectedProductOptions(request)},
-      // This query carries price and availableForSale — the two fields a
-      // customer actually acts on. Omitting `cache` does NOT keep them fresh:
-      // Hydrogen's default is maxAge 1 + SWR 86399, so the price on this page
-      // could be a full day old. CachePrice is the 3-minute tier.
-      cache: CachePrice(),
-    }),
+    selectedOptionsFor(storefront, request, handle).then((selectedOptions) =>
+      storefront.query(PRODUCT_QUERY, {
+        variables: {handle, selectedOptions},
+        // This query carries price and availableForSale — the two fields a
+        // customer actually acts on. Omitting `cache` does NOT keep them fresh:
+        // Hydrogen's default is maxAge 1 + SWR 86399, so the price on this page
+        // could be a full day old. CachePrice is the 3-minute tier.
+        cache: CachePrice(),
+      }),
+    ),
     // Shop config, so cache it hard. Errors when the storefront token is
     // missing the `unauthenticated_read_shop_pay_installments_pricing` scope —
     // the banner falls back to FALLBACK_PRICING rather than taking the page down.
@@ -308,7 +434,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     /**
      * Computed here, not at render time, from one shared `now`. `buildProductJsonLd`
      * runs during hydration too, and a `new Date()` evaluated separately on
-     * server and client can straddle a UTC midnight â€” that produces two
+     * server and client can straddle a UTC midnight — that produces two
      * different strings for the same markup and React reports a hydration
      * mismatch. Both dates come from the same instant so they can't drift
      * relative to each other either.
@@ -324,7 +450,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
 function loadDeferredData({context, params}: Route.LoaderArgs) {
-  // Related products â€” fetched after first paint so they never block the page.
+  // Related products — fetched after first paint so they never block the page.
   const recommendedProducts = context.storefront
     .query(PRODUCT_RECOMMENDATIONS_QUERY, {
       // NOT `params.handle` — see productHandleFromParams. On the canonical
@@ -517,6 +643,10 @@ export default function Product() {
   const needsPhoto = isPicturePendantProduct(product);
   const [photoUrl, setPhotoUrl] = useState<string | undefined>();
 
+  // The purchase card, for the phone sticky bar: it watches the buy row inside
+  // and clicks the real Add to bag rather than keeping a second one.
+  const buyBoxRef = useRef<HTMLDivElement>(null);
+
   /**
    * Optimistically selects a variant from the available variant information.
    *
@@ -544,7 +674,7 @@ export default function Product() {
 
   // This ring already in the bag? Show the size that's in there rather than the
   // default, so the picker matches the cart line and the button reads "Added to
-  // bag". Picking another size afterwards leaves this alone â€” that's a
+  // bag". Picking another size afterwards leaves this alone — that's a
   // different line, and it should be addable.
   const bagRingSize = cartLineAttribute(
     useAnalytics().cart,
@@ -747,7 +877,7 @@ export default function Product() {
 
         {/* Wrapper exists for mobile only: it is `display: contents` below 48em
             so the heading, the gallery and the buy panel become siblings that
-            `order` can interleave â€” title, then the piece, then the price.
+            `order` can interleave — title, then the piece, then the price.
             On desktop it is the sticky right column, which is what
             .product-main used to be, so that layout is unchanged. */}
         <div className="product-buy-column">
@@ -761,7 +891,7 @@ export default function Product() {
 
           <div className="product-main">
             <FinancingPartners />
-            <div className="product-purchase-card pdp-card">
+            <div className="product-purchase-card pdp-card" ref={buyBoxRef}>
               <div className="product-price-row">
                 <ProductPrice
                   price={selectedVariant?.price}
@@ -800,7 +930,7 @@ export default function Product() {
                   Solid gold is a soft precious metal. Store this piece
                   separately, keep it away from perfume and chlorine, and polish
                   it with a soft cloth. Custom or engraved pieces are crafted to
-                  order and may add 5â€“7 business days before shipping.
+                  order and may add 5–7 business days before shipping.
                 </p>
               </div>
               {/* Last thing in the card, after the description and the care
@@ -833,6 +963,13 @@ export default function Product() {
       />
 
       <ProductFaqSection faqs={faqs} />
+
+      <StickyAddToCart
+        buyBox={buyBoxRef}
+        title={title}
+        price={selectedVariant?.price}
+        availableForSale={Boolean(selectedVariant?.availableForSale)}
+      />
 
       <Analytics.ProductView
         data={{
@@ -908,7 +1045,7 @@ function ProductTrustBadges() {
 
 /**
  * Rendered when the product has no authored `custom.ai_faq` metafield, so the
- * section never looks empty. Deliberately NOT emitted as FAQPage JSON-LD â€”
+ * section never looks empty. Deliberately NOT emitted as FAQPage JSON-LD —
  * these answers are boilerplate derived from fields already in the Product
  * schema, and marking up generated filler as Q&A is what earns a manual
  * action. Only authored FAQs get structured data (see buildFaqJsonLd).
@@ -1203,11 +1340,11 @@ const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
  * Every file is 200x102, but the mark inside is letterboxed vertically by a
  * different amount. Measured ink bounding boxes:
  *
- *   acima 200x90 Â· american 193x94 Â· progressive 200x75 Â· synchrony 200x44
+ *   acima 200x90 · american 193x94 · progressive 200x75 · synchrony 200x44
  *
  * That letterboxing is the whole problem. Left uncropped in a row of equal
  * cells, each logo fills the cell width and its height falls out of its own
- * aspect ratio â€” so synchrony's 4.5:1 mark renders about 19px tall next to
+ * aspect ratio — so synchrony's 4.5:1 mark renders about 19px tall next to
  * acima's 39px, and the row looks broken rather than set.
  *
  * So each file is cropped to its own mark, and the row is then sized by height
@@ -1216,13 +1353,13 @@ const SHOPIFY_FILES = 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files';
  * in their canvases, so a centre crop is safe; `LOGO_INK_PAD` keeps it clear
  * of the ink.
  *
- * The requested height must stay within the source's own 102px â€” Shopify's CDN
+ * The requested height must stay within the source's own 102px — Shopify's CDN
  * will not upscale, and silently returns the original uncropped frame if asked
  * for more. For the same reason there is no 2x retina variant to request:
  * 200x102 is all these files have.
  *
- * Note there is no horizontal margin to reclaim either â€” three of the four run
- * edge to edge â€” so scaling a logo past its box only collides its neighbour.
+ * Note there is no horizontal margin to reclaim either — three of the four run
+ * edge to edge — so scaling a logo past its box only collides its neighbour.
  */
 const LOGO_INK_PAD = 4;
 
@@ -1236,7 +1373,7 @@ function financingLogo(file: string, ink: number) {
     /**
      * Share of the row this mark takes, proportional to its aspect ratio.
      * Because each image then fills its own share, every logo resolves to the
-     * SAME height â€” row width divided by the sum of these weights â€” at any
+     * SAME height — row width divided by the sum of these weights — at any
      * container width. That is what lets the strip grow with the column
      * instead of sitting at a fixed size with the slack dumped between logos.
      */
@@ -1246,7 +1383,7 @@ function financingLogo(file: string, ink: number) {
 
 /**
  * These are Gold Custom's own merchant application links, not the lenders'
- * marketing homepages â€” each carries a code that attributes the application to
+ * marketing homepages — each carries a code that attributes the application to
  * this store (Acima `location_guid`, Progressive's `GoldCustomLA` portal,
  * Synchrony's `mmc` merchant code). Sending a customer to the bare homepage
  * instead loses that attribution, so keep the query strings intact.
@@ -1480,9 +1617,18 @@ function buildProductJsonLd({
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
     .filter((url): url is string => Boolean(url));
   const price = selectedVariant?.price;
-  // Must match the <link rel="canonical"> emitted by `meta` above â€” a product
+  // Must match the <link rel="canonical"> emitted by `meta` above — a product
   // that advertises two different URLs splits its own ranking signals.
   const url = absoluteUrl(origin, productCanonicalPath(product));
+  // Each Offer names ITS variant's address, in the `?variant=<id>` shape
+  // Google's feed links use and the loader resolves (selectedOptionsFor).
+  // Pointing every Offer at the bare canonical told Google they all lived on
+  // the default variant's page, at the default variant's price. The Product's
+  // own `url` and `@id` stay canonical.
+  const offerUrl = (variant: any) => {
+    const id = variantIdNumber(variant?.id);
+    return id ? `${url}?variant=${id}` : url;
+  };
 
   // Every variant the page already holds, deduped by id. The query fetches
   // `selectedOrFirstAvailableVariant`, `adjacentVariants` and one
@@ -1540,7 +1686,7 @@ function buildProductJsonLd({
     offers: variant.price
       ? {
           '@type': 'Offer',
-          url,
+          url: offerUrl(variant),
           price: Number(variant.price.amount).toFixed(2),
           priceCurrency: variant.price.currencyCode,
           priceValidUntil,
@@ -1599,7 +1745,7 @@ function buildProductJsonLd({
     offers: price
       ? {
           '@type': 'Offer',
-          url,
+          url: offerUrl(selectedVariant),
           // The API returns a bare decimal — "440.0" — while og:price:amount
           // publishes "440.00" for the same variant. Two prices that differ in
           // text is a needless mismatch for anything reconciling the two.
@@ -1776,6 +1922,30 @@ const PRODUCT_QUERY = `#graphql
     }
   }
   ${PRODUCT_FRAGMENT}
+` as const;
+
+/**
+ * What a `?variant=<id>` link selects — see selectedOptionsFor. The handle
+ * comes back so the variant can be checked against the product it landed on.
+ */
+const VARIANT_OPTIONS_QUERY = `#graphql
+  query VariantOptions(
+    $id: ID!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    node(id: $id) {
+      ... on ProductVariant {
+        selectedOptions {
+          name
+          value
+        }
+        product {
+          handle
+        }
+      }
+    }
+  }
 ` as const;
 
 // Shared by the recommendations and their top-up, so both render identical

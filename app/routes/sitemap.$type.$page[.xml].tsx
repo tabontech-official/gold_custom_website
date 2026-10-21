@@ -6,6 +6,13 @@ import {productCanonicalPath} from '~/lib/categories';
 type Storefront = Route.LoaderArgs['context']['storefront'];
 
 /**
+ * Pages this app serves from its own routes rather than from Shopify `pages`,
+ * so Shopify's sitemap API has never heard of them. They ride along at the
+ * end of the first pages sitemap. Each is a self-canonical, indexable 200.
+ */
+const APP_PAGES = ['/showroom', '/repairs', '/custom-jewelry', '/contact'];
+
+/**
  * `handle` → canonical path, for every product in the catalogue.
  *
  * WHY THIS EXISTS
@@ -103,6 +110,18 @@ export async function loader({
   });
 
   response.headers.set('Cache-Control', `max-age=${60 * 60 * 24}`);
+
+  if (params.type === 'pages' && params.page === '1') {
+    const origin = new URL(request.url).origin;
+    const appPages = APP_PAGES.map(
+      (path) => `<url><loc>${origin}${path}</loc></url>`,
+    ).join('');
+    const xml = (await response.text()).replace(
+      '</urlset>',
+      `${appPages}</urlset>`,
+    );
+    return new Response(xml, {headers: response.headers});
+  }
 
   return response;
 }

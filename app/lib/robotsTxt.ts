@@ -6,15 +6,18 @@
 export function robotsTxtData({url, shopId}: {shopId?: string; url?: string}) {
   const sitemapUrl = url ? `${url}/sitemap.xml` : undefined;
 
+  // `Sitemap:` is a file-level line, not a rule of any group, so it is printed
+  // once at the end. It used to ride along inside generalDisallowRules and was
+  // repeated in every group that shares those rules — five identical lines.
   return `
 User-agent: *
-${generalDisallowRules({sitemapUrl, shopId})}
+${generalDisallowRules({shopId})}
 
 User-agent: Googlebot
-${generalDisallowRules({sitemapUrl, shopId})}
+${generalDisallowRules({shopId})}
 
 User-agent: Googlebot-Image
-${generalDisallowRules({sitemapUrl, shopId})}
+${generalDisallowRules({shopId})}
 
 User-agent: adsbot-google
 Disallow: /checkouts/
@@ -32,11 +35,11 @@ Disallow: /
 
 User-agent: AhrefsBot
 Crawl-delay: 10
-${generalDisallowRules({sitemapUrl, shopId})}
+${generalDisallowRules({shopId})}
 
 User-agent: AhrefsSiteAudit
 Crawl-delay: 10
-${generalDisallowRules({sitemapUrl, shopId})}
+${generalDisallowRules({shopId})}
 
 User-agent: MJ12bot
 Crawl-Delay: 10
@@ -45,6 +48,8 @@ User-agent: Pinterest
 Crawl-delay: 1
 
 ${aiCrawlerRules({shopId})}
+
+${sitemapUrl ? `Sitemap: ${sitemapUrl}` : ''}
 `.trim();
 }
 
@@ -107,13 +112,7 @@ function aiCrawlerRules({shopId}: {shopId?: string}) {
  * Faceted-URL bloat is still covered: the sort_by and double-filter rules
  * above target the shapes this storefront can actually emit.
  */
-function generalDisallowRules({
-  shopId,
-  sitemapUrl,
-}: {
-  shopId?: string;
-  sitemapUrl?: string;
-}) {
+function generalDisallowRules({shopId}: {shopId?: string}) {
   return `Allow: /products/
 Allow: /collections/
 Allow: /pages/
@@ -140,6 +139,5 @@ Disallow: /search
 Allow: /search/
 Disallow: /search/?*
 Disallow: /apple-app-site-association
-Disallow: /.well-known/shopify/monorail
-${sitemapUrl ? `Sitemap: ${sitemapUrl}` : ''}`;
+Disallow: /.well-known/shopify/monorail`;
 }

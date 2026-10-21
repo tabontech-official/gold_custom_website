@@ -105,6 +105,9 @@ function SearchAside() {
           {({fetchResults, goToSearch, inputRef}) => (
             <>
               <input
+                // A placeholder is not a label: it vanishes on input and some
+                // screen readers skip it.
+                aria-label="Search"
                 name="q"
                 onChange={fetchResults}
                 onFocus={fetchResults}

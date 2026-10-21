@@ -71,7 +71,10 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
 
               <div className="footer-mid">
                 <div className="footer-col">
-                  <h4>Shop</h4>
+                  {/* h2, not h4: the page's own content ends at h2/h3, and
+                      jumping to h4 here skipped a level (axe heading-order).
+                      Styled by `.footer-col h2`, so the look is unchanged. */}
+                  <h2>Shop</h2>
                   <ul>
                     <li>
                       <Link to="/collections/diamond">
@@ -97,7 +100,7 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                 </div>
 
                 <div className="footer-col">
-                  <h4>Services</h4>
+                  <h2>Services</h2>
                   <ul>
                     <li>
                       <Link to="/repairs">Repair Jewelry</Link>
@@ -112,7 +115,7 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                 </div>
 
                 <div className="footer-col">
-                  <h4>Customers</h4>
+                  <h2>Customers</h2>
                   <ul>
                     <li>
                       <Link to="/policies/refund-policy">
@@ -142,7 +145,7 @@ export function Footer({footer: footerPromise, header}: FooterProps) {
                 </div>
 
                 <div className="footer-col footer-contact-col">
-                    <h4>Stay Connected</h4>
+                    <h2>Stay Connected</h2>
                     <div className="footer-contact-grid">
                       <div>
                         <ul>

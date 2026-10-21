@@ -15,6 +15,7 @@ import {redirectIfHandleIsLocalized} from '~/lib/redirect';
 import {FaqAccordion} from '~/components/FaqAccordion';
 import {FAQS_QUERY, buildFaqJsonLd, parseFaqs} from '~/lib/faqs';
 import {CacheContent} from '~/lib/cache';
+import {localizeLinks} from '~/lib/description';
 import {
   absoluteUrl,
   breadcrumbJsonLd,
@@ -142,7 +143,7 @@ export default function Page() {
   if (page.handle === OPT_OUT_PAGE_HANDLE) {
     return (
       <PolicyDocument title={page.title}>
-        <div dangerouslySetInnerHTML={{__html: page.body}} />
+        <div dangerouslySetInnerHTML={{__html: localizeLinks(page.body)}} />
         <DataSharingOptOut />
       </PolicyDocument>
     );
@@ -154,7 +155,7 @@ export default function Page() {
       <header>
         <h1>{page.title}</h1>
       </header>
-      <main dangerouslySetInnerHTML={{__html: page.body}} />
+      <main dangerouslySetInnerHTML={{__html: localizeLinks(page.body)}} />
       {/* Rendered, not just marked up — the JSON-LD above describes exactly
           these questions, and Google requires FAQ markup to match content the
           visitor can actually see. */}

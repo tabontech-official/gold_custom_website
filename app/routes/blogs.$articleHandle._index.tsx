@@ -14,7 +14,24 @@ import {
 } from '~/lib/seo';
 import {buildFaqJsonLd, extractArticleFaqs} from '~/lib/faqs';
 import {buildHowToJsonLd} from '~/lib/howToSchema';
-import {CacheContent} from '~/lib/cache';
+import {CacheCatalog, CacheContent} from '~/lib/cache';
+import {localizeLinks} from '~/lib/description';
+import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
+import {ProductSlider} from '~/components/ProductSlider';
+
+/**
+ * Guide → the collection its "Shop the collection" rail links to and shows.
+ *
+ * Hand-picked, because the match is editorial: a guide on testing gold is
+ * best served by the pieces people actually buy. Only guides listed here run
+ * the extra query. The 10K-worth and Byzantine guides have no matching
+ * collection yet (10k-gold, 10k-gold-jewelry, 10k-chains, 10k-gold-chains,
+ * byzantine, byzantine-chain(s) all 404 as of Oct 2026) — add them once one
+ * exists.
+ */
+const GUIDE_COLLECTIONS = new Map([
+  ['how-to-tell-if-gold-is-real', 'best-sellers'],
+]);
 
 /**
  * Articles live one level under /blogs — the Shopify blog ("News") is not part
@@ -138,14 +155,26 @@ async function loadCriticalData({context, params}: Route.LoaderArgs) {
     throw new Response('Not found', {status: 404});
   }
 
+  const guideCollectionHandle = GUIDE_COLLECTIONS.get(articleHandle);
+
   // ponytail: looks the article up in the store's single blog. A second blog
   // would need this to search across blogs.
-  const [{blogs}] = await Promise.all([
+  const [{blogs}, guideCollection] = await Promise.all([
     context.storefront.query(ARTICLE_QUERY, {
       cache: CacheContent(),
       variables: {articleHandle},
     }),
-    // Add other queries here, so that they are loaded in parallel
+    // Alongside the article, not after it. Non-fatal: a failure only costs
+    // the rail, never the guide.
+    guideCollectionHandle
+      ? context.storefront
+          .query(GUIDE_COLLECTION_QUERY, {
+            cache: CacheCatalog(),
+            variables: {handle: guideCollectionHandle},
+          })
+          .then((data) => data.collection)
+          .catch(() => null)
+      : null,
   ]);
 
   const blog = blogs.nodes[0];
@@ -169,7 +198,7 @@ async function loadCriticalData({context, params}: Route.LoaderArgs) {
     sitemap?.resources?.items.find((item) => item.handle === articleHandle)
       ?.updatedAt ?? null;
 
-  return {article, dateModified};
+  return {article, dateModified, guideCollection};
 }
 
 /**
@@ -182,7 +211,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Article() {
-  const {article, dateModified} = useLoaderData<typeof loader>();
+  const {article, dateModified, guideCollection} =
+    useLoaderData<typeof loader>();
   const {title, image, contentHtml, author} = article;
 
   const formatDate = (iso: string) =>
@@ -254,9 +284,21 @@ export default function Article() {
 
         <div
           className="article-body"
-          dangerouslySetInnerHTML={{__html: contentHtml}}
+          dangerouslySetInnerHTML={{__html: localizeLinks(contentHtml)}}
         />
       </article>
+
+      {/* Reader to shopper: the guide's own collection, as a text link and
+          cards. ProductSlider renders nothing when there are no products. */}
+      {guideCollection && (
+        <ProductSlider
+          eyebrow="Shop the collection"
+          heading={guideCollection.title}
+          products={guideCollection.products.nodes}
+          viewAllTo={`/collections/${guideCollection.handle}`}
+          viewAllLabel={`Shop ${guideCollection.title}`}
+        />
+      )}
     </>
   );
 }
@@ -291,6 +333,25 @@ const ARTICLE_QUERY = `#graphql
             description
             title
           }
+        }
+      }
+    }
+  }
+` as const;
+
+const GUIDE_COLLECTION_QUERY = `#graphql
+  ${PRODUCT_ITEM_FRAGMENT}
+  query GuideCollection(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      handle
+      title
+      products(first: 8) {
+        nodes {
+          ...ProductItem
         }
       }
     }

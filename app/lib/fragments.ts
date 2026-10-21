@@ -290,3 +290,77 @@ export const FOOTER_QUERY = `#graphql
   }
   ${MENU_FRAGMENT}
 ` as const;
+
+/**
+ * Everything a product card (ProductItem) renders. Shared by the collection
+ * grid and the guides' "Shop the collection" rail, so a card shows and links
+ * the same wherever it appears.
+ */
+export const PRODUCT_ITEM_FRAGMENT = `#graphql
+  fragment MoneyProductItem on MoneyV2 {
+    amount
+    currencyCode
+  }
+  fragment ProductItem on Product {
+    id
+    handle
+    title
+    # New Arrival badge — see cardBadges() in ProductItem.tsx.
+    publishedAt
+    # Products sharing a group name render as one card — see groupProducts.
+    groupName: metafield(namespace: "custom", key: "group_name") {
+      value
+    }
+    # Only used to resolve each product's canonical
+    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
+    # Without them productCanonicalPath falls back to the flat
+    # /products/<handle>, which 301s — and a structured-data list of redirects
+    # is worth less than no list at all.
+    productType
+    category {
+      name
+    }
+    featuredImage {
+      id
+      altText
+      url
+      width
+      height
+    }
+    # Card badges. Tags drive Karat/Diamond and best-sellers
+    # membership drives Best Seller. See cardBadges() in
+    # ProductItem.tsx for why only those, and only from here.
+    tags
+    collections(first: 15) {
+      nodes {
+        handle
+      }
+    }
+    selectedOrFirstAvailableVariant {
+      id
+      availableForSale
+      # The one real identifier in the ItemList's Product nodes — what an
+      # agent or a feed matches this piece by when the title is ambiguous.
+      # See collectionItemListJsonLd.
+      sku
+      # Card badges: a Sale badge must come from a real
+      # compare-at price, never from a tag someone typed.
+      price {
+        amount
+        currencyCode
+      }
+      compareAtPrice {
+        amount
+        currencyCode
+      }
+    }
+    priceRange {
+      minVariantPrice {
+        ...MoneyProductItem
+      }
+      maxVariantPrice {
+        ...MoneyProductItem
+      }
+    }
+  }
+` as const;

@@ -247,7 +247,7 @@ function viewKey(href?: string): string {
 }
 
 export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
-  const {subscribe, register, shop} = useAnalytics();
+  const {subscribe, register, shop, publish} = useAnalytics();
 
   /**
    * Registering is not optional. `Analytics.Provider` buffers every published
@@ -263,6 +263,12 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
   // render of the app. The ref pins a stable handle to the current one.
   const readyRef = useRef(ready);
   readyRef.current = ready;
+
+  // Same reason, different cause: `publish` is a no-op until the visitor
+  // allows tracking and becomes the real one when consent loads. The phone
+  // listener below is attached once and reads whichever is current.
+  const publishRef = useRef(publish);
+  publishRef.current = publish;
 
   const lastConsent = useRef('');
 
@@ -651,6 +657,51 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
     // handler replaces it instead of doubling every event — but "harmless"
     // is a bad thing to rely on for something that fires on every render.
   }, [subscribe, shop?.currency, ga4Id, metaPixelId]);
+
+  /**
+   * Phone taps from every tel: link on the site — header icon, footer,
+   * service pages, and any the merchant pastes into a page, product or
+   * article body — through one delegated listener instead of an onClick per
+   * link. Only /contact had one, so every other call went unreported; CMS
+   * HTML can't carry an onClick at all, and a link added later is tracked
+   * without anyone remembering to. That also makes this the ONLY phone
+   * tracker: a tel: link that adds its own onClick publishing `contact`
+   * counts each call twice.
+   *
+   * Capture phase, so a handler that stops propagation further down can't
+   * swallow the tap. It goes through `publish` rather than ga4()/meta()
+   * directly because `publish` is the consent gate, and the custom_ga4
+   * mapping above already sends both GA4 and Meta.
+   *
+   * `<main>` is checked first on purpose. The header's phone icon sits in
+   * .header-primary, outside the `<header>` element, so `closest('header')`
+   * would file it under the page body; "not in the body, not in the footer"
+   * is what the header actually is here. Body first also keeps a tel: inside
+   * an article's own <header> or <footer> markup counted as content.
+   */
+  useEffect(() => {
+    const onClick = (event: MouseEvent) => {
+      const link =
+        event.target instanceof Element
+          ? event.target.closest('a[href^="tel:" i]')
+          : null;
+      if (!link) return;
+      publishRef.current('custom_ga4', {
+        event: 'contact',
+        params: {
+          method: 'phone',
+          link_location: link.closest('main')
+            ? 'main'
+            : link.closest('footer')
+              ? 'footer'
+              : 'header',
+        },
+        metaEvent: 'Contact',
+      });
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, []);
 
   return null;
 }

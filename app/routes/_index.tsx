@@ -850,7 +850,7 @@ function ProductRail({
 
   return (
     <DragScroller className="split-rail" ariaLabel={ariaLabel} showScrollbar>
-      {products.slice(0, shown).map((product: any, index: number) => (
+      {products.slice(0, shown).map((product: any) => (
         <ProductItem
           key={product.id}
           product={product}
@@ -859,7 +859,10 @@ function ProductRail({
           /* --rail-card-w is `clamp(260px, 30vw, 340px)`: 30vw only beats the
              260px floor above ~867px of viewport, so phones get the floor. */
           sizes="(min-width: 54em) 340px, 260px"
-          loading={index < 4 ? 'eager' : undefined}
+          /* No `loading` override: ProductItem defaults to lazy. Every rail
+             sits below the hero and Shop by Category on phones and desktop,
+             and the first four of each used to be eager — eight product
+             images competing with the hero (LCP) for the first bytes. */
         />
       ))}
       {hasMore && (
@@ -1603,12 +1606,8 @@ function HomeJournal({
                 ariaLabel="journal articles"
                 showScrollbar
               >
-                {nodes.map((article, index) => (
-                  <JournalCard
-                    key={article.id}
-                    article={article}
-                    eager={index < 3}
-                  />
+                {nodes.map((article) => (
+                  <JournalCard key={article.id} article={article} />
                 ))}
               </DragScroller>
             );
@@ -1619,13 +1618,7 @@ function HomeJournal({
   );
 }
 
-function JournalCard({
-  article,
-  eager,
-}: {
-  article: JournalArticle;
-  eager?: boolean;
-}) {
+function JournalCard({article}: {article: JournalArticle}) {
   const to = `/blogs/${article.handle}`;
   const publishedAt = article.publishedAt
     ? new Intl.DateTimeFormat('en-US', {
@@ -1643,7 +1636,10 @@ function JournalCard({
           <img
             src={cdnWidth(article.image.url, 800)}
             alt={article.image.altText || article.title}
-            loading={eager ? 'eager' : 'lazy'}
+            // Always lazy: the Journal sits near the bottom of the homepage, so
+            // "the first three" were never on screen at load — they were just
+            // three full-size downloads competing with the hero.
+            loading="lazy"
             decoding="async"
             draggable={false}
           />
