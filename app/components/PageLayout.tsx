@@ -75,7 +75,18 @@ function CartAside({cart}: {cart: PageLayoutProps['cart']}) {
   return (
     <Aside type="cart" heading="CART">
       <Suspense fallback={<p>Loading cart ...</p>}>
-        <Await resolve={cart}>
+        {/* Every Await of the root cart promise needs its own errorElement:
+            one without it rethrows a rejected cart (React Router aborts it
+            after ~5 s) to the root ErrorBoundary, taking down the whole page
+            and the cart route's own retry with it. /cart auto-retries. */}
+        <Await
+          resolve={cart}
+          errorElement={
+            <p>
+              We couldn&rsquo;t load your bag. <a href="/cart">Try again</a>
+            </p>
+          }
+        >
           {(cart) => {
             return <CartMain cart={cart} layout="aside" />;
           }}

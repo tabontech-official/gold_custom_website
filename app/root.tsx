@@ -208,7 +208,7 @@ export async function loader(args: Route.LoaderArgs) {
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
 async function loadCriticalData({context}: Route.LoaderArgs) {
-  const {storefront} = context;
+  const {storefront, customerAccount} = context;
 
   const [header] = await Promise.all([
     storefront.query(HEADER_QUERY, {
@@ -222,6 +222,16 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
         headerMenuHandle: 'main-menu', // Adjust to your header menu handle
       },
     }),
+    // Not for its value — the deferred `isLoggedIn` below is what the UI
+    // reads. Starting it here puts an expired customer token's refresh ahead
+    // of the shell. Left to the deferred calls (it also runs inside
+    // cart.get()), the refresh finished after server.ts had already checked
+    // `session.isPending`, so the new token was never saved and EVERY page
+    // load re-ran the refresh — holding the cart back each time for any
+    // shopper signed in more than ~an hour ago. Hydrogen shares one refresh
+    // lock across all three calls, it never throws, and for a logged-out
+    // shopper or a valid token it is a session read with no network call.
+    customerAccount.isLoggedIn(),
     // Add other queries here, so that they are loaded in parallel
   ]);
 

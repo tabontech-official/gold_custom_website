@@ -153,6 +153,16 @@ export function analyticsBootstrap({
 }: AnalyticsTagIds): string {
   const parts: string[] = [];
 
+  if (ga4Id || metaPixelId) {
+    // The landing query string, captured before the router can touch the URL.
+    // Both vendor bundles load late (see AnalyticsBridge) and the first event
+    // can be published after the shopper has already navigated in-app, by
+    // which point `utm_*`, `gclid` and `fbclid` are gone from the address bar
+    // and the session is attributed to direct/referral. The bridge reads this
+    // instead of the live URL for attribution.
+    parts.push(`window.__gcLandingSearch=location.search;`);
+  }
+
   if (ga4Id) {
     parts.push(
       // Canonical Google snippet. `gtag` must stay a `function` expression:

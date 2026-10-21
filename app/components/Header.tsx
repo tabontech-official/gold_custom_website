@@ -1228,7 +1228,9 @@ function BagIcon() {
 function CartToggle({cart}: Pick<HeaderProps, 'cart'>) {
   return (
     <Suspense fallback={<CartBadge count={null} />}>
-      <Await resolve={cart}>
+      {/* Without an errorElement a rejected cart promise takes the whole page
+          to the root ErrorBoundary — see CartAside in PageLayout. */}
+      <Await resolve={cart} errorElement={<CartBadge count={null} />}>
         <CartBanner />
       </Await>
     </Suspense>

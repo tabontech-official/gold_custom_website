@@ -2662,6 +2662,11 @@ F
   padding-top: 0;
 }
 
+/* CartPageSkeleton's rows: same first-row rule as the real list above. */
+.cart-skeleton-lines > .cart-line:first-child {
+  padding-top: 0;
+}
+
 .cart-line-inner {
   display: flex;
   gap: 1.25rem;

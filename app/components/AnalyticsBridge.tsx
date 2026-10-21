@@ -30,6 +30,8 @@ declare global {
     dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
     fbq?: (...args: unknown[]) => void;
+    /** Landing `location.search`, written by the inline bootstrap. */
+    __gcLandingSearch?: string;
   }
 }
 
@@ -160,6 +162,87 @@ function marketingAllowed(): boolean {
     return consentApi()?.marketingAllowed() ?? false;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Params that decide which campaign a session is credited to. GA4 reads the
+ * utm/click IDs off `page_location`; Meta reads `fbclid` into its `_fbc`
+ * cookie.
+ */
+const CAMPAIGN_PARAMS = [
+  'utm_source',
+  'utm_medium',
+  'utm_campaign',
+  'utm_term',
+  'utm_content',
+  'utm_id',
+  'gclid',
+  'gbraid',
+  'wbraid',
+  'fbclid',
+];
+
+function landingParam(name: string): string | null {
+  try {
+    return new URLSearchParams(window.__gcLandingSearch ?? '').get(name);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The first page_view carries the landing campaign even if the shopper has
+ * navigated before it was sent (consent loading late, a fast first click).
+ * Without this the URL on that hit has no utm_* and GA4 credits the whole
+ * session to direct/referral. A URL that already has campaign params is left
+ * alone.
+ */
+function withLandingCampaign(href: string): string {
+  try {
+    const url = new URL(href);
+    if (CAMPAIGN_PARAMS.some((name) => url.searchParams.has(name))) return href;
+    for (const name of CAMPAIGN_PARAMS) {
+      const value = landingParam(name);
+      if (value) url.searchParams.set(name, value);
+    }
+    return url.toString();
+  } catch {
+    return href;
+  }
+}
+
+/**
+ * Meta only turns `fbclid` into the `_fbc` click cookie if it is still in the
+ * address bar when fbevents.js boots — and that bundle loads late on purpose.
+ * Writing the cookie ourselves (Meta's documented format) keeps ad clicks
+ * attributed. Only called once marketing consent is granted.
+ */
+function storeFbc() {
+  const fbclid = landingParam('fbclid');
+  if (!fbclid) return;
+  const existing = /(?:^|;\s*)_fbc=([^;]*)/.exec(document.cookie)?.[1];
+  if (existing?.endsWith(`.${fbclid}`)) return;
+  const host = window.location.hostname.replace(/^www\./, '');
+  const domain = host.includes('.') ? `; domain=.${host}` : '';
+  document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; path=/; max-age=7776000; SameSite=Lax${domain}`;
+}
+
+/**
+ * Hydrogen re-publishes every view event whenever `location.search` changes.
+ * On this storefront that is a variant pick on a product page and every
+ * filter/sort/page change on a collection — each one sent a second PageView
+ * and ViewContent for a page the shopper never left, which is the duplicate
+ * count the reports showed. A view is keyed on the path instead; `q` is kept
+ * because a new search term is a genuinely new search page.
+ */
+function viewKey(href?: string): string {
+  try {
+    const url = new URL(href ?? window.location.href);
+    const q = url.searchParams.get('q');
+    return url.pathname + (q ? `?q=${q}` : '');
+  } catch {
+    return href ?? '';
   }
 }
 
@@ -313,6 +396,7 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
         ad_personalization: marketing ? 'granted' : 'denied',
       });
       window.fbq?.('consent', marketing ? 'grant' : 'revoke');
+      if (marketing && metaPixelId) storeFbc();
     }
 
     function ga4(event: string, params: Record<string, unknown>) {
@@ -344,15 +428,35 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
       window.fbq?.('track', event, params ?? {}, {eventID: eventId});
     }
 
+    // Per-mount view state; see viewKey.
+    let lastPageKey = '';
+    let lastProductKey = '';
+    let lastCollectionKey = '';
+    let previousUrl = '';
+
     subscribe('page_viewed', (payload: PageViewPayload) => {
+      const key = viewKey(payload.url);
+      if (key === lastPageKey) return;
+      lastPageKey = key;
+
       ga4('page_view', {
-        page_location: payload.url,
+        page_location: previousUrl
+          ? payload.url
+          : withLandingCampaign(payload.url),
         page_title: document.title,
+        // gtag would otherwise report the external `document.referrer` on
+        // every in-app navigation, since an SPA never updates it.
+        ...(previousUrl ? {page_referrer: previousUrl} : {}),
       });
+      previousUrl = payload.url;
       meta('PageView');
     });
 
     subscribe('product_viewed', (payload: ProductViewPayload) => {
+      const key = viewKey((payload as {url?: string}).url);
+      if (key === lastProductKey) return;
+      lastProductKey = key;
+
       const items = payload.products.map((product) => itemFromProduct(product));
       if (!items.length) return;
 
@@ -368,6 +472,10 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
     });
 
     subscribe('collection_viewed', (payload: CollectionViewPayload) => {
+      const key = viewKey((payload as {url?: string}).url);
+      if (key === lastCollectionKey) return;
+      lastCollectionKey = key;
+
       // The collection route passes its visible products through `customData`;
       // Hydrogen's own payload carries only the collection id and handle, and a
       // `view_item_list` with no items populates no report in GA4.

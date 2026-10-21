@@ -191,3 +191,68 @@ function GenericPageSkeleton() {
     </div>
   );
 }
+
+/**
+ * Mirrors the /cart page: the bordered line panel and the summary box,
+ * built from CartMain's own classes rather than route-skeleton ones, so the
+ * bag streams into the same boxes without reflowing the page and a change to
+ * the cart's CSS moves the placeholder with it.
+ *
+ * Shown while the root loader's deferred `cart.get()` is in flight on a
+ * document load — coming back from checkout is when shoppers see it.
+ * `data-cart-loading` is what the cart route's auto-load watchdog looks for.
+ */
+export function CartPageSkeleton() {
+  return (
+    <div
+      className="cart-main cart-main--page"
+      data-cart-loading=""
+      aria-busy="true"
+    >
+      <span className="sr-only" role="status">
+        Loading your bag
+      </span>
+      <div className="cart-details cart-details--page" aria-hidden="true">
+        <div className="cart-lines-list">
+          <div className="cart-lines-header">
+            <span>Product</span>
+            <span>Quantity</span>
+            <span>Total</span>
+            <span>Action</span>
+          </div>
+          <div className="cart-skeleton-lines">
+            {Array.from({length: 2}).map((_, index) => (
+              <div className="cart-line" key={index}>
+                <div className="cart-line-inner">
+                  <div className="cart-line-product">
+                    <Bone w="84px" h="84px" radius="0" />
+                    <div className="cart-line-info route-skeleton-buybox">
+                      <Bone w="75%" />
+                      <Bone w="40%" h="0.8rem" />
+                    </div>
+                  </div>
+                  <div className="cart-line-col cart-line-col--qty">
+                    <Bone w="6.5rem" h="2.25rem" radius="0" />
+                  </div>
+                  <div className="cart-line-col cart-line-col--total">
+                    <Bone w="5rem" />
+                  </div>
+                  <div className="cart-line-col cart-line-col--action">
+                    <Bone w="1.5rem" h="1.5rem" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="cart-summary-page route-skeleton-buybox">
+          <h4>Order Summary</h4>
+          <Bone h="0.9rem" />
+          <Bone w="70%" h="0.8rem" />
+          <Bone h="2.75rem" radius="0" />
+          <Bone h="3rem" radius="0" />
+        </div>
+      </div>
+    </div>
+  );
+}
