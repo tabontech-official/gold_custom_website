@@ -192,7 +192,7 @@ function landingParam(name: string): string | null {
 }
 
 /**
- * The first page_view carries the landing campaign even if the shopper has
+ * The first GA4 hit carries the landing campaign even if the shopper has
  * navigated before it was sent (consent loading late, a fast first click).
  * Without this the URL on that hit has no utm_* and GA4 credits the whole
  * session to direct/referral. A URL that already has campaign params is left
@@ -399,10 +399,34 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
       if (marketing && metaPixelId) storeFbc();
     }
 
-    function ga4(event: string, params: Record<string, unknown>) {
+    // Whether this document has sent GA4 anything yet; see ga4().
+    let sentFirstHit = false;
+
+    /**
+     * Every hit carries an explicit `page_location`. gtag.js loads late on
+     * purpose, and a hit queued before it arrives is otherwise stamped with
+     * whatever URL is current when it finally loads — after a quick in-app
+     * click, the next page, with no utm_*.
+     *
+     * The FIRST hit also carries the landing campaign. GA4 attaches
+     * session_start, and with it the session's source/medium, to whichever
+     * event comes first — and on a collection or product landing that is
+     * view_item_list / view_item, not page_view: Hydrogen publishes the
+     * route's view before the provider's page view (seen live in the
+     * dataLayer). Stamping only page_view left those sessions unattributed.
+     */
+    function ga4(event: string, params: Record<string, unknown>, url?: string) {
       if (!ga4Id) return;
       syncConsent();
-      window.gtag?.('event', event, params);
+      const location =
+        (params.page_location as string | undefined) ??
+        url ??
+        window.location.href;
+      window.gtag?.('event', event, {
+        ...params,
+        page_location: sentFirstHit ? location : withLandingCampaign(location),
+      });
+      sentFirstHit = true;
     }
 
     /**
@@ -440,9 +464,7 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
       lastPageKey = key;
 
       ga4('page_view', {
-        page_location: previousUrl
-          ? payload.url
-          : withLandingCampaign(payload.url),
+        page_location: payload.url,
         page_title: document.title,
         // gtag would otherwise report the external `document.referrer` on
         // every in-app navigation, since an SPA never updates it.
@@ -454,13 +476,24 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
 
     subscribe('product_viewed', (payload: ProductViewPayload) => {
       const key = viewKey((payload as {url?: string}).url);
-      if (key === lastProductKey) return;
+      // A re-publish on the page the shopper is still on (variant pick) is
+      // skipped; a revisit (product A → collection → A) is not. Comparing
+      // with lastProductKey alone dropped revisits. This relies on Hydrogen
+      // publishing the route's view BEFORE page_viewed, so on a revisit
+      // lastPageKey still holds the page being left. Never reset the keys in
+      // page_viewed instead: that runs right after this, so every variant
+      // pick would send view_item again.
+      if (key === lastProductKey && key === lastPageKey) return;
       lastProductKey = key;
 
       const items = payload.products.map((product) => itemFromProduct(product));
       if (!items.length) return;
 
-      ga4('view_item', {currency, value: totalValue(items), items});
+      ga4(
+        'view_item',
+        {currency, value: totalValue(items), items},
+        (payload as {url?: string}).url,
+      );
       meta('ViewContent', {
         content_type: 'product',
         content_ids: items.map((item) => item.item_id),
@@ -473,7 +506,9 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
 
     subscribe('collection_viewed', (payload: CollectionViewPayload) => {
       const key = viewKey((payload as {url?: string}).url);
-      if (key === lastCollectionKey) return;
+      // Same rule as product_viewed: skip filter/sort/page changes, keep
+      // revisits.
+      if (key === lastCollectionKey && key === lastPageKey) return;
       lastCollectionKey = key;
 
       // The collection route passes its visible products through `customData`;
@@ -483,19 +518,27 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
         []) as ProductViewPayload['products'];
       const listId = payload.collection.handle;
 
-      ga4('view_item_list', {
-        item_list_id: listId,
-        item_list_name: listId,
-        items: products.map((product, index) => ({
-          ...itemFromProduct(product, index),
+      ga4(
+        'view_item_list',
+        {
           item_list_id: listId,
           item_list_name: listId,
-        })),
-      });
+          items: products.map((product, index) => ({
+            ...itemFromProduct(product, index),
+            item_list_id: listId,
+            item_list_name: listId,
+          })),
+        },
+        (payload as {url?: string}).url,
+      );
     });
 
     subscribe('search_viewed', (payload: SearchViewPayload) => {
-      ga4('search', {search_term: payload.searchTerm});
+      ga4(
+        'search',
+        {search_term: payload.searchTerm},
+        (payload as {url?: string}).url,
+      );
       meta('Search', {search_string: payload.searchTerm});
     });
 
