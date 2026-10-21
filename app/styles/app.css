@@ -7599,15 +7599,22 @@ html.header-primary-hidden
   border: 0;
 }
 
-/* Loading shimmer, on the <img> itself rather than the tile behind it — the
-   tile and the featured image both paint #fff, which would cover any skeleton
-   put on the parent. An image's own background shows through only while it has
-   no pixels to draw, so decoding covers this with no JS, no state, and no
-   stuck-skeleton risk if a cached image's load event beats React's handler.
+/* Loading placeholder, on the <img> itself rather than the tile behind it —
+   the tile and the featured image both paint #fff, which would cover any
+   skeleton put on the parent. An image's own background shows through only
+   while it has no pixels to draw, so decoding covers this with no JS, no
+   state, and no stuck-skeleton risk if a cached image's load event beats
+   React's handler.
 
-   Bounded to 8 iterations (~11s) rather than `infinite`: past that the photo
-   has either arrived or failed, and an animation running forever behind every
-   tile of every product page is battery spent on something nobody can see. */
+   Static on purpose. This used to run the skeletonShimmer keyframe for ~11s,
+   but that animates `background-position`, which the compositor cannot run:
+   the browser repainted the featured photo and every thumbnail on every frame
+   for the whole 11s — long after the photos had arrived, since the animation
+   doesn't know they cover it. Lighthouse flagged it as the page's one
+   non-composited animation; removing it cut the PDP's paint time from ~1.4s
+   to ~0.25s and its main-thread task count by ~30% (mobile, 4x CPU). Same fix
+   as the announcement bar's shimmer above, except an <img> has no
+   pseudo-elements to move it onto. */
 .pgg-feature img,
 .pgg-tile img {
   background-image: linear-gradient(
@@ -7618,14 +7625,6 @@ html.header-primary-hidden
     #eee8dd 100%
   );
   background-size: 220% 100%;
-  animation: skeletonShimmer 1.35s ease-in-out 8;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .pgg-feature img,
-  .pgg-tile img {
-    animation: none;
-  }
 }
 
 /* The image fills the frame edge-to-edge (cover) — no floating white space. */
