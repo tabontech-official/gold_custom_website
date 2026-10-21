@@ -1244,6 +1244,64 @@ function scrubTermsText(root: ParentNode): boolean {
 }
 
 /**
+ * Runs `load` once the page has finished loading and the main thread is idle,
+ * or on the shopper's first touch, whichever comes first. Returns a cancel.
+ *
+ * shop-js is the heaviest thing on the PDP that isn't ours: Lighthouse (mobile,
+ * 4x CPU) puts it at ~200 ms of main-thread work, and it pulls ~127 KB of Shop
+ * Pay webfonts. Appended at mount, both landed while the product photo — the
+ * LCP image — was still downloading on a slow connection. Waiting for `load`
+ * hands the photo the bandwidth first; the interaction path means a shopper
+ * who taps or scrolls straight away doesn't wait on idle. Same shape as
+ * AnalyticsBridge's tag loader.
+ */
+function afterPageSettles(load: () => void): () => void {
+  const controller = new AbortController();
+  let idleHandle: number | undefined;
+  let timer: number | undefined;
+  let done = false;
+
+  const cancel = () => {
+    controller.abort();
+    if (idleHandle !== undefined) window.cancelIdleCallback?.(idleHandle);
+    if (timer !== undefined) window.clearTimeout(timer);
+  };
+  const run = () => {
+    if (done) return;
+    done = true;
+    cancel();
+    load();
+  };
+
+  for (const type of ['pointerdown', 'keydown', 'scroll'] as const) {
+    window.addEventListener(type, run, {
+      passive: true,
+      signal: controller.signal,
+    });
+  }
+
+  const whenLoaded = () => {
+    // Safari only shipped requestIdleCallback in 16.4 — the timer is the
+    // fallback, roughly where the idle deadline would have landed.
+    if (window.requestIdleCallback) {
+      idleHandle = window.requestIdleCallback(run, {timeout: 2000});
+    } else {
+      timer = window.setTimeout(run, 1000);
+    }
+  };
+  if (document.readyState === 'complete') {
+    whenLoaded();
+  } else {
+    window.addEventListener('load', whenLoaded, {
+      once: true,
+      signal: controller.signal,
+    });
+  }
+
+  return cancel;
+}
+
+/**
  * Shop Pay Installments banner — the same `shopify-payment-terms` custom
  * element the Liquid storefront renders from `{{ form | payment_terms }}`, so
  * the "sample plans" modal here is Shopify's real one (Affirm's plans, APRs
@@ -1263,12 +1321,34 @@ function ShopPayInstallments({
   pricing: InstallmentsPricing;
 }) {
   const box = useRef<HTMLDivElement>(null);
+  // Whether shop-js has been appended. Both polls below wait for it: started
+  // at mount they would spend their 15s window before the widget even exists.
+  const [termsLoaded, setTermsLoaded] = useState(false);
+
+  useEffect(() => {
+    // A second PDP in the same visit: the script is already on the page.
+    if (document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) {
+      setTermsLoaded(true);
+      return;
+    }
+    return afterPageSettles(() => {
+      if (!document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) {
+        const script = document.createElement('script');
+        script.id = SHOP_PAY_TERMS_SCRIPT_ID;
+        script.type = 'module';
+        script.src = SHOP_PAY_TERMS_SCRIPT;
+        document.body.appendChild(script);
+      }
+      setTermsLoaded(true);
+    });
+  }, []);
 
   // Re-run per variant: switching variant rewrites `shopify-meta`, and the
   // widget re-renders the sentence from scratch. The poll keeps scrubbing for
   // the whole window rather than stopping at the first cut, because shop-js
   // repaints the banner a few times while it boots.
   useEffect(() => {
+    if (!termsLoaded) return;
     const el = box.current;
     if (!el) return;
     scrubTermsText(el);
@@ -1278,16 +1358,10 @@ function ShopPayInstallments({
       clearInterval(poll);
       clearTimeout(stop);
     };
-  }, [variant?.id, price?.amount]);
+  }, [variant?.id, price?.amount, termsLoaded]);
 
   useEffect(() => {
-    if (!document.getElementById(SHOP_PAY_TERMS_SCRIPT_ID)) {
-      const script = document.createElement('script');
-      script.id = SHOP_PAY_TERMS_SCRIPT_ID;
-      script.type = 'module';
-      script.src = SHOP_PAY_TERMS_SCRIPT;
-      document.body.appendChild(script);
-    }
+    if (!termsLoaded) return;
 
     // The portal only exists once the widget has booted, which is a network
     // round trip away — poll briefly rather than racing it, and give up
@@ -1302,7 +1376,7 @@ function ShopPayInstallments({
       clearInterval(poll);
       clearTimeout(stop);
     };
-  }, []);
+  }, [termsLoaded]);
 
   const variantId = variantIdNumber(variant?.id);
   if (!price || !variantId) return null;

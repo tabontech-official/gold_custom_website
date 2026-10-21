@@ -8272,6 +8272,11 @@ html.header-primary-hidden
   margin: 0;
   font-size: 0.9rem;
   color: var(--color-ink-soft);
+  /* shop-js now loads after the page settles (see afterPageSettles in
+     products.$handle.tsx), and until it defines the element the box is empty.
+     Reserving the banner's one-line height (26.3px measured, phone and
+     desktop) keeps the buy row below it from jumping when the line appears. */
+  min-height: 1.65rem;
 }
 
 /* Financing partner logos, under the price/monthly estimate. A soft filled
