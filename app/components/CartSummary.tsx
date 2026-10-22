@@ -17,7 +17,10 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
   return (
     <div aria-labelledby="cart-summary" className={className}>
       {layout === 'page' && <h4>Order Summary</h4>}
-      {layout === 'aside' && <CartNote note={cart?.note} />}
+      {/* Both layouts: the note was aside-only, so a note added in the drawer
+          looked lost on /cart. Checkout doesn't show it either way — it lands
+          on the order (admin → order → Notes). */}
+      <CartNote note={cart?.note} />
 
       <dl className="cart-subtotal">
         <dt>Subtotal</dt>

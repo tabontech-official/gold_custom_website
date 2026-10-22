@@ -173,7 +173,7 @@ export function analyticsBootstrap({
     parts.push(
       // Canonical Google snippet. `gtag` must stay a `function` expression:
       // it forwards the `arguments` object, which an arrow function has no
-      // binding for.
+      // binding for.ocalhost:3000
       `window.dataLayer=window.dataLayer||[];` +
         `window.gtag=function(){window.dataLayer.push(arguments)};` +
         `gtag('js',new Date());` +
