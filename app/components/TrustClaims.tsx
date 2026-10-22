@@ -38,5 +38,14 @@ export function TrustClaimIconArt({name}: {name: TrustClaimIcon}) {
           <path d="m23 32 6 6 13-15" />
         </svg>
       );
+    case 'support':
+      // A headset: band, two ear cups, and the mic boom curling to the mouth.
+      return (
+        <svg viewBox="0 0 64 64" aria-hidden="true">
+          <path d="M12 36v-6a20 20 0 0 1 40 0v6" />
+          <path d="M12 34h6v14h-6ZM46 34h6v14h-6Z" />
+          <path d="M52 48c0 6-6 9-14 9h-4" />
+        </svg>
+      );
   }
 }

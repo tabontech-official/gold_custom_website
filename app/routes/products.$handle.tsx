@@ -1074,7 +1074,7 @@ function fallbackFaqs(
     {
       question: 'What if I need help after ordering?',
       answer:
-        'We support shipping, returns, and warranty questions through our customer care team and the FAQ page.',
+        'We help with shipping, exchange and return questions through our customer care team and the FAQ page.',
     },
   ];
 }

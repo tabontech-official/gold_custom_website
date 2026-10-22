@@ -3,6 +3,9 @@ import {getSeoMeta, type SeoConfig, type WithCache} from '@shopify/hydrogen';
 // bare `node`, which resolves neither the `~` alias nor an extensionless
 // path. Same convention the test files themselves use.
 import {toText} from './description.ts';
+import {FREE_SHIPPING_THRESHOLD_USD} from './trustClaims.ts';
+
+export {FREE_SHIPPING_THRESHOLD_USD};
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -25,8 +28,9 @@ export const SITE = {
    * which was cutting the warranty clause mid-phrase. The previous wording
    * ran 132.
    */
-  description:
-    'Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping over $99, 14-day returns, 1-year warranty.',
+  // Promises here follow trustClaims.ts and the published policies — no
+  // warranty clause, since no policy offers one.
+  description: `Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping $${FREE_SHIPPING_THRESHOLD_USD}+, 14-day exchanges or store credit.`,
   logo: 'https://www.goldcustom.com/favicon.png',
   /**
    * Fallback for any page with no image of its own.
@@ -694,17 +698,18 @@ export function websiteJsonLd(origin: string): JsonLd {
 }
 
 /**
- * Free U.S. shipping kicks in at $99. Schema has no way to express "free above
- * a threshold" that Google reads, so a flat `shippingRate: 0` on a $40 charm
- * would simply be a false claim. The node is therefore attached only to items
- * that individually clear the threshold, where it is unconditionally true;
- * cheaper items get no `shippingDetails` rather than a wrong one.
+ * Free standard U.S. shipping starts at FREE_SHIPPING_THRESHOLD_USD (defined
+ * in trustClaims.ts, transcribed from checkout's rates). Schema has no way to
+ * express "free above a threshold" that Google reads, so a flat
+ * `shippingRate: 0` on a $40 charm would simply be a false claim. The node is
+ * therefore attached only to items that individually clear the threshold,
+ * where it is unconditionally true; cheaper items get no `shippingDetails`
+ * rather than a wrong one.
  *
- * Mirrors the on-page trust badge in ProductTrustBadges. If that promise
- * changes both must change — Google cross-checks structured data against the
- * visible page, and a mismatch is worse than an omission.
+ * The on-page trust badge reads the same constant, so the two can't drift —
+ * Google cross-checks structured data against the visible page, and a
+ * mismatch is worse than an omission.
  */
-export const FREE_SHIPPING_THRESHOLD_USD = 99;
 
 /**
  * Handling + transit time for a standard (non-custom) US order, as given by

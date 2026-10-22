@@ -36,6 +36,7 @@ import {getGoldRates} from '~/lib/goldRates';
 import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 import {CacheCatalog, CacheContent} from '~/lib/cache';
 import {groupProducts} from '~/lib/productGroups';
+import {TRUST_CLAIMS, claimLine} from '~/lib/trustClaims';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
@@ -724,11 +725,11 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
 // Each item must match the policy pages. "Lifetime Warranty" and "Lifetime
 // Upgrade" contradicted the product page's "1 Year Free Warranty" and the
 // 14-day refund policy; a promise the policy won't honour is a chargeback,
-// not a conversion.
+// not a conversion. Read from TRUST_CLAIMS rather than retyped: this list was
+// a second copy, and it had drifted to "Free U.S. Shipping Over $99" while
+// checkout charged nothing from $70.
 const PROMISE_TICKER_ITEMS = [
-  'Made in Our Own U.S.A. Factory',
-  '1-Year Warranty on Production Defects',
-  'Free U.S. Shipping Over $99',
+  ...TRUST_CLAIMS.map(claimLine),
   // Not "0% APR Financing" — rates and approval are set by the lender per
   // applicant, so promising 0% to everyone is a claim we can't honour.
   'Financing Available — Subject to Approval',

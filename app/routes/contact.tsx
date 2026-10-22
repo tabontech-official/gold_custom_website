@@ -3,6 +3,7 @@ import {useAnalytics} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {Route} from './+types/contact';
 import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {FREE_SHIPPING_THRESHOLD_USD} from '~/lib/trustClaims';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
@@ -23,12 +24,16 @@ const SELF_SERVE = [
   {
     to: '/policies/refund-policy',
     label: 'Returns and exchanges',
-    body: '14 days to return an unworn piece. Custom orders are final sale.',
+    // The refund policy's own terms: 14 days from receipt, exchange or store
+    // credit, unused items; custom, personalized and sized-to-order are final.
+    body: '14 days from receipt to exchange an unused piece or take store credit. Custom, personalized and sized-to-order pieces are final sale.',
   },
   {
     to: '/policies/shipping-policy',
     label: 'Shipping and delivery',
-    body: 'Free insured US shipping over $99, signature required on arrival.',
+    // Policy terms only: "signature required on arrival" used to follow, and
+    // the shipping policy never says it.
+    body: `Free insured U.S. shipping with tracking on orders $${FREE_SHIPPING_THRESHOLD_USD} and up.`,
   },
   {
     to: '/repairs',
