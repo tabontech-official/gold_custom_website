@@ -1,5 +1,8 @@
 import {useEffect, useRef} from 'react';
+import {useFetcher} from 'react-router';
+import {withAttribution, type Attribute} from '~/lib/cartAttribution';
 import {
+  CartForm,
   useAnalytics,
   type CartLineUpdatePayload,
   type CartViewPayload,
@@ -32,6 +35,8 @@ declare global {
     fbq?: (...args: unknown[]) => void;
     /** Landing `location.search`, written by the inline bootstrap. */
     __gcLandingSearch?: string;
+    __gcLandingReferrer?: string;
+    __gcLandingPath?: string;
   }
 }
 
@@ -248,6 +253,10 @@ function viewKey(href?: string): string {
 
 export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
   const {subscribe, register, shop, publish} = useAnalytics();
+  // Ref so the subscription below (registered once) always has the live one.
+  const fetcher = useFetcher();
+  const attributionFetcher = useRef(fetcher);
+  attributionFetcher.current = fetcher;
 
   /**
    * Registering is not optional. `Analytics.Provider` buffers every published
@@ -560,6 +569,29 @@ export function AnalyticsBridge({ga4Id, metaPixelId}: AnalyticsTagIds) {
     });
 
     subscribe('product_added_to_cart', (payload: CartLineUpdatePayload) => {
+      // Not GA4/Meta, so not consent-gated here — it's order data the shop
+      // keeps, like the cart itself. Once per cart (withAttribution's marker).
+      const attributes = withAttribution(
+        (payload.cart as {attributes?: Attribute[]} | null)?.attributes,
+        {
+          search: window.__gcLandingSearch ?? '',
+          referrer: window.__gcLandingReferrer ?? '',
+          path: window.__gcLandingPath ?? location.pathname,
+          cookie: document.cookie,
+        },
+      );
+      if (attributes) {
+        void attributionFetcher.current.submit(
+          {
+            [CartForm.INPUT_NAME]: JSON.stringify({
+              action: CartForm.ACTIONS.AttributesUpdateInput,
+              inputs: {attributes},
+            }),
+          },
+          {method: 'POST', action: '/cart'},
+        );
+      }
+
       const current = payload.currentLine as CartLineish | undefined;
       const previous = payload.prevLine as CartLineish | undefined;
       // Hydrogen fires this both for a brand-new line (no prevLine) and for a

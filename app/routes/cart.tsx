@@ -80,6 +80,11 @@ export async function action({request, context}: Route.ActionArgs) {
       });
       break;
     }
+    // Visit source written by AnalyticsBridge (see cartAttribution.ts).
+    case CartForm.ACTIONS.AttributesUpdateInput: {
+      result = await cart.updateAttributes(inputs.attributes);
+      break;
+    }
     case CartForm.ACTIONS.NoteUpdate: {
       result = await cart.updateNote((inputs.note as string) ?? '');
       break;

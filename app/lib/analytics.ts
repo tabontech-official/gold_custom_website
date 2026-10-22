@@ -160,7 +160,13 @@ export function analyticsBootstrap({
     // which point `utm_*`, `gclid` and `fbclid` are gone from the address bar
     // and the session is attributed to direct/referral. The bridge reads this
     // instead of the live URL for attribution.
-    parts.push(`window.__gcLandingSearch=location.search;`);
+    parts.push(
+      `window.__gcLandingSearch=location.search;` +
+        // Referrer and path too: written onto the cart (cartAttribution.ts) so
+        // the order keeps its source through checkout and payment windows.
+        `window.__gcLandingReferrer=document.referrer;` +
+        `window.__gcLandingPath=location.pathname;`,
+    );
   }
 
   if (ga4Id) {
