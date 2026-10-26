@@ -38,5 +38,12 @@ declare global {
      * Unset: bookings/inquiries fail — the metafields are their record.
      */
     PRIVATE_ADMIN_API_TOKEN?: string;
+    /**
+     * Judge.me PUBLIC token (Judge.me → Settings → Integrations → View API
+     * tokens) — read-only, meant for public code. Feeds the product page's
+     * review carousel (loadReviewCarousel in routes/products.$handle.tsx).
+     * Unset: the carousel is left out; nothing else depends on it.
+     */
+    PUBLIC_JUDGEME_TOKEN?: string;
   }
 }

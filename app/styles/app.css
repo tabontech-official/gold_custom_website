@@ -249,6 +249,9 @@ code {
   --color-gold-dark: #b89020;
   --color-gold-deep: #8f6f12;
   --color-gold-soft: rgba(212, 175, 55, 0.14);
+  /* Review star, used as a mask so its colour comes from the background —
+     see .review-stars. */
+  --star-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5l2.9 6.4 7 .7-5.3 4.7 1.6 6.9L12 17.6l-6.2 3.6 1.6-6.9-5.3-4.7 7-.7z'/%3E%3C/svg%3E");
   --color-charcoal: #000000;
   --color-charcoal-deep: #000000;
   --color-cream-text: #000000;
@@ -9294,6 +9297,258 @@ html.header-primary-hidden
     font-size: 0.82rem;
     padding-right: 0.9rem;
   }
+}
+
+/* Review carousel (components/ReviewsCarousel.tsx) — Judge.me's "Cards"
+   carousel layout in the site's own materials: the FAQ's heading and card
+   surface, gold stars, arrows below. Scrolling comes from .hcarousel-viewport. */
+.reviews-carousel-section {
+  padding: 1.75rem 0 0.5rem;
+  @media (min-width: 48em) {
+    padding: 2.75rem 0 1rem;
+  }
+}
+
+.reviews-carousel-head {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.reviews-carousel-head .pdp-faq-title {
+  margin-bottom: 0.85rem;
+}
+
+.reviews-carousel-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  color: var(--color-ink-soft);
+}
+
+.reviews-carousel-meta .review-stars {
+  font-size: 1.1rem;
+}
+
+/* One star SVG tiled five times as a mask, with a hard-stop gradient behind
+   it filling rating/5 of the width — 4.3 is four stars and a third. A mask,
+   not ★ text: Almarai has no star glyph and every OS draws its fallback
+   differently. */
+.review-stars {
+  display: inline-block;
+  flex: none;
+  width: 5.5em;
+  height: 1.1em;
+  background: linear-gradient(
+    90deg,
+    var(--color-gold) calc(var(--rating) * 20%),
+    var(--color-border) 0
+  );
+  -webkit-mask: var(--star-icon) left / 1.1em 1.1em repeat-x;
+  mask: var(--star-icon) left / 1.1em 1.1em repeat-x;
+}
+
+.reviews-carousel {
+  max-width: 72rem;
+  margin: 0 auto;
+}
+
+/* Card widths are fractions of THIS box (cqi), which lets the track size to
+   its content: fewer cards than fit sit centred, more overflow to scroll. */
+.reviews-carousel-viewport {
+  container-type: inline-size;
+}
+
+.reviews-carousel-track {
+  --review-gap: 1.25rem;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100cqi - 2 * var(--review-gap)) / 3);
+  gap: var(--review-gap);
+  width: max-content;
+  margin: 0 auto;
+  /* Room for the cards' shadow inside the clipping viewport. */
+  padding: 0.35rem 0 1rem;
+  list-style: none;
+  @media (max-width: 64em) {
+    grid-auto-columns: calc((100cqi - var(--review-gap)) / 2);
+  }
+  @media (max-width: 40em) {
+    --review-gap: 0.85rem;
+    /* One card and a sliver of the next, so it reads as swipeable. */
+    grid-auto-columns: 86cqi;
+  }
+}
+
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  /* Judge.me's "block height" was 250px; a floor, not a cap, so the name
+     never gets pushed into the card's edge. */
+  min-height: 15.5rem;
+  padding: 1.5rem 1.4rem 1.2rem;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1px solid rgba(160, 126, 55, 0.22);
+  border-radius: 2px;
+  box-shadow: 0 6px 20px rgba(47, 37, 18, 0.045);
+}
+
+@media (hover: none) {
+  .review-card {
+    scroll-snap-align: start;
+  }
+}
+
+.review-card .review-stars {
+  font-size: 0.95rem;
+}
+
+.review-card-title {
+  margin: 0.15rem 0 0;
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--color-ink);
+}
+
+.review-card-body {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  color: var(--color-ink-soft);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+}
+
+/* Customer photos: square thumbnails under the text, full size in a
+   <dialog> on click. */
+.review-card-photos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.review-card-photo {
+  display: block;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 2px;
+  background: var(--color-bg-soft);
+  overflow: hidden;
+  cursor: zoom-in;
+  transition: border-color 160ms ease;
+}
+
+.review-card-photo:hover {
+  border-color: var(--color-gold-dark);
+}
+
+.review-card-photo:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+.review-card-photo img {
+  display: block;
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: cover;
+}
+
+.review-photo-dialog {
+  max-width: min(92vw, 56rem);
+  max-height: 90vh;
+  padding: 0;
+  border: 0;
+  border-radius: 2px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+  overflow: visible;
+}
+
+.review-photo-dialog::backdrop {
+  background: rgba(12, 12, 12, 0.72);
+}
+
+.review-photo-dialog img {
+  display: block;
+  max-width: min(92vw, 56rem);
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+.review-photo-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-ink);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.review-photo-close:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+.review-card-name {
+  margin: auto 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.reviews-carousel-arrows {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.reviews-carousel-arrow {
+  display: grid;
+  place-items: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.reviews-carousel-arrow:hover {
+  border-color: var(--color-gold-dark);
+  color: var(--color-gold-dark);
+}
+
+.reviews-carousel-arrow:focus-visible {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
 }
 
 /* Frequently Bought Together — a picture of the pair, under the gallery.

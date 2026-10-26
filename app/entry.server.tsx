@@ -95,6 +95,8 @@ export default async function handleRequest(
       'https://*.tiktokcdn.com',
       'https://*.tiktokcdn-us.com',
       'https://*.tiktokcdn-eu.com',
+      // Customer photos in the product page's review carousel (Judge.me).
+      'https://review-images.judgeme.com',
       // Analytics still measure over image beacons, not only fetch: GA4 falls
       // back to one when sendBeacon is unavailable, Meta's /tr endpoint is an
       // image by design, and the doubleclick/google.com hosts are the

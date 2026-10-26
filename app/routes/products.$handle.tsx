@@ -20,6 +20,13 @@ import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {StickyAddToCart} from '~/components/StickyAddToCart';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
+import {ReviewsCarousel} from '~/components/ReviewsCarousel';
+import {
+  REVIEWS_PER_PAGE,
+  carouselReviews,
+  type Review,
+  type ReviewCarouselData,
+} from '~/lib/reviews';
 import {ProductItem} from '~/components/ProductItem';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {ShareButtons} from '~/components/ShareButtons';
@@ -254,7 +261,87 @@ export async function loader(args: Route.LoaderArgs) {
     // product is known — which side of the pair it is on decides which
     // collection to ask for. Not awaited, so it still never blocks the page.
     bundlePartner: loadBundlePartner(args.context, criticalData.product),
+    // Same shape: needs the product id, never awaited.
+    reviewCarousel: loadReviewCarousel(args.context, criticalData.product.id),
   };
+}
+
+/**
+ * Data for the review carousel, from Judge.me's widget API with
+ * `json_request=true` (structured JSON; the widget endpoints only ever return
+ * published reviews). The product's own reviews first; only when it has none,
+ * the store-wide list and totals — see carouselReviews.
+ *
+ * The store-wide calls are one cache entry for the whole catalog, so on most
+ * pages they cost nothing; the per-product call is on the price tier so a
+ * newly published review shows within a few minutes.
+ */
+async function loadReviewCarousel(
+  context: Route.LoaderArgs['context'],
+  productId: string,
+): Promise<ReviewCarouselData | null> {
+  const token = context.env.PUBLIC_JUDGEME_TOKEN?.trim();
+  if (!token) return null;
+
+  const get = async <T,>(
+    path: string,
+    cacheKey: string[],
+    cacheStrategy: ReturnType<typeof CachePrice>,
+  ) => {
+    const join = path.includes('?') ? '&' : '?';
+    const {data} = await context.withCache.fetch<T>(
+      `https://api.judge.me/api/v1/widgets/${path}${join}shop_domain=${context.env.PUBLIC_STORE_DOMAIN}`,
+      {
+        headers: {'X-Api-Token': token, Accept: 'application/json'},
+        // Crawlers get the page only once every deferred promise settles
+        // (entry.server awaits allReady for bots), so a hung Judge.me would
+        // hang every product page for them. Give up and leave it out.
+        signal: AbortSignal.timeout(3000),
+      },
+      {
+        displayName: `Judge.me ${path.split('?')[0]}`,
+        cacheKey,
+        cacheStrategy,
+        shouldCacheResponse: (_body, response) => response.ok,
+      },
+    );
+    return data;
+  };
+
+  try {
+    const id = productId.replace('gid://shopify/Product/', '');
+    const own = await get<{reviews?: Review[]}>(
+      `product_review?json_request=true&per_page=${REVIEWS_PER_PAGE}&external_id=${id}`,
+      ['judgeme-product-reviews', id],
+      CachePrice(),
+    );
+    if (own?.reviews?.length) return carouselReviews(own.reviews, [], {});
+
+    const [all, count, rating] = await Promise.all([
+      get<{reviews?: Review[]}>(
+        `all_reviews_page?json_request=true&per_page=${REVIEWS_PER_PAGE}`,
+        ['judgeme-all-reviews'],
+        CacheCatalog(),
+      ),
+      get<{all_reviews_count?: number}>(
+        'all_reviews_count',
+        ['judgeme-all-reviews-count'],
+        CacheCatalog(),
+      ),
+      get<{all_reviews_rating?: string}>(
+        'all_reviews_rating',
+        ['judgeme-all-reviews-rating'],
+        CacheCatalog(),
+      ),
+    ]);
+    return carouselReviews([], all?.reviews ?? [], {
+      count: count?.all_reviews_count,
+      rating: rating?.all_reviews_rating,
+    });
+  } catch (error) {
+    console.error('[reviews]', error);
+    return null;
+  }
 }
 
 type VariantGroupOption = {
@@ -618,6 +705,7 @@ export default function Product() {
     product,
     recommendedProducts,
     bundlePartner,
+    reviewCarousel,
     breadcrumbContext,
     priceValidUntil,
     validFrom,
@@ -956,6 +1044,14 @@ export default function Product() {
           </div>
         </div>
       </div>
+
+      {/* Streams in after the page; null (no token, no reviews, Judge.me
+          down) leaves the section out entirely. */}
+      <Suspense fallback={null}>
+        <Await resolve={reviewCarousel} errorElement={null}>
+          {(data) => (data ? <ReviewsCarousel {...data} /> : null)}
+        </Await>
+      </Suspense>
 
       <RelatedProducts
         products={recommendedProducts}
