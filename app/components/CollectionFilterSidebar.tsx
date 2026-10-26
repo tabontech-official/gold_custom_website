@@ -1,4 +1,5 @@
 import {
+  Suspense,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -11,8 +12,15 @@ import {
 // same no-op without the warning. Both only measure the DOM, client-only work.
 const useClientLayoutEffect =
   typeof window === 'undefined' ? useEffect : useLayoutEffect;
-import {Link, useLocation, useNavigate, useSearchParams} from 'react-router';
+import {
+  Await,
+  Link,
+  useLocation,
+  useNavigate,
+  useSearchParams,
+} from 'react-router';
 import {SORT_OPTIONS} from '~/lib/collectionFilter';
+import {FACETS, parseFacetFilter} from '~/lib/facets';
 import {
   BROWSE_GROUPS,
   browseLabel,
@@ -54,6 +62,14 @@ function stripPagination(params: URLSearchParams) {
   params.delete('page');
   params.delete('cursor');
   params.delete('direction');
+}
+
+function facetFromParam(value: string) {
+  try {
+    return parseFacetFilter(JSON.parse(value));
+  } catch {
+    return null;
+  }
 }
 
 function isPriceParam(value: string) {
@@ -115,6 +131,7 @@ export function CollectionFilterSidebar({
   // from ShareButtons and how the page builds its share content (same
   // pattern as ProductForm's `wishlistButton`). Absent on /search.
   shareButton,
+  deferredFilters,
 }: {
   categories?: SidebarCategory[];
   filters: Filter[];
@@ -122,6 +139,8 @@ export function CollectionFilterSidebar({
   showCounts?: boolean;
   showAppliedChips?: boolean;
   shareButton?: ReactNode;
+  /** Groups that arrive after the page — the storefront's own facets. */
+  deferredFilters?: Promise<Filter[]>;
 }) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
@@ -193,6 +212,16 @@ export function CollectionFilterSidebar({
         };
       }
     }
+    // Karat/Carat/Style carry their own label: their groups stream in after
+    // this renders (deferredFilters), and the param already says it all.
+    const facet = facetFromParam(param);
+    if (facet) {
+      return {
+        key: param,
+        label: `${FACETS.find((f) => f.key === facet.key)?.label}: ${facet.value}`,
+        href: removeFilterHref(param),
+      };
+    }
     return {key: param, label: 'Filter', href: removeFilterHref(param)};
   });
 
@@ -244,6 +273,47 @@ export function CollectionFilterSidebar({
     stripPagination(params);
     const query = params.toString();
     return query ? `?${query}` : '?';
+  }
+
+  function renderGroup(filter: Filter) {
+    const values = dedupeValues(filter.values);
+    const isChecked = (value: GroupedValue) =>
+      value.inputs.some((input) => activeSet.has(normalize(input)));
+    return (
+      <details
+        className="sidebar-group"
+        key={filter.id}
+        // Long lists start closed — Style has ~60 values on "all", a rail
+        // taller than the grid beside it — unless something in them is ticked.
+        // ponytail: a "show more" toggle if shoppers miss it closed.
+        open={
+          values.some(isChecked) ||
+          (!/tag/i.test(filter.label) && values.length <= 12)
+        }
+      >
+        <summary>{filter.label}</summary>
+        <ul className="sidebar-options">
+          {values.map((value) => {
+            const checked = isChecked(value);
+            return (
+              <li key={value.id}>
+                <Link
+                  to={toggleHref(value.inputs)}
+                  preventScrollReset
+                  className={`sidebar-option${checked ? ' is-checked' : ''}`}
+                >
+                  <span className="sidebar-check" aria-hidden="true" />
+                  <span>{value.label}</span>
+                  {showCounts && (
+                    <span className="sidebar-count">{value.count}</span>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+    );
   }
 
   function viewHref(nextView: 'grid' | 'list') {
@@ -404,37 +474,17 @@ export function CollectionFilterSidebar({
           </details>
         )}
 
-        {filterGroups.map((filter) => (
-          <details
-            className="sidebar-group"
-            key={filter.id}
-            open={!/tag/i.test(filter.label)}
-          >
-            <summary>{filter.label}</summary>
-            <ul className="sidebar-options">
-              {dedupeValues(filter.values).map((value) => {
-                const checked = value.inputs.some((input) =>
-                  activeSet.has(normalize(input)),
-                );
-                return (
-                  <li key={value.id}>
-                    <Link
-                      to={toggleHref(value.inputs)}
-                      preventScrollReset
-                      className={`sidebar-option${checked ? ' is-checked' : ''}`}
-                    >
-                      <span className="sidebar-check" aria-hidden="true" />
-                      <span>{value.label}</span>
-                      {showCounts && (
-                        <span className="sidebar-count">{value.count}</span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </details>
-        ))}
+        {filterGroups.map(renderGroup)}
+
+        {/* Karat / Carat / Style (lib/facets), streamed in after the grid on
+            an unfiltered page; same rendering as Shopify's facets above. */}
+        {deferredFilters && (
+          <Suspense fallback={null}>
+            <Await resolve={deferredFilters} errorElement={null}>
+              {(groups) => groups.map(renderGroup)}
+            </Await>
+          </Suspense>
+        )}
 
         <CategoryNav categories={categories} />
       </aside>

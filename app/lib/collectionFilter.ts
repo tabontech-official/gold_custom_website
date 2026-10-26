@@ -3,6 +3,7 @@ import type {
   ProductCollectionSortKeys,
   SearchSortKeys,
 } from '@shopify/hydrogen/storefront-api-types';
+import {parseFacetFilter, type FacetFilter} from './facets';
 
 export type SortOption = {
   label: string;
@@ -119,20 +120,38 @@ export function getSearchSortFromParam(sort?: string | null): SearchSortOption {
   );
 }
 
-/** Every active facet is stored as a JSON-encoded `filter` search param. */
+function parsedFilterParams(searchParams: URLSearchParams): unknown[] {
+  return searchParams.getAll('filter').flatMap((value) => {
+    try {
+      return [JSON.parse(value)];
+    } catch {
+      return []; // ignore malformed filter params
+    }
+  });
+}
+
+/**
+ * Every active facet is stored as a JSON-encoded `filter` search param.
+ * Shopify's facets only: the storefront's own Karat/Carat/Style ride the same
+ * param (see lib/facets) and Shopify rejects the whole query over a field
+ * `ProductFilter` doesn't have.
+ */
 export function getFiltersFromParam(
   searchParams: URLSearchParams,
 ): ProductFilter[] {
-  const filters: ProductFilter[] = [];
-  for (const value of searchParams.getAll('filter')) {
-    try {
-      // every facet has sidebar UI now, price slider included
-      filters.push(JSON.parse(value) as ProductFilter);
-    } catch {
-      // ignore malformed filter params
-    }
-  }
-  return filters;
+  return parsedFilterParams(searchParams).filter(
+    (filter) => !parseFacetFilter(filter),
+  ) as ProductFilter[];
+}
+
+/** The storefront-derived facets in the `filter` params — see lib/facets. */
+export function getFacetFiltersFromParam(
+  searchParams: URLSearchParams,
+): FacetFilter[] {
+  return parsedFilterParams(searchParams).flatMap((filter) => {
+    const facet = parseFacetFilter(filter);
+    return facet ? [facet] : [];
+  });
 }
 
 /**

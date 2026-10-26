@@ -32,9 +32,17 @@ import {CollectionSubNavIcons} from '~/components/CollectionSubNavIcons';
 import {CollectionFilterSidebar} from '~/components/CollectionFilterSidebar';
 import {
   collectionProductCount,
+  getFacetFiltersFromParam,
   getFiltersFromParam,
   getSortFromParam,
 } from '~/lib/collectionFilter';
+import {
+  facetGroups,
+  indexProduct,
+  matchesFacets,
+  type IndexedProduct,
+} from '~/lib/facets';
+import {isbot} from 'isbot';
 import {
   CATEGORY_MENU_HANDLES,
   MERGED_CUBAN_HANDLES,
@@ -55,7 +63,7 @@ import {
   parseFaqMetafield,
   type Faq,
 } from '~/lib/faqs';
-import {CacheCatalog, CacheContent, CacheNav} from '~/lib/cache';
+import {CacheCatalog, CacheContent, CacheNav, CacheStatic} from '~/lib/cache';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {groupProducts} from '~/lib/productGroups';
 import {
@@ -528,6 +536,57 @@ async function loadCollectionProducts(
 }
 
 /**
+ * Every product in the collection under Shopify's filters and sort, reduced to
+ * what the storefront's own Karat/Carat/Style facets need (lib/facets).
+ *
+ * Shopify can't filter on these, so the whole collection is read: 250 products
+ * a page, about 0.35s each — one page for most collections, 7 for rings, 20
+ * for the 4,825-product "all". On the static tier, so that cost lands about
+ * once a day per Oxygen data centre and every other view is a cache hit.
+ */
+async function loadFacetIndex(
+  storefront: Route.LoaderArgs['context']['storefront'],
+  variables: {handle: string; filters: any; sortKey: any; reverse: boolean},
+): Promise<IndexedProduct[]> {
+  const index: IndexedProduct[] = [];
+  let after: string | null = null;
+  do {
+    const data: any = await storefront.query(FACET_INDEX_QUERY, {
+      variables: {...variables, after},
+      cache: CacheStatic(),
+    });
+    const products = data?.collection?.products;
+    if (!products) break;
+    index.push(...products.nodes.map(indexProduct));
+    after = products.pageInfo.hasNextPage ? products.pageInfo.endCursor : null;
+  } while (after);
+  return index;
+}
+
+/** Grid cards for these product ids, in this order, ≤250 per query. */
+async function loadCards(
+  storefront: Route.LoaderArgs['context']['storefront'],
+  ids: string[],
+) {
+  const chunks: string[][] = [];
+  for (let i = 0; i < ids.length; i += PAGE_LIMIT) {
+    chunks.push(ids.slice(i, i + PAGE_LIMIT));
+  }
+  const pages = await Promise.all(
+    chunks.map((chunk) =>
+      storefront.query(FACET_CARDS_QUERY, {
+        variables: {ids: chunk},
+        cache: CacheCatalog(),
+      }),
+    ),
+  );
+  // A product unpublished since the index was cached comes back null.
+  return pages.flatMap((page) =>
+    page.nodes.filter((node) => node && 'id' in node),
+  );
+}
+
+/**
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
@@ -540,11 +599,30 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // ever rendered the in-stock subset. Availability is a filter the shopper
   // opts into from the sidebar (getFiltersFromParam), same as any other facet.
   const filters = getFiltersFromParam(url.searchParams);
+  const facetFilters = getFacetFiltersFromParam(url.searchParams);
   const sort = getSortFromParam(url.searchParams.get('sort'));
+  const count = productsToShow(request);
 
   if (!handle) {
     throw redirect('/collections');
   }
+
+  // Karat/Carat/Style (lib/facets), started beside the main query. Skipped for
+  // crawlers on an unfiltered page: entry.server holds a bot's response until
+  // every promise settles, and the sidebar's checkbox counts are not worth a
+  // cold 7s walk of "all" to Googlebot.
+  const facetIndex =
+    facetFilters.length || !isbot(request.headers.get('user-agent'))
+      ? loadFacetIndex(storefront, {
+          handle,
+          filters,
+          sortKey: sort.sortKey,
+          reverse: sort.reverse,
+        }).catch((error) => {
+          console.error('[facets]', error);
+          return [] as IndexedProduct[];
+        })
+      : Promise.resolve([] as IndexedProduct[]);
 
   // Folded into the single Miami Cuban Chains category — see megaMenu.
   if (MERGED_CUBAN_HANDLES.includes(handle)) {
@@ -600,7 +678,9 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
       filters,
       sortKey: sort.sortKey,
       reverse: sort.reverse,
-      count: productsToShow(request),
+      // Under a Karat/Carat/Style filter the grid comes from the index below;
+      // this query is then only for the collection itself and Shopify's facets.
+      count: facetFilters.length ? 1 : count,
     }),
     // Backs the sidebar's category list. Cached and non-fatal: the page still
     // renders if it fails.
@@ -618,6 +698,33 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: collection});
+
+  // A Karat/Carat/Style filter is on: the grid is the matching slice of the
+  // index — already in Shopify's sort, under Shopify's filters — grouped the
+  // way the normal grid is, then turned into cards. `?show=N` works the same.
+  let facetTotal: number | undefined;
+  if (facetFilters.length) {
+    const matched = groupProducts(
+      (await facetIndex).filter((product) =>
+        matchesFacets(product, facetFilters),
+      ),
+    );
+    const nodes = await loadCards(
+      storefront,
+      matched.slice(0, count).map((product) => product.id),
+    );
+    collection.products = {
+      ...collection.products,
+      nodes: nodes as typeof collection.products.nodes,
+      pageInfo: {
+        ...collection.products.pageInfo,
+        hasNextPage: matched.length > count,
+      },
+      // `matched` is already grouped, so the total below is a card count.
+      groupedAway: 0,
+    };
+    facetTotal = matched.length;
+  }
 
   // This metaobject is assigned in Shopify on each individual collection.
   // Never search or fall back to general site-wide FAQ data here; the only
@@ -640,6 +747,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     collection,
     allCollections,
     faqs,
+    facetTotal,
+    // Sidebar groups. Not awaited when no facet is on, so an unfiltered page
+    // never waits on the index — the three groups stream in beside the grid.
+    facets: facetIndex.then((index) => facetGroups(index, facetFilters)),
     // Resolved here, not in `meta`, because deciding it needs one look at what
     // the CDN actually returns and a meta function cannot await. Null means the
     // banner is unusable as a share image and pageSeo should fall back to the
@@ -678,7 +789,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection, allCollections, faqs} = useLoaderData<typeof loader>();
+  const {collection, allCollections, faqs, facets, facetTotal} =
+    useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
   // The metafield JSON is the source of truth. Any FAQ block still sitting in
@@ -716,7 +828,10 @@ export default function Collection() {
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
   // The collection's true size, from the facet counts that came back with the
   // products — no extra query, and it narrows with the filters.
-  const productCount = collectionProductCount(collection.products.filters);
+  // Under a Karat/Carat/Style filter Shopify's count can't see that filter;
+  // the loader's own match count is the total then.
+  const productCount =
+    facetTotal ?? collectionProductCount(collection.products.filters);
 
   const filters = (collection.products.filters ?? []).map((filter: any) => ({
     id: filter.id,
@@ -763,6 +878,7 @@ export default function Collection() {
           <CollectionFilterSidebar
             categories={categories}
             filters={filters}
+            deferredFilters={facets}
             shareButton={
               <ShareButtons
                 title={collection.title}
@@ -1018,6 +1134,71 @@ const PARENT_COLLECTION_CONTENT_QUERY = `#graphql
  * of the collection, not of the page of products, and re-fetching all of it
  * per 250 products would triple the cost of browsing deep for nothing.
  */
+/** One page of the facet index — see loadFacetIndex and lib/facets. */
+const FACET_INDEX_QUERY = `#graphql
+  query CollectionFacetIndex(
+    $handle: String!
+    $country: CountryCode
+    $language: LanguageCode
+    $filters: [ProductFilter!]
+    $sortKey: ProductCollectionSortKeys
+    $reverse: Boolean
+    $after: String
+  ) @inContext(country: $country, language: $language) {
+    collection(handle: $handle) {
+      products(
+        first: 250,
+        after: $after,
+        filters: $filters,
+        sortKey: $sortKey,
+        reverse: $reverse
+      ) {
+        nodes {
+          id
+          handle
+          title
+          groupName: metafield(namespace: "custom", key: "group_name") {
+            value
+          }
+          options {
+            name
+            optionValues {
+              name
+            }
+          }
+          # Style is membership of the style collections. Twelve is the most
+          # any product is in today.
+          collections(first: 30) {
+            nodes {
+              handle
+            }
+          }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+      }
+    }
+  }
+` as const;
+
+/** Grid cards for a Karat/Carat/Style-filtered page, by id. */
+const FACET_CARDS_QUERY = `#graphql
+  ${PRODUCT_ITEM_FRAGMENT}
+  query CollectionFacetCards(
+    $ids: [ID!]!
+    $country: CountryCode
+    $language: LanguageCode
+  ) @inContext(country: $country, language: $language) {
+    nodes(ids: $ids) {
+      ... on Product {
+        ...ProductItem
+      }
+    }
+  }
+` as const;
+
 const COLLECTION_PRODUCTS_QUERY = `#graphql
   ${PRODUCT_ITEM_FRAGMENT}
   query CollectionProductsPage(
