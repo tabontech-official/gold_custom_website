@@ -59,14 +59,15 @@ export default async function handleRequest(
       // ad attribution matching.
       'https://www.facebook.com',
     ],
-    // Hosted product videos are served from the store's own domain
-    // (e.g. goldcustom.com/cdn/shop/videos/...), not cdn.shopify.com.
+    // Hosted product videos are served from the store's primary domain
+    // (checkout.goldcustom.com/cdn/shop/videos/...), not cdn.shopify.com.
     mediaSrc: [
       "'self'",
       'https://cdn.shopify.com',
       'https://*.shopifycdn.com',
       `https://${context.env.PUBLIC_STORE_DOMAIN}`,
       'https://goldcustom.com',
+      'https://checkout.goldcustom.com',
       // Tidio's notification sounds.
       'https://code.tidio.co',
       // TikTok clip mp4s (v15m/v16m/v19/v45/v77 hosts, three regional CDNs).
