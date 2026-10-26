@@ -45,8 +45,6 @@ export async function action({request, context}: Route.ActionArgs) {
   if (form.get('consent') !== 'yes')
     errors.consent = 'Please agree so we can store your details and reply.';
 
-  // Per-category design options — required, and only values from the
-  // category's own option sheet are accepted.
   const {selections, errors: specErrors} = readSpecSelections(
     productType,
     (field) => String(form.get(field) ?? ''),
