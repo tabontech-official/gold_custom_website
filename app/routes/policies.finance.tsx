@@ -1,6 +1,7 @@
 import {Link} from 'react-router';
 import type {Route} from './+types/policies.finance';
 import {FINANCE_LINKS} from '~/lib/finance';
+import {FinancingLink} from '~/components/FinancingLink';
 import {SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 
 /**
@@ -29,49 +30,44 @@ export default function Finance() {
         </p>
 
         <h2>We Partner With</h2>
-        {/* Third-party lenders: `noopener` because of target=_blank, and
-            `nofollow` so a commercial partner link can't be read as a link
-            scheme or bleed ranking signal off the store — same treatment as
-            the logo strip on the product page. */}
+        {/* Same lead form as the product page's logo strip — FinancingLink. */}
         <ul>
           <li>
-            <a
-              href={FINANCE_LINKS.americanFirst}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
+            <FinancingLink
+              partner={{
+                name: 'American First Finance',
+                href: FINANCE_LINKS.americanFirst,
+              }}
             >
               American First Finance
-            </a>{' '}
+            </FinancingLink>{' '}
             — apply on their secure site.
           </li>
           <li>
-            <a
-              href={FINANCE_LINKS.progressive}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
+            <FinancingLink
+              partner={{
+                name: 'Progressive Leasing',
+                href: FINANCE_LINKS.progressive,
+              }}
             >
               Progressive Leasing
-            </a>{' '}
+            </FinancingLink>{' '}
             — lease-to-own financing. Not available in all states.
           </li>
           <li>
-            <a
-              href={FINANCE_LINKS.synchrony}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
+            <FinancingLink
+              partner={{name: 'Synchrony', href: FINANCE_LINKS.synchrony}}
             >
               Synchrony
-            </a>{' '}
+            </FinancingLink>{' '}
             — flexible retail financing programs.
           </li>
           <li>
-            <a
-              href={FINANCE_LINKS.acima}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
+            <FinancingLink
+              partner={{name: 'Acima Leasing', href: FINANCE_LINKS.acima}}
             >
               Acima
-            </a>{' '}
+            </FinancingLink>{' '}
             — affordable payments and lease options.
           </li>
         </ul>

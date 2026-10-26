@@ -13207,6 +13207,99 @@ html.header-primary-hidden
   color: var(--color-ink-soft);
 }
 
+/* Financing lead form (components/FinancingLink.tsx). Everything else on it —
+   overlay, card, eyebrow, fields, button, success mark — is the appointment
+   modal's own classes above, so the two read as one family. Only the budget
+   choice, the consent line and the text links are new. */
+.fin-lede {
+  max-width: 34ch;
+  margin: 0 auto 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.fin-budget {
+  margin: 0 0 1.1rem;
+  padding: 0;
+  border: 0;
+}
+
+/* Same label treatment as .appt-field > span. */
+.fin-budget legend {
+  margin-bottom: 0.4rem;
+  padding: 0;
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.fin-budget-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6.75rem, 1fr));
+  gap: 0.5rem;
+}
+
+.fin-budget-options label {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0 0.5rem;
+  background: #fff;
+  border: 1px solid var(--color-border);
+  font-size: 0.86rem;
+  color: var(--color-ink);
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.fin-budget-options label:hover {
+  border-color: var(--color-gold);
+}
+
+.fin-budget-options label.is-selected {
+  background: var(--color-gold-soft);
+  border-color: var(--color-gold-dark);
+  font-weight: 600;
+}
+
+.fin-budget-options label:has(:focus-visible) {
+  outline: 2px solid var(--color-gold-dark);
+  outline-offset: 2px;
+}
+
+.fin-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin: 0 0 1.25rem;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+}
+
+.fin-consent input {
+  flex: none;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0.1rem 0 0;
+  accent-color: var(--color-gold-dark);
+}
+
+.fin-text-link {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.fin-text-link:hover {
+  color: var(--color-gold-dark);
+}
+
 /* Compact the modal on phones — full-desktop padding/spacing/height overflows
    small screens. Matches the site's 48em mobile breakpoint. Tighter chrome,
    shorter fields, smaller type. */
