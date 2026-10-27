@@ -3624,28 +3624,9 @@ F
   background: var(--color-bg-soft);
 }
 
-/* Below-the-fold homepage sections: let the browser skip style, layout and
-   paint for them entirely until they are near the viewport. This page is long
-   and dense — product rails, a video rail, a journal rail — and without this
-   every scroll frame carried the cost of the whole document.
-   `contain-intrinsic-size: auto <h>` means the real height is remembered after
-   the first render, so scrolling back up never jumps.
-
-   Two deliberate exclusions. The hero, market bar, category carousel and
-   new-arrivals rail are at or near the fold and must be laid out immediately.
-   `.featured-split` is left out for a different reason: content-visibility
-   brings paint containment with it, which clips at the padding box, and that
-   section's `.split-showcase` casts a 46px shadow into less bottom padding
-   than that — it would end in a hard line instead of a fade. */
-.homepage-faq-section,
-.home-journal {
-  content-visibility: auto;
-  /* Plain value first: engines that don't understand the `auto` keyword keep
-     a usable placeholder height rather than dropping the declaration and
-     collapsing the section to zero. */
-  contain-intrinsic-size: 600px;
-  contain-intrinsic-size: auto 600px;
-}
+/* Keep these small homepage sections in normal layout. Their contents vary
+   enough that a fixed content-visibility placeholder caused large shifts as
+   the FAQ and journal entered the viewport. */
 
 /* Policies directory and individual policy pages */
 .policies-page,
@@ -6983,15 +6964,17 @@ html.header-primary-hidden
     border-color 180ms ease,
     box-shadow 180ms ease,
     transform 180ms ease;
-  /* Same technique .home-journal/.homepage-faq-section use: skip layout and
-     paint entirely for cards outside the viewport, so a long, ungapped grid
-     (search now fetches every match in one page, up to 250) costs the
-     browser like the dozen or so cards actually on screen, not all of them.
-     No shadow-clipping risk here the way that pair's comment warns about —
-     this card already clips its own overflow above, unconditionally. */
+  /* Skip off-screen cards on long collection and search grids. Keep the
+     placeholder close to the rendered card height at each layout size so
+     revealing a row does not move the rest of the page. */
   content-visibility: auto;
-  contain-intrinsic-size: 440px;
-  contain-intrinsic-size: auto 440px;
+  contain-intrinsic-size: auto 295px;
+  @media (max-width: 48em) {
+    /* Two columns: card height follows its square image plus the fixed title
+       and price area. This fluid estimate tracks the image as the columns
+       grow on larger phones and tablets. */
+    contain-intrinsic-size: auto calc(50vw + 37px);
+  }
   /* NO will-change here. Every rail on the homepage renders dozens of these,
      and `will-change: transform` promotes each one to its own compositor
      layer permanently — hundreds of layers on a phone, which costs GPU memory
@@ -12613,6 +12596,7 @@ html.header-primary-hidden
 /* List rows: image pinned to the left edge, title and price to the right. */
 .collection-main.is-list-view .product-item {
   align-items: center;
+  content-visibility: visible;
   display: flex;
   flex-direction: row;
   gap: 1.5rem;
