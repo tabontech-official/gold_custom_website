@@ -63,14 +63,11 @@ export function ProductGallery({
     setActiveKey(null);
   }, [selectedImageUrl]);
 
-  if (!items.length) {
-    return <div className="product-gallery-empty" aria-hidden="true" />;
-  }
-
   const activeItem = items.find((item) => item.key === activeKey) ?? items[0];
+  const activeKeyForRender = activeItem?.key ?? '';
   const activeIndex = Math.max(
     0,
-    items.findIndex((item) => item.key === activeItem.key),
+    items.findIndex((item) => item.key === activeKeyForRender),
   );
   // Wraps at both ends: with the thumbnail rail hidden on mobile these arrows
   // are the only way through the set, and a dead-ended arrow reads as broken.
@@ -157,6 +154,10 @@ export function ProductGallery({
     };
   }, [canSwipe]);
 
+  if (!items.length) {
+    return <div className="product-gallery-empty" aria-hidden="true" />;
+  }
+
   return (
     <div
       className="product-grid-gallery"
@@ -165,7 +166,7 @@ export function ProductGallery({
       {items.length > 1 && (
         <div className="pgg-rail" aria-label="Product media">
           {items.map((m) => {
-            const selected = m.key === activeItem.key;
+            const selected = m.key === activeKeyForRender;
             return (
               <button
                 className={`pgg-thumb ${selected ? 'is-selected' : ''}`}
@@ -204,13 +205,13 @@ export function ProductGallery({
           }
         >
           {items.map((m) =>
-            m.kind === 'image' || m.key === activeItem.key ? (
+            m.kind === 'image' || m.key === activeKeyForRender ? (
               <GalleryTile
                 key={m.key}
                 media={m}
                 title={title}
                 featured
-                active={m.key === activeItem.key}
+                active={m.key === activeKeyForRender}
               />
             ) : null,
           )}
