@@ -1133,15 +1133,17 @@ function ProductTrustBadges() {
       className="product-trust-badges pdp-card"
       aria-label="Product trust badges"
     >
-      {TRUST_CLAIMS.map((claim) => (
-        <div className="product-trust-badge" key={claim.title}>
-          <span className="product-trust-icon">
-            <TrustClaimIconArt name={claim.icon} />
-          </span>
-          <span className="product-trust-title">{claim.title}</span>
-          <span className="product-trust-sub">{claim.sub}</span>
-        </div>
-      ))}
+      <div className="product-trust-badge-grid">
+        {TRUST_CLAIMS.map((claim) => (
+          <div className="product-trust-badge" key={claim.title}>
+            <span className="product-trust-icon">
+              <TrustClaimIconArt name={claim.icon} />
+            </span>
+            <span className="product-trust-title">{claim.title}</span>
+            <span className="product-trust-sub">{claim.sub}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1685,7 +1685,7 @@ F
   0%,
   100% {
     opacity: 1;
-  }
+  }    
   50% {
     opacity: 0.5;
   }
@@ -1694,7 +1694,10 @@ F
 .mega-menu-card:hover .mega-menu-card-img {
   transform: translateY(-3px);
 }
-
+.header-mega-menu{
+ line-style:none;
+ 
+}
 .mega-menu-card-title {
   color: var(--color-ink) !important;
   display: -webkit-box !important;
@@ -1762,20 +1765,26 @@ F
     gap: 2rem;
   }
 
-  /* One column from here down. Two columns at this width leave ~252px each,
-     and the longest collection names need ~273px — so the choice is a single
-     roomy list or two that keep breaking. It reads better as one anyway; the
-     lists stack, keeping menu 1 above menu 2 above menu 3. */
+  /* Give each menu group a real column, while letting long collection names
+     wrap instead of forcing the dropdown into one very tall list. */
   .mega-menu-link-columns {
-    display: block;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: 1.25rem 1.5rem;
   }
 
   .mega-menu-link-list {
+    width: 100%;
     gap: 1rem;
   }
 
+  .mega-menu-link-list a {
+    display: block;
+    width: 100%;
+  }
+
   .mega-menu-link-list + .mega-menu-link-list {
-    margin-top: 1rem;
+    margin-top: 0;
   }
 
   .mega-menu-featured h3 {
@@ -1783,18 +1792,39 @@ F
   }
 
   .mega-menu-product-grid {
-    grid-template-columns: repeat(auto-fit, minmax(0, 158px));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     justify-content: center;
+  }
+
+  .mega-menu-card,
+  .mega-menu-card:hover {
+    width: 100%;
+  }
+
+  .mega-menu-card-img {
+    height: auto;
   }
 }
 
 @media (max-width: 66em) {
   .mega-menu-inner {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 1.25rem;
+  }
+
+  .mega-menu-panel {
+    max-height: calc(100dvh - 8rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1.25rem;
+  }
+
+  .mega-menu-featured h3 {
+    font-size: clamp(1.6rem, 3vw, 2rem);
   }
 
   .mega-menu-product-grid {
-    grid-template-columns: repeat(auto-fit, 170px);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     justify-content: center;
   }
 }
@@ -9041,9 +9071,7 @@ html.header-primary-hidden
 }
 
 .product-trust-badges {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: clamp(0.5rem, 1.2vw, 0.85rem);
+  container-type: inline-size;
   /* Flush with the IMAGE CARD, not with the gallery: the column is capped
      at the same 48rem the gallery is, so stretching to it and pushing right
      past the thumbnail rail leaves both edges level with the big image. The
@@ -9052,11 +9080,17 @@ html.header-primary-hidden
   align-self: stretch;
   margin-left: var(--pgg-stage-offset);
   box-sizing: border-box;
+  min-width: 0;
   /* .pdp-card's own uniform padding — this rule comes after it in the file,
-     so this wins outright; kept as its own value rather than the shared
-     1.15rem/1.3rem since four columns need the horizontal room a card's
-     usual side padding would eat into. */
-  padding: 1rem 0.85rem;
+     so this wins outright. */
+  padding: clamp(0.6rem, 2vw, 1rem) clamp(0.55rem, 2vw, 0.85rem);
+}
+
+.product-trust-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.5rem, 2cqi, 0.85rem);
+  min-width: 0;
 }
 
 .product-trust-badge {
@@ -9071,7 +9105,7 @@ html.header-primary-hidden
 
 .product-trust-icon {
   display: block;
-  width: clamp(1.7rem, 2.6vw, 2.4rem);
+  width: clamp(1.35rem, 6cqi, 2rem);
   margin-bottom: 0.25rem;
   color: #d4af37;
 }
@@ -9088,23 +9122,39 @@ html.header-primary-hidden
 }
 
 .product-trust-title {
-  font-size: clamp(0.6rem, 0.75vw, 0.7rem);
+  font-size: clamp(0.6rem, 4cqi, 0.7rem);
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.15;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .product-trust-sub {
   color: var(--color-ink-soft);
-  font-size: clamp(0.58rem, 0.72vw, 0.66rem);
+  font-size: clamp(0.58rem, 3.8cqi, 0.66rem);
   font-weight: 400;
   line-height: 1.2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
-@media (max-width: 34em) {
+@media (max-width: 66em) {
   .product-trust-badges {
+    margin-left: 0;
+  }
+}
+
+@container (max-width: 36rem) {
+  .product-trust-badge-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 18rem) {
+  .product-trust-badge-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -9544,8 +9594,12 @@ html.header-primary-hidden
    move together if the rail ever changes width. */
 .fbt {
   align-self: stretch;
+  box-sizing: border-box;
+  container-type: inline-size;
   margin-left: var(--pgg-stage-offset);
   margin-top: clamp(0.25rem, 1vw, 0.75rem);
+  max-width: 100%;
+  min-width: 0;
 }
 
 .fbt-title {
@@ -9633,6 +9687,16 @@ html.header-primary-hidden
   text-transform: uppercase;
 }
 
+@media (max-width: 66em) {
+  .fbt {
+    margin-left: 0;
+  }
+
+  .fbt.pdp-card {
+    padding: 1rem;
+  }
+}
+
 @media (max-width: 48em) {
   /* The gallery column dissolves on mobile (display: contents), so this
      needs its own place in the ordered stack: directly above the description
@@ -9697,6 +9761,52 @@ html.header-primary-hidden
     font-size: 0.65rem;
     letter-spacing: 0.04em;
     line-height: 1.15;
+  }
+}
+
+@container (max-width: 26rem) {
+  .fbt-title {
+    font-size: clamp(1.15rem, 7cqi, 1.5rem);
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .fbt-body {
+    align-items: stretch;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.75rem;
+  }
+
+  .fbt-thumbs {
+    flex: none;
+    justify-content: center;
+  }
+
+  .fbt-thumb {
+    width: clamp(3.5rem, 20cqi, 5.5rem);
+  }
+
+  .fbt-plus {
+    padding-inline: clamp(0.25rem, 2cqi, 0.6rem);
+  }
+
+  .fbt-buy {
+    flex: none;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .fbt-total strong {
+    font-size: clamp(1rem, 5cqi, 1.25rem);
+  }
+
+  .fbt-add {
+    min-height: 2.5rem;
+    padding-inline: 0.75rem;
+    font-size: clamp(0.68rem, 3cqi, 0.8rem);
+    line-height: 1.2;
+    white-space: normal;
   }
 }
 

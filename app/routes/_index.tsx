@@ -618,7 +618,7 @@ function Hero({content}: {content: HeroContent | null}) {
             ))}
           </div>
         )}
-        {count > 1 && (
+                      {count > 1 && (
           <div className="hero-dots" role="tablist" aria-label="Hero slides">
             {slides.map((_, index) => (
               <button
