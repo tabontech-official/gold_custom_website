@@ -50,6 +50,13 @@ export type AnalyticsTagIds = {
 const GA4_ID = /^G-[A-Z0-9]{4,20}$/i;
 const META_PIXEL_ID = /^\d{6,25}$/;
 
+/**
+ * The store's Google Tag Manager container (www.goldcustom.com). A constant
+ * rather than env config: the ID never changes, and a missing Oxygen env var
+ * would silently drop the container.
+ */
+export const GTM_CONTAINER_ID = 'GTM-WGSB8HKX';
+
 export function analyticsTagIds(env: {
   PUBLIC_GA4_ID?: string;
   PUBLIC_META_PIXEL_ID?: string;
@@ -121,7 +128,14 @@ export function analyticsVendorScripts({
   ga4Id,
   metaPixelId,
 }: AnalyticsTagIds): Array<{id: string; src: string}> {
-  const scripts: Array<{id: string; src: string}> = [];
+  // The container loads unconditionally: its Google tag and Ads destinations
+  // do not depend on the GA4 or Meta IDs.
+  const scripts: Array<{id: string; src: string}> = [
+    {
+      id: 'gtm',
+      src: `https://www.googletagmanager.com/gtm.js?id=${GTM_CONTAINER_ID}`,
+    },
+  ];
 
   if (ga4Id) {
     scripts.push({
@@ -145,13 +159,19 @@ export function analyticsVendorScripts({
  * queues that are already there, and never has to care whether either vendor
  * script has finished loading.
  *
- * Returns '' when neither ID is configured, so the caller can skip the tag.
+ * Always non-empty now that the GTM container is always on.
  */
 export function analyticsBootstrap({
   ga4Id,
   metaPixelId,
 }: AnalyticsTagIds): string {
-  const parts: string[] = [];
+  const parts: string[] = [
+    // Google's GTM stub with the script injection removed. Google's snippet
+    // inserts gtm.js into <head> mid-parse, which breaks hydration (see
+    // analyticsVendorScripts). gtm.js itself is loaded by AnalyticsBridge.
+    `window.dataLayer=window.dataLayer||[];` +
+      `window.dataLayer.push({'gtm.start':new Date().getTime(),event:'gtm.js'});`,
+  ];
 
   if (ga4Id || metaPixelId) {
     // The landing query string, captured before the router can touch the URL.
