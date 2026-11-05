@@ -581,7 +581,7 @@ async function loadCards(
   );
   // A product unpublished since the index was cached comes back null.
   return pages.flatMap((page) =>
-    page.nodes.filter((node) => node && 'id' in node),
+    page.nodes.filter((node: {id: string} | null) => node && 'id' in node),
   );
 }
 
