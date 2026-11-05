@@ -2250,21 +2250,6 @@ export type ArticleItemFragment = Pick<
   >;
 };
 
-export type SidebarCollectionsQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-}>;
-
-export type SidebarCollectionsQuery = {
-  collections: {
-    nodes: Array<
-      Pick<StorefrontAPI.Collection, 'handle' | 'title'> & {
-        products: {nodes: Array<Pick<StorefrontAPI.Product, 'id'>>};
-      }
-    >;
-  };
-};
-
 export type CollectionContentFragment = {
   collectionFaqs?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Metafield, 'value'> & {
@@ -3835,10 +3820,6 @@ interface GeneratedQueryTypes {
   '#graphql\n  query BlogArticles(\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(country: $country, language: $language) {\n    blogs(first: 1) {\n      nodes {\n        title\n        handle\n        seo {\n          title\n          description\n        }\n        # ponytail: all posts at once; past 250 this needs paging again.\n        articles(first: 250) {\n          nodes {\n            ...ArticleItem\n          }\n        }\n      }\n    }\n  }\n  fragment ArticleItem on Article {\n    author: authorV2 {\n      name\n    }\n    contentHtml\n    excerpt\n    handle\n    id\n    image {\n      id\n      altText\n      url\n      width\n      height\n    }\n    publishedAt\n    title\n  }\n': {
     return: BlogArticlesQuery;
     variables: BlogArticlesQueryVariables;
-  };
-  '#graphql\n  query SidebarCollections($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    collections(first: 250, sortKey: TITLE) {\n      nodes {\n        handle\n        title\n        products(first: 1) {\n          nodes {\n            id\n          }\n        }\n      }\n    }\n  }\n': {
-    return: SidebarCollectionsQuery;
-    variables: SidebarCollectionsQueryVariables;
   };
   '#graphql\n  fragment MenuHandles on Menu {\n    items {\n      url\n    }\n  }\n  query CategoryMenus($country: CountryCode, $language: LanguageCode)\n    @inContext(country: $country, language: $language) {\n    chainsGroup1: menu(handle: "chains-copy-copy-1") { ...MenuHandles }\n    chainsGroup2: menu(handle: "chains-copy-copy") { ...MenuHandles }\n    chainsGroup3: menu(handle: "chains-copy") { ...MenuHandles }\n    braceletsMenu: menu(handle: "bracelets-1") { ...MenuHandles }\n    earringsMenu: menu(handle: "earrings") { ...MenuHandles }\n    pendantsMenu: menu(handle: "pendants") { ...MenuHandles }\n    chainWithPendantMenu: menu(handle: "chain-with-pendant") { ...MenuHandles }\n    diamondMenu: menu(handle: "diamond") { ...MenuHandles }\n    engagementRingsMenu: menu(handle: "engagement-rings") { ...MenuHandles }\n    ringsMenu: menu(handle: "rings") { ...MenuHandles }\n  }\n': {
     return: CategoryMenusQuery;
