@@ -311,11 +311,9 @@ export const PRODUCT_ITEM_FRAGMENT = `#graphql
     groupName: metafield(namespace: "custom", key: "group_name") {
       value
     }
-    # Only used to resolve each product's canonical
-    # /collections/<category>/products/<handle> path for the ItemList JSON-LD.
-    # Without them productCanonicalPath falls back to the flat
-    # /products/<handle>, which 301s — and a structured-data list of redirects
-    # is worth less than no list at all.
+    # Only used to resolve each product card's collection-nested link path
+    # (productCanonicalPath). Without them that falls back to the flat
+    # /products/<handle>, which serves the product too.
     productType
     category {
       name

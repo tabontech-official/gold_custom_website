@@ -1,5 +1,5 @@
 import {Suspense, useEffect, useRef, useState} from 'react';
-import {redirect, useLoaderData, Await, useRouteLoaderData} from 'react-router';
+import {useLoaderData, Await, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/products.$handle';
 import {
   getSelectedProductOptions,
@@ -36,6 +36,7 @@ import {
   collectionLabel,
   getProductCategoryMatch,
   productCanonicalPath,
+  productIndexPath,
 } from '~/lib/categories';
 import {
   DEFAULT_RING_SIZE,
@@ -90,7 +91,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   if (!product) return pageSeo({title: SITE.name});
 
   const origin = siteOrigin(rootDataFrom(matches));
-  const canonical = absoluteUrl(origin, productCanonicalPath(product));
+  const canonical = absoluteUrl(origin, productIndexPath(product.handle));
   const variant = product.selectedOrFirstAvailableVariant;
   const image = variant?.image;
 
@@ -100,7 +101,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ...(category
       ? [{name: category.label, path: `/collections/${category.handle}`}]
       : []),
-    {name: product.title, path: productCanonicalPath(product)},
+    {name: product.title, path: productIndexPath(product.handle)},
   ];
 
   // Base SEO tags
@@ -449,7 +450,6 @@ async function selectedOptionsFor(
  */
 async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   const {storefront} = context;
-  const url = new URL(request.url);
   // Shared by priceValidUntil and validFrom below — see the comment on that
   // return value for why they must come from one instant.
   const now = new Date();
@@ -493,24 +493,8 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // The API handle might be localized, so redirect to the localized handle
   redirectIfHandleIsLocalized(request, {handle, data: product});
 
-  // A product reached WITHOUT a collection in the path has no browsing context
-  // worth preserving, so send it to its canonical URL — one address in the bar,
-  // in the sitemap and in Google. Reached WITH one, it stays put: the collection
-  // is where the shopper actually is, and every such page names the same
-  // canonical anyway.
-  //
-  // 301, not the default 302: a temporary redirect leaves Google crawling the
-  // alias forever and never consolidating ranking onto the real URL.
-  //
-  // No loop is possible — `productCanonicalPath` returns the flat
-  // `/products/<handle>` for a product whose category doesn't resolve, which is
-  // the path we are already on, so the comparison stops it.
-  if (!collectionHandle) {
-    const canonical = productCanonicalPath(product);
-    if (canonical !== url.pathname) {
-      throw redirect(`${canonical}${url.search}`, 301);
-    }
-  }
+  // No redirect here. Both the flat and the collection-nested addresses render
+  // the product; each one's canonical tag names /products/<handle>.
 
   return {
     product,
@@ -541,7 +525,7 @@ function loadDeferredData({context, params}: Route.LoaderArgs) {
   // Related products — fetched after first paint so they never block the page.
   const recommendedProducts = context.storefront
     .query(PRODUCT_RECOMMENDATIONS_QUERY, {
-      // NOT `params.handle` — see productHandleFromParams. On the canonical
+      // NOT `params.handle` — see productHandleFromParams. On the
       // `/collections/<c>/products/<h>` URL that is the collection.
       variables: {productHandle: productHandleFromParams(params)},
       // A browsing rail below the fold, not the buy box: the catalog tier.
@@ -822,7 +806,7 @@ export default function Product() {
     name: title,
     description: metaDescription(product.seo?.description || product.description),
     uploadDate: product.publishedAt,
-    pageUrl: absoluteUrl(productOrigin, productCanonicalPath(product)),
+    pageUrl: absoluteUrl(productOrigin, productIndexPath(product.handle)),
   });
   const rawCategory = product.category?.name || product.productType || '';
   const categoryName =
@@ -1780,7 +1764,7 @@ function buildProductJsonLd({
   const price = selectedVariant?.price;
   // Must match the <link rel="canonical"> emitted by `meta` above — a product
   // that advertises two different URLs splits its own ranking signals.
-  const url = absoluteUrl(origin, productCanonicalPath(product));
+  const url = absoluteUrl(origin, productIndexPath(product.handle));
   // Each Offer names ITS variant's address, in the `?variant=<id>` shape
   // Google's feed links use and the loader resolves (selectedOptionsFor).
   // Pointing every Offer at the bare canonical told Google they all lived on

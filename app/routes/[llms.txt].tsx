@@ -1,5 +1,5 @@
 import type {Route} from './+types/[llms.txt]';
-import {CATEGORIES, productCanonicalPath} from '~/lib/categories';
+import {CATEGORIES, productIndexPath} from '~/lib/categories';
 import {siteOrigin} from '~/lib/seo';
 import {CacheCatalog, CacheStatic} from '~/lib/cache';
 import {groupProducts} from '~/lib/productGroups';
@@ -67,11 +67,10 @@ ${productSection(origin, products)}
 
 ## Notes for agents
 
-- Canonical product URLs are /collections/{collection}/products/{handle}, where
-  the collection is the product's own category. A product listed in several
-  collections is reachable under each of them; every one of those pages names
-  the same canonical, so treat that canonical as the product's identity.
-- A bare /products/{handle} redirects to it; follow the redirect.
+- Canonical product URLs are /products/{handle}. A product listed in several
+  collections is also reachable at /collections/{collection}/products/{handle}
+  under each of them; every one of those pages names /products/{handle} as its
+  canonical, so treat that as the product's identity.
 - Prices and availability change; always re-read the Product JSON-LD rather
   than relying on a cached value.
 - /cart, /account, /wishlist and /checkout are user-specific and not indexable.
@@ -112,10 +111,9 @@ function productSection(
   const lines = groupProducts(products).map((product) => {
     const price = product.priceRange?.minVariantPrice;
     const amount = price?.amount ? Number(price.amount) : null;
-    // Canonical /collections/<category>/products/<handle>, matching the
-    // product page's own canonical tag — a flat /products/<handle> here would
-    // just 301.
-    const path = productCanonicalPath(product);
+    // The canonical /products/<handle>, matching the product page's own
+    // canonical tag.
+    const path = productIndexPath(product.handle);
     const cost =
       amount !== null && Number.isFinite(amount)
         ? ` — from ${price?.currencyCode === 'USD' ? '$' : ''}${amount.toFixed(2)}${price?.currencyCode === 'USD' ? '' : ` ${price?.currencyCode ?? ''}`.trimEnd()}`

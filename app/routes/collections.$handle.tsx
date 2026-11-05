@@ -11,7 +11,7 @@ import type {Route} from './+types/collections.$handle';
 import type {HeaderQuery} from 'storefrontapi.generated';
 import {Analytics} from '@shopify/hydrogen';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
-import {productCanonicalPath} from '~/lib/categories';
+import {productIndexPath} from '~/lib/categories';
 import {analyticsProduct} from '~/lib/analytics';
 import {
   SITE,
@@ -227,10 +227,9 @@ function collectionItemListJsonLd(origin: string, collection: any) {
     name: collection.seo?.title || displayTitle(collection),
     numberOfItems: nodes.length,
     itemListElement: nodes.map((product, index) => {
-      // Must be the canonical /collections/<category>/products/<handle>, not
-      // the flat /products/<handle>, which 301s. See the productType/category
-      // fields on the ProductItem fragment.
-      const url = absoluteUrl(origin, productCanonicalPath(product));
+      // The product's indexed URL — the same /products/<handle> its own page
+      // declares as canonical.
+      const url = absoluteUrl(origin, productIndexPath(product.handle));
       const variant = product.selectedOrFirstAvailableVariant;
       // The variant's own price where there is one, the range's floor
       // otherwise — the same number the card prints, in the same order of

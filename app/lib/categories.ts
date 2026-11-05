@@ -121,19 +121,14 @@ export function buildProductPath(collectionHandle: string, handle: string) {
 }
 
 /**
- * The single indexable path for a product.
+ * The path a product's links point at: the collection-nested URL when the
+ * product has a category, the flat one when it does not.
  *
- * A product sits in many collections, so it is reachable at many valid URLs —
- * exactly as it was on the Liquid storefront. The collection segment here is
- * the product's OWN resolved category, never whichever collection it happened
- * to be browsed through, so the answer is the same on every one of those pages
- * and they all point at one indexed URL.
- *
- * Products whose category doesn't resolve have no collection to nest under and
- * stay at the flat `/products/{handle}`, which serves 200 for them.
- *
- * The loader, the `<link rel="canonical">`, the JSON-LD and llms.txt all call
- * this, so they can never drift apart.
+ * The collection segment is the product's OWN resolved category, never whichever
+ * collection the shopper is browsing through, so a product links to the same
+ * address from every collection it appears in. That is shopping context, NOT
+ * the indexed URL: the `<link rel="canonical">`, the product JSON-LD and the
+ * sitemap all use `productIndexPath`.
  */
 export function productCanonicalPath(
   product: CategorizableProduct & {handle: string},
@@ -142,6 +137,17 @@ export function productCanonicalPath(
   if (!category) return `/products/${encodeURIComponent(product.handle)}`;
 
   return buildProductPath(category.handle, product.handle);
+}
+
+/**
+ * The one indexed URL for a product: the flat `/products/{handle}`.
+ *
+ * Every `/collections/<c>/products/<handle>` address still serves the product,
+ * and each one declares this URL as its canonical, so search engines consolidate
+ * them all onto one page per product. The sitemap lists this URL too.
+ */
+export function productIndexPath(handle: string) {
+  return `/products/${encodeURIComponent(handle)}`;
 }
 
 /**

@@ -9,9 +9,9 @@
  * unrelated branch of the site mid-session. It now renders.
  *
  * The collection segment is browsing context, not identity: the same product
- * is reachable under every collection it belongs to. `productCanonicalPath`
- * resolves the one indexed URL from the product's own category, so all of
- * those pages agree on a single canonical (see products.$handle.tsx).
+ * is reachable under every collection it belongs to. Every one of those pages
+ * declares the same flat `/products/<handle>` as its canonical (see
+ * products.$handle.tsx).
  *
  * `$handle_` keeps this out of collections.$handle.tsx's tree — that route has
  * no Outlet, and nesting would run its full collection query for nothing.
