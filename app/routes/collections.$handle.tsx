@@ -51,7 +51,6 @@ import {
   getMegaMenuParentCrumb,
   useDepartmentHint,
   getMegaMenuParentHandle,
-  getNavCollectionHandles,
 } from '~/lib/megaMenu';
 import type {RootLoader} from '~/root';
 import {FaqAccordion} from '~/components/FaqAccordion';
@@ -671,23 +670,15 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     })
     .catch(() => null);
 
-  const [collection, allCollections] = await Promise.all([
-    loadCollectionProducts(storefront, {
-      handle,
-      filters,
-      sortKey: sort.sortKey,
-      reverse: sort.reverse,
-      // Under a Karat/Carat/Style filter the grid comes from the index below;
-      // this query is then only for the collection itself and Shopify's facets.
-      count: facetFilters.length ? 1 : count,
-    }),
-    // Backs the sidebar's category list. Cached and non-fatal: the page still
-    // renders if it fails.
-    storefront
-      .query(SIDEBAR_COLLECTIONS_QUERY, {cache: CacheNav()})
-      .then((data) => data.collections.nodes)
-      .catch(() => []),
-  ]);
+  const collection = await loadCollectionProducts(storefront, {
+    handle,
+    filters,
+    sortKey: sort.sortKey,
+    reverse: sort.reverse,
+    // Under a Karat/Carat/Style filter the grid comes from the index below;
+    // this query is then only for the collection itself and Shopify's facets.
+    count: facetFilters.length ? 1 : count,
+  });
 
   if (!collection) {
     throw new Response(`Collection ${handle} not found`, {
@@ -744,7 +735,6 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
 
   return {
     collection,
-    allCollections,
     faqs,
     facetTotal,
     // Sidebar groups. Not awaited when no facet is on, so an unfiltered page
@@ -788,7 +778,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection, allCollections, faqs, facets, facetTotal} =
+  const {collection, faqs, facets, facetTotal} =
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
@@ -807,22 +797,6 @@ export default function Collection() {
     publicStoreDomain: rootData?.publicStoreDomain,
     preferDepartmentId: useDepartmentHint(),
   });
-
-  // Only the collections the header nav doesn't already link to — the nav
-  // holds the departments, the sidebar holds the rest of the catalog.
-  const navHandles =
-    rootData?.header && rootData.publicStoreDomain
-      ? getNavCollectionHandles(rootData.header, rootData.publicStoreDomain)
-      : new Set<string>();
-  const categories = allCollections
-    .filter(
-      (node) =>
-        node.products.nodes.length > 0 &&
-        !navHandles.has(node.handle) &&
-        // Shopify's default "Home page" collection — not a real category.
-        node.handle !== 'frontpage',
-    )
-    .map((node) => ({handle: node.handle, title: node.title}));
 
   // The API types `input` as a JSON scalar; it's a JSON string at runtime.
   // The collection's true size, from the facet counts that came back with the
@@ -875,7 +849,6 @@ export default function Collection() {
       <section className="home-section">
         <div className="section-inner collection-layout">
           <CollectionFilterSidebar
-            categories={categories}
             filters={filters}
             deferredFilters={facets}
             shareButton={
@@ -1040,26 +1013,6 @@ export default function Collection() {
     </div>
   );
 }
-
-// Sidebar category list: every published collection, alphabetical. `products`
-// is only there to drop the empty tag-collections (same check as
-// collections._index) so the sidebar never links to a blank page.
-const SIDEBAR_COLLECTIONS_QUERY = `#graphql
-  query SidebarCollections($country: CountryCode, $language: LanguageCode)
-    @inContext(country: $country, language: $language) {
-    collections(first: 250, sortKey: TITLE) {
-      nodes {
-        handle
-        title
-        products(first: 1) {
-          nodes {
-            id
-          }
-        }
-      }
-    }
-  }
-` as const;
 
 // The FAQ metaobject, shared by the collection query and the parent-department
 // lookup that child pages fall back to.
