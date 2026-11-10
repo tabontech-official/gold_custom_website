@@ -80,6 +80,7 @@ import {
   metaDescription,
   offerShippingDetails,
   offerValidFromDate,
+  PHONE,
   pageSeo,
   priceValidUntilDate,
   rootDataFrom,
@@ -819,8 +820,7 @@ export default function Product() {
   )?.label;
 
   const authoredFaqs = parseFaqMetafield(product.faqs?.value);
-  const faqs =
-    authoredFaqs ?? fallbackFaqs(product, selectedVariant, categoryName);
+  const faqs = authoredFaqs ?? fallbackFaqs(selectedVariant);
 
   // Resolve the category to a shoppable collection so the crumb is clickable.
   // Shopify taxonomy names look like "Necklaces in Jewelry", so we match on
@@ -1139,16 +1139,8 @@ function ProductTrustBadges() {
  * schema, and marking up generated filler as Q&A is what earns a manual
  * action. Only authored FAQs get structured data (see buildFaqJsonLd).
  */
-function fallbackFaqs(
-  product: any,
-  selectedVariant: any,
-  categoryName: string,
-): Faq[] {
+function fallbackFaqs(selectedVariant: any): Faq[] {
   return [
-    {
-      question: `What is ${product.title}?`,
-      answer: `This ${categoryName || 'jewelry piece'} is sold by ${product.vendor || 'our store'}${selectedVariant?.sku ? ` and is tracked under SKU ${selectedVariant.sku}` : ''}.`,
-    },
     {
       question: 'What size or length options are available?',
       answer:
@@ -1164,6 +1156,10 @@ function fallbackFaqs(
       question: 'What if I need help after ordering?',
       answer:
         'We help with shipping, exchange and return questions through our customer care team and the FAQ page.',
+    },
+    {
+      question: 'Can I get a call for more details?',
+      answer: `Yes. Call us at ${PHONE.display} and our team can walk you through the details of this piece.`,
     },
   ];
 }
