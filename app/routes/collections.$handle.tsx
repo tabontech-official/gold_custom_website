@@ -476,6 +476,13 @@ function groupForGrid<T extends {groupName?: {value?: string | null} | null}>(
   return ungrouped ? products : groupProducts(products);
 }
 
+/** Shown first on the engagement pages. Matches Shopify's tag exactly. */
+const TOP_TAG = 'Top showing rings';
+
+function isTopPiece(product: {tags?: string[] | null}) {
+  return product.tags?.includes(TOP_TAG) ?? false;
+}
+
 /**
  * The collection, with `count` products in it — following `endCursor` for as
  * many extra queries as that takes.
@@ -497,6 +504,8 @@ async function loadCollectionProducts(
   },
 ) {
   const {handle, filters, sortKey, reverse, count} = variables;
+  // Engagement pages walk the whole collection so the tagged pieces can go first.
+  const allPieces = handle.endsWith('engagement-rings');
   const {collection} = await storefront.query(COLLECTION_QUERY, {
     variables: {
       handle,
@@ -520,11 +529,15 @@ async function loadCollectionProducts(
   // over the whole walk from the first product, so a group's representative is
   // its first product in the active sort, and no later Load More can bring a
   // second member of a group back.
-  const raw = [...collection.products.nodes];
+  let raw = [...collection.products.nodes];
   let nodes = groupForGrid(handle, raw);
   let pageInfo = collection.products.pageInfo;
 
-  while (nodes.length < count && pageInfo?.hasNextPage && pageInfo?.endCursor) {
+  while (
+    (allPieces || nodes.length < count) &&
+    pageInfo?.hasNextPage &&
+    pageInfo?.endCursor
+  ) {
     // Grouping can collapse part of every page, so the exact shortfall is not
     // enough to fill the batch; a full page makes that one round trip rather
     // than a shrinking series of them. The extra cards are sliced off below.
@@ -549,6 +562,14 @@ async function loadCollectionProducts(
     raw.push(...next.nodes);
     nodes = groupForGrid(handle, raw);
     pageInfo = next.pageInfo;
+  }
+
+  // Engagement pages: the tagged pieces go first, each group keeping the sort
+  // order it came in. Done here, client-side of Shopify, because the collection
+  // query ignores a tag filter.
+  if (allPieces) {
+    raw = [...raw.filter(isTopPiece), ...raw.filter((p) => !isTopPiece(p))];
+    nodes = groupForGrid(handle, raw);
   }
 
   // Cards beyond `count` were fetched but not asked for. They are real,
