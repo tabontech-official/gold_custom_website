@@ -117,6 +117,8 @@ export function CollectionFilterSidebar({
   // pattern as ProductForm's `wishlistButton`). Absent on /search.
   shareButton,
   deferredFilters,
+  // Every group starts open (engagement rings page), instead of long ones closed.
+  expandAll = false,
 }: {
   filters: Filter[];
   sortOptions?: ReadonlyArray<{label: string; value: string}>;
@@ -125,6 +127,7 @@ export function CollectionFilterSidebar({
   shareButton?: ReactNode;
   /** Groups that arrive after the page — the storefront's own facets. */
   deferredFilters?: Promise<Filter[]>;
+  expandAll?: boolean;
 }) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
   const [sortOpen, setSortOpen] = useState(false);
@@ -271,6 +274,7 @@ export function CollectionFilterSidebar({
         // taller than the grid beside it — unless something in them is ticked.
         // ponytail: a "show more" toggle if shoppers miss it closed.
         open={
+          expandAll ||
           values.some(isChecked) ||
           (!/tag/i.test(filter.label) && values.length <= 12)
         }

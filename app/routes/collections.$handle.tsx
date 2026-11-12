@@ -1,8 +1,9 @@
-import {useRef} from 'react';
+import {useEffect, useRef} from 'react';
 import {
   Link,
   redirect,
   useLoaderData,
+  useNavigate,
   useNavigation,
   useRouteLoaderData,
   useSearchParams,
@@ -308,6 +309,31 @@ export async function loader(args: Route.LoaderArgs) {
  * independent: the browser measures the grid it actually rendered, adds five
  * rows of it, and asks for that many.
  */
+/**
+ * Loads the next batch when it scrolls into view (engagement rings), instead of
+ * a Load More button. Same `?show=N` link as the button, so it behaves the same.
+ */
+// ponytail: no JS means no more than the first batch; add a noscript link if that matters.
+function AutoLoadSentinel({href}: {href: string}) {
+  const navigate = useNavigate();
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          navigate(href, {replace: true, preventScrollReset: true});
+        }
+      },
+      {rootMargin: '600px 0px'},
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [href, navigate]);
+  return <div ref={ref} aria-hidden="true" />;
+}
+
 function ProductGrid({
   connection,
   total,
@@ -320,6 +346,7 @@ function ProductGrid({
     nodes: any[];
     isLoading: boolean;
     hasNextPage: boolean;
+    nextHref: string;
     columns: number;
     gridRef: React.MutableRefObject<HTMLDivElement | null>;
     LoadMoreLink: (props: {
@@ -384,6 +411,7 @@ function ProductGrid({
     // Shopify's own answer, and nothing else: the page stops offering more
     // products exactly when the collection runs out of them.
     hasNextPage: connection.pageInfo?.hasNextPage ?? false,
+    nextHref: linkTo(nextShow),
     LoadMoreLink,
   });
 }
@@ -438,6 +466,16 @@ function productsToShow(request: Request): number {
   return FIRST_BATCH;
 }
 
+// ponytail: engagement rings show every piece as its own card; grouping stays on everywhere else.
+// Covers engagement-rings and its shape pages (round-engagement-rings, halo-engagement-rings, ...).
+function groupForGrid<T extends {groupName?: {value?: string | null} | null}>(
+  handle: string,
+  products: T[],
+): T[] {
+  const ungrouped = handle.endsWith('engagement-rings');
+  return ungrouped ? products : groupProducts(products);
+}
+
 /**
  * The collection, with `count` products in it — following `endCursor` for as
  * many extra queries as that takes.
@@ -483,7 +521,7 @@ async function loadCollectionProducts(
   // its first product in the active sort, and no later Load More can bring a
   // second member of a group back.
   const raw = [...collection.products.nodes];
-  let nodes = groupProducts(raw);
+  let nodes = groupForGrid(handle, raw);
   let pageInfo = collection.products.pageInfo;
 
   while (nodes.length < count && pageInfo?.hasNextPage && pageInfo?.endCursor) {
@@ -509,7 +547,7 @@ async function loadCollectionProducts(
     // the grid truthfully whether to offer Load More.
     if (!next?.nodes?.length) break;
     raw.push(...next.nodes);
-    nodes = groupProducts(raw);
+    nodes = groupForGrid(handle, raw);
     pageInfo = next.pageInfo;
   }
 
@@ -694,7 +732,8 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // way the normal grid is, then turned into cards. `?show=N` works the same.
   let facetTotal: number | undefined;
   if (facetFilters.length) {
-    const matched = groupProducts(
+    const matched = groupForGrid(
+      handle,
       (await facetIndex).filter((product) =>
         matchesFacets(product, facetFilters),
       ),
@@ -851,6 +890,7 @@ export default function Collection() {
           <CollectionFilterSidebar
             filters={filters}
             deferredFilters={facets}
+            expandAll={collection.handle.endsWith('engagement-rings')}
             shareButton={
               <ShareButtons
                 title={collection.title}
@@ -873,9 +913,12 @@ export default function Collection() {
                 isLoading,
                 LoadMoreLink,
                 hasNextPage,
+                nextHref,
                 columns,
                 gridRef,
               }) => {
+                // Engagement rings: no button, the next batch loads on scroll.
+                const autoLoad = collection.handle.endsWith('engagement-rings');
                 return (
                   <div className="load-more">
                     {/* No "Load previous". Every product from the first one
@@ -941,7 +984,9 @@ export default function Collection() {
                           ? `${nodes.length} of ${productCount} pieces shown`
                           : `${nodes.length} pieces shown`}
                       </span>
-                      {hasNextPage ? (
+                      {hasNextPage && autoLoad ? (
+                        !isLoading && <AutoLoadSentinel href={nextHref} />
+                      ) : hasNextPage ? (
                         <LoadMoreLink className="load-more-btn">
                           {isLoading ? 'Loading…' : 'Load More'}
                         </LoadMoreLink>
