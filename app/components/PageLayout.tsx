@@ -1,4 +1,4 @@
-import {Await} from 'react-router';
+import {Await, Link, useLocation} from 'react-router';
 import {Suspense} from 'react';
 import type {
   CartApiQueryFragment,
@@ -31,6 +31,7 @@ export function PageLayout({
   isLoggedIn,
   publicStoreDomain,
 }: PageLayoutProps) {
+  const {pathname} = useLocation();
   return (
     <Aside.Provider>
       <CartAside cart={cart} />
@@ -59,6 +60,8 @@ export function PageLayout({
         */}
         <SocialRail />
         <main className="page-body">
+          {/* Collection pages place their own copy (see collections.$handle). */}
+          {pathname.startsWith('/collections/') ? null : <BlackFridayBanner />}
           <RouteTransition>{children}</RouteTransition>
         </main>
       </div>
@@ -68,6 +71,36 @@ export function PageLayout({
         publicStoreDomain={publicStoreDomain}
       />
     </Aside.Provider>
+  );
+}
+
+/**
+ * The Black Friday banner, shown at the top of every page. The image is the
+ * whole banner, so any wording lives in the image itself. The whole banner is
+ * one link to the engagement collection. On phones app.css crops it to the
+ * headline.
+ */
+export function BlackFridayBanner() {
+  return (
+    <Link
+      className="black-friday-banner"
+      to="/collections/engagement-rings"
+      prefetch="intent"
+    >
+      <picture>
+        <source
+          media="(max-width: 45em)"
+          srcSet="/Black%20Friday%20Engagement%20Ring%20Event%20mobile.png"
+        />
+        <img
+          className="black-friday-image"
+          src="/Luxe%20Black%20Friday%20Ring%20Event.png"
+          alt="Black Friday engagement ring event. Shop the deals"
+          width={2660}
+          height={218}
+        />
+      </picture>
+    </Link>
   );
 }
 

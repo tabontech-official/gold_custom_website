@@ -7,6 +7,7 @@ import type {
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
+import {formatUsd, productSavings} from '~/lib/discount';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
@@ -64,6 +65,7 @@ export function ProductItem({
     : productCanonicalPath(product);
   const image = product.featuredImage;
   const badges = cardBadges(product);
+  const savings = productSavings(product);
 
   const {publish} = useAnalytics();
 
@@ -128,6 +130,10 @@ export function ProductItem({
           );
         })}
 
+        {savings && (
+          <span className="product-off-badge">{savings.percent}% OFF</span>
+        )}
+
         {/* Heart sits top-right over the image, always visible. */}
         <div className="product-wishlist-control">
           <WishlistButton handle={product.handle} product={product} />
@@ -149,9 +155,23 @@ export function ProductItem({
         >
           <h3>{product.title}</h3>
         </Link>
-        <div className="product-card-price">
-          <Money data={product.priceRange.minVariantPrice} />
-        </div>
+        {savings ? (
+          <div className="product-card-price is-sale">
+            <s className="product-card-was">
+              <Money data={product.selectedOrFirstAvailableVariant.compareAtPrice} />
+            </s>
+            <Money data={product.selectedOrFirstAvailableVariant.price} />
+          </div>
+        ) : (
+          <div className="product-card-price">
+            <Money data={product.priceRange.minVariantPrice} />
+          </div>
+        )}
+        {savings && (
+          <div className="product-card-savings">
+            You save {formatUsd(savings.amount)}
+          </div>
+        )}
       </div>
       {showQuickAdd && <WishlistQuickAdd product={product} />}
     </article>
@@ -180,13 +200,6 @@ const NEW_ARRIVAL_DAYS = 7;
  */
 function cardBadges(product: any): CardBadge[] {
   const badges: CardBadge[] = [];
-
-  const variant = product?.selectedOrFirstAvailableVariant;
-  const price = Number(variant?.price?.amount);
-  const was = Number(variant?.compareAtPrice?.amount);
-  if (Number.isFinite(price) && Number.isFinite(was) && was > price) {
-    badges.push({label: 'Sale', tone: 'sale', slot: 'bottom-right'});
-  }
 
   // Best Seller first: rarer than New Arrival, so it wins the shared corner.
   const inBestSellers = (product?.collections?.nodes ?? []).some(

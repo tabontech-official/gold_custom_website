@@ -15573,3 +15573,171 @@ html.header-primary-hidden
     transition: none;
   }
 }
+
+/* Black Friday event. Savings show only for a verified markdown (lib/discount.ts). */
+
+/* Black Friday banner: one image, full width under the header, linked to the
+   engagement collection. Sits flush against the hero below it. */
+.black-friday-banner {
+  display: block;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-bottom: 0;
+  text-decoration: none;
+}
+
+.black-friday-banner:hover {
+  text-decoration: none;
+}
+
+/* Desktop: 80% of the artwork's natural height (2660 x 218 becomes 2660 x 174). */
+.black-friday-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 2660 / 174;
+  object-fit: cover;
+}
+
+@media (max-width: 45em) {
+  /* Phones: the container is full width here, so no negative offset is needed. */
+  .black-friday-banner {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  /* Phones: the whole mobile artwork, uncropped. Its own 3:1 ratio sets the
+     height; contain-fit means nothing is trimmed on any side. */
+  .black-friday-image {
+    height: auto;
+    aspect-ratio: auto;
+    object-fit: contain;
+  }
+}
+
+/* Discount tag, flush to the photo's top-left corner. */
+.product-off-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  padding: 0.35rem 0.6rem;
+  background: #7a1f2b;
+  color: #fff;
+  font-family: var(--font-classic);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+@media (max-width: 45em) {
+  .product-off-badge {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.64rem;
+  }
+}
+
+/* The sale price is the one figure the eye should find first on a card. */
+.product-card-price.is-sale {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.5rem;
+  color: #7a1f2b;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.product-card-was {
+  color: #8a8a8a;
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+/* The saving sits under the price as a solid pill, not a small caption. */
+.product-card-savings {
+  align-self: center;
+  margin-top: -0.2rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: #7a1f2b;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.product-savings {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #7a1f2b;
+}
+
+/* Which banner copy shows: the page-flow copy on desktop, the band copy on phones. */
+.bf-desktop-only {
+  display: none;
+}
+
+.bf-mobile-only {
+  display: block;
+}
+
+@media (min-width: 60em) {
+  .bf-desktop-only {
+    display: block;
+  }
+
+  .bf-mobile-only {
+    display: none;
+  }
+}
+
+/* Inside the pinned phone band the banner needs no outer margin. */
+.collection-sticky-head .black-friday-banner {
+  margin: 0;
+}
+
+/* The pinned band starts at the banner's top edge, so it has no padding above it. */
+.collection-sticky-head:has(.black-friday-banner) {
+  padding-top: 0;
+}
+
+/* Desktop collection pages: the banner is the first thing in the page, so the
+   container's top padding is cancelled above it. */
+.collection:has(> .bf-desktop-only) {
+  padding-top: 0;
+}
+
+.collection:has(> .bf-desktop-only) > .section-inner {
+  padding-top: 0.25rem;
+}
+
+/* Phone collection pages: the category row and the filter bar stick under the
+   header once they reach it. The banner is in the page flow above them, so it
+   scrolls away, the same as on the homepage. */
+@media (max-width: 60em) {
+  body:has(.collection-toolbar) .collection-sticky-head {
+    position: sticky !important;
+    top: calc(var(--announce-h) + 3.65rem) !important;
+    left: auto;
+    right: auto;
+  }
+
+  body:has(.collection-toolbar) .collection-toolbar {
+    position: sticky !important;
+    top: calc(
+      var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) - 1px
+    ) !important;
+    left: auto;
+    right: auto;
+  }
+
+  body:has(.collection-toolbar) .page-body {
+    padding-top: calc(var(--announce-h) + 3.65rem);
+  }
+}

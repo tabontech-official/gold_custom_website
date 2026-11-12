@@ -66,6 +66,8 @@ import {
 import {CacheCatalog, CacheContent, CacheNav, CacheStatic} from '~/lib/cache';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {groupProducts} from '~/lib/productGroups';
+import {BlackFridayBanner} from '~/components/PageLayout';
+import {productSavings} from '~/lib/discount';
 import {
   batchSize,
   DEFAULT_COLUMNS,
@@ -347,6 +349,7 @@ function ProductGrid({
     isLoading: boolean;
     hasNextPage: boolean;
     nextHref: string;
+    onSale: boolean;
     columns: number;
     gridRef: React.MutableRefObject<HTMLDivElement | null>;
     LoadMoreLink: (props: {
@@ -412,6 +415,7 @@ function ProductGrid({
     // products exactly when the collection runs out of them.
     hasNextPage: connection.pageInfo?.hasNextPage ?? false,
     nextHref: linkTo(nextShow),
+    onSale: searchParams.get('sale') === '1',
     LoadMoreLink,
   });
 }
@@ -501,9 +505,11 @@ async function loadCollectionProducts(
     sortKey: any;
     reverse: boolean;
     count: number;
+    /** `?sale=1`: only pieces with a verified markdown (engagement pages). */
+    onSale?: boolean;
   },
 ) {
-  const {handle, filters, sortKey, reverse, count} = variables;
+  const {handle, filters, sortKey, reverse, count, onSale} = variables;
   // Engagement pages walk the whole collection so the tagged pieces can go first.
   const allPieces = handle.endsWith('engagement-rings');
   const {collection} = await storefront.query(COLLECTION_QUERY, {
@@ -568,6 +574,7 @@ async function loadCollectionProducts(
   // order it came in. Done here, client-side of Shopify, because the collection
   // query ignores a tag filter.
   if (allPieces) {
+    if (onSale) raw = raw.filter((p) => productSavings(p) !== null);
     raw = [...raw.filter(isTopPiece), ...raw.filter((p) => !isTopPiece(p))];
     nodes = groupForGrid(handle, raw);
   }
@@ -734,6 +741,7 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     filters,
     sortKey: sort.sortKey,
     reverse: sort.reverse,
+    onSale: url.searchParams.get('sale') === '1',
     // Under a Karat/Carat/Style filter the grid comes from the index below;
     // this query is then only for the collection itself and Shopify's facets.
     count: facetFilters.length ? 1 : count,
@@ -880,6 +888,14 @@ export default function Collection() {
 
   return (
     <div className="collection">
+      {/* The banner is first on every screen: header, banner, heading, then the
+          category row. Phones and desktop each get their own copy; CSS shows one. */}
+      <div className="bf-desktop-only">
+        <BlackFridayBanner />
+      </div>
+      <div className="bf-mobile-only">
+        <BlackFridayBanner />
+      </div>
       <div className="section-inner">
         <Breadcrumb
           items={[
@@ -935,6 +951,7 @@ export default function Collection() {
                 LoadMoreLink,
                 hasNextPage,
                 nextHref,
+                onSale,
                 columns,
                 gridRef,
               }) => {
@@ -1001,9 +1018,19 @@ export default function Collection() {
                         {/* Shopify's total counts products; once a group has
                             collapsed several into one card it overstates what
                             this grid can show, so the bare count is used. */}
-                        {productCount && !collection.products.groupedAway
-                          ? `${nodes.length} of ${productCount} pieces shown`
-                          : `${nodes.length} pieces shown`}
+                        {onSale ? (
+                          <>
+                            {nodes.length} engagement rings on sale ·{' '}
+                            <Link
+                              to={`/collections/${collection.handle}`}
+                              preventScrollReset
+                            >
+                              Show all
+                            </Link>
+                          </>
+                        ) : productCount && !collection.products.groupedAway
+                            ? `${nodes.length} of ${productCount} pieces shown`
+                            : `${nodes.length} pieces shown`}
                       </span>
                       {hasNextPage && autoLoad ? (
                         !isLoading && <AutoLoadSentinel href={nextHref} />
