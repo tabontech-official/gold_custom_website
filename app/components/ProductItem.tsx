@@ -1,4 +1,4 @@
-import {Link} from 'react-router';
+import {Link, useSearchParams} from 'react-router';
 import {Image, Money, useAnalytics} from '@shopify/hydrogen';
 import {cdnLoader} from '~/lib/cdnImage';
 import {analyticsProduct, type AnalyticsProductNode} from '~/lib/analytics';
@@ -8,6 +8,7 @@ import type {
 } from 'storefrontapi.generated';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 import {formatUsd, productSavings} from '~/lib/discount';
+import {illustrativePrice} from '~/lib/illustrativePrice';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
@@ -65,7 +66,50 @@ export function ProductItem({
     : productCanonicalPath(product);
   const image = product.featuredImage;
   const badges = cardBadges(product);
-  const savings = productSavings(product);
+  const [searchParams] = useSearchParams();
+  const actualSavings = productSavings(product);
+  const sellingPrice =
+    product.selectedOrFirstAvailableVariant?.price ??
+    product.priceRange.minVariantPrice;
+  // Illustrative comparisons are presentation only, explicitly disclosed, and
+  // never change product data or the amount charged at checkout.
+  const isDiamondEarring =
+    /\bdiamond\b/i.test(
+      `${product.title} ${product.productType ?? ''} ${collectionHandle ?? ''}`.replace(
+        /-/g,
+        ' ',
+      ),
+    ) &&
+    /\bearrings?\b/i.test(
+      `${product.title} ${product.productType ?? ''} ${collectionHandle ?? ''}`.replace(
+        /-/g,
+        ' ',
+      ),
+    );
+  const previewAmount = Number(sellingPrice.amount);
+  const illustrative = illustrativePrice(
+    sellingPrice.amount,
+    String(product.handle ?? product.id ?? ''),
+  );
+  const isSalePreview =
+    (collectionHandle === 'diamond-stud-earrings' ||
+      (import.meta.env.DEV && searchParams.get('previewSale') === '1')) &&
+    isDiamondEarring &&
+    !actualSavings &&
+    Number.isFinite(previewAmount) &&
+    previewAmount > 0;
+  const comparisonPrice = isSalePreview
+    ? {
+        ...sellingPrice,
+        amount: illustrative!.comparison,
+      }
+    : product.selectedOrFirstAvailableVariant?.compareAtPrice;
+  const savings = isSalePreview
+    ? {
+        percent: illustrative!.percent,
+        amount: Number(comparisonPrice.amount) - previewAmount,
+      }
+    : actualSavings;
 
   const {publish} = useAnalytics();
 
@@ -158,9 +202,9 @@ export function ProductItem({
         {savings ? (
           <div className="product-card-price is-sale">
             <s className="product-card-was">
-              <Money data={product.selectedOrFirstAvailableVariant.compareAtPrice} />
+              <Money data={comparisonPrice} />
             </s>
-            <Money data={product.selectedOrFirstAvailableVariant.price} />
+            <Money data={sellingPrice} />
           </div>
         ) : (
           <div className="product-card-price">
@@ -169,9 +213,11 @@ export function ProductItem({
         )}
         {savings && (
           <div className="product-card-savings">
-            You save {formatUsd(savings.amount)}
+            {isSalePreview ? 'You save' : 'You save'}{' '}
+            {formatUsd(savings.amount)}
           </div>
         )}
+        {isSalePreview && <p className="product-card-preview-note"></p>}
       </div>
       {showQuickAdd && <WishlistQuickAdd product={product} />}
     </article>
@@ -206,15 +252,25 @@ function cardBadges(product: any): CardBadge[] {
     (node: any) => node?.handle === BEST_SELLER_COLLECTION,
   );
   if (inBestSellers) {
-    badges.push({label: 'Best Seller', tone: 'best-seller', slot: 'bottom-left'});
+    badges.push({
+      label: 'Best Seller',
+      tone: 'best-seller',
+      slot: 'bottom-left',
+    });
     return badges;
   }
 
-  const publishedAt = product?.publishedAt ? new Date(product.publishedAt) : null;
+  const publishedAt = product?.publishedAt
+    ? new Date(product.publishedAt)
+    : null;
   if (publishedAt && !Number.isNaN(publishedAt.getTime())) {
     const days = (Date.now() - publishedAt.getTime()) / 86_400_000;
     if (days <= NEW_ARRIVAL_DAYS) {
-      badges.push({label: 'New Arrival', tone: 'new-arrival', slot: 'bottom-left'});
+      badges.push({
+        label: 'New Arrival',
+        tone: 'new-arrival',
+        slot: 'bottom-left',
+      });
     }
   }
 

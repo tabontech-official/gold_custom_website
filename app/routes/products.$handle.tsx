@@ -805,7 +805,9 @@ export default function Product() {
   const videoJsonLd = buildVideoJsonLd({
     media: allMedia,
     name: title,
-    description: metaDescription(product.seo?.description || product.description),
+    description: metaDescription(
+      product.seo?.description || product.description,
+    ),
     uploadDate: product.publishedAt,
     pageUrl: absoluteUrl(productOrigin, productIndexPath(product.handle)),
   });
@@ -975,6 +977,12 @@ export default function Product() {
                 <ProductPrice
                   price={selectedVariant?.price}
                   compareAtPrice={selectedVariant?.compareAtPrice}
+                  illustrativeHandle={
+                    /\bdiamond\b/i.test(product.title) &&
+                    /\bearrings?\b/i.test(product.title)
+                      ? product.handle
+                      : undefined
+                  }
                 />
               </div>
               <ShopPayInstallments
