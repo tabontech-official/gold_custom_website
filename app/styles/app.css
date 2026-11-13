@@ -4287,6 +4287,10 @@ button.announcement-link {
 }
 
 /* Campaign panel below the hero. Right half is reserved for campaign artwork. */
+.hero + .black-friday-feature {
+  border-top: 8px solid #fff;
+}
+
 .black-friday-feature {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
