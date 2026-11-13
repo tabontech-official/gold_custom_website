@@ -66,7 +66,6 @@ import {
 import {CacheCatalog, CacheContent, CacheNav, CacheStatic} from '~/lib/cache';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {groupProducts} from '~/lib/productGroups';
-import {BlackFridayBanner} from '~/components/PageLayout';
 import {productSavings} from '~/lib/discount';
 import {
   batchSize,
@@ -888,14 +887,6 @@ export default function Collection() {
 
   return (
     <div className="collection">
-      {/* The banner is first on every screen: header, banner, heading, then the
-          category row. Phones and desktop each get their own copy; CSS shows one. */}
-      <div className="bf-desktop-only">
-        <BlackFridayBanner />
-      </div>
-      <div className="bf-mobile-only">
-        <BlackFridayBanner />
-      </div>
       <div className="section-inner">
         <Breadcrumb
           items={[

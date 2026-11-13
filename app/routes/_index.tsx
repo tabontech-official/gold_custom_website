@@ -8,6 +8,7 @@ import type {
 } from 'storefrontapi.generated';
 import {ProductItem} from '~/components/ProductItem';
 import {MarketBar} from '~/components/MarketBar';
+import {BlackFridayFeature} from '~/components/BlackFridayFeature';
 import {CoverflowCarousel} from '~/components/CoverflowCarousel';
 import {DragScroller} from '~/components/DragScroller';
 import {cdnWidth} from '~/lib/cdnImage';
@@ -354,6 +355,10 @@ export default function Homepage() {
   return (
     <div className="home">
       <Hero content={data.hero} />
+      <BlackFridayFeature
+        imageSrc="/black%20friday%20sale%20cover.jpg"
+        imageAlt="Diamond stud earrings and a diamond ring displayed on burgundy jewellery stands"
+      />
       <MarketBar rates={data.goldRates} />
       <ShopByCategory categories={data.categories} />
       {/* Phones and tablets only — the left rail covers 64em and up. */}

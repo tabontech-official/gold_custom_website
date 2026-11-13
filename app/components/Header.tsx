@@ -19,7 +19,6 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
-import {SignupModal} from '~/components/SignupModal';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {PHONE} from '~/lib/seo';
 import {
@@ -152,7 +151,9 @@ function useHideOnScrollDown() {
  * vibrate on iOS in the first place. The sentinel's height also gives the
  * toggle natural hysteresis — it flips at one edge, not on every pixel.
  */
-function useScrolledPastAnnouncement(ref: React.RefObject<HTMLDivElement | null>) {
+function useScrolledPastAnnouncement(
+  ref: React.RefObject<HTMLDivElement | null>,
+) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -221,7 +222,7 @@ export function Header({
   // read after mount, which is the only place sessionStorage exists.
   const [announcementOpen, setAnnouncementOpen] = useState(true);
   useEffect(() => {
-    if (sessionStorage.getItem('gc-announce-dismissed'))
+    if (sessionStorage.getItem('gc-sale-announce-dismissed'))
       setAnnouncementOpen(false);
   }, []);
   const hideStickyRow = useHideOnScrollDown();
@@ -257,31 +258,41 @@ export function Header({
           leaving the page jumping up by a whole row. Same bar, same gold, same
           height — different words. sessionStorage rather than localStorage so
           a returning visitor sees the offer again. */}
-      <div className="announcement-bar" aria-live="polite">
+      <div
+        className={`announcement-bar${announcementOpen ? ' announcement-bar--sale' : ''}`}
+        aria-live="polite"
+      >
         {announcementOpen ? (
           <>
-            <p className="announcement-text">
-              Sign up and get <strong>10% off</strong>
-              <span className="announcement-long"> your first order</span>
-              <span className="announcement-long">{' — '}</span>
-              <span className="announcement-short">{'. '}</span>
-              <SignupModal
-                triggerLabel={
-                  <>
-                    <span className="announcement-long">Claim your code</span>
-                    <span className="announcement-short">Click the code</span>
-                  </>
-                }
-                triggerClassName="announcement-link"
-              />
+            <Link
+              className="sale-announcement-category sale-announcement-category--left"
+              to="/collections/engagement-rings"
+              prefetch="intent"
+            >
+              Engagement Rings <span aria-hidden="true">↗</span>
+            </Link>
+            <p className="announcement-text announcement-sale-text">
+              <span className="sale-announcement-headline">
+                Black Friday Sales Are Live
+              </span>
+              <span className="sale-announcement-offer">
+                Up to <strong>50% Off</strong>
+              </span>
             </p>
+            <Link
+              className="sale-announcement-category sale-announcement-category--right"
+              to="/collections/diamond-stud-earrings"
+              prefetch="intent"
+            >
+              Diamond Earrings <span aria-hidden="true">↗</span>
+            </Link>
             <button
               type="button"
               className="announcement-close"
               aria-label="Dismiss announcement"
               onClick={() => {
                 setAnnouncementOpen(false);
-                sessionStorage.setItem('gc-announce-dismissed', '1');
+                sessionStorage.setItem('gc-sale-announce-dismissed', '1');
               }}
             >
               &times;
@@ -310,9 +321,7 @@ export function Header({
       </div>
 
       {/* Tier 2 — search + region | logo | account + cart */}
-      <div
-        className={`header-primary${hideStickyRow ? ' is-hidden' : ''}`}
-      >
+      <div className={`header-primary${hideStickyRow ? ' is-hidden' : ''}`}>
         <div className="header-primary-left">
           <HeaderMenuMobileToggle />
           <HeaderSearchBar />
@@ -590,7 +599,11 @@ export function HeaderMenu({
             would all resolve to nothing. A plain link, same class as every
             department's own trigger so it reads as one nav rather than a
             department plus a stray extra. */}
-        <NavLink className="header-menu-item" prefetch="intent" to="/custom-jewelry">
+        <NavLink
+          className="header-menu-item"
+          prefetch="intent"
+          to="/custom-jewelry"
+        >
           Custom Jewelry
         </NavLink>
       </nav>
@@ -697,7 +710,9 @@ function MegaMenuItem({
     curated.push(product);
   };
   const isIn = (product: FeaturedProduct, collectionHandle: string) =>
-    product.collections?.nodes?.some((node) => node.handle === collectionHandle);
+    product.collections?.nodes?.some(
+      (node) => node.handle === collectionHandle,
+    );
   // Owned by a department this one yields to — see `yieldsTo` in megaMenu.ts.
   //
   // ONE-WAY, deliberately. An "is it more specific elsewhere?" test that looked
@@ -713,7 +728,11 @@ function MegaMenuItem({
       return (
         isIn(product, otherHandle) ||
         [
-          ...getDepartmentSubCollectionHandles(header, other, publicStoreDomain),
+          ...getDepartmentSubCollectionHandles(
+            header,
+            other,
+            publicStoreDomain,
+          ),
         ].some((subHandle) => isIn(product, subHandle))
       );
     });
