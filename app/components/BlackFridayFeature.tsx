@@ -3,9 +3,11 @@ import {Link} from 'react-router';
 /** Pass imageSrc when the campaign photograph is ready. */
 export function BlackFridayFeature({
   imageSrc,
+  desktopImageSrc,
   imageAlt = '',
 }: {
   imageSrc?: string;
+  desktopImageSrc?: string;
   imageAlt?: string;
 }) {
   return (
@@ -36,21 +38,30 @@ export function BlackFridayFeature({
             Shop Diamond Earrings
           </Link>
         </div>
-       
       </div>
       <div
         className="black-friday-feature-media"
         aria-hidden={!imageSrc || undefined}
       >
         {imageSrc && (
-          <img
-            src={imageSrc}
-            alt={imageAlt}
-            width={736}
-            height={736}
-            loading="lazy"
-            decoding="async"
-          />
+          <picture>
+            {desktopImageSrc && (
+              <source
+                media="(min-width: 48.001em)"
+                srcSet={desktopImageSrc}
+                width={1000}
+                height={700}
+              />
+            )}
+            <img
+              src={imageSrc}
+              alt={imageAlt}
+              width={736}
+              height={736}
+              loading="lazy"
+              decoding="async"
+            />
+          </picture>
         )}
       </div>
     </section>

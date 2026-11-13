@@ -4428,7 +4428,7 @@ button.announcement-link {
 
 @media (min-width: 48.001em) {
   .black-friday-feature {
-    min-height: clamp(25rem, 34vw, 42rem);
+    min-height: 0;
   }
 
   .black-friday-feature-copy {
@@ -4463,8 +4463,39 @@ button.announcement-link {
   }
 
   .black-friday-feature-media {
-    aspect-ratio: auto;
+    aspect-ratio: 1000 / 700;
     align-self: stretch;
+  }
+}
+
+@media (min-width: 48.001em) and (max-width: 75em) {
+  .black-friday-feature-copy {
+    padding: 1rem 1.5rem;
+  }
+
+  .black-friday-feature-brand {
+    margin-bottom: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .black-friday-feature-title {
+    font-size: clamp(2rem, 3.5vw, 2.75rem);
+    line-height: 1;
+  }
+
+  .black-friday-feature-subtitle {
+    margin: 0.8rem 0 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .black-friday-feature-description {
+    margin-bottom: 0.8rem;
+    font-size: 0.7rem;
+  }
+
+  .black-friday-feature-actions a {
+    min-height: 2.75rem;
+    padding: 0.5rem;
   }
 }
 

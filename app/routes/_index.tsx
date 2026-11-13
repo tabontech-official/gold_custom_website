@@ -357,6 +357,7 @@ export default function Homepage() {
       <Hero content={data.hero} />
       <BlackFridayFeature
         imageSrc="/black%20friday%20sale%20cover.jpg"
+        desktopImageSrc="/Burgundy%20Geometric%20Diamond%20Jewellery%20Set%20desktop.png"
         imageAlt="Diamond stud earrings and a diamond ring displayed on burgundy jewellery stands"
       />
       <MarketBar rates={data.goldRates} />
