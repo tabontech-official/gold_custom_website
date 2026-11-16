@@ -2093,6 +2093,357 @@ export type NewsletterSubscribeMutation = {
   }>;
 };
 
+export type BlackFridayCollectionFragment = Pick<
+  StorefrontAPI.Collection,
+  'handle'
+> & {
+  products: {
+    nodes: Array<
+      Pick<
+        StorefrontAPI.Product,
+        'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+      > & {
+        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+        category?: StorefrontAPI.Maybe<
+          Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+        >;
+        featuredImage?: StorefrontAPI.Maybe<
+          Pick<
+            StorefrontAPI.Image,
+            'id' | 'altText' | 'url' | 'width' | 'height'
+          >
+        >;
+        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
+        selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+          Pick<
+            StorefrontAPI.ProductVariant,
+            'id' | 'availableForSale' | 'sku'
+          > & {
+            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+            compareAtPrice?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+            >;
+          }
+        >;
+        priceRange: {
+          minVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+          maxVariantPrice: Pick<
+            StorefrontAPI.MoneyV2,
+            'amount' | 'currencyCode'
+          >;
+        };
+      }
+    >;
+  };
+};
+
+export type BlackFridayLandingQueryVariables = StorefrontAPI.Exact<{
+  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
+  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
+  first: StorefrontAPI.Scalars['Int']['input'];
+  specialsHandle: StorefrontAPI.Scalars['String']['input'];
+}>;
+
+export type BlackFridayLandingQuery = {
+  engagementRings?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+  todaysSpecials?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+  bestSellers?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+  chains?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+  earrings?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+  bracelets?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Collection, 'handle'> & {
+      products: {
+        nodes: Array<
+          Pick<
+            StorefrontAPI.Product,
+            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
+          > & {
+            groupName?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.Metafield, 'value'>
+            >;
+            category?: StorefrontAPI.Maybe<
+              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
+            >;
+            featuredImage?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.Image,
+                'id' | 'altText' | 'url' | 'width' | 'height'
+              >
+            >;
+            collections: {
+              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
+            };
+            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
+              Pick<
+                StorefrontAPI.ProductVariant,
+                'id' | 'availableForSale' | 'sku'
+              > & {
+                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
+                compareAtPrice?: StorefrontAPI.Maybe<
+                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
+                >;
+              }
+            >;
+            priceRange: {
+              minVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+              maxVariantPrice: Pick<
+                StorefrontAPI.MoneyV2,
+                'amount' | 'currencyCode'
+              >;
+            };
+          }
+        >;
+      };
+    }
+  >;
+};
+
 export type ArticleQueryVariables = StorefrontAPI.Exact<{
   articleHandle: StorefrontAPI.Scalars['String']['input'];
   country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
@@ -2678,357 +3029,6 @@ export type PageQuery = {
       seo?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.Seo, 'description' | 'title'>
       >;
-    }
-  >;
-};
-
-export type BlackFridayCollectionFragment = Pick<
-  StorefrontAPI.Collection,
-  'handle'
-> & {
-  products: {
-    nodes: Array<
-      Pick<
-        StorefrontAPI.Product,
-        'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-      > & {
-        groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
-        category?: StorefrontAPI.Maybe<
-          Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-        >;
-        featuredImage?: StorefrontAPI.Maybe<
-          Pick<
-            StorefrontAPI.Image,
-            'id' | 'altText' | 'url' | 'width' | 'height'
-          >
-        >;
-        collections: {nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>};
-        selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-          Pick<
-            StorefrontAPI.ProductVariant,
-            'id' | 'availableForSale' | 'sku'
-          > & {
-            price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-            compareAtPrice?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-            >;
-          }
-        >;
-        priceRange: {
-          minVariantPrice: Pick<
-            StorefrontAPI.MoneyV2,
-            'amount' | 'currencyCode'
-          >;
-          maxVariantPrice: Pick<
-            StorefrontAPI.MoneyV2,
-            'amount' | 'currencyCode'
-          >;
-        };
-      }
-    >;
-  };
-};
-
-export type BlackFridayLandingQueryVariables = StorefrontAPI.Exact<{
-  country?: StorefrontAPI.InputMaybe<StorefrontAPI.CountryCode>;
-  language?: StorefrontAPI.InputMaybe<StorefrontAPI.LanguageCode>;
-  first: StorefrontAPI.Scalars['Int']['input'];
-  specialsHandle: StorefrontAPI.Scalars['String']['input'];
-}>;
-
-export type BlackFridayLandingQuery = {
-  engagementRings?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
-    }
-  >;
-  todaysSpecials?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
-    }
-  >;
-  bestSellers?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
-    }
-  >;
-  chains?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
-    }
-  >;
-  earrings?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
-    }
-  >;
-  bracelets?: StorefrontAPI.Maybe<
-    Pick<StorefrontAPI.Collection, 'handle'> & {
-      products: {
-        nodes: Array<
-          Pick<
-            StorefrontAPI.Product,
-            'id' | 'handle' | 'title' | 'publishedAt' | 'productType' | 'tags'
-          > & {
-            groupName?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.Metafield, 'value'>
-            >;
-            category?: StorefrontAPI.Maybe<
-              Pick<StorefrontAPI.TaxonomyCategory, 'name'>
-            >;
-            featuredImage?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.Image,
-                'id' | 'altText' | 'url' | 'width' | 'height'
-              >
-            >;
-            collections: {
-              nodes: Array<Pick<StorefrontAPI.Collection, 'handle'>>;
-            };
-            selectedOrFirstAvailableVariant?: StorefrontAPI.Maybe<
-              Pick<
-                StorefrontAPI.ProductVariant,
-                'id' | 'availableForSale' | 'sku'
-              > & {
-                price: Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>;
-                compareAtPrice?: StorefrontAPI.Maybe<
-                  Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
-                >;
-              }
-            >;
-            priceRange: {
-              minVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-              maxVariantPrice: Pick<
-                StorefrontAPI.MoneyV2,
-                'amount' | 'currencyCode'
-              >;
-            };
-          }
-        >;
-      };
     }
   >;
 };
@@ -4156,6 +4156,10 @@ interface GeneratedQueryTypes {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };
+  '#graphql\n  fragment BlackFridayCollection on Collection {\n    handle\n    products(first: $first) {\n      nodes {\n        ...ProductItem\n      }\n    }\n  }\n  query BlackFridayLanding(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int!\n    $specialsHandle: String!\n  ) @inContext(country: $country, language: $language) {\n    engagementRings: collection(handle: "engagement-rings") {\n      ...BlackFridayCollection\n    }\n    todaysSpecials: collection(handle: $specialsHandle) {\n      ...BlackFridayCollection\n    }\n    bestSellers: collection(handle: "best-sellers") {\n      ...BlackFridayCollection\n    }\n    chains: collection(handle: "chains") {\n      ...BlackFridayCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...BlackFridayCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...BlackFridayCollection\n    }\n  }\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product card\'s collection-nested link path\n    # (productCanonicalPath). Without them that falls back to the flat\n    # /products/<handle>, which serves the product too.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n': {
+    return: BlackFridayLandingQuery;
+    variables: BlackFridayLandingQueryVariables;
+  };
   '#graphql\n  query Article(\n    $articleHandle: String!\n    $country: CountryCode\n    $language: LanguageCode\n  ) @inContext(language: $language, country: $country) {\n    blogs(first: 1) {\n      nodes {\n        handle\n        articleByHandle(handle: $articleHandle) {\n          handle\n          title\n          contentHtml\n          publishedAt\n          tags\n          author: authorV2 {\n            name\n          }\n          image {\n            id\n            altText\n            url\n            width\n            height\n          }\n          seo {\n            description\n            title\n          }\n        }\n      }\n    }\n  }\n': {
     return: ArticleQuery;
     variables: ArticleQueryVariables;
@@ -4203,10 +4207,6 @@ interface GeneratedQueryTypes {
   '#graphql\n  query Page(\n    $language: LanguageCode,\n    $country: CountryCode,\n    $handle: String!\n  )\n  @inContext(language: $language, country: $country) {\n    page(handle: $handle) {\n      handle\n      id\n      title\n      body\n      seo {\n        description\n        title\n      }\n    }\n  }\n': {
     return: PageQuery;
     variables: PageQueryVariables;
-  };
-  '#graphql\n  fragment BlackFridayCollection on Collection {\n    handle\n    products(first: $first) {\n      nodes {\n        ...ProductItem\n      }\n    }\n  }\n  query BlackFridayLanding(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int!\n    $specialsHandle: String!\n  ) @inContext(country: $country, language: $language) {\n    engagementRings: collection(handle: "engagement-rings") {\n      ...BlackFridayCollection\n    }\n    todaysSpecials: collection(handle: $specialsHandle) {\n      ...BlackFridayCollection\n    }\n    bestSellers: collection(handle: "best-sellers") {\n      ...BlackFridayCollection\n    }\n    chains: collection(handle: "chains") {\n      ...BlackFridayCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...BlackFridayCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...BlackFridayCollection\n    }\n  }\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product card\'s collection-nested link path\n    # (productCanonicalPath). Without them that falls back to the flat\n    # /products/<handle>, which serves the product too.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n': {
-    return: BlackFridayLandingQuery;
-    variables: BlackFridayLandingQueryVariables;
   };
   '#graphql\n  fragment Policy on ShopPolicy {\n    body\n    handle\n    id\n    title\n    url\n  }\n  query Policy(\n    $country: CountryCode\n    $language: LanguageCode\n    $privacyPolicy: Boolean!\n    $refundPolicy: Boolean!\n    $shippingPolicy: Boolean!\n    $termsOfService: Boolean!\n  ) @inContext(language: $language, country: $country) {\n    shop {\n      privacyPolicy @include(if: $privacyPolicy) {\n        ...Policy\n      }\n      shippingPolicy @include(if: $shippingPolicy) {\n        ...Policy\n      }\n      termsOfService @include(if: $termsOfService) {\n        ...Policy\n      }\n      refundPolicy @include(if: $refundPolicy) {\n        ...Policy\n      }\n    }\n  }\n': {
     return: PolicyQuery;

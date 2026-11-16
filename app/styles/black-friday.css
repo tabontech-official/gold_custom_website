@@ -1,4 +1,4 @@
-/* /pages/black-friday only — loaded by that route's `links`, never globally.
+/* /blackfriday only — loaded by that route's `links`, never globally.
    Black and gold. Product cards stay white (the catalogue photography is shot
    on white) and sit on the black page with a gold hairline. */
 
@@ -13,11 +13,14 @@
   --bf-rule: rgba(201, 162, 77, 0.28);
   background: var(--bf-black);
   color: var(--bf-text);
+  /* Contains the breadcrumb's top margin. Without it the margin collapsed
+     through this wrapper and showed as a white band under the header. */
+  display: flow-root;
 }
 
-/* Breadcrumb on black. */
+/* Breadcrumb on black. Its own 2rem top margin is the gap below the header. */
 .bf-crumbs {
-  padding-top: 1rem;
+  padding-top: 0;
   padding-bottom: 0.25rem;
 }
 .bf-page .breadcrumb,

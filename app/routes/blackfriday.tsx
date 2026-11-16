@@ -1,5 +1,5 @@
 import {Link, useLoaderData} from 'react-router';
-import type {Route} from './+types/pages.black-friday';
+import type {Route} from './+types/blackfriday';
 import type {BlackFridayCollectionFragment} from 'storefrontapi.generated';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {ProductItem} from '~/components/ProductItem';
@@ -16,10 +16,7 @@ import {
 import blackFridayStyles from '~/styles/black-friday.css?url';
 
 /**
- * /pages/black-friday — the campaign landing page.
- *
- * A static route, so it wins over pages.$handle for this one handle; every
- * other /pages/* URL is untouched.
+ * /blackfriday — the campaign landing page.
  *
  * Pricing rule for this page: nothing here states a discount. Product cards
  * show Shopify's own price, and a struck-through compare-at only where Shopify
@@ -28,7 +25,7 @@ import blackFridayStyles from '~/styles/black-friday.css?url';
  */
 const APPROVED_OFFER: string | null = null;
 
-const PATH = '/pages/black-friday';
+const PATH = '/blackfriday';
 
 /**
  * Curated by the merchant in Shopify Admin. When it has products, the section
