@@ -41,8 +41,15 @@ import {
   facetGroups,
   indexProduct,
   matchesFacets,
+  type FacetFilter,
   type IndexedProduct,
 } from '~/lib/facets';
+import {
+  cardCounts,
+  filterGroupKey,
+  isCountedFacet,
+  type ShopifyFacet,
+} from '~/lib/groupedFacetCounts';
 import {isbot} from 'isbot';
 import {
   CATEGORY_MENU_HANDLES,
@@ -626,6 +633,74 @@ async function loadFacetIndex(
   return index;
 }
 
+/**
+ * Card counts for Shopify's own facets (lib/groupedFacetCounts).
+ *
+ * A group with nothing ticked counts against the page's own index. A group
+ * with a value ticked is counted the way Shopify counts it, against every
+ * other filter but its own, so it needs the index without its own filter:
+ * one more walk per such group, on the same static cache tier. Ticking
+ * nothing costs nothing extra. Never rejects; a failed walk leaves that
+ * group's boxes without a badge.
+ */
+async function loadFacetCardCounts(
+  storefront: Route.LoaderArgs['context']['storefront'],
+  {
+    handle,
+    filters,
+    facetFilters,
+    sortKey,
+    reverse,
+    facets,
+    index,
+  }: {
+    handle: string;
+    filters: any[];
+    facetFilters: FacetFilter[];
+    sortKey: any;
+    reverse: boolean;
+    facets: ShopifyFacet[];
+    index: Promise<IndexedProduct[] | null>;
+  },
+): Promise<Record<string, number>> {
+  try {
+    const counted = new Set(
+      facets
+        .filter((facet) => isCountedFacet(facet) && facet.values.length)
+        .map((facet) => filterGroupKey(facet.values[0].input)),
+    );
+    const ticked = [
+      ...new Set(filters.map((filter) => filterGroupKey(filter))),
+    ].filter((key): key is string => key !== null && counted.has(key));
+
+    const [own, ...others] = await Promise.all([
+      index,
+      ...ticked.map((key) =>
+        loadFacetIndex(storefront, {
+          handle,
+          filters: filters.filter((filter) => filterGroupKey(filter) !== key),
+          sortKey,
+          reverse,
+        }).catch((error) => {
+          console.error('[facet counts]', error);
+          return null;
+        }),
+      ),
+    ]);
+    const byGroup = new Map(ticked.map((key, i) => [key, others[i]]));
+
+    return cardCounts({
+      facets,
+      indexFor: (key) => (byGroup.has(key) ? byGroup.get(key)! : own),
+      also: (product) => matchesFacets(product, facetFilters),
+      group: (products) => groupForGrid(handle, products),
+    });
+  } catch (error) {
+    console.error('[facet counts]', error);
+    return {};
+  }
+}
+
 /** Grid cards for these product ids, in this order, ≤250 per query. */
 async function loadCards(
   storefront: Route.LoaderArgs['context']['storefront'],
@@ -674,8 +749,11 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
   // crawlers on an unfiltered page: entry.server holds a bot's response until
   // every promise settles, and the sidebar's checkbox counts are not worth a
   // cold 7s walk of "all" to Googlebot.
-  const facetIndex =
-    facetFilters.length || !isbot(request.headers.get('user-agent'))
+  const bot = isbot(request.headers.get('user-agent'));
+  // null when skipped or failed, so the card counts below can tell "no index"
+  // from "an empty collection" and show no badges rather than zeros.
+  const facetIndexOrNull: Promise<IndexedProduct[] | null> =
+    facetFilters.length || !bot
       ? loadFacetIndex(storefront, {
           handle,
           filters,
@@ -683,9 +761,10 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
           reverse: sort.reverse,
         }).catch((error) => {
           console.error('[facets]', error);
-          return [] as IndexedProduct[];
+          return null;
         })
-      : Promise.resolve([] as IndexedProduct[]);
+      : Promise.resolve(null);
+  const facetIndex = facetIndexOrNull.then((index) => index ?? []);
 
   // Folded into the single Miami Cuban Chains category — see megaMenu.
   if (MERGED_CUBAN_HANDLES.includes(handle)) {
@@ -806,7 +885,25 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     facetTotal,
     // Sidebar groups. Not awaited when no facet is on, so an unfiltered page
     // never waits on the index — the three groups stream in beside the grid.
-    facets: facetIndex.then((index) => facetGroups(index, facetFilters)),
+    // Counted in cards, the way the grid groups them.
+    facets: facetIndex.then((index) =>
+      facetGroups(index, facetFilters, (products) =>
+        groupForGrid(handle, products),
+      ),
+    ),
+    // Card counts for Shopify's own facets (Metal), streamed the same way.
+    // Not for crawlers, which would otherwise wait on the extra index walks.
+    facetCounts: bot
+      ? Promise.resolve({} as Record<string, number>)
+      : loadFacetCardCounts(storefront, {
+          handle,
+          filters,
+          facetFilters,
+          sortKey: sort.sortKey,
+          reverse: sort.reverse,
+          facets: collection.products.filters ?? [],
+          index: facetIndexOrNull,
+        }),
     // Resolved here, not in `meta`, because deciding it needs one look at what
     // the CDN actually returns and a meta function cannot await. Null means the
     // banner is unusable as a share image and pageSeo should fall back to the
@@ -845,7 +942,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 }
 
 export default function Collection() {
-  const {collection, faqs, facets, facetTotal} =
+  const {collection, faqs, facets, facetCounts, facetTotal} =
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
@@ -918,6 +1015,7 @@ export default function Collection() {
           <CollectionFilterSidebar
             filters={filters}
             deferredFilters={facets}
+            deferredCounts={facetCounts}
             expandAll={collection.handle.endsWith('engagement-rings')}
             shareButton={
               <ShareButtons
@@ -1019,9 +1117,11 @@ export default function Collection() {
                               Show all
                             </Link>
                           </>
-                        ) : productCount && !collection.products.groupedAway
-                            ? `${nodes.length} of ${productCount} pieces shown`
-                            : `${nodes.length} pieces shown`}
+                        ) : productCount && !collection.products.groupedAway ? (
+                          `${nodes.length} of ${productCount} pieces shown`
+                        ) : (
+                          `${nodes.length} pieces shown`
+                        )}
                       </span>
                       {hasNextPage && autoLoad ? (
                         !isLoading && <AutoLoadSentinel href={nextHref} />
