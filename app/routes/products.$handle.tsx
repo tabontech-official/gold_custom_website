@@ -15,6 +15,7 @@ import type {
 } from 'storefrontapi.generated';
 import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {groupProducts, productGroupKey} from '~/lib/productGroups';
+import {stripDuplicatedSpecLines, variantWeightLabel} from '~/lib/productSpecs';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
@@ -766,15 +767,18 @@ export default function Product() {
   });
 
   const {title} = product;
-  // Strip the merchant's own "Size & Weight" heading and its Length/Width
-  // lines, when present (990 of 4,539 products, checked directly against the
-  // Storefront API — always this exact heading text) — the spec sheet below
-  // the description prints the same facts, sourced from the variant instead
-  // of copy, so every product ends up with the identical block in the
-  // identical place rather than depending on whether a merchant happened to
-  // write one. Two systems for the same numbers is what read as
-  // inconsistent; one system that always runs is the fix.
-  const descriptionHtml = stripSizeWeightSection(product.descriptionHtml);
+  // The merchant's "Size & Weight" copy stays: it carries dimensions and, on
+  // diamond pieces, stone carats and counts that nothing else on the page
+  // shows. Only a plain gold-weight line is dropped, and only while the
+  // structured Weight row below is actually rendering it (a zero/missing
+  // variant weight renders no row, so the copy keeps its line).
+  const weightLabel = variantWeightLabel(
+    selectedVariant?.weight,
+    selectedVariant?.weightUnit,
+  );
+  const descriptionHtml = stripDuplicatedSpecLines(product.descriptionHtml, {
+    weightShown: weightLabel !== null,
+  });
   const allMedia = normalizeMedia(product.media?.nodes ?? [], title);
   // Products photographed per metal carry a whole media GROUP per option
   // value, tagged in each item's alt text — see variantMedia.ts. Switching
@@ -1028,12 +1032,9 @@ export default function Product() {
                   didn't and the page read as two different designs. Sourced
                   from the variant, not the description, so it fills in
                   whatever the merchant's copy is missing rather than only
-                  ever repeating what is already there — stripSizeWeightSection
+                  ever repeating what is already there — stripDuplicatedSpecLines
                   above is what keeps the two from duplicating instead. */}
-              <ProductSpecsLine
-                weight={selectedVariant?.weight}
-                weightUnit={selectedVariant?.weightUnit}
-              />
+              <ProductSpecsLine weightLabel={weightLabel} />
               <ShareButtons
                 title={product.title}
                 image={selectedVariant?.image?.url}
@@ -1218,45 +1219,14 @@ function parseKarat(keyword: string) {
   return {karat, tone, label: `${karat} ${toneLabel}`};
 }
 
-const WEIGHT_UNIT_ABBR: Record<string, string> = {
-  GRAMS: 'g',
-  KILOGRAMS: 'kg',
-  OUNCES: 'oz',
-  POUNDS: 'lb',
-};
-
-/**
- * Cuts a merchant's own "Size & Weight" heading and everything after it up
- * to the next heading — the one template variant found across the
- * catalogue (990 of 4,539 products, checked directly against the Storefront
- * API, always this exact heading text). Its body is always the same
- * Length/Width lines ProductSpecsLine prints below the description, sourced
- * from the variant instead of copy — leaving both in would show the same
- * two numbers twice in two different styles on the same page.
- */
-function stripSizeWeightSection(html?: string | null): string {
-  if (!html) return '';
-  return html.replace(
-    /<h[1-6][^>]*>\s*size\s*(?:&amp;|&|and)\s*weight\s*<\/h[1-6]>[\s\S]*?(?=<h[1-6]|$)/i,
-    '',
-  );
-}
-
 /**
  * Weight, as a labeled spec row in the description card — nothing else.
- * Metal type already has its own line under the title (see metalLabel); size
- * came out too, so this is just the one fact. Renders nothing when the
- * variant has no weight.
+ * Metal type already has its own line under the title (see metalLabel).
+ * Renders nothing when the variant has no real weight (missing or 0 — see
+ * variantWeightLabel); nothing is guessed in its place.
  */
-function ProductSpecsLine({
-  weight,
-  weightUnit,
-}: {
-  weight?: number | null;
-  weightUnit?: string | null;
-}) {
-  if (typeof weight !== 'number' || weight <= 0) return null;
-  const weightLabel = `Approx. ${weight}${WEIGHT_UNIT_ABBR[weightUnit ?? ''] ?? weightUnit ?? ''}`;
+function ProductSpecsLine({weightLabel}: {weightLabel: string | null}) {
+  if (!weightLabel) return null;
 
   return (
     <dl className="product-specs-text">
