@@ -981,12 +981,6 @@ export default function Product() {
                 <ProductPrice
                   price={selectedVariant?.price}
                   compareAtPrice={selectedVariant?.compareAtPrice}
-                  illustrativeHandle={
-                    /\bdiamond\b/i.test(product.title) &&
-                    /\bearrings?\b/i.test(product.title)
-                      ? product.handle
-                      : undefined
-                  }
                 />
               </div>
               <ShopPayInstallments

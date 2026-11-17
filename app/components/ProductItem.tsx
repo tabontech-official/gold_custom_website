@@ -1,4 +1,4 @@
-import {Link, useSearchParams} from 'react-router';
+import {Link} from 'react-router';
 import {Image, Money, useAnalytics} from '@shopify/hydrogen';
 import {cdnLoader} from '~/lib/cdnImage';
 import {analyticsProduct, type AnalyticsProductNode} from '~/lib/analytics';
@@ -8,7 +8,6 @@ import type {
 } from 'storefrontapi.generated';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 import {formatUsd, productSavings} from '~/lib/discount';
-import {illustrativePrice} from '~/lib/illustrativePrice';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
@@ -66,50 +65,9 @@ export function ProductItem({
     : productCanonicalPath(product);
   const image = product.featuredImage;
   const badges = cardBadges(product);
-  const [searchParams] = useSearchParams();
-  const actualSavings = productSavings(product);
-  const sellingPrice =
-    product.selectedOrFirstAvailableVariant?.price ??
-    product.priceRange.minVariantPrice;
-  // Illustrative comparisons are presentation only, explicitly disclosed, and
-  // never change product data or the amount charged at checkout.
-  const isDiamondEarring =
-    /\bdiamond\b/i.test(
-      `${product.title} ${product.productType ?? ''} ${collectionHandle ?? ''}`.replace(
-        /-/g,
-        ' ',
-      ),
-    ) &&
-    /\bearrings?\b/i.test(
-      `${product.title} ${product.productType ?? ''} ${collectionHandle ?? ''}`.replace(
-        /-/g,
-        ' ',
-      ),
-    );
-  const previewAmount = Number(sellingPrice.amount);
-  const illustrative = illustrativePrice(
-    sellingPrice.amount,
-    String(product.handle ?? product.id ?? ''),
-  );
-  const isSalePreview =
-    (collectionHandle === 'diamond-stud-earrings' ||
-      (import.meta.env.DEV && searchParams.get('previewSale') === '1')) &&
-    isDiamondEarring &&
-    !actualSavings &&
-    Number.isFinite(previewAmount) &&
-    previewAmount > 0;
-  const comparisonPrice = isSalePreview
-    ? {
-        ...sellingPrice,
-        amount: illustrative!.comparison,
-      }
-    : product.selectedOrFirstAvailableVariant?.compareAtPrice;
-  const savings = isSalePreview
-    ? {
-        percent: illustrative!.percent,
-        amount: Number(comparisonPrice.amount) - previewAmount,
-      }
-    : actualSavings;
+  // Only a real Shopify markdown — the default variant's compareAtPrice above
+  // its price, vetted by savingsFor — is shown as a sale. Never synthesized.
+  const savings = productSavings(product);
 
   const {publish} = useAnalytics();
 
@@ -202,9 +160,11 @@ export function ProductItem({
         {savings ? (
           <div className="product-card-price is-sale">
             <s className="product-card-was">
-              <Money data={comparisonPrice} />
+              <Money
+                data={product.selectedOrFirstAvailableVariant.compareAtPrice}
+              />
             </s>
-            <Money data={sellingPrice} />
+            <Money data={product.selectedOrFirstAvailableVariant.price} />
           </div>
         ) : (
           <div className="product-card-price">
@@ -213,11 +173,9 @@ export function ProductItem({
         )}
         {savings && (
           <div className="product-card-savings">
-            {isSalePreview ? 'You save' : 'You save'}{' '}
-            {formatUsd(savings.amount)}
+            You save {formatUsd(savings.amount)}
           </div>
         )}
-        {isSalePreview && <p className="product-card-preview-note"></p>}
       </div>
       {showQuickAdd && <WishlistQuickAdd product={product} />}
     </article>
