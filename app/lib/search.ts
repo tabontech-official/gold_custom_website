@@ -71,10 +71,12 @@ export function urlWithTrackingParams({
   params: extraParams,
   term,
 }: UrlWithTrackingParams) {
-  let search = new URLSearchParams({
-    ...extraParams,
-    q: encodeURIComponent(term),
-  }).toString();
+  // URLSearchParams already encodes values — pre-encoding the term made
+  // "cuban chain" arrive as q=cuban%2520chain. Its `+` for a space is turned
+  // into `%20` (a literal "+" in the term is already `%2B`, so this is safe).
+  let search = new URLSearchParams({...extraParams, q: term})
+    .toString()
+    .replace(/\+/g, '%20');
 
   if (trackingParams) {
     search = `${search}&${trackingParams}`;
