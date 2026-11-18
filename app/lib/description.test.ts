@@ -8,7 +8,7 @@
  * and not the Shopify-only paths that would 404 on www.
  */
 import assert from 'node:assert/strict';
-import {localizeLinks} from './description.ts';
+import {decodeHtmlEntities, localizeLinks} from './description.ts';
 
 const cases: [string, string][] = [
   // apex, www and the Shopify checkout host all become root-relative
@@ -87,5 +87,11 @@ assert.equal(
   ),
   '<p><a href="/a">a</a> <a href="/b">b</a></p>',
 );
+
+assert.equal(
+  decodeHtmlEntities('Stamps, Hallmarks &amp; the Acid Test'),
+  'Stamps, Hallmarks & the Acid Test',
+);
+assert.equal(decodeHtmlEntities('Chains & Rings'), 'Chains & Rings');
 
 console.log('description self-check passed');

@@ -8,7 +8,8 @@ import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
-    title: 'Showroom',
+    title: 'Jewelry Showroom in Downtown LA Jewelry District | Gold Custom',
+    preserveBrandSuffix: true,
     description: `Visit the ${SITE.name} showroom at 550 S Hill St #660 in the Los Angeles Jewelry District. Try on chains, rings and custom pieces, or book a private appointment.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/showroom'),
   });

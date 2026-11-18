@@ -5,12 +5,19 @@ import {cdnLoader} from '~/lib/cdnImage';
 import type {Route} from './+types/repairs';
 import {AppointmentModal} from '~/components/AppointmentModal';
 import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
+import {buildFaqJsonLd} from '~/lib/faqs';
 
 export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
-    title: 'Jewelry Repair',
+    title: 'Jewelry Repair in Downtown Los Angeles | Gold Custom',
+    preserveBrandSuffix: true,
     description: `Ring sizing, chain and clasp soldering, stone setting, rhodium plating and restoration — repaired on site at ${SITE.name} in downtown Los Angeles. Free estimates.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/repairs'),
+    jsonLd: [
+      buildFaqJsonLd(
+        FAQS.map(({q, a}) => ({question: q, answer: a})),
+      ),
+    ],
   });
 
 /* Hero photograph, from the store's Shopify Files. Dimensions are the

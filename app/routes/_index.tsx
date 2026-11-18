@@ -32,7 +32,8 @@ import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
  */
 import {SITE, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FaqAccordion} from '~/components/FaqAccordion';
-import {FAQS_QUERY, parseFaqs} from '~/lib/faqs';
+import {buildFaqJsonLd, FAQS_QUERY, parseFaqs} from '~/lib/faqs';
+import {decodeHtmlEntities} from '~/lib/description';
 import {getGoldRates} from '~/lib/goldRates';
 import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 import {CacheCatalog, CacheContent} from '~/lib/cache';
@@ -57,6 +58,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       titleTemplate: '%s',
       description: SITE.description,
       url: origin,
+      jsonLd: data?.faqs?.length ? [buildFaqJsonLd(data.faqs)] : undefined,
     }),
     ...heroPreloadTags(data?.hero ?? null),
   ];
@@ -1642,7 +1644,7 @@ function JournalCard({article}: {article: JournalArticle}) {
         {article.image && (
           <img
             src={cdnWidth(article.image.url, 800)}
-            alt={article.image.altText || article.title}
+            alt={article.image.altText || decodeHtmlEntities(article.title)}
             // Always lazy: the Journal sits near the bottom of the homepage, so
             // "the first three" were never on screen at load — they were just
             // three full-size downloads competing with the hero.
@@ -1656,7 +1658,7 @@ function JournalCard({article}: {article: JournalArticle}) {
         {publishedAt && <time className="blog-card-date">{publishedAt}</time>}
         <h3 className="blog-card-title">
           <Link to={to} prefetch="intent">
-            {article.title}
+            {decodeHtmlEntities(article.title)}
           </Link>
         </h3>
         {excerpt && <p className="blog-card-excerpt">{excerpt}</p>}

@@ -15,7 +15,7 @@ import {
 import {buildFaqJsonLd, extractArticleFaqs} from '~/lib/faqs';
 import {buildHowToJsonLd} from '~/lib/howToSchema';
 import {CacheCatalog, CacheContent} from '~/lib/cache';
-import {localizeLinks} from '~/lib/description';
+import {decodeHtmlEntities, localizeLinks} from '~/lib/description';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {ProductSlider} from '~/components/ProductSlider';
 
@@ -43,7 +43,9 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
   const url = absoluteUrl(origin, `/blogs/${params.articleHandle}`);
 
   return pageSeo({
-    title: article?.seo?.title || article?.title || 'Blog',
+    title:
+      article?.seo?.title ||
+      (article?.title ? decodeHtmlEntities(article.title) : 'Blog'),
     description: metaDescription(article?.seo?.description),
     url,
     media: article?.image?.url
@@ -55,7 +57,7 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
             '@context': 'https://schema.org',
             '@type': 'BlogPosting',
             '@id': `${url}#article`,
-            headline: article.title,
+            headline: decodeHtmlEntities(article.title),
             description: metaDescription(article.seo?.description),
             url,
             mainEntityOfPage: url,
@@ -100,7 +102,10 @@ export const meta: Route.MetaFunction = ({data, matches, params}) => {
           breadcrumbJsonLd(origin, [
             {name: 'Home', path: '/'},
             {name: 'Blog', path: '/blogs'},
-            {name: article.title, path: `/blogs/${params.articleHandle}`},
+            {
+              name: decodeHtmlEntities(article.title),
+              path: `/blogs/${params.articleHandle}`,
+            },
           ]),
           // Step-by-step guides additionally describe their procedure. Opting
           // in is a property of how the post is WRITTEN — a "How to …" heading
@@ -213,7 +218,8 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 export default function Article() {
   const {article, dateModified, guideCollection} =
     useLoaderData<typeof loader>();
-  const {title, image, contentHtml, author} = article;
+  const {image, contentHtml, author} = article;
+  const title = decodeHtmlEntities(article.title);
 
   const formatDate = (iso: string) =>
     new Intl.DateTimeFormat('en-US', {
