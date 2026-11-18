@@ -22,6 +22,7 @@ import {ProductForm} from '~/components/ProductForm';
 import {StickyAddToCart} from '~/components/StickyAddToCart';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ReviewsCarousel} from '~/components/ReviewsCarousel';
+import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {
   REVIEWS_PER_PAGE,
   carouselReviews,
@@ -1006,6 +1007,8 @@ export default function Product() {
                 onPhotoChange={needsPhoto ? setPhotoUrl : undefined}
               />
             </div>
+
+            <GoogleReviewsSection />
 
             <div className="product-details-card pdp-card">
               <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
