@@ -2097,6 +2097,9 @@ export type BlackFridayCollectionFragment = Pick<
   StorefrontAPI.Collection,
   'handle'
 > & {
+  image?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+  >;
   products: {
     nodes: Array<
       Pick<
@@ -2150,6 +2153,9 @@ export type BlackFridayLandingQueryVariables = StorefrontAPI.Exact<{
 export type BlackFridayLandingQuery = {
   engagementRings?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -2199,6 +2205,9 @@ export type BlackFridayLandingQuery = {
   >;
   todaysSpecials?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -2248,6 +2257,9 @@ export type BlackFridayLandingQuery = {
   >;
   bestSellers?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -2297,6 +2309,9 @@ export type BlackFridayLandingQuery = {
   >;
   chains?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -2346,6 +2361,9 @@ export type BlackFridayLandingQuery = {
   >;
   earrings?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -2395,6 +2413,9 @@ export type BlackFridayLandingQuery = {
   >;
   bracelets?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.Collection, 'handle'> & {
+      image?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Image, 'id' | 'url' | 'altText' | 'width' | 'height'>
+      >;
       products: {
         nodes: Array<
           Pick<
@@ -4156,7 +4177,7 @@ interface GeneratedQueryTypes {
     return: CollectionByHandleQuery;
     variables: CollectionByHandleQueryVariables;
   };
-  '#graphql\n  fragment BlackFridayCollection on Collection {\n    handle\n    products(first: $first) {\n      nodes {\n        ...ProductItem\n      }\n    }\n  }\n  query BlackFridayLanding(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int!\n    $specialsHandle: String!\n  ) @inContext(country: $country, language: $language) {\n    engagementRings: collection(handle: "engagement-rings") {\n      ...BlackFridayCollection\n    }\n    todaysSpecials: collection(handle: $specialsHandle) {\n      ...BlackFridayCollection\n    }\n    bestSellers: collection(handle: "best-sellers") {\n      ...BlackFridayCollection\n    }\n    chains: collection(handle: "chains") {\n      ...BlackFridayCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...BlackFridayCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...BlackFridayCollection\n    }\n  }\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product card\'s collection-nested link path\n    # (productCanonicalPath). Without them that falls back to the flat\n    # /products/<handle>, which serves the product too.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n': {
+  '#graphql\n  fragment BlackFridayCollection on Collection {\n    handle\n    # The collection\'s own photograph: hero (engagement rings) and the\n    # category tiles.\n    image {\n      id\n      url\n      altText\n      width\n      height\n    }\n    products(first: $first) {\n      nodes {\n        ...ProductItem\n      }\n    }\n  }\n  query BlackFridayLanding(\n    $country: CountryCode\n    $language: LanguageCode\n    $first: Int!\n    $specialsHandle: String!\n  ) @inContext(country: $country, language: $language) {\n    engagementRings: collection(handle: "engagement-rings") {\n      ...BlackFridayCollection\n    }\n    todaysSpecials: collection(handle: $specialsHandle) {\n      ...BlackFridayCollection\n    }\n    bestSellers: collection(handle: "best-sellers") {\n      ...BlackFridayCollection\n    }\n    chains: collection(handle: "chains") {\n      ...BlackFridayCollection\n    }\n    earrings: collection(handle: "earrings") {\n      ...BlackFridayCollection\n    }\n    bracelets: collection(handle: "bracelets") {\n      ...BlackFridayCollection\n    }\n  }\n  #graphql\n  fragment MoneyProductItem on MoneyV2 {\n    amount\n    currencyCode\n  }\n  fragment ProductItem on Product {\n    id\n    handle\n    title\n    # New Arrival badge — see cardBadges() in ProductItem.tsx.\n    publishedAt\n    # Products sharing a group name render as one card — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    # Only used to resolve each product card\'s collection-nested link path\n    # (productCanonicalPath). Without them that falls back to the flat\n    # /products/<handle>, which serves the product too.\n    productType\n    category {\n      name\n    }\n    featuredImage {\n      id\n      altText\n      url\n      width\n      height\n    }\n    # Card badges. Tags drive Karat/Diamond and best-sellers\n    # membership drives Best Seller. See cardBadges() in\n    # ProductItem.tsx for why only those, and only from here.\n    tags\n    collections(first: 15) {\n      nodes {\n        handle\n      }\n    }\n    selectedOrFirstAvailableVariant {\n      id\n      availableForSale\n      # The one real identifier in the ItemList\'s Product nodes — what an\n      # agent or a feed matches this piece by when the title is ambiguous.\n      # See collectionItemListJsonLd.\n      sku\n      # Card badges: a Sale badge must come from a real\n      # compare-at price, never from a tag someone typed.\n      price {\n        amount\n        currencyCode\n      }\n      compareAtPrice {\n        amount\n        currencyCode\n      }\n    }\n    priceRange {\n      minVariantPrice {\n        ...MoneyProductItem\n      }\n      maxVariantPrice {\n        ...MoneyProductItem\n      }\n    }\n  }\n\n': {
     return: BlackFridayLandingQuery;
     variables: BlackFridayLandingQueryVariables;
   };
