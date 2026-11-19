@@ -31,10 +31,10 @@ export function BlackFridayFeature({
           Up to 50% off selected jewellery.*
         </p>
         <div className="black-friday-feature-actions">
-          <Link to="/blackfriday" prefetch="intent">
+          <Link to="/blackfriday#engagement-rings" prefetch="intent">
             Shop Engagement Rings
           </Link>
-          <Link to="/blackfriday" prefetch="intent">
+          <Link to="/blackfriday#earrings" prefetch="intent">
             Shop Diamond Earrings
           </Link>
         </div>
