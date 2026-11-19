@@ -271,14 +271,14 @@ export function Header({
             >
               Engagement Rings <span aria-hidden="true">↗</span>
             </Link>
-            <p className="announcement-text announcement-sale-text">
+            <Link className="announcement-text announcement-sale-text" to="/blackfriday" prefetch="intent">
               <span className="sale-announcement-headline">
                 Black Friday Sales Are Live
               </span>
               <span className="sale-announcement-offer">
                 Up to <strong>50% Off</strong>
               </span>
-            </p>
+            </Link>
             <Link
               className="sale-announcement-category sale-announcement-category--right"
               to="/collections/diamond-stud-earrings"
