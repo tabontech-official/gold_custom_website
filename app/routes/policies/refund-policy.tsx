@@ -6,8 +6,9 @@ export default function RefundPolicy() {
       <section>
         <p>
           If, for any reason, you are not 100% satisfied with your purchase, you
-          may make a request to return any product within 14 days of receipt for
-          an exchange or store credit (less shipping and handling charges).
+          may request an exchange or store credit within 14 days of receipt for
+          eligible items that have not been custom-sized (less shipping and
+          handling charges).
         </p>
       </section>
       <section>

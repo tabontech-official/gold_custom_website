@@ -25,8 +25,8 @@ const SELF_SERVE = [
     to: '/policies/refund-policy',
     label: 'Returns and exchanges',
     // The refund policy's own terms: 14 days from receipt, exchange or store
-    // credit, unused items; custom, personalized and sized-to-order are final.
-    body: '14 days from receipt to exchange an unused piece or take store credit. Custom, personalized and sized-to-order pieces are final sale.',
+    // credit, unused items; custom-sized, personalized and sized-to-order are final.
+    body: '14 days from receipt to exchange an unused item that has not been custom-sized, or take store credit. Custom-sized, personalized and sized-to-order pieces are final sale.',
   },
   {
     to: '/policies/shipping-policy',
