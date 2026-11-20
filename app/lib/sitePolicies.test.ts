@@ -56,3 +56,11 @@ assert.equal(liveFieldShape.shipping, 'Free U.S. Shipping $99+ testttt');
 assert.equal(liveFieldShape.returns, '14-day exchanges or store credit');
 assert.equal(liveFieldShape.warranty, 'Manufacturing defects only');
 assert.equal(liveFieldShape.madeInUSA, 'Made in U.S.A.');
+const liveSeoDescription = policySeoDescription({
+  ...liveFieldShape,
+  shipping: 'Free U.S. Shipping $99+ — Standard, insured with tracking',
+  returns: '14-day exchanges or store credit. Custom and sized pieces are final sale.',
+  warranty: 'Warranty covers manufacturing defects, not physical damage.',
+});
+assert.match(liveSeoDescription, /\$99\+/);
+assert.ok(liveSeoDescription.length <= 155);

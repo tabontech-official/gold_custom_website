@@ -93,7 +93,14 @@ export function policyClaims(policies: SitePolicies) {
 }
 
 export function policySeoDescription(policies: SitePolicies) {
-  const description = `${policies.madeInUSA} ${policies.shipping} ${policies.returns} ${policies.warranty}`;
+  const shippingThreshold = policies.shipping.match(
+    /\$\s*([\d,]+(?:\.\d{1,2})?)\s*\+/,
+  )?.[1];
+  const shipping = shippingThreshold
+    ? `Free U.S. shipping $${shippingThreshold}+.`
+    : policies.shipping.split(/[.!?](?:\s|$)/, 1)[0].trim() + '.';
+  const returns = policies.returns.split(/[.!?](?:\s|$)/, 1)[0].trim();
+  const description = `${shipping} ${policies.madeInUSA} ${returns} ${policies.warranty}`;
   if (description.length <= 155) return description;
   return `${description.slice(0, 152).replace(/\s+\S*$/, '')}…`;
 }

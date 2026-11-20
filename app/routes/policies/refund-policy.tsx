@@ -1,15 +1,24 @@
 import {PolicyDocument} from '~/components/PolicyDocument';
+import {useRouteLoaderData} from 'react-router';
+import type {RootLoader} from '~/root';
+import type {SitePolicies} from '~/lib/sitePolicies';
 
 export default function RefundPolicy() {
+  const root = useRouteLoaderData<RootLoader>('root');
+  const returnsSentence = (root?.sitePolicies as SitePolicies | undefined)?.returns;
   return (
     <PolicyDocument title="Refund & Returns Policy">
       <section>
-        <p>
-          If, for any reason, you are not 100% satisfied with your purchase, you
-          may request an exchange or store credit within 14 days of receipt for
-          eligible items that have not been custom-sized (less shipping and
-          handling charges).
-        </p>
+        {returnsSentence ? (
+          <p>{returnsSentence}</p>
+        ) : (
+          <p>
+            If, for any reason, you are not 100% satisfied with your purchase,
+            you may request an exchange or store credit within 14 days of
+            receipt for eligible items that have not been custom-sized (less
+            shipping and handling charges).
+          </p>
+        )}
       </section>
       <section>
         <h2>Return Conditions</h2>

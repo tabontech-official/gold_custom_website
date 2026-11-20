@@ -19,6 +19,7 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
+import {policyClaims, type SitePolicies} from '~/lib/sitePolicies';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {PHONE} from '~/lib/seo';
 import {
@@ -181,12 +182,16 @@ function useScrolledPastAnnouncement(
  * layaway line the refund policy already names.
  */
 function AnnouncementPromises() {
+  const root = useRouteLoaderData<RootLoader>('root');
+  const policies = root?.sitePolicies as SitePolicies | undefined;
   // Title always, qualifier only where there is room — the same
   // .announcement-long/.announcement-short split the offer line uses. "14 Day
   // Returns — Exchange or store credit · Return shipping fees apply" cannot
   // fit one phone line, and this strip is a single line by design.
   const messages = [
-    ...TRUST_CLAIMS.map((claim) => [claim.title, claim.sub] as const),
+    ...(policies ? policyClaims(policies) : TRUST_CLAIMS).map(
+      (claim) => [claim.title, claim.sub] as const,
+    ),
     ['Layaway Available', 'Pay over time with Partial.ly'] as const,
   ];
   const [index, setIndex] = useState(0);
@@ -203,8 +208,12 @@ function AnnouncementPromises() {
     // centred treatment as the offer it replaces.
     <p className="announcement-text announcement-promise" key={index}>
       {messages[index][0]}
-      <span className="announcement-long">{' — '}</span>
-      <span className="announcement-long">{messages[index][1]}</span>
+      {messages[index][1] && (
+        <>
+          <span className="announcement-long">{' — '}</span>
+          <span className="announcement-long">{messages[index][1]}</span>
+        </>
+      )}
     </p>
   );
 }
