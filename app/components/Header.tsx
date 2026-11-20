@@ -238,7 +238,7 @@ export function Header({
   // resizing it is all that's needed.
   const logoSrc =
     shop.brand?.logo?.image?.url ??
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/ChatGPT_Image_Aug_24_2026_02_24_14_PM.png?v=1787813253';
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/gold-custom-logo.png?v=1795073155';
   const logoUrl = (scale: number) => cdnWidth(logoSrc, 360 * scale);
 
   return (
