@@ -58,10 +58,27 @@ export function parseSitePolicies(response: any): SitePolicies {
   }
 
   return {
-    shipping: values.shipping ?? values.shippingpolicy ?? fallbackPolicies.shipping,
-    returns: values.returns ?? values.returnspolicy ?? values.returnpolicy ?? fallbackPolicies.returns,
-    warranty: values.warranty ?? values.warrantypolicy ?? fallbackPolicies.warranty,
-    madeInUSA: values.madeinusa ?? values.madeinusapolicy ?? fallbackPolicies.madeInUSA,
+    shipping:
+      values.shippingsentence ??
+      values.shipping ??
+      values.shippingpolicy ??
+      fallbackPolicies.shipping,
+    returns:
+      values.returnssentence ??
+      values.returns ??
+      values.returnspolicy ??
+      values.returnpolicy ??
+      fallbackPolicies.returns,
+    warranty:
+      values.warrantysentence ??
+      values.warranty ??
+      values.warrantypolicy ??
+      fallbackPolicies.warranty,
+    madeInUSA:
+      values.madeinusasentence ??
+      values.madeinusa ??
+      values.madeinusapolicy ??
+      fallbackPolicies.madeInUSA,
   };
 }
 
