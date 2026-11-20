@@ -1,4 +1,4 @@
-import {Await, useLoaderData, Link} from 'react-router';
+import {Await, useLoaderData, Link, useRouteLoaderData} from 'react-router';
 import type {Route} from './+types/_index';
 import {Suspense, useEffect, useRef, useState} from 'react';
 import type {
@@ -39,9 +39,11 @@ import {TikTokFeedSection} from '~/components/TikTokFeedSection';
 import {CacheCatalog, CacheContent} from '~/lib/cache';
 import {groupProducts} from '~/lib/productGroups';
 import {TRUST_CLAIMS, claimLine} from '~/lib/trustClaims';
+import {policyClaims, policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
+  const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
 
   return [
     ...pageSeo({
@@ -56,7 +58,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       // title tag, so the words here are better spent on what the store sells.
       title: 'Real 10K & 14K Solid Gold Jewelry',
       titleTemplate: '%s',
-      description: SITE.description,
+      description: policies ? policySeoDescription(policies) : SITE.description,
       url: origin,
       jsonLd: data?.faqs?.length ? [buildFaqJsonLd(data.faqs)] : undefined,
     }),
@@ -354,6 +356,7 @@ function loadDeferredData({context}: Route.LoaderArgs) {
 
 export default function Homepage() {
   const data = useLoaderData<typeof loader>();
+  const root = useRouteLoaderData<any>('root');
   return (
     <div className="home">
       <Hero content={data.hero} />
@@ -379,7 +382,7 @@ export default function Homepage() {
 
       <HomeJournal articles={data.journalArticles} />
       <GoogleReviewsSection />
-      <PromiseTicker />
+      <PromiseTicker policies={root?.sitePolicies} />
     </div>
   );
 }
@@ -736,16 +739,13 @@ function MobileHeroSlider({slides}: {slides: HeroSlide[]}) {
 // not a conversion. Read from TRUST_CLAIMS rather than retyped: this list was
 // a second copy, and it had drifted to "Free U.S. Shipping Over $99" while
 // checkout charged nothing from $70.
-const PROMISE_TICKER_ITEMS = [
-  ...TRUST_CLAIMS.map(claimLine),
-  // Not "0% APR Financing" — rates and approval are set by the lender per
-  // applicant, so promising 0% to everyone is a claim we can't honour.
-  'Financing Available — Subject to Approval',
-];
-
 // Three identical groups so the marquee can loop seamlessly; only the first is
 // exposed to screen readers.
-function PromiseTicker() {
+function PromiseTicker({policies}: {policies?: SitePolicies}) {
+  const items = [
+    ...(policies ? policyClaims(policies).map(claimLine) : TRUST_CLAIMS.map(claimLine)),
+    'Financing Available — Subject to Approval',
+  ];
   return (
     <div className="hero-ticker" aria-hidden="false">
       <div className="ticker-track">
@@ -755,7 +755,7 @@ function PromiseTicker() {
             key={group}
             aria-hidden={group > 0 || undefined}
           >
-            {PROMISE_TICKER_ITEMS.map((item) => (
+            {items.map((item) => (
               <span key={item}>{item}</span>
             ))}
           </div>

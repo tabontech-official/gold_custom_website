@@ -1,4 +1,4 @@
-import {Link} from 'react-router';
+import {Link, useRouteLoaderData} from 'react-router';
 import {Image} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import {cdnLoader} from '~/lib/cdnImage';
@@ -6,12 +6,14 @@ import type {Route} from './+types/repairs';
 import {AppointmentModal} from '~/components/AppointmentModal';
 import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {buildFaqJsonLd} from '~/lib/faqs';
+import {policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 
-export const meta: Route.MetaFunction = ({matches}) =>
-  pageSeo({
+export const meta: Route.MetaFunction = ({matches}) => {
+  const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
+  return pageSeo({
     title: 'Jewelry Repair in Downtown Los Angeles | Gold Custom',
     preserveBrandSuffix: true,
-    description: `Ring sizing, chain and clasp soldering, stone setting, rhodium plating and restoration — repaired on site at ${SITE.name} in downtown Los Angeles. Free estimates.`,
+    description: policies ? policySeoDescription(policies) : `Ring sizing, chain and clasp soldering, stone setting, rhodium plating and restoration — repaired on site at ${SITE.name} in downtown Los Angeles. Free estimates.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/repairs'),
     jsonLd: [
       buildFaqJsonLd(
@@ -19,6 +21,7 @@ export const meta: Route.MetaFunction = ({matches}) =>
       ),
     ],
   });
+};
 
 /* Hero photograph, from the store's Shopify Files. Dimensions are the
    original's — Hydrogen's <Image> needs them to reserve the box and to
@@ -113,6 +116,8 @@ const FAQS = [
 ];
 
 export default function Repairs() {
+  const root = useRouteLoaderData<any>('root');
+  const policies = root?.sitePolicies as SitePolicies | undefined;
   return (
     <main className="svc-page">
       <div className="section-inner svc-crumb">
@@ -148,8 +153,8 @@ export default function Repairs() {
                 <span>Your stones never leave</span>
               </li>
               <li>
-                <strong>6 months</strong>
-                <span>Workmanship warranty</span>
+                <strong>{policies?.warranty ? 'Warranty' : '6 months'}</strong>
+                <span>{policies?.warranty ?? 'Workmanship warranty'}</span>
               </li>
             </ul>
           </div>
