@@ -260,6 +260,7 @@ export function Header({
         className="top-scroll-sentinel"
         ref={topSentinelRef}
       />
+      <BlackFridayCountdown />
       {/* Tier 1 — one offer, one action, one dismiss. Dismissing swaps the
           message, it does NOT remove the bar: the strip is also where the
           store's standing promises (shipping, returns, layaway, warranty) are
@@ -280,7 +281,11 @@ export function Header({
             >
               Engagement Rings <span aria-hidden="true">↗</span>
             </Link>
-            <Link className="announcement-text announcement-sale-text" to="/blackfriday" prefetch="intent">
+            <Link
+              className="announcement-text announcement-sale-text"
+              to="/blackfriday"
+              prefetch="intent"
+            >
               <span className="sale-announcement-headline">
                 Black Friday Sales Are Live
               </span>
@@ -379,6 +384,54 @@ export function Header({
         />
       </header>
     </>
+  );
+}
+
+const BLACK_FRIDAY_END = Date.parse('2026-12-01T00:00:00-08:00');
+
+function BlackFridayCountdown() {
+  const [remaining, setRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () =>
+      setRemaining(Math.max(0, BLACK_FRIDAY_END - Date.now()));
+    update();
+    const interval = window.setInterval(update, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+  if (remaining === null || remaining === 0) return null;
+  const days = Math.floor(remaining / 86400000);
+  const hours = Math.floor((remaining / 3600000) % 24);
+  const minutes = Math.floor((remaining / 60000) % 60);
+  const seconds = Math.floor((remaining / 1000) % 60);
+  const units = [
+    ['Days', days],
+    ['Hrs', hours],
+    ['Min', minutes],
+    ['Sec', seconds],
+  ] as const;
+  return (
+    <div className="black-friday-timer-bar">
+      <span className="black-friday-timer-message">
+        Black Friday ends Monday
+      </span>
+      <div
+        className="black-friday-timer-units"
+        role="timer"
+        aria-label={`Black Friday ends in ${days} days, ${hours} hours, ${minutes} minutes and ${seconds} seconds`}
+      >
+        {units.map(([label, value]) => (
+          <span className="black-friday-timer-unit" key={label}>
+            <span className="black-friday-timer-label">{label}</span>
+            <span className="black-friday-timer-value">
+              {String(value).padStart(2, '0')}
+            </span>
+          </span>
+        ))}
+      </div>
+      <Link to="/blackfriday" className="black-friday-timer-cta">
+        Explore Deals
+      </Link>
+    </div>
   );
 }
 
@@ -957,7 +1010,11 @@ function MobileMenu({
      * Opening the menu warms exactly the links the visitor is looking at, and
      * the tap that follows is usually already cached.
      */
-    <nav className="header-menu-mobile" aria-label="Mobile categories" dir="ltr">
+    <nav
+      className="header-menu-mobile"
+      aria-label="Mobile categories"
+      dir="ltr"
+    >
       <NavLink end onClick={navigateFromMenu} prefetch="viewport" to="/">
         Home
       </NavLink>
@@ -997,7 +1054,10 @@ function MobileMenu({
                 grouping when a column actually gets a title — and dedupe
                 before splitting. */}
             {isOpen && (
-              <div className="mobile-nav-submenu" id={`${menuId}-${department.id}`}>
+              <div
+                className="mobile-nav-submenu"
+                id={`${menuId}-${department.id}`}
+              >
                 {getDepartmentItems(header, department).map((item) =>
                   item.url ? (
                     <NavLink
@@ -1019,7 +1079,11 @@ function MobileMenu({
       {/* Same reasoning as the desktop nav: /custom-jewelry has no submenu to
           expand, so it is a flat link rather than a mobile-nav-department
           with a +/− toggle that would open onto nothing. */}
-      <NavLink onClick={navigateFromMenu} prefetch="viewport" to="/custom-jewelry">
+      <NavLink
+        onClick={navigateFromMenu}
+        prefetch="viewport"
+        to="/custom-jewelry"
+      >
         Custom Jewelry
       </NavLink>
     </nav>

@@ -946,8 +946,7 @@ button.reset:hover:not(:has(> *)) {
      The close button gets its own fixed track rather than sharing the
      showroom link's, so dismissing the offer leaves an empty column instead
      of reflowing the two standing links. */
-  grid-template-columns:
-    minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr) 2.25rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr) 2.25rem;
   min-height: calc(var(--utility-bar-height) + 8px);
   overflow: hidden;
   padding: 0.48rem var(--section-pad);
@@ -1013,6 +1012,73 @@ button.reset:hover:not(:has(> *)) {
   padding: 0.25rem 4rem;
 }
 
+.black-friday-timer-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 4vw, 4rem);
+  min-height: 2.5rem;
+  padding: 0.2rem 3rem;
+  background: #f4d878;
+  color: #211b14;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.black-friday-timer-units {
+  display: flex;
+  gap: 0.25rem;
+}
+.black-friday-timer-unit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 2.6rem;
+}
+.black-friday-timer-label {
+  font-size: 0.65rem;
+  line-height: 1;
+}
+.black-friday-timer-value {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 1.25rem;
+  border: 1px solid #6d592e;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.black-friday-timer-cta {
+  padding: 0.35rem 0.8rem;
+  border-radius: 2px;
+  background: #1a1916;
+  color: #fff;
+  font-size: 0.72rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.black-friday-timer-cta:hover {
+  color: #fff;
+  background: #7a1f2b;
+  text-decoration: none;
+}
+@media (max-width: 48em) {
+  .black-friday-timer-bar {
+    flex-wrap: wrap;
+    gap: 0.3rem 0.7rem;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.7rem;
+  }
+  .black-friday-timer-unit {
+    min-width: 2.25rem;
+  }
+  .black-friday-timer-cta {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.65rem;
+  }
+}
+
 .announcement-bar--sale::before {
   display: none;
 }
@@ -1070,6 +1136,26 @@ button.reset:hover:not(:has(> *)) {
   grid-column: 3;
   justify-self: start;
 }
+.announcement-countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid rgba(244, 219, 181, 0.65);
+  border-radius: 3px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.announcement-countdown time {
+  color: #f4dbb5;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
 
 .sale-announcement-category span {
   display: none;
@@ -1114,13 +1200,24 @@ button.reset:hover:not(:has(> *)) {
 }
 
 @keyframes saleAnnouncementSheen {
-  0%, 15% { transform: translateX(-150%); }
-  75%, 100% { transform: translateX(450%); }
+  0%,
+  15% {
+    transform: translateX(-150%);
+  }
+  75%,
+  100% {
+    transform: translateX(450%);
+  }
 }
 
 @keyframes saleAnnouncementGlow {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.75; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.75;
+  }
 }
 
 @media (max-width: 64em) {
@@ -1991,7 +2088,7 @@ button.announcement-link {
   0%,
   100% {
     opacity: 1;
-  }    
+  }
   50% {
     opacity: 0.5;
   }
@@ -2000,9 +2097,8 @@ button.announcement-link {
 .mega-menu-card:hover .mega-menu-card-img {
   transform: translateY(-3px);
 }
-.header-mega-menu{
- line-style:none;
- 
+.header-mega-menu {
+  line-style: none;
 }
 .mega-menu-card-title {
   color: var(--color-ink) !important;
@@ -4481,7 +4577,9 @@ button.announcement-link {
   letter-spacing: 0.05em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: background 180ms ease, color 180ms ease;
+  transition:
+    background 180ms ease,
+    color 180ms ease;
 }
 
 .black-friday-feature-actions a:last-child {
@@ -6633,9 +6731,12 @@ button.announcement-link {
 
   html.header-primary-hidden .collection-layout .collection-sidebar {
     max-height: calc(
-      100vh - var(--sticky-head-height, 0px) - var(--toolbar-height, 0px) - 1.5rem
+      100vh - var(--sticky-head-height, 0px) - var(--toolbar-height, 0px) -
+        1.5rem
     );
-    top: calc(var(--sticky-head-height, 0px) + var(--toolbar-height, 0px) + 0.75rem);
+    top: calc(
+      var(--sticky-head-height, 0px) + var(--toolbar-height, 0px) + 0.75rem
+    );
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -6876,7 +6977,9 @@ html.header-primary-hidden
      shifted the whole page 32px each time the bar crossed (Search Console
      CLS > 0.25 on mobile collections). A translate is not a layout shift,
      and the padding it reserves stays put. */
-  html.page-scrolled body:has(.collection-toolbar) :is(
+  html.page-scrolled
+    body:has(.collection-toolbar)
+    :is(
       .announcement-bar,
       .header-primary,
       .collection-sticky-head,
@@ -10596,8 +10699,9 @@ html.header-primary-hidden
    book serif (system stack — Charter/Iowan ship with the OS, so no download).
    The one ornament is the gold drop cap; everything else stays quiet. */
 .article {
-  --article-serif: Charter, 'Bitstream Charter', 'Iowan Old Style',
-    'Sitka Text', Cambria, Georgia, serif;
+  --article-serif:
+    Charter, 'Bitstream Charter', 'Iowan Old Style', 'Sitka Text', Cambria,
+    Georgia, serif;
   --article-measure: 40rem;
   max-width: 1040px;
   margin: 0 auto;
@@ -11837,7 +11941,6 @@ html.header-primary-hidden
   padding: 0;
 }
 
-
 .subnav-icons .dragscroll-viewport {
   cursor: grab;
   /* pan-x alone froze vertical page scroll — see .dragscroll-viewport. */
@@ -12732,8 +12835,6 @@ html.header-primary-hidden
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-
-
 
 /* The large centered title and the absolute action compete for the same row
    on narrow phones. Keep the action readable by giving it its own line. */
@@ -13739,7 +13840,9 @@ html.header-primary-hidden
   height: 2.7rem;
   border-radius: 50%;
   background: var(--color-bg-soft);
-  transition: background 140ms ease, transform 140ms ease;
+  transition:
+    background 140ms ease,
+    transform 140ms ease;
 }
 
 .share-app-icon svg {
