@@ -13,7 +13,23 @@
  */
 import assert from 'node:assert/strict';
 import type {WithCache} from '@shopify/hydrogen';
-import {pageSeo, resolveShareImage, stripBrandSuffix} from './seo.ts';
+import {
+  localBusinessJsonLd,
+  organizationJsonLd,
+  pageSeo,
+  resolveShareImage,
+  SITE,
+  stripBrandSuffix,
+} from './seo.ts';
+
+const organization = organizationJsonLd(SITE.origin) as any;
+const localBusiness = localBusinessJsonLd(SITE.origin) as any;
+assert.equal(organization.name, 'Gold Custom');
+assert.equal(localBusiness.name, organization.name);
+assert.equal(
+  organization.logo,
+  'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/gold-custom-logo.png?v=1795073155',
+);
 
 // No brand suffix on titles — it pushed products past the ~60 chars Google
 // renders. Real collection value from Shopify's SEO field, plus the two ways

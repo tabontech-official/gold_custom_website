@@ -31,7 +31,7 @@ export const SITE = {
   // Promises here follow trustClaims.ts and the published policies — no
   // warranty clause, since no policy offers one.
   description: `Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping $${FREE_SHIPPING_THRESHOLD_USD}+, 14-day exchanges or store credit.`,
-  logo: 'https://www.goldcustom.com/favicon.png',
+  logo: 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/gold-custom-logo.png?v=1795073155',
   /**
    * Fallback for any page with no image of its own.
    *
@@ -578,7 +578,7 @@ export const PHONE = {
 } as const;
 
 const STORE = {
-  name: 'Gold Custom LA',
+  name: SITE.name,
   telephone: PHONE.e164,
   email: 'mr10k@goldcustom.com',
   streetAddress: '550 S Hill Street Suite 660',
@@ -607,7 +607,7 @@ export function organizationJsonLd(origin: string): JsonLd {
     '@id': `${origin}/#organization`,
     name: SITE.name,
     url: origin,
-    logo: absoluteUrl(origin, '/favicon.png'),
+    logo: SITE.logo,
     description: SITE.description,
     sameAs: [...STORE.sameAs],
     contactPoint: {
