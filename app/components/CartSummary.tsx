@@ -4,6 +4,13 @@ import {CartForm, Money, type OptimisticCart} from '@shopify/hydrogen';
 import {useEffect, useRef, useState} from 'react';
 import {Link, useFetcher} from 'react-router';
 import {useAside} from './Aside';
+/** True for any finite amount, zero included; false for missing, blank or
+ *  non-numeric values. */
+function isValidAmount(amount: string | number | null | undefined) {
+  if (amount === null || amount === undefined) return false;
+  if (String(amount).trim() === '') return false;
+  return Number.isFinite(Number(amount));
+}
 
 type CartSummaryProps = {
   cart: OptimisticCart<CartApiQueryFragment | null>;
@@ -13,6 +20,7 @@ type CartSummaryProps = {
 export function CartSummary({cart, layout}: CartSummaryProps) {
   const className =
     layout === 'page' ? 'cart-summary-page' : 'cart-summary-aside';
+  const subtotal = cart?.cost?.subtotalAmount;
 
   return (
     <div aria-labelledby="cart-summary" className={className}>
@@ -25,8 +33,10 @@ export function CartSummary({cart, layout}: CartSummaryProps) {
       <dl className="cart-subtotal">
         <dt>Subtotal</dt>
         <dd>
-          {cart?.cost?.subtotalAmount?.amount ? (
-            <Money data={cart?.cost?.subtotalAmount} /> 
+          {/* A numeric check, not truthiness: a subtotal of 0 is real and
+              shows as $0.00. Only a missing or non-numeric amount shows "-". */}
+          {subtotal && isValidAmount(subtotal.amount) ? (
+            <Money data={subtotal} />
           ) : (
             '-'
           )}

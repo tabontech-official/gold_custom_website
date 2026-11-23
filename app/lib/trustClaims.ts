@@ -32,15 +32,12 @@ export type TrustClaim = {
 };
 
 /**
- * Standard U.S. shipping is free from this order total up. Transcribed from
- * checkout — Settings → Shipping and delivery → United States: Standard free
- * on orders $70.00 and up, $8.00 below, Express $15 — because that is what a
- * shopper is actually charged. The site used to say $99 and the shipping
- * policy "all U.S. orders"; neither matched checkout. If the rate changes,
- * change this one number: the badges, announcement bar, homepage ticker, meta
- * description, contact page and product schema all read it.
+ * Standard U.S. shipping is free from this order total up. Keep this aligned
+ * with the confirmed storefront policy. If the rate changes, change this one
+ * number: badges, announcement bar, homepage ticker, SEO, contact page and
+ * product schema all read it.
  */
-export const FREE_SHIPPING_THRESHOLD_USD = 70;
+export const FREE_SHIPPING_THRESHOLD_USD = 99;
 
 /**
  * Titles must be true on their own. On phones the announcement bar shows the
@@ -56,7 +53,11 @@ export const TRUST_CLAIMS: TrustClaim[] = [
   },
   // Matches the refund policy: 14 days, exchange or store credit, return
   // shipping on the customer.
-  {title: '14-Day Exchanges', sub: 'Or store credit', icon: 'returns'},
+  {
+    title: '14-Day Exchanges (Excludes Custom-Sized)',
+    sub: 'Or store credit',
+    icon: 'returns',
+  },
   {title: 'Made in U.S.A', sub: 'From our factory to you', icon: 'usa'},
   // In the slot "1 Year Free Warranty" used to hold. That one sat on every
   // product page and in the announcement bar, but neither the refund policy

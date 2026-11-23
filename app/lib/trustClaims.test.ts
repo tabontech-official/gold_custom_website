@@ -2,10 +2,8 @@
  * Self-check: every promise the storefront prints agrees with the published
  * policies and with checkout. Run with `node app/lib/trustClaims.test.ts`.
  *
- * These claims were in four places that drifted apart: the badges said free
- * shipping over $99, checkout charged nothing from $70, the shipping policy said
- * all orders, and an engagement-ring FAQ promised 30-day returns against a
- * 14-day policy. They now share one source; this keeps it honest.
+ * Shared claims stay aligned with the confirmed $99 shipping threshold and
+ * exchange terms for items that are not custom-sized.
  */
 import assert from 'node:assert/strict';
 import {
@@ -36,6 +34,7 @@ assert.ok(
   returns.title.includes(String(MERCHANT_RETURN_POLICY.merchantReturnDays)),
 );
 assert.match(returns.title, /exchange/i);
+assert.match(returns.title, /excludes custom-sized/i);
 assert.match(returns.sub, /store credit/i);
 
 // Nothing the policies don't back.

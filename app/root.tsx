@@ -33,6 +33,7 @@ import {
   websiteJsonLd,
 } from '~/lib/seo';
 import {CacheNav} from '~/lib/cache';
+import {SITE_POLICIES_QUERY, parseSitePolicies, policySeoDescription} from '~/lib/sitePolicies';
 
 export type RootLoader = typeof loader;
 
@@ -43,7 +44,8 @@ export type RootLoader = typeof loader;
  * route repeating it.
  */
 export const meta: Route.MetaFunction = ({matches}) => {
-  const origin = siteOrigin(rootDataFrom(matches));
+  const root = rootDataFrom(matches) as any;
+  const origin = siteOrigin(root);
 
   // pageSeo, not getSeoMeta — it is the only thing that emits `og:image`,
   // `og:type`, `og:site_name` and `twitter:card`, and it supplies the brand
@@ -51,7 +53,7 @@ export const meta: Route.MetaFunction = ({matches}) => {
   // shipping blank social previews. See lib/seo.ts.
   return pageSeo({
     title: SITE.name,
-    description: SITE.description,
+    description: root?.sitePolicies ? policySeoDescription(root.sitePolicies) : SITE.description,
     url: origin,
   });
 };
@@ -210,7 +212,7 @@ export async function loader(args: Route.LoaderArgs) {
 async function loadCriticalData({context}: Route.LoaderArgs) {
   const {storefront, customerAccount} = context;
 
-  const [header] = await Promise.all([
+  const [header, policiesResponse] = await Promise.all([
     storefront.query(HEADER_QUERY, {
       // The nav tier: 2 min fresh, 12 min worst case. Not CacheLong (24h
       // stale window — a menu edit took an hour plus two page loads to show
@@ -222,6 +224,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
         headerMenuHandle: 'main-menu', // Adjust to your header menu handle
       },
     }),
+    storefront.query(SITE_POLICIES_QUERY, {cache: CacheNav()}).catch(() => null),
     // Not for its value — the deferred `isLoggedIn` below is what the UI
     // reads. Starting it here puts an expired customer token's refresh ahead
     // of the shell. Left to the deferred calls (it also runs inside
@@ -235,7 +238,7 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     // Add other queries here, so that they are loaded in parallel
   ]);
 
-  return {header};
+  return {header, sitePolicies: parseSitePolicies(policiesResponse)};
 }
 
 /**

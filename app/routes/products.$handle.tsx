@@ -69,6 +69,7 @@ import {
 } from '~/lib/shopPayInstallments';
 import {buildFaqJsonLd, parseFaqMetafield, type Faq} from '~/lib/faqs';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
+import {policyClaims, policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 import {TrustClaimIconArt} from '~/components/TrustClaims';
 import {buildVideoJsonLd} from '~/lib/videoSchema';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -94,6 +95,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   if (!product) return pageSeo({title: SITE.name});
 
   const origin = siteOrigin(rootDataFrom(matches));
+  const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
   const canonical = absoluteUrl(origin, productIndexPath(product.handle));
   const variant = product.selectedOrFirstAvailableVariant;
   const image = variant?.image;
@@ -112,7 +114,9 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ogType: 'product',
     title: product.seo?.title || product.title,
     description: metaDescription(
-      product.seo?.description || product.description,
+      policies
+        ? `${product.seo?.description || product.description || ''} ${policySeoDescription(policies)}`
+        : product.seo?.description || product.description,
     ),
     url: canonical,
     // width/height come along so pageSeo can publish og:image:width/height —
@@ -801,6 +805,7 @@ export default function Product() {
     origin: productOrigin,
     priceValidUntil,
     validFrom,
+    policies: root?.sitePolicies,
   });
   // VideoObject for every video in the gallery — YouTube embeds and the few
   // Shopify-hosted clips alike. `uploadDate` is the product's publishedAt:
@@ -922,7 +927,7 @@ export default function Product() {
             )}
             title={title}
           />
-          <ProductTrustBadges />
+          <ProductTrustBadges policies={root?.sitePolicies} />
           {/* Under the gallery, not in the buy column: it is a picture of
               the pair, and it belongs with the pictures. Skipped for a
               Picture Pendant still waiting on its photo — its line cannot be
@@ -1117,14 +1122,14 @@ function ProductWishlistButton({handle}: {handle: string}) {
  * drift apart — and so a policy change is one edit, not a hunt. A badge here
  * once outlived the policy it described; see that file.
  */
-function ProductTrustBadges() {
+function ProductTrustBadges({policies}: {policies?: SitePolicies}) {
   return (
     <div
       className="product-trust-badges pdp-card"
       aria-label="Product trust badges"
     >
       <div className="product-trust-badge-grid">
-        {TRUST_CLAIMS.map((claim) => (
+        {(policies ? policyClaims(policies) : TRUST_CLAIMS).map((claim) => (
           <div className="product-trust-badge" key={claim.title}>
             <span className="product-trust-icon">
               <TrustClaimIconArt name={claim.icon} />
@@ -1721,6 +1726,7 @@ function buildProductJsonLd({
   origin,
   priceValidUntil,
   validFrom,
+  policies,
 }: {
   product: any;
   selectedVariant: any;
@@ -1728,6 +1734,7 @@ function buildProductJsonLd({
   origin: string;
   priceValidUntil: string;
   validFrom: string;
+  policies?: SitePolicies;
 }) {
   const images = mediaItems
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
@@ -1813,7 +1820,7 @@ function buildProductJsonLd({
           itemCondition: 'https://schema.org/NewCondition',
           seller: {'@id': `${origin}/#organization`},
           shippingDetails: offerShippingDetails(variant.price),
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
+          hasMerchantReturnPolicy: merchantReturnPolicy(policies),
         }
       : undefined,
   }));
@@ -1875,10 +1882,18 @@ function buildProductJsonLd({
           itemCondition: 'https://schema.org/NewCondition',
           seller: {'@id': `${origin}/#organization`},
           shippingDetails: offerShippingDetails(price),
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
+          hasMerchantReturnPolicy: merchantReturnPolicy(policies),
         }
       : undefined,
   };
+}
+
+function merchantReturnPolicy(policies?: SitePolicies) {
+  if (!policies) return MERCHANT_RETURN_POLICY;
+  const days = Number(/\b(\d{1,3})\s*[- ]?days?\b/i.exec(policies.returns)?.[1]);
+  return Number.isFinite(days) && days > 0
+    ? {...MERCHANT_RETURN_POLICY, merchantReturnDays: days}
+    : MERCHANT_RETURN_POLICY;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql
