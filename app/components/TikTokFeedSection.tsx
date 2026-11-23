@@ -132,14 +132,6 @@ export function TikTokFeedSection() {
   return (
     <section className="home-section tiktok-feed-section">
       <div className="section-inner">
-        {/* Heads the feed AND the social bar under it — one heading for the
-            whole block, which is why SocialFollow carries none of its own.
-            Reputon's header sits below this with the account handle and follow
-            button; the two are spaced tight so they read as one unit rather
-            than two headings. */}
-        <div className="editorial-heading tiktok-feed-heading">
-          <h2 className="editorial-title">Our Media</h2>
-        </div>
         <div
           ref={stage}
           className="reputon-tiktok-widget"

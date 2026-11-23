@@ -8434,6 +8434,13 @@ html.header-primary-hidden
     order: 4;
   }
 
+  /* This section sits after the purchase card in the markup, but its wrapper
+     dissolves on mobile. Give it the buy card's order so source order keeps
+     Google Reviews immediately after the Buy button and before trust badges. */
+  .google-reviews-section {
+    order: 4;
+  }
+
   /* Straight after the buy box: the delivery, exchange and warranty
      promises belong next to Add to bag, where the decision is made. At 7
      they sat under the whole description, a long scroll past the button. */
@@ -16071,14 +16078,6 @@ html.header-primary-hidden
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
-}
-
-.product-card-preview-note {
-  margin: 0;
-  color: #6b6b6b;
-  font-size: 0.7rem;
-  line-height: 1.4;
-  text-align: center;
 }
 
 .product-savings {

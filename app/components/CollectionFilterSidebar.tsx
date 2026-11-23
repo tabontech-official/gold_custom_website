@@ -15,6 +15,7 @@ const useClientLayoutEffect =
 import {Await, Link, useNavigate, useSearchParams} from 'react-router';
 import {SORT_OPTIONS} from '~/lib/collectionFilter';
 import {FACETS, parseFacetFilter} from '~/lib/facets';
+import {countKey} from '~/lib/groupedFacetCounts';
 import {useDismissable} from '~/hooks/useDismissable';
 
 type FilterValue = {
@@ -106,7 +107,8 @@ export function CollectionFilterSidebar({
   sortOptions = SORT_OPTIONS,
   // Off for /search: facet counts there disagree with the result set the same
   // filter actually returns (Shopify reported 14 for a value that yields 20
-  // products). Collection facet counts are exact, so they stay on.
+  // products). Collections pass `deferredCounts`, card counts that match the
+  // grouped grid, so they stay on.
   showCounts = true,
   // Off for /search, where the query itself is already the visible context and
   // the toolbar's "Clear all" plus the rail's own checkboxes still undo a
@@ -117,6 +119,7 @@ export function CollectionFilterSidebar({
   // pattern as ProductForm's `wishlistButton`). Absent on /search.
   shareButton,
   deferredFilters,
+  deferredCounts,
   // Every group starts open (engagement rings page), instead of long ones closed.
   expandAll = false,
 }: {
@@ -127,6 +130,12 @@ export function CollectionFilterSidebar({
   shareButton?: ReactNode;
   /** Groups that arrive after the page — the storefront's own facets. */
   deferredFilters?: Promise<Filter[]>;
+  /**
+   * Card counts for `filters`, keyed by countKey (lib/groupedFacetCounts).
+   * When passed, a value's badge shows only once its card count arrives —
+   * never Shopify's product count, which disagrees with a grouped grid.
+   */
+  deferredCounts?: Promise<Record<string, number>>;
   expandAll?: boolean;
 }) {
   const [drawer, setDrawer] = useState<null | 'filters'>(null);
@@ -262,8 +271,26 @@ export function CollectionFilterSidebar({
     return query ? `?${query}` : '?';
   }
 
-  function renderGroup(filter: Filter) {
+  /** `exact`: the values' own counts are already card counts. */
+  function renderGroup(filter: Filter, exact: boolean) {
     const values = dedupeValues(filter.values);
+    const countFor = (value: GroupedValue) => {
+      if (exact || !deferredCounts) {
+        return <span className="sidebar-count">{value.count}</span>;
+      }
+      const key = countKey(filter.id, value.label);
+      return (
+        <Suspense fallback={null}>
+          <Await resolve={deferredCounts} errorElement={null}>
+            {(counts) =>
+              key in counts ? (
+                <span className="sidebar-count">{counts[key]}</span>
+              ) : null
+            }
+          </Await>
+        </Suspense>
+      );
+    };
     const isChecked = (value: GroupedValue) =>
       value.inputs.some((input) => activeSet.has(normalize(input)));
     return (
@@ -292,9 +319,7 @@ export function CollectionFilterSidebar({
                 >
                   <span className="sidebar-check" aria-hidden="true" />
                   <span>{value.label}</span>
-                  {showCounts && (
-                    <span className="sidebar-count">{value.count}</span>
-                  )}
+                  {showCounts && countFor(value)}
                 </Link>
               </li>
             );
@@ -462,14 +487,14 @@ export function CollectionFilterSidebar({
           </details>
         )}
 
-        {filterGroups.map(renderGroup)}
+        {filterGroups.map((filter) => renderGroup(filter, false))}
 
         {/* Karat / Carat / Style (lib/facets), streamed in after the grid on
             an unfiltered page; same rendering as Shopify's facets above. */}
         {deferredFilters && (
           <Suspense fallback={null}>
             <Await resolve={deferredFilters} errorElement={null}>
-              {(groups) => groups.map(renderGroup)}
+              {(groups) => groups.map((filter) => renderGroup(filter, true))}
             </Await>
           </Suspense>
         )}

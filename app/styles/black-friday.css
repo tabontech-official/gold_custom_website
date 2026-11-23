@@ -1,0 +1,601 @@
+/* /blackfriday only — loaded by that route's `links`, never globally.
+   Black and gold throughout. Card overrides are scoped to .bf-card, so the
+   shared ProductItem looks exactly as before everywhere else. No animation
+   beyond short hover transitions. */
+
+.bf-page {
+  --bf-black: #090909;
+  --bf-panel: #111;
+  --bf-card: #151515;
+  --bf-gold: #c9a24d;
+  --bf-gold-bright: #e6c674;
+  --bf-gold-deep: #8f6f2a;
+  --bf-text: #f4efe6;
+  --bf-text-soft: rgba(244, 239, 230, 0.68);
+  --bf-rule: rgba(201, 162, 77, 0.24);
+  --bf-gold-line: linear-gradient(
+    90deg,
+    transparent,
+    var(--bf-gold) 20%,
+    var(--bf-gold-bright) 50%,
+    var(--bf-gold) 80%,
+    transparent
+  );
+  background: var(--bf-black);
+  color: var(--bf-text);
+  /* Contains the breadcrumb's top margin. Without it the margin collapsed
+     through this wrapper and showed as a white band under the header. */
+  display: flow-root;
+}
+
+/* Breadcrumb on black. Its own 2rem top margin is the gap below the header. */
+.bf-crumbs {
+  padding-top: 0;
+  padding-bottom: 0.25rem;
+}
+.bf-page .breadcrumb,
+.bf-page .breadcrumb a,
+.bf-page .breadcrumb span,
+.bf-page .breadcrumb li {
+  color: var(--bf-text-soft);
+}
+.bf-page .breadcrumb a:hover {
+  color: var(--bf-gold-bright);
+}
+
+/* Shared type and buttons ---------------------------------------------- */
+
+.bf-kicker,
+.bf-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  color: var(--bf-gold);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+.bf-kicker-line {
+  width: 2.25rem;
+  height: 1px;
+  background: var(--bf-gold);
+  opacity: 0.7;
+}
+.bf-eyebrow-index {
+  color: var(--bf-text-soft);
+  font-weight: 400;
+  letter-spacing: 0.1em;
+}
+.bf-eyebrow-index::after {
+  content: '';
+  display: inline-block;
+  width: 1.5rem;
+  height: 1px;
+  margin-left: 0.75rem;
+  vertical-align: middle;
+  background: var(--bf-gold);
+}
+
+.bf-section-title {
+  margin: 0;
+  color: var(--bf-text);
+  font-size: clamp(1.6rem, 3.2vw, 2.6rem);
+  font-weight: 300;
+  line-height: 1.15;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.bf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 34rem;
+}
+
+.bf-btn {
+  display: inline-flex;
+  flex: 1 1 12rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3.1rem;
+  padding: 0.85rem 1.4rem;
+  border: 1px solid var(--bf-gold);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-decoration: none;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    border-color 160ms ease;
+}
+.bf-btn--gold,
+.bf-btn--gold:visited {
+  background: linear-gradient(135deg, var(--bf-gold-bright), var(--bf-gold));
+  color: var(--bf-black);
+}
+.bf-btn--gold:hover {
+  background: var(--bf-gold-bright);
+  border-color: var(--bf-gold-bright);
+  color: var(--bf-black);
+}
+.bf-btn--ghost,
+.bf-btn--ghost:visited {
+  background: transparent;
+  color: var(--bf-gold-bright);
+}
+.bf-btn--ghost:hover {
+  background: var(--bf-gold);
+  color: var(--bf-black);
+}
+.bf-page a:focus-visible {
+  outline: 2px solid var(--bf-gold-bright);
+  outline-offset: 3px;
+}
+
+/* Hero ------------------------------------------------------------------ */
+/* Phones: photograph on top, fading into black, copy rising over its foot.
+   48em and up: full-bleed photograph on the right, copy on the left over a
+   black-to-clear gradient. */
+
+.bf-hero {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  background: var(--bf-black);
+}
+
+.bf-hero-media {
+  position: relative;
+  aspect-ratio: 5 / 4;
+}
+.bf-hero-media img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  object-fit: cover;
+}
+.bf-hero-media::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(9, 9, 9, 0) 45%,
+    rgba(9, 9, 9, 0.85) 85%,
+    var(--bf-black)
+  );
+}
+
+.bf-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: -4.5rem;
+  padding: 0 var(--section-pad, 1rem) 2.75rem;
+  text-align: center;
+}
+.bf-hero--text .bf-hero-copy {
+  margin-top: 0;
+  padding-top: 3rem;
+}
+
+.bf-hero-title {
+  display: flex;
+  flex-direction: column;
+  margin: 1.1rem 0 0;
+  color: var(--bf-text);
+  font-size: clamp(3rem, 13vw, 6.5rem);
+  font-weight: 300;
+  line-height: 0.98;
+  letter-spacing: 0.18em;
+  text-indent: 0.18em;
+  text-transform: uppercase;
+}
+.bf-hero-title-gold {
+  background: linear-gradient(
+    180deg,
+    var(--bf-gold-bright),
+    var(--bf-gold) 60%,
+    var(--bf-gold-deep)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bf-hero-tagline {
+  margin: 1.1rem 0 0;
+  color: var(--bf-gold-bright);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.05rem, 1.6vw, 1.35rem);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+.bf-hero-lede {
+  max-width: 30rem;
+  margin: 0.75rem 0 0;
+  color: var(--bf-text-soft);
+  font-size: clamp(0.92rem, 1.1vw, 1.02rem);
+  line-height: 1.65;
+}
+
+.bf-hero-offer {
+  margin: 1rem 0 0;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--bf-gold);
+  color: var(--bf-gold-bright);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bf-hero .bf-actions {
+  justify-content: center;
+  margin-top: 1.75rem;
+}
+
+.bf-hero::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: var(--bf-gold-line);
+}
+
+@media (min-width: 48em) {
+  .bf-hero {
+    min-height: clamp(30rem, 44vw, 42rem);
+    align-items: center;
+  }
+  .bf-hero-media {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 35%;
+    aspect-ratio: auto;
+  }
+  .bf-hero-media::after {
+    background:
+      linear-gradient(
+        90deg,
+        var(--bf-black),
+        rgba(9, 9, 9, 0.7) 22%,
+        rgba(9, 9, 9, 0) 55%
+      ),
+      linear-gradient(0deg, rgba(9, 9, 9, 0.5), rgba(9, 9, 9, 0) 35%);
+  }
+  .bf-hero-copy {
+    align-items: flex-start;
+    max-width: 40rem;
+    margin-top: 0;
+    padding: 4rem var(--section-pad, 3rem);
+    text-align: left;
+  }
+  .bf-hero-title {
+    text-indent: 0;
+  }
+  .bf-hero .bf-actions {
+    justify-content: flex-start;
+  }
+  .bf-hero--text .bf-hero-copy {
+    align-items: center;
+    max-width: none;
+    text-align: center;
+  }
+  .bf-hero--text .bf-actions {
+    justify-content: center;
+  }
+}
+
+/* Category tiles -------------------------------------------------------- */
+
+.bf-tiles ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 0 auto;
+  padding-top: clamp(2rem, 4vw, 3.25rem);
+  padding-bottom: clamp(0.5rem, 2vw, 1.5rem);
+  list-style: none;
+}
+@media (min-width: 64em) {
+  .bf-tiles ul {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+.bf-tile {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--bf-rule);
+  color: var(--bf-text);
+  text-decoration: none;
+  transition: border-color 160ms ease;
+}
+.bf-tile img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 5 / 4;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  object-fit: cover;
+}
+.bf-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(9, 9, 9, 0.88), rgba(9, 9, 9, 0) 60%);
+}
+.bf-tile-label {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.85rem 1rem;
+}
+.bf-tile-title {
+  font-size: clamp(0.78rem, 1.2vw, 0.95rem);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.bf-tile-cta {
+  color: var(--bf-gold-bright);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bf-tile:hover {
+  border-color: var(--bf-gold);
+}
+@media (max-width: 40em) {
+  .bf-tile-cta {
+    display: none;
+  }
+  .bf-tile-label {
+    padding: 0.7rem 0.75rem;
+  }
+  .bf-tile-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+}
+
+/* Product sections ------------------------------------------------------ */
+
+.bf-section {
+  position: relative;
+  padding: clamp(3rem, 6vw, 5.5rem) 0;
+  scroll-margin-top: var(--header-height, 64px);
+}
+.bf-section:nth-of-type(odd) {
+  background: var(--bf-panel);
+}
+.bf-section + .bf-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 10%;
+  left: 10%;
+  height: 1px;
+  background: var(--bf-gold-line);
+  opacity: 0.6;
+}
+
+.bf-section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: clamp(1.75rem, 3vw, 2.75rem);
+  text-align: center;
+}
+.bf-divider {
+  width: 4.5rem;
+  height: 1px;
+  background: var(--bf-gold-line);
+}
+
+.bf-section-foot {
+  display: flex;
+  justify-content: center;
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+}
+.bf-section-foot .bf-btn {
+  flex: 0 1 auto;
+  min-width: min(100%, 18rem);
+}
+
+/* Below 64em: one swipeable row per section (cards ~2/3 of a phone, ~1/3 of
+   a tablet). 64em and up: a four-column grid. */
+.bf-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 66vw;
+  gap: 0.9rem;
+  margin: 0 calc(-1 * var(--section-pad, 1rem));
+  padding: 0.25rem var(--section-pad, 1rem) 0.75rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--section-pad, 1rem);
+  overscroll-behavior-x: contain;
+}
+.bf-grid > * {
+  scroll-snap-align: start;
+}
+@media (min-width: 40em) {
+  .bf-grid {
+    grid-auto-columns: 36vw;
+  }
+}
+@media (min-width: 64em) {
+  .bf-grid {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+}
+
+/* Cards: a dark gold-edged frame around the shared ProductItem, with its own
+   Shop Now link. Prices and any sale figures still come from ProductItem and
+   lib/discount.ts; only their colours change here. */
+.bf-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 0.6rem 0.6rem 0.75rem;
+  border: 1px solid var(--bf-rule);
+  background: var(--bf-card);
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+.bf-card:hover,
+.bf-card:focus-within {
+  border-color: var(--bf-gold);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+.bf-card .product-item,
+.bf-card .product-item:hover,
+.bf-card .product-item:focus-within {
+  flex: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--bf-text);
+  transform: none;
+}
+.bf-card .product-image-wrap {
+  background: #fff;
+}
+.bf-card .product-item-copy h3 {
+  color: var(--bf-text);
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+}
+.bf-card .product-card-price,
+.bf-card .product-card-price:hover,
+.bf-card .product-card-price:visited,
+.bf-card .product-card-price:focus {
+  color: var(--bf-gold-bright);
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.bf-card .product-card-price.is-sale {
+  color: var(--bf-gold-bright);
+}
+.bf-card .product-card-was {
+  color: var(--bf-text-soft);
+}
+.bf-card .product-card-savings,
+.bf-card .product-off-badge {
+  background: var(--bf-gold);
+  color: var(--bf-black);
+}
+
+.bf-card-cta,
+.bf-card-cta:visited {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  border: 1px solid var(--bf-gold);
+  color: var(--bf-gold-bright);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+.bf-card-cta:hover,
+.bf-card:hover .bf-card-cta {
+  background: var(--bf-gold);
+  color: var(--bf-black);
+}
+
+/* Closing --------------------------------------------------------------- */
+
+.bf-closing {
+  padding: clamp(3rem, 6vw, 5.5rem) 0;
+}
+.bf-closing-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid var(--bf-rule);
+  background:
+    radial-gradient(
+      ellipse at top,
+      rgba(201, 162, 77, 0.12),
+      rgba(201, 162, 77, 0) 70%
+    ),
+    var(--bf-panel);
+  text-align: center;
+}
+.bf-closing-text {
+  max-width: 30rem;
+  margin: 0;
+  color: var(--bf-text-soft);
+  line-height: 1.6;
+}
+.bf-closing .bf-actions {
+  justify-content: center;
+  margin-top: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bf-btn,
+  .bf-card,
+  .bf-card-cta,
+  .bf-tile {
+    transition: none;
+  }
+}

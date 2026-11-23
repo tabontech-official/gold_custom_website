@@ -1,16 +1,19 @@
-import {Link} from 'react-router';
+import {Link, useRouteLoaderData} from 'react-router';
 import {useAnalytics} from '@shopify/hydrogen';
 import {Breadcrumb} from '~/components/Breadcrumb';
 import type {Route} from './+types/contact';
 import {PHONE, SITE, absoluteUrl, pageSeo, rootDataFrom, siteOrigin} from '~/lib/seo';
 import {FREE_SHIPPING_THRESHOLD_USD} from '~/lib/trustClaims';
+import {policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 
-export const meta: Route.MetaFunction = ({matches}) =>
-  pageSeo({
+export const meta: Route.MetaFunction = ({matches}) => {
+  const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
+  return pageSeo({
     title: 'Contact Us',
-    description: `Reach the ${SITE.name} team about an order, a return, sizing or a repair in progress. Call, email, or find the answer yourself.`,
+    description: policies ? policySeoDescription(policies) : `Reach the ${SITE.name} team about an order, a return, sizing or a repair in progress. Call, email, or find the answer yourself.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/contact'),
   });
+};
 
 /* Address, hours and the map live on /showroom — this page is reach-us only.
    Two pages publishing the same NAP compete for the same query and double the
@@ -25,8 +28,8 @@ const SELF_SERVE = [
     to: '/policies/refund-policy',
     label: 'Returns and exchanges',
     // The refund policy's own terms: 14 days from receipt, exchange or store
-    // credit, unused items; custom, personalized and sized-to-order are final.
-    body: '14 days from receipt to exchange an unused piece or take store credit. Custom, personalized and sized-to-order pieces are final sale.',
+    // credit, unused items; custom-sized, personalized and sized-to-order are final.
+    body: '14 days from receipt to exchange an unused item that has not been custom-sized, or take store credit. Custom-sized, personalized and sized-to-order pieces are final sale.',
   },
   {
     to: '/policies/shipping-policy',
@@ -40,10 +43,14 @@ const SELF_SERVE = [
     label: 'Repair in progress',
     body: 'Turnaround times by service, and how to check on a piece at the bench.',
   },
+  {to: '/showroom', label: 'Made in the U.S.A.', body: 'From our factory to you.'},
+  {to: '/repairs', label: 'Warranty', body: 'Contact us for warranty information.'},
 ];
 
 export default function Contact() {
   const {publish} = useAnalytics();
+  const root = useRouteLoaderData<any>('root');
+  const policies = root?.sitePolicies as SitePolicies | undefined;
 
   // Same shape as the financing-partner and appointment tracking (see
   // products.$handle.tsx / AppointmentModal): the click itself is the signal,
@@ -131,14 +138,25 @@ export default function Contact() {
             Most-asked, already written down.
           </h2>
           <ul className="contact-help-list">
-            {SELF_SERVE.map((item) => (
-              <li key={item.to}>
-                <Link to={item.to}>
-                  <strong>{item.label}</strong>
-                  <span>{item.body}</span>
-                </Link>
-              </li>
-            ))}
+            {SELF_SERVE.map((item) => {
+              const body = item.to === '/policies/refund-policy' && policies
+                ? policies.returns
+                : item.to === '/policies/shipping-policy' && policies
+                  ? policies.shipping
+                  : item.label === 'Made in the U.S.A.' && policies
+                    ? policies.madeInUSA
+                    : item.label === 'Warranty' && policies
+                      ? policies.warranty
+                      : item.body;
+              return (
+                <li key={item.label}>
+                  <Link to={item.to}>
+                    <strong>{item.label}</strong>
+                    <span>{body}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </section>

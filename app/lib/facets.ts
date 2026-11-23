@@ -138,6 +138,10 @@ export type FacetSource = {
 export type IndexedProduct = {
   id: string;
   groupName?: {value?: string | null} | null;
+  /** Option values by lower-cased option name, spaces kept (" metal" is not
+   *  "metal" to Shopify's filter) — for counting Shopify's own option facets
+   *  (Metal) per card; see groupedFacetCounts. */
+  options: Record<string, string[]>;
 } & Record<FacetKey, string[]>;
 
 const KARAT = /\b(10|14|18|22|24)\s?k(?:t|arat)?\b/gi;
@@ -183,9 +187,18 @@ export function indexProduct(product: FacetSource): IndexedProduct {
   const styles = (product.collections?.nodes ?? [])
     .map((collection) => STYLE_COLLECTIONS[collection.handle])
     .filter(Boolean);
+  const options: Record<string, string[]> = {};
+  for (const option of product.options) {
+    const name = option.name.toLowerCase();
+    options[name] = [
+      ...(options[name] ?? []),
+      ...option.optionValues.map((value) => value.name),
+    ];
+  }
   return {
     id: product.id,
     groupName: product.groupName,
+    options,
     karat: karatsOf(product),
     carat: carat ? [carat] : [],
     style: [...new Set(styles)].sort(),
@@ -233,16 +246,29 @@ const CARAT_ORDER = CARAT_BANDS.map(([, label]) => label);
  * Sidebar groups, in the shape CollectionFilterSidebar takes for Shopify's
  * facets. Each facet counts against every OTHER active facet but not itself,
  * so ticking 14K never zeroes out 10K — the box stays a real choice.
+ *
+ * `group` turns the matching products into what the grid shows for them (the
+ * route's groupForGrid), so a count is the number of CARDS ticking that box
+ * yields, not products. Without it each product counts once.
  */
-export function facetGroups(index: IndexedProduct[], active: FacetFilter[]) {
+export function facetGroups(
+  index: IndexedProduct[],
+  active: FacetFilter[],
+  group: (products: IndexedProduct[]) => unknown[] = (products) => products,
+) {
   return FACETS.map(({key, label}) => {
-    const counts = new Map<string, number>();
+    const matching = new Map<string, IndexedProduct[]>();
     for (const product of index) {
       if (!matchesFacets(product, active, key)) continue;
       for (const value of product[key]) {
-        counts.set(value, (counts.get(value) ?? 0) + 1);
+        const list = matching.get(value);
+        if (list) list.push(product);
+        else matching.set(value, [product]);
       }
     }
+    const counts = new Map(
+      [...matching].map(([value, products]) => [value, group(products).length]),
+    );
     const values = [...counts.keys()].sort((a, b) =>
       key === 'carat'
         ? CARAT_ORDER.indexOf(a) - CARAT_ORDER.indexOf(b)

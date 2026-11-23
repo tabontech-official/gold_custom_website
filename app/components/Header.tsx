@@ -19,6 +19,7 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
+import {policyClaims, type SitePolicies} from '~/lib/sitePolicies';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {PHONE} from '~/lib/seo';
 import {
@@ -181,12 +182,16 @@ function useScrolledPastAnnouncement(
  * layaway line the refund policy already names.
  */
 function AnnouncementPromises() {
+  const root = useRouteLoaderData<RootLoader>('root');
+  const policies = root?.sitePolicies as SitePolicies | undefined;
   // Title always, qualifier only where there is room — the same
   // .announcement-long/.announcement-short split the offer line uses. "14 Day
   // Returns — Exchange or store credit · Return shipping fees apply" cannot
   // fit one phone line, and this strip is a single line by design.
   const messages = [
-    ...TRUST_CLAIMS.map((claim) => [claim.title, claim.sub] as const),
+    ...(policies ? policyClaims(policies) : TRUST_CLAIMS).map(
+      (claim) => [claim.title, claim.sub] as const,
+    ),
     ['Layaway Available', 'Pay over time with Partial.ly'] as const,
   ];
   const [index, setIndex] = useState(0);
@@ -203,8 +208,12 @@ function AnnouncementPromises() {
     // centred treatment as the offer it replaces.
     <p className="announcement-text announcement-promise" key={index}>
       {messages[index][0]}
-      <span className="announcement-long">{' — '}</span>
-      <span className="announcement-long">{messages[index][1]}</span>
+      {messages[index][1] && (
+        <>
+          <span className="announcement-long">{' — '}</span>
+          <span className="announcement-long">{messages[index][1]}</span>
+        </>
+      )}
     </p>
   );
 }
@@ -238,7 +247,7 @@ export function Header({
   // resizing it is all that's needed.
   const logoSrc =
     shop.brand?.logo?.image?.url ??
-    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/ChatGPT_Image_Aug_24_2026_02_24_14_PM.png?v=1787813253';
+    'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/gold-custom-logo.png?v=1795073155';
   const logoUrl = (scale: number) => cdnWidth(logoSrc, 360 * scale);
 
   return (
@@ -271,14 +280,14 @@ export function Header({
             >
               Engagement Rings <span aria-hidden="true">↗</span>
             </Link>
-            <p className="announcement-text announcement-sale-text">
+            <Link className="announcement-text announcement-sale-text" to="/blackfriday" prefetch="intent">
               <span className="sale-announcement-headline">
                 Black Friday Sales Are Live
               </span>
               <span className="sale-announcement-offer">
                 Up to <strong>50% Off</strong>
               </span>
-            </p>
+            </Link>
             <Link
               className="sale-announcement-category sale-announcement-category--right"
               to="/collections/diamond-stud-earrings"

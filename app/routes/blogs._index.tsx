@@ -13,6 +13,7 @@ import {
   siteOrigin,
 } from '~/lib/seo';
 import {CacheContent} from '~/lib/cache';
+import {decodeHtmlEntities} from '~/lib/description';
 
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
@@ -47,7 +48,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
             '@type': 'BlogPosting',
             '@id': `${articleUrl}#article`,
             url: articleUrl,
-            headline: article.title,
+            headline: decodeHtmlEntities(article.title),
             datePublished: article.publishedAt,
             image: article.image?.url ? [article.image.url] : undefined,
             author: article.author?.name
@@ -154,7 +155,7 @@ function ArticleItem({
         {article.image && (
           <Image
             loader={cdnLoader}
-            alt={article.image.altText || article.title}
+            alt={article.image.altText || decodeHtmlEntities(article.title)}
             aspectRatio="3/2"
             data={article.image}
             loading={loading}
@@ -168,7 +169,7 @@ function ArticleItem({
         </time>
         <h3 className="blog-card-title">
           <Link to={to} prefetch="intent">
-            {article.title}
+            {decodeHtmlEntities(article.title)}
           </Link>
         </h3>
         {detail && <p className="blog-card-excerpt">{detail}</p>}

@@ -15,12 +15,14 @@ import type {
 } from 'storefrontapi.generated';
 import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {groupProducts, productGroupKey} from '~/lib/productGroups';
+import {stripDuplicatedSpecLines, variantWeightLabel} from '~/lib/productSpecs';
 import {ProductPrice} from '~/components/ProductPrice';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {StickyAddToCart} from '~/components/StickyAddToCart';
 import {HorizontalCarousel} from '~/components/HorizontalCarousel';
 import {ReviewsCarousel} from '~/components/ReviewsCarousel';
+import {GoogleReviewsSection} from '~/components/GoogleReviewsSection';
 import {
   REVIEWS_PER_PAGE,
   carouselReviews,
@@ -67,6 +69,7 @@ import {
 } from '~/lib/shopPayInstallments';
 import {buildFaqJsonLd, parseFaqMetafield, type Faq} from '~/lib/faqs';
 import {TRUST_CLAIMS} from '~/lib/trustClaims';
+import {policyClaims, policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 import {TrustClaimIconArt} from '~/components/TrustClaims';
 import {buildVideoJsonLd} from '~/lib/videoSchema';
 import {redirectIfHandleIsLocalized} from '~/lib/redirect';
@@ -92,6 +95,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
   if (!product) return pageSeo({title: SITE.name});
 
   const origin = siteOrigin(rootDataFrom(matches));
+  const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
   const canonical = absoluteUrl(origin, productIndexPath(product.handle));
   const variant = product.selectedOrFirstAvailableVariant;
   const image = variant?.image;
@@ -110,7 +114,9 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
     ogType: 'product',
     title: product.seo?.title || product.title,
     description: metaDescription(
-      product.seo?.description || product.description,
+      policies
+        ? `${product.seo?.description || product.description || ''} ${policySeoDescription(policies)}`
+        : product.seo?.description || product.description,
     ),
     url: canonical,
     // width/height come along so pageSeo can publish og:image:width/height —
@@ -766,15 +772,18 @@ export default function Product() {
   });
 
   const {title} = product;
-  // Strip the merchant's own "Size & Weight" heading and its Length/Width
-  // lines, when present (990 of 4,539 products, checked directly against the
-  // Storefront API — always this exact heading text) — the spec sheet below
-  // the description prints the same facts, sourced from the variant instead
-  // of copy, so every product ends up with the identical block in the
-  // identical place rather than depending on whether a merchant happened to
-  // write one. Two systems for the same numbers is what read as
-  // inconsistent; one system that always runs is the fix.
-  const descriptionHtml = stripSizeWeightSection(product.descriptionHtml);
+  // The merchant's "Size & Weight" copy stays: it carries dimensions and, on
+  // diamond pieces, stone carats and counts that nothing else on the page
+  // shows. Only a plain gold-weight line is dropped, and only while the
+  // structured Weight row below is actually rendering it (a zero/missing
+  // variant weight renders no row, so the copy keeps its line).
+  const weightLabel = variantWeightLabel(
+    selectedVariant?.weight,
+    selectedVariant?.weightUnit,
+  );
+  const descriptionHtml = stripDuplicatedSpecLines(product.descriptionHtml, {
+    weightShown: weightLabel !== null,
+  });
   const allMedia = normalizeMedia(product.media?.nodes ?? [], title);
   // Products photographed per metal carry a whole media GROUP per option
   // value, tagged in each item's alt text — see variantMedia.ts. Switching
@@ -796,6 +805,7 @@ export default function Product() {
     origin: productOrigin,
     priceValidUntil,
     validFrom,
+    policies: root?.sitePolicies,
   });
   // VideoObject for every video in the gallery — YouTube embeds and the few
   // Shopify-hosted clips alike. `uploadDate` is the product's publishedAt:
@@ -917,7 +927,7 @@ export default function Product() {
             )}
             title={title}
           />
-          <ProductTrustBadges />
+          <ProductTrustBadges policies={root?.sitePolicies} />
           {/* Under the gallery, not in the buy column: it is a picture of
               the pair, and it belongs with the pictures. Skipped for a
               Picture Pendant still waiting on its photo — its line cannot be
@@ -977,12 +987,6 @@ export default function Product() {
                 <ProductPrice
                   price={selectedVariant?.price}
                   compareAtPrice={selectedVariant?.compareAtPrice}
-                  illustrativeHandle={
-                    /\bdiamond\b/i.test(product.title) &&
-                    /\bearrings?\b/i.test(product.title)
-                      ? product.handle
-                      : undefined
-                  }
                 />
               </div>
               <ShopPayInstallments
@@ -1009,6 +1013,8 @@ export default function Product() {
               />
             </div>
 
+            <GoogleReviewsSection />
+
             <div className="product-details-card pdp-card">
               <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
               <div className="product-note">
@@ -1028,12 +1034,9 @@ export default function Product() {
                   didn't and the page read as two different designs. Sourced
                   from the variant, not the description, so it fills in
                   whatever the merchant's copy is missing rather than only
-                  ever repeating what is already there — stripSizeWeightSection
+                  ever repeating what is already there — stripDuplicatedSpecLines
                   above is what keeps the two from duplicating instead. */}
-              <ProductSpecsLine
-                weight={selectedVariant?.weight}
-                weightUnit={selectedVariant?.weightUnit}
-              />
+              <ProductSpecsLine weightLabel={weightLabel} />
               <ShareButtons
                 title={product.title}
                 image={selectedVariant?.image?.url}
@@ -1119,14 +1122,14 @@ function ProductWishlistButton({handle}: {handle: string}) {
  * drift apart — and so a policy change is one edit, not a hunt. A badge here
  * once outlived the policy it described; see that file.
  */
-function ProductTrustBadges() {
+function ProductTrustBadges({policies}: {policies?: SitePolicies}) {
   return (
     <div
       className="product-trust-badges pdp-card"
       aria-label="Product trust badges"
     >
       <div className="product-trust-badge-grid">
-        {TRUST_CLAIMS.map((claim) => (
+        {(policies ? policyClaims(policies) : TRUST_CLAIMS).map((claim) => (
           <div className="product-trust-badge" key={claim.title}>
             <span className="product-trust-icon">
               <TrustClaimIconArt name={claim.icon} />
@@ -1218,45 +1221,14 @@ function parseKarat(keyword: string) {
   return {karat, tone, label: `${karat} ${toneLabel}`};
 }
 
-const WEIGHT_UNIT_ABBR: Record<string, string> = {
-  GRAMS: 'g',
-  KILOGRAMS: 'kg',
-  OUNCES: 'oz',
-  POUNDS: 'lb',
-};
-
-/**
- * Cuts a merchant's own "Size & Weight" heading and everything after it up
- * to the next heading — the one template variant found across the
- * catalogue (990 of 4,539 products, checked directly against the Storefront
- * API, always this exact heading text). Its body is always the same
- * Length/Width lines ProductSpecsLine prints below the description, sourced
- * from the variant instead of copy — leaving both in would show the same
- * two numbers twice in two different styles on the same page.
- */
-function stripSizeWeightSection(html?: string | null): string {
-  if (!html) return '';
-  return html.replace(
-    /<h[1-6][^>]*>\s*size\s*(?:&amp;|&|and)\s*weight\s*<\/h[1-6]>[\s\S]*?(?=<h[1-6]|$)/i,
-    '',
-  );
-}
-
 /**
  * Weight, as a labeled spec row in the description card — nothing else.
- * Metal type already has its own line under the title (see metalLabel); size
- * came out too, so this is just the one fact. Renders nothing when the
- * variant has no weight.
+ * Metal type already has its own line under the title (see metalLabel).
+ * Renders nothing when the variant has no real weight (missing or 0 — see
+ * variantWeightLabel); nothing is guessed in its place.
  */
-function ProductSpecsLine({
-  weight,
-  weightUnit,
-}: {
-  weight?: number | null;
-  weightUnit?: string | null;
-}) {
-  if (typeof weight !== 'number' || weight <= 0) return null;
-  const weightLabel = `Approx. ${weight}${WEIGHT_UNIT_ABBR[weightUnit ?? ''] ?? weightUnit ?? ''}`;
+function ProductSpecsLine({weightLabel}: {weightLabel: string | null}) {
+  if (!weightLabel) return null;
 
   return (
     <dl className="product-specs-text">
@@ -1754,6 +1726,7 @@ function buildProductJsonLd({
   origin,
   priceValidUntil,
   validFrom,
+  policies,
 }: {
   product: any;
   selectedVariant: any;
@@ -1761,6 +1734,7 @@ function buildProductJsonLd({
   origin: string;
   priceValidUntil: string;
   validFrom: string;
+  policies?: SitePolicies;
 }) {
   const images = mediaItems
     .map((item) => (item.kind === 'image' ? item.image?.url : item.thumbUrl))
@@ -1846,7 +1820,7 @@ function buildProductJsonLd({
           itemCondition: 'https://schema.org/NewCondition',
           seller: {'@id': `${origin}/#organization`},
           shippingDetails: offerShippingDetails(variant.price),
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
+          hasMerchantReturnPolicy: merchantReturnPolicy(policies),
         }
       : undefined,
   }));
@@ -1908,10 +1882,18 @@ function buildProductJsonLd({
           itemCondition: 'https://schema.org/NewCondition',
           seller: {'@id': `${origin}/#organization`},
           shippingDetails: offerShippingDetails(price),
-          hasMerchantReturnPolicy: MERCHANT_RETURN_POLICY,
+          hasMerchantReturnPolicy: merchantReturnPolicy(policies),
         }
       : undefined,
   };
+}
+
+function merchantReturnPolicy(policies?: SitePolicies) {
+  if (!policies) return MERCHANT_RETURN_POLICY;
+  const days = Number(/\b(\d{1,3})\s*[- ]?days?\b/i.exec(policies.returns)?.[1]);
+  return Number.isFinite(days) && days > 0
+    ? {...MERCHANT_RETURN_POLICY, merchantReturnDays: days}
+    : MERCHANT_RETURN_POLICY;
 }
 
 const PRODUCT_VARIANT_FRAGMENT = `#graphql

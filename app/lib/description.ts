@@ -18,6 +18,15 @@ const ENTITIES: Record<string, string> = {
   '#39': "'",
 };
 
+/** Decode encoded text entities without treating the input as markup. Shopify
+ * article titles can contain literal `&amp;`; React escapes that again when
+ * rendering a text child, leaving the entity visible to shoppers. */
+export function decodeHtmlEntities(text: string): string {
+  return text.replace(/&(#?\w+);/g, (match, entity) => {
+    return ENTITIES[entity.toLowerCase()] ?? match;
+  });
+}
+
 /** Markup to readable text. Entities must be decoded here: the result is
  *  rendered as a React text child, which would escape a raw `&amp;` again.
  *
