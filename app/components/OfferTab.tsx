@@ -1,9 +1,8 @@
 import {useEffect, useState} from 'react';
-import {SignupModal} from '~/components/SignupModal';
+import {Link} from 'react-router';
 
 /**
- * Permanent way back to the 10%-off offer once the announcement bar is gone —
- * the bar is dismissible and the offer shouldn't disappear with it.
+ * Floating shortcut to Black Friday deals after the announcement scrolls away.
  *
  * Its own dismissal is separate from the bar's and lives in sessionStorage,
  * same as the bar: gone for this visit, back on the next one.
@@ -21,19 +20,14 @@ export function OfferTab() {
 
   return (
     <div className="offer-tab">
-      <SignupModal
-        triggerLabel={
-          <>
-            Get <strong>10%</strong> off
-          </>
-        }
-        triggerClassName="offer-tab-btn"
-        autoOpenAfterMs={6000}
-      />
+      <Link className="offer-tab-btn" to="/blackfriday" prefetch="intent">
+        <span>Black Friday</span>
+        <span>Up to <strong>50% off</strong></span>
+      </Link>
       <button
         type="button"
         className="offer-tab-close"
-        aria-label="Dismiss the 10% off offer"
+        aria-label="Dismiss the Black Friday tab"
         onClick={() => {
           setVisible(false);
           sessionStorage.setItem('gc-offer-tab-dismissed', '1');

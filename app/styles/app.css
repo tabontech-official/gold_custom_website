@@ -707,6 +707,109 @@ html:has(.overlay.expanded) {
   transform: translateX(0);
 }
 
+/* Mobile menu opens from the left, with a fixed heading and one scroll area. */
+@media (max-width: 60em) {
+  .overlay.overlay--mobile aside {
+    left: 0;
+    right: auto;
+    top: var(--mobile-header-height);
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--mobile-header-height));
+    max-height: calc(100dvh - var(--mobile-header-height));
+    width: min(25rem, calc(100vw - 1rem));
+    overflow: hidden;
+    border-left: 0;
+    border-right: 1px solid rgba(60, 60, 67, 0.12);
+    box-shadow: 14px 0 35px rgba(0, 0, 0, 0.14);
+    direction: ltr;
+    text-align: left;
+    z-index: 1;
+  }
+
+  .overlay.overlay--mobile:not(.expanded) aside {
+    transform: translateX(-100%);
+  }
+
+  .overlay.overlay--mobile aside > header {
+    flex: 0 0 auto;
+  }
+
+  .overlay.overlay--mobile .aside-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+    touch-action: pan-y;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .overlay.overlay--mobile .aside-body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .overlay.overlay--mobile .close-outside {
+    width: 100%;
+    left: 0;
+  }
+
+  .overlay--mobile .mobile-nav-department-header {
+    position: relative;
+    direction: ltr;
+  }
+
+  .overlay--mobile .mobile-nav-department-header > a {
+    position: relative;
+    z-index: 1;
+    padding: 1rem 0;
+    max-width: calc(100% - 3.5rem);
+  }
+
+  .overlay--mobile .mobile-nav-department-header > .mobile-nav-toggle {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    justify-content: flex-end;
+    padding: 0 0.75rem 0 0;
+  }
+
+  .overlay--mobile .mobile-nav-submenu a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+@media (max-width: 48em) {
+  .overlay.overlay--mobile {
+    --mobile-menu-top: 5.65rem;
+    top: var(--mobile-menu-top);
+  }
+
+  body:has(.collection-toolbar) .overlay.overlay--mobile {
+    --mobile-menu-top: calc(var(--announce-h, 2rem) + 3.65rem);
+  }
+
+  html.page-scrolled .overlay.overlay--mobile,
+  html.page-scrolled body:has(.collection-toolbar) .overlay.overlay--mobile {
+    --mobile-menu-top: 3.65rem;
+  }
+
+  .overlay.overlay--mobile aside {
+    top: var(--mobile-menu-top);
+    height: calc(100dvh - var(--mobile-menu-top));
+    max-height: calc(100dvh - var(--mobile-menu-top));
+  }
+}
+
 /* Cart gets a self-contained, elevated drawer so it never competes with the
    sticky announcement/header layers. */
 .overlay--cart aside header {
@@ -15822,7 +15925,7 @@ html.header-primary-hidden
 }
 
 /* --------------------------------------------------
- * components/OfferTab — sticky 10%-off re-opener
+ * components/OfferTab — Black Friday campaign shortcut
  * --------------------------------------------------
  * Right edge rather than the bottom-right corner: Tidio's chat bubble owns
  * that corner, so this sits above it, flush to the screen like .social-rail
@@ -15842,22 +15945,27 @@ html.header-primary-hidden
 }
 
 .offer-tab-btn {
-  background: var(--color-ink);
-  border: 0;
+  background: linear-gradient(135deg, #8f2d3d, #641924);
+  border: 1px solid #d7b97b;
+  border-right: 0;
+  box-shadow: 0 5px 20px #35101735;
   /* Square rectangle, meeting the screen edge like .social-rail does on the
      left; only the outer corners are eased. */
   border-radius: 4px 0 0 4px;
   color: #fff;
   cursor: pointer;
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   font-family: inherit;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.1em;
   line-height: 1.35;
   padding: 0.9rem 1.15rem;
   text-align: center;
   text-transform: uppercase;
+  text-decoration: none;
   white-space: nowrap;
   transition:
     background 200ms ease,
@@ -15865,18 +15973,26 @@ html.header-primary-hidden
 }
 
 .offer-tab-btn strong {
-  color: var(--color-gold);
+  color: #ffe3a3;
   font-weight: 800;
+  font-size: 1.15em;
 }
 
 .offer-tab-btn:hover {
-  background: #000;
+  background: #7a1f2b;
+  color: #fff;
+  text-decoration: none;
   transform: translateX(-3px);
+}
+
+.offer-tab-btn:focus-visible {
+  outline: 2px solid #d7b97b;
+  outline-offset: 3px;
 }
 
 .offer-tab-close {
   align-items: center;
-  background: var(--color-ink);
+  background: #641924;
   border: 2px solid #fff;
   border-radius: 50%;
   color: #fff;
@@ -15895,7 +16011,7 @@ html.header-primary-hidden
 }
 
 .offer-tab-close:hover {
-  background: #000;
+  background: #8f2d3d;
 }
 
 @media (max-width: 48em) {

@@ -61,16 +61,28 @@ export const meta: Route.MetaFunction = ({matches}) => {
 };
 
 export async function loader({context}: Route.LoaderArgs) {
-  const data = await context.storefront.query(BLACK_FRIDAY_QUERY, {
-    variables: {first: 16, specialsHandle: SPECIALS_HANDLE},
-    cache: CacheCatalog(),
-  });
+  const [data, taggedRings] = await Promise.all([
+    context.storefront.query(BLACK_FRIDAY_QUERY, {
+      variables: {first: 100, specialsHandle: SPECIALS_HANDLE},
+      cache: CacheCatalog(),
+    }),
+    context.storefront.query(BLACK_FRIDAY_RINGS_QUERY, {
+      variables: {first: 100},
+      cache: CacheCatalog(),
+    }),
+  ]);
 
-  const specials = pick(data.todaysSpecials, 8);
+  const rings = {
+    ...data.engagementRings,
+    products: {nodes: taggedRings.products.nodes},
+  } as Collection;
+
+  const specials = pick(data.todaysSpecials, 8, undefined, true);
   const sections: Section[] = [
-    section('engagement-rings', 'Engagement Rings', data.engagementRings, 8, {
+    section('engagement-rings', 'Engagement Rings', rings, 4, {
       eyebrow: 'The Featured Edit',
       topTag: 'Top showing rings',
+      requiredTag: 'Top showing rings',
     }),
     specials.products.length
       ? {
@@ -81,15 +93,21 @@ export async function loader({context}: Route.LoaderArgs) {
         }
       : section('todays-specials', 'Best Sellers', data.bestSellers, 8, {
           eyebrow: 'Most Loved',
+          taggedOnly: true,
         }),
-    section('chains', 'Chains', data.chains, 4, {eyebrow: 'Gold Chains'}),
+    section('chains', 'Chains', data.chains, 4, {
+      eyebrow: 'Gold Chains',
+      taggedOnly: true,
+    }),
     section('earrings', 'Earrings', data.earrings, 4, {
       eyebrow: 'Gold & Diamond',
+      taggedOnly: true,
     }),
     section('bracelets', 'Bracelets', data.bracelets, 4, {
       eyebrow: 'Gold Bracelets',
+      taggedOnly: true,
     }),
-  ].filter((s) => s.products.length > 0);
+  ].filter((s): s is Section => Boolean(s && s.products.length > 0));
 
   return {
     sections,
@@ -112,11 +130,27 @@ type Section = {
 };
 
 /** In-stock pieces first, one card per product group, `count` of them. */
-function pick(collection: Collection, count: number, topTag?: string) {
+function pick(
+  collection: Collection,
+  count: number,
+  topTag?: string,
+  taggedOnly = false,
+  requiredTag?: string,
+) {
   let nodes = collection?.products.nodes ?? [];
   nodes = nodes.filter(
     (p) => p.selectedOrFirstAvailableVariant?.availableForSale !== false,
   );
+  if (taggedOnly) {
+    nodes = nodes.filter((p) =>
+      p.tags.some((tag) => tag.toLowerCase() === 'black friday collection'),
+    );
+  }
+  if (requiredTag) {
+    nodes = nodes.filter((p) =>
+      p.tags.some((tag) => tag.toLowerCase() === requiredTag.toLowerCase()),
+    );
+  }
   if (topTag) {
     const isTop = (p: CardProduct) => p.tags.includes(topTag);
     nodes = [...nodes.filter(isTop), ...nodes.filter((p) => !isTop(p))];
@@ -124,7 +158,7 @@ function pick(collection: Collection, count: number, topTag?: string) {
   return {
     handle: collection?.handle ?? '',
     image: collection?.image ?? null,
-    products: groupProducts(nodes).slice(0, count),
+    products: (requiredTag ? nodes : groupProducts(nodes)).slice(0, count),
   };
 }
 
@@ -133,13 +167,18 @@ function section(
   title: string,
   collection: Collection,
   count: number,
-  opts: {eyebrow?: string; topTag?: string} = {},
+  opts: {
+    eyebrow?: string;
+    topTag?: string;
+    taggedOnly?: boolean;
+    requiredTag?: string;
+  } = {},
 ): Section {
   return {
     id,
     title,
     eyebrow: opts.eyebrow,
-    ...pick(collection, count, opts.topTag),
+    ...pick(collection, count, opts.topTag, opts.taggedOnly, opts.requiredTag),
   };
 }
 
@@ -372,6 +411,18 @@ const BLACK_FRIDAY_QUERY = `#graphql
     }
     bracelets: collection(handle: "bracelets") {
       ...BlackFridayCollection
+    }
+  }
+  ${PRODUCT_ITEM_FRAGMENT}
+` as const;
+
+const BLACK_FRIDAY_RINGS_QUERY = `#graphql
+  query BlackFridayTaggedRings($first: Int!, $country: CountryCode, $language: LanguageCode)
+  @inContext(country: $country, language: $language) {
+    products(first: $first, query: "tag:'Top showing rings'") {
+      nodes {
+        ...ProductItem
+      }
     }
   }
   ${PRODUCT_ITEM_FRAGMENT}

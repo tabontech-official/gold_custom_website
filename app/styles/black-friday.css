@@ -533,6 +533,9 @@
   background: var(--bf-gold);
   color: var(--bf-black);
 }
+.bf-card .product-off-badge {
+  color: #fff;
+}
 
 .bf-card-cta,
 .bf-card-cta:visited {

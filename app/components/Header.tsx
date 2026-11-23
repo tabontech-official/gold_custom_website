@@ -1,4 +1,4 @@
-import {Suspense, useEffect, useRef, useState} from 'react';
+import {Suspense, useEffect, useId, useRef, useState} from 'react';
 import {
   Await,
   Link,
@@ -939,6 +939,11 @@ function MobileMenu({
   onNavigate: () => void;
 }) {
   const [openDepartment, setOpenDepartment] = useState<string | null>(null);
+  const menuId = useId();
+  const navigateFromMenu = () => {
+    setOpenDepartment(null);
+    onNavigate();
+  };
 
   return (
     /**
@@ -952,8 +957,8 @@ function MobileMenu({
      * Opening the menu warms exactly the links the visitor is looking at, and
      * the tap that follows is usually already cached.
      */
-    <nav className="header-menu-mobile" role="navigation">
-      <NavLink end onClick={onNavigate} prefetch="viewport" to="/">
+    <nav className="header-menu-mobile" aria-label="Mobile categories" dir="ltr">
+      <NavLink end onClick={navigateFromMenu} prefetch="viewport" to="/">
         Home
       </NavLink>
       {MEGA_MENU.filter((department) =>
@@ -964,7 +969,7 @@ function MobileMenu({
           <div className="mobile-nav-department" key={department.id}>
             <div className="mobile-nav-department-header">
               <NavLink
-                onClick={onNavigate}
+                onClick={navigateFromMenu}
                 prefetch="viewport"
                 to={department.to}
               >
@@ -972,12 +977,13 @@ function MobileMenu({
               </NavLink>
               <button
                 aria-expanded={isOpen}
+                aria-controls={`${menuId}-${department.id}`}
                 aria-label={`Toggle ${department.label} submenu`}
                 className="mobile-nav-toggle reset"
                 onClick={() => setOpenDepartment(isOpen ? null : department.id)}
                 type="button"
               >
-                {isOpen ? '−' : '+'}
+                <span aria-hidden="true">{isOpen ? '−' : '+'}</span>
               </button>
             </div>
             {/* One flat list, through the same deduping helper as the desktop
@@ -991,12 +997,12 @@ function MobileMenu({
                 grouping when a column actually gets a title — and dedupe
                 before splitting. */}
             {isOpen && (
-              <div className="mobile-nav-submenu">
+              <div className="mobile-nav-submenu" id={`${menuId}-${department.id}`}>
                 {getDepartmentItems(header, department).map((item) =>
                   item.url ? (
                     <NavLink
                       key={item.id}
-                      onClick={onNavigate}
+                      onClick={navigateFromMenu}
                       prefetch="viewport"
                       state={departmentLinkState(department.id)}
                       to={relativeUrl(item.url)}
@@ -1013,7 +1019,7 @@ function MobileMenu({
       {/* Same reasoning as the desktop nav: /custom-jewelry has no submenu to
           expand, so it is a flat link rather than a mobile-nav-department
           with a +/− toggle that would open onto nothing. */}
-      <NavLink onClick={onNavigate} prefetch="viewport" to="/custom-jewelry">
+      <NavLink onClick={navigateFromMenu} prefetch="viewport" to="/custom-jewelry">
         Custom Jewelry
       </NavLink>
     </nav>
