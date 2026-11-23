@@ -1144,6 +1144,16 @@ export type ShopPayInstallmentsQuery = {
   };
 };
 
+export type SitePoliciesQueryVariables = StorefrontAPI.Exact<{
+  [key: string]: never;
+}>;
+
+export type SitePoliciesQuery = {
+  metaobject?: StorefrontAPI.Maybe<{
+    fields: Array<Pick<StorefrontAPI.MetaobjectField, 'key' | 'value'>>;
+  }>;
+};
+
 export type ZeroPriceGuardQueryVariables = StorefrontAPI.Exact<{
   ids:
     | Array<StorefrontAPI.Scalars['ID']['input']>
@@ -4116,6 +4126,10 @@ interface GeneratedQueryTypes {
   '#graphql\n  query ShopPayInstallments($country: CountryCode, $language: LanguageCode)\n  @inContext(country: $country, language: $language) {\n    shop {\n      shopPayInstallmentsPricing {\n        minPrice { amount currencyCode }\n        maxPrice { amount currencyCode }\n        financingPlans {\n          minPrice { amount currencyCode }\n          maxPrice { amount currencyCode }\n          terms {\n            apr\n            loanType\n            installmentsCount { count }\n          }\n        }\n      }\n    }\n  }\n': {
     return: ShopPayInstallmentsQuery;
     variables: ShopPayInstallmentsQueryVariables;
+  };
+  '#graphql\n  query SitePolicies {\n    metaobject(handle: {handle: "storewide-policies", type: "site_policies"}) {\n      fields { key value }\n    }\n  }\n': {
+    return: SitePoliciesQuery;
+    variables: SitePoliciesQueryVariables;
   };
   '#graphql\n  query ZeroPriceGuard($ids: [ID!]!) {\n    nodes(ids: $ids) {\n      ... on ProductVariant {\n        id\n        price {\n          amount\n        }\n      }\n    }\n  }\n': {
     return: ZeroPriceGuardQuery;

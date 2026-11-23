@@ -17,6 +17,7 @@ import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {groupProducts, productGroupKey} from '~/lib/productGroups';
 import {stripDuplicatedSpecLines, variantWeightLabel} from '~/lib/productSpecs';
 import {ProductPrice} from '~/components/ProductPrice';
+import {promotionPricing} from '~/lib/promotionPricing';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
 import {ProductForm} from '~/components/ProductForm';
 import {StickyAddToCart} from '~/components/StickyAddToCart';
@@ -747,6 +748,10 @@ export default function Product() {
     product.selectedOrFirstAvailableVariant,
     getAdjacentAndFirstAvailableVariants(product),
   );
+  const campaignPricing = promotionPricing(product, selectedVariant);
+  const displayedProductPrice = selectedVariant?.price && campaignPricing
+    ? {...selectedVariant.price, amount: campaignPricing.price.amount}
+    : selectedVariant?.price;
 
   // No useSelectedOptionInUrlParam: it stamped ?Metal=… onto the URL after
   // every first load (re-rendering the buy box mid-load). ProductForm's option
@@ -985,6 +990,7 @@ export default function Product() {
             <div className="product-purchase-card pdp-card" ref={buyBoxRef}>
               <div className="product-price-row">
                 <ProductPrice
+                  product={product}
                   price={selectedVariant?.price}
                   compareAtPrice={selectedVariant?.compareAtPrice}
                 />
@@ -1065,7 +1071,7 @@ export default function Product() {
       <StickyAddToCart
         buyBox={buyBoxRef}
         title={title}
-        price={selectedVariant?.price}
+        price={displayedProductPrice}
         availableForSale={Boolean(selectedVariant?.availableForSale)}
       />
 

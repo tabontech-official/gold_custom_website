@@ -7,7 +7,8 @@ import type {
   RecommendedProductFragment,
 } from 'storefrontapi.generated';
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
-import {formatUsd, productSavings} from '~/lib/discount';
+import {formatUsd, savingsFor} from '~/lib/discount';
+import {promotionPricing} from '~/lib/promotionPricing';
 import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
@@ -65,9 +66,11 @@ export function ProductItem({
     : productCanonicalPath(product);
   const image = product.featuredImage;
   const badges = cardBadges(product);
-  // Only a real Shopify markdown — the default variant's compareAtPrice above
-  // its price, vetted by savingsFor — is shown as a sale. Never synthesized.
-  const savings = productSavings(product);
+  const pricing = promotionPricing(product);
+  const savings = savingsFor(
+    pricing?.price.amount,
+    pricing?.compareAtPrice?.amount,
+  );
 
   const {publish} = useAnalytics();
 
@@ -91,7 +94,7 @@ export function ProductItem({
     <article
       className={className ? `product-item ${className}` : 'product-item'}
     >
-      <div className="product-image-wrap">
+      <div className={`product-image-wrap${savings ? ' has-sale-ribbon' : ''}`}>
         <Link
           prefetch="intent"
           to={productUrl}
@@ -132,15 +135,29 @@ export function ProductItem({
           );
         })}
 
-        {savings && (
-          <span className="product-off-badge">{savings.percent}% OFF</span>
-        )}
-
-        {/* Heart sits top-right over the image, always visible. */}
+        {/* On sale cards the heart sits just below the corner ribbon. */}
         <div className="product-wishlist-control">
           <WishlistButton handle={product.handle} product={product} />
         </div>
       </div>
+
+      {savings && (
+        <>
+          <span
+            className="product-off-badge"
+            aria-label={`${savings.percent}% off`}
+          >
+            <strong>{savings.percent}%</strong>
+            <span>OFF</span>
+          </span>
+          <div className="product-sale-ribbon">
+            <span>
+              <strong>Black Friday</strong>
+              <span>Deal</span>
+            </span>
+          </div>
+        </>
+      )}
 
       <div className="product-card-body">
         {/* h3, not h4. Every grid and rail that renders these cards sits under
@@ -160,15 +177,15 @@ export function ProductItem({
         {savings ? (
           <div className="product-card-price is-sale">
             <s className="product-card-was">
-              <Money
-                data={product.selectedOrFirstAvailableVariant.compareAtPrice}
-              />
+              <Money data={pricing!.compareAtPrice!} />
             </s>
-            <Money data={product.selectedOrFirstAvailableVariant.price} />
+            <Money data={pricing!.price} />
           </div>
         ) : (
           <div className="product-card-price">
-            <Money data={product.priceRange.minVariantPrice} />
+            <Money
+              data={pricing?.price ?? product.priceRange.minVariantPrice}
+            />
           </div>
         )}
         {savings && (

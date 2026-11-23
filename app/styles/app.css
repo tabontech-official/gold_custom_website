@@ -16025,30 +16025,126 @@ html.header-primary-hidden
 
 /* Black Friday event. Savings show only for a verified markdown (lib/discount.ts). */
 
-/* Discount tag, flush to the photo's top-left corner. */
+/* Ribbons anchor to the card corners, outside the image's inset padding. */
 .product-off-badge {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 5px;
   z-index: 2;
-  padding: 0.35rem 0.6rem;
-  background: #7a1f2b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 38px;
+  height: 51px;
+  padding: 7px 2px 0;
+  background: linear-gradient(115deg, #e4c584, #ab803b 55%, #e6c887);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
   color: #fff;
-  font-family: var(--font-classic);
-  font-size: 0.72rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.product-off-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0 3px 4px;
+  background: linear-gradient(120deg, #57151e, #8c2834 65%, #641823);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%);
+  z-index: -1;
+}
+
+.product-off-badge strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 16px;
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.product-off-badge > span {
+  margin-top: 2px;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 8px;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
 }
 
 @media (max-width: 45em) {
   .product-off-badge {
-    padding: 0.3rem 0.5rem;
-    font-size: 0.64rem;
+    width: 32px;
+    height: 44px;
+    padding-top: 6px;
+  }
+
+  .product-off-badge strong {
+    font-size: 14px;
+  }
+
+  .product-off-badge > span {
+    font-size: 7px;
   }
 }
 
 /* The sale price is the one figure the eye should find first on a card. */
+.product-sale-ribbon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  width: 92px;
+  height: 92px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.product-sale-ribbon > span {
+  position: absolute;
+  top: 21px;
+  right: -33px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 136px;
+  height: 33px;
+  transform: rotate(45deg);
+  background: #7a1f2b;
+  color: #fff;
+  box-shadow: 0 2px 4px #0002;
+  font-size: 0.5rem;
+  line-height: 1.45;
+  letter-spacing: 0.06em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.product-sale-ribbon strong {
+  font-weight: 700;
+}
+
+.has-sale-ribbon .product-wishlist-control {
+  top: 5.4rem;
+}
+
+@media (max-width: 45em) {
+  .product-sale-ribbon {
+    width: 75px;
+    height: 75px;
+  }
+
+  .product-sale-ribbon > span {
+    top: 17px;
+    right: -27px;
+    width: 112px;
+    height: 28px;
+    font-size: 0.42rem;
+  }
+
+  .has-sale-ribbon .product-wishlist-control {
+    top: 4.5rem;
+  }
+}
+
 .product-card-price.is-sale {
   display: flex;
   flex-wrap: wrap;
