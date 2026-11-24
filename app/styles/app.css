@@ -249,9 +249,6 @@ code {
   --color-gold-dark: #b89020;
   --color-gold-deep: #8f6f12;
   --color-gold-soft: rgba(212, 175, 55, 0.14);
-  /* Review star, used as a mask so its colour comes from the background —
-     see .review-stars. */
-  --star-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 2.5l2.9 6.4 7 .7-5.3 4.7 1.6 6.9L12 17.6l-6.2 3.6 1.6-6.9-5.3-4.7 7-.7z'/%3E%3C/svg%3E");
   --color-charcoal: #000000;
   --color-charcoal-deep: #000000;
   --color-cream-text: #000000;
