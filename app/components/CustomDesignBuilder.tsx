@@ -395,8 +395,8 @@ export function CustomDesignBuilder() {
           </div>
           <h2>Design request received</h2>
           <p>
-            A designer will review your {category.toLowerCase()} and reach out
-            within one business day with ideas and a quote.
+            Our team will review your {category.toLowerCase()} request and
+            contact you to confirm available options and provide a quote.
           </p>
         </div>
       </div>
@@ -736,8 +736,8 @@ export function CustomDesignBuilder() {
                     {submitting ? 'Sending…' : 'Submit design request'}
                   </button>
                   <p className="cdz-fineprint">
-                    Free consultation — a designer reaches out within one
-                    business day.
+                    Free consultation — our team will follow up about available
+                    options and pricing.
                   </p>
                 </div>
               </div>

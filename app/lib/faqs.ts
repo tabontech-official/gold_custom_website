@@ -6,6 +6,30 @@ export type Faq = {
   answerHtml?: string;
 };
 
+const SAFE_CUSTOM_SERVICE_ANSWER =
+  'Yes. Gold Custom offers custom jewelry, sizing, repair and available personalization. Contact our team to confirm the options and pricing for your piece.';
+
+/**
+ * Homepage FAQs are merchant-authored in Shopify and can outlive a service
+ * change. Keep custom-jewelry guidance useful without publishing unverified
+ * workflow, staffing, factory or turnaround promises.
+ */
+function approvedHomepageFaq(faq: Faq): Faq {
+  const claim = `${faq.question} ${faq.answer}`;
+  const hasUnsupportedPromise =
+    /\bCAD\b|3D\s+(?:render|preview)|\bdesigner(?:s)?\b|\bproduction\b|\bfactory\b|\bcraft(?:ed|ing)\b|\b(?:gemstone|stone)\s+customi[sz]ation\b|\b2\s*(?:–|-|to)\s*4\s*weeks?\b/i.test(
+      claim,
+    );
+
+  return hasUnsupportedPromise
+    ? {
+        ...faq,
+        question: 'What custom services are available?',
+        answer: SAFE_CUSTOM_SERVICE_ANSWER,
+      }
+    : faq;
+}
+
 function normalizeHandle(value: unknown): string {
   return String(value ?? '')
     .trim()
@@ -60,7 +84,15 @@ export function parseFaqs(response: any, sectionHandle?: string): Faq[] {
             answer: String(faq?.answer ?? faq?.a ?? faq?.content ?? '').trim(),
           }))
           .filter((faq: Faq) => faq.question && faq.answer);
-        if (faqs.length) return faqs;
+        if (faqs.length) {
+          if (sectionHandle) return faqs;
+          return faqs
+            .map(approvedHomepageFaq)
+            .filter(
+              (faq, index, all) =>
+                all.findIndex((item) => item.question === faq.question) === index,
+            );
+        }
       } catch {
         // This field is not the JSON FAQ field; keep checking the others.
       }

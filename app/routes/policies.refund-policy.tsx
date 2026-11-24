@@ -20,8 +20,8 @@ export default function RefundPolicy() {
       <section>
         <h2>Manufacturing Defects</h2>
         <p>
-          We make our jewelry in our own factory. For online orders, we accept
-          returns only for confirmed manufacturing defects, including on
+          Our jewelry is made in the USA. For online orders, we accept returns
+          only for confirmed manufacturing defects, including on
           custom-made, personalized, or sized-to-order pieces. {RETURNS_SUMMARY}
         </p>
         <p>In-store purchases are final sale, subject to applicable law.</p>

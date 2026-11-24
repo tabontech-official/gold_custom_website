@@ -15,7 +15,7 @@ export const meta: Route.MetaFunction = ({matches}) =>
   pageSeo({
     title: 'Custom Gold Jewelry in Los Angeles | Gold Custom',
     preserveBrandSuffix: true,
-    description: `Design a one-of-a-kind piece with ${SITE.name}. Free consultation, 3D CAD preview before we cast, made in 10K, 14K or 18K gold in downtown Los Angeles.`,
+    description: `Request custom gold jewelry from ${SITE.name}. Choose available metals, stones and personalization, then contact our Los Angeles team for a consultation and quote.`,
     url: absoluteUrl(siteOrigin(rootDataFrom(matches)), '/custom-jewelry'),
   });
 
@@ -53,9 +53,9 @@ export default function CustomJewelry() {
               <p className="svc-kicker">Custom jewelry · Los Angeles</p>
               <h1>Custom Solid Gold Jewelry, Made For You.</h1>
               <p className="svc-hero-lede">
-                Pick the piece, the metal, the stones and our designers create
-                a 3D render for your approval before crafting your custom gold
-                piece.
+                Tell us the piece, metal, stones and personalization you want.
+                Our team will review the request and contact you to confirm
+                available options and provide a quote.
               </p>
               <div className="svc-actions">
                 <button
@@ -74,8 +74,8 @@ export default function CustomJewelry() {
               </div>
               <ul className="svc-facts">
                 <li>
-                  <strong>2–4 weeks</strong>
-                  <span>Typical turnaround</span>
+                  <strong>Made in USA</strong>
+                  <span>Custom gold jewelry</span>
                 </li>
                 <li>
                   <strong>10K · 14K · 18K</strong>

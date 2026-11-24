@@ -49,7 +49,7 @@ export const TRUST_CLAIMS: TrustClaim[] = [
     sub: '14 days to request an exchange or store credit',
     icon: 'returns',
   },
-  {title: 'Made in U.S.A', sub: 'From our factory to you', icon: 'usa'},
+  {title: 'Made in U.S.A', sub: 'Custom jewelry available', icon: 'usa'},
   // In the slot "1 Year Free Warranty" used to hold. That one sat on every
   // product page and in the announcement bar, but neither the refund policy
   // nor the terms of service mentions a warranty, so rule 1 above failed. This

@@ -23,10 +23,9 @@ import secureDeliveryIcon from '~/assets/img/secure-delivery.webp?url';
 // because it named no fact a competitor couldn't copy verbatim.
 export const TRUST_PROMISES = [
   {
-    title: 'Our Own Factory',
+    title: 'Made in USA',
     pill: 'U.S.A.',
-    // Source: product-page trust badge "Made in U.S.A — From our factory to you".
-    copy: 'No middleman markup between our bench and your order.',
+    copy: 'Made in the USA, with product details confirmed for your selection.',
     icon: handmadeIcon,
     signal: 'gold',
     keys: ['craft', 'mastercraft', 'craftsmanship'],
@@ -43,8 +42,7 @@ export const TRUST_PROMISES = [
   {
     title: 'Built to Your Spec',
     pill: 'Custom',
-    // Source: homepage FAQ — design, gold type, gemstones and engraving.
-    copy: 'Choose the design, karat, stones and engraving on a custom order.',
+    copy: 'Ask about available sizing, stones, engraving and personalization.',
     icon: careIcon,
     signal: 'brown',
     keys: ['care', 'lifetimecare'],

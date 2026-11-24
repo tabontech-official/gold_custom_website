@@ -39,7 +39,7 @@ const SELF_SERVE = [
     label: 'Repair in progress',
     body: 'Turnaround times by service, and how to check on a piece at the bench.',
   },
-  {to: '/showroom', label: 'Made in the U.S.A.', body: 'From our factory to you.'},
+  {to: '/custom-jewelry', label: 'Made in the U.S.A.', body: 'Custom jewelry and available personalization.'},
   {to: '/repairs', label: 'Warranty', body: 'Contact us for warranty information.'},
 ];
 

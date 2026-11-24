@@ -54,7 +54,7 @@ const EXPECT = [
   },
   {
     title: 'Start a custom order',
-    body: 'Bring a reference photo and leave with a written estimate and a CAD appointment on the calendar.',
+    body: 'Bring a reference photo and discuss available metals, stones and personalization with our team. We will follow up with the options and a quote.',
   },
 ];
 

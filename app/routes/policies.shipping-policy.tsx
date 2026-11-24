@@ -27,8 +27,8 @@ export default function ShippingPolicy() {
         <h2>Processing Time</h2>
         <p>
           In-stock orders ship within 1 to 2 business days. Custom-made,
-          personalized, and sized-to-order pieces ship once production is
-          complete. We confirm the estimated timeline when you place your order.
+          personalized, and sized-to-order pieces may require additional time.
+          We confirm the estimated timeline when you place your order.
         </p>
       </section>
       <section>
