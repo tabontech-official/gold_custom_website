@@ -1011,6 +1011,7 @@ export default function Product() {
               <ProductForm
                 productOptions={productOptions}
                 selectedVariant={selectedVariant}
+                displayPrice={displayedProductPrice}
                 wishlistButton={
                   <ProductWishlistButton handle={product.handle} />
                 }

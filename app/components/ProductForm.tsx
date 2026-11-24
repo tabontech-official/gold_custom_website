@@ -27,6 +27,7 @@ export type VariantGroupSelect = {
 export function ProductForm({
   productOptions,
   selectedVariant,
+  displayPrice,
   wishlistButton,
   variantGroup,
   product,
@@ -37,6 +38,8 @@ export function ProductForm({
 }: {
   productOptions: MappedProductOptions[];
   selectedVariant: ProductFragment['selectedOrFirstAvailableVariant'];
+  /** The price advertised beside this form, including storefront campaigns. */
+  displayPrice?: {amount: string; currencyCode: string};
   wishlistButton?: ReactNode;
   variantGroup?: VariantGroupSelect | null;
   product: {id: string; title: string; handle: string};
@@ -218,11 +221,11 @@ export function ProductForm({
             {selectedVariant?.availableForSale ? (
               <>
                 Add to bag
-                {selectedVariant.price && (
+                {(displayPrice ?? selectedVariant.price) && (
                   <>
                     {' - '}
                     <span className="product-atc-price">
-                      {formatMoney(selectedVariant.price)}
+                      {formatMoney(displayPrice ?? selectedVariant.price)}
                     </span>
                   </>
                 )}
