@@ -9017,6 +9017,65 @@ html.header-primary-hidden
   gap: 1rem;
 }
 
+.merchant-product-specs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0.85rem 0 0;
+  border-block: 1px solid var(--color-border);
+}
+
+.merchant-product-spec {
+  min-width: 0;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.merchant-product-spec:nth-child(odd) {
+  padding-right: 0.75rem;
+}
+
+.merchant-product-spec:nth-child(even) {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--color-border);
+}
+
+.merchant-product-spec:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.merchant-product-spec dt {
+  color: var(--color-ink-soft);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.merchant-product-spec dd {
+  margin: 0.18rem 0 0;
+  color: var(--color-ink);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 24em) {
+  .merchant-product-specs {
+    grid-template-columns: 1fr;
+  }
+
+  .merchant-product-spec:nth-child(n) {
+    padding-inline: 0;
+    border-left: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .merchant-product-spec:last-child {
+    border-bottom: 0;
+  }
+}
+
 /* Shop Pay Installments banner under the price. The banner and its "sample
    plans" modal are rendered by Shopify's shopify-payment-terms element, which
    carries its own styles — only the surrounding spacing is ours. */

@@ -19,6 +19,52 @@ export const WEIGHT_UNIT_ABBR: Record<string, string> = {
   POUNDS: 'lb',
 };
 
+export type MerchantProductSpecs = {
+  stoneOriginType?: MerchantSpecMetafield | null;
+  centerStoneWeight?: MerchantSpecMetafield | null;
+  totalStoneWeight?: MerchantSpecMetafield | null;
+  dimensions?: MerchantSpecMetafield | null;
+  certificateReport?: MerchantSpecMetafield | null;
+  soldAs?: MerchantSpecMetafield | null;
+};
+
+type MerchantSpecMetafield = {value?: string | null};
+
+export type ProductSpecRow = {label: string; value: string};
+
+const MERCHANT_SPEC_FIELDS: Array<{
+  key: keyof MerchantProductSpecs;
+  label: string;
+}> = [
+  {key: 'stoneOriginType', label: 'Stone'},
+  {key: 'centerStoneWeight', label: 'Center weight'},
+  {key: 'totalStoneWeight', label: 'Total weight'},
+  {key: 'dimensions', label: 'Dimensions'},
+  {key: 'certificateReport', label: 'Certificate / report'},
+  {key: 'soldAs', label: 'Sold as'},
+];
+
+function metafieldText(field: MerchantSpecMetafield | null | undefined) {
+  const value = field?.value?.trim();
+  return value || null;
+}
+
+/**
+ * Builds the compact PDP specification rows from merchant-entered metafields.
+ * Variant values take precedence because center and total weights can change
+ * with the selected stone option. Empty fields stay absent. Product titles,
+ * prices, tags, and descriptions are deliberately never used as fallbacks.
+ */
+export function merchantProductSpecRows(
+  product: MerchantProductSpecs,
+  variant?: MerchantProductSpecs | null,
+): ProductSpecRow[] {
+  return MERCHANT_SPEC_FIELDS.flatMap(({key, label}) => {
+    const value = metafieldText(variant?.[key]) ?? metafieldText(product[key]);
+    return value ? [{label, value}] : [];
+  });
+}
+
 /**
  * Shopify stores "no weight entered" as 0 (often in POUNDS), so 0 is never a
  * real gold weight. Returns the display label, or null when there is nothing

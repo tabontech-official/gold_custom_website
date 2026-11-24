@@ -15,7 +15,12 @@ import type {
 } from 'storefrontapi.generated';
 import {CachePrice, CacheCatalog, CacheStatic} from '~/lib/cache';
 import {groupProducts, productGroupKey} from '~/lib/productGroups';
-import {stripDuplicatedSpecLines, variantWeightLabel} from '~/lib/productSpecs';
+import {
+  merchantProductSpecRows,
+  stripDuplicatedSpecLines,
+  variantWeightLabel,
+  type ProductSpecRow,
+} from '~/lib/productSpecs';
 import {ProductPrice} from '~/components/ProductPrice';
 import {promotionPricing} from '~/lib/promotionPricing';
 import {ProductGallery, type GalleryMedia} from '~/components/ProductGallery';
@@ -789,6 +794,7 @@ export default function Product() {
   const descriptionHtml = stripDuplicatedSpecLines(product.descriptionHtml, {
     weightShown: weightLabel !== null,
   });
+  const merchantSpecs = merchantProductSpecRows(product, selectedVariant);
   const allMedia = normalizeMedia(product.media?.nodes ?? [], title);
   // Products photographed per metal carry a whole media GROUP per option
   // value, tagged in each item's alt text — see variantMedia.ts. Switching
@@ -996,6 +1002,7 @@ export default function Product() {
                   compareAtPrice={selectedVariant?.compareAtPrice}
                 />
               </div>
+              <MerchantProductSpecs rows={merchantSpecs} />
               <ShopPayInstallments
                 price={selectedVariant?.price}
                 variant={selectedVariant}
@@ -1122,6 +1129,7 @@ function ProductWishlistButton({handle}: {handle: string}) {
 
 const PRODUCT_TRUST_LABELS = {
   shipping: 'Free Standard Shipping',
+  returns: '',
   usa: 'Made in U.S.A.',
   warranty: 'Manufacturing Warranty',
   support: 'Free Support',
@@ -1245,6 +1253,21 @@ function ProductSpecsLine({weightLabel}: {weightLabel: string | null}) {
         <dt>Weight</dt>
         <dd>{weightLabel}</dd>
       </div>
+    </dl>
+  );
+}
+
+function MerchantProductSpecs({rows}: {rows: ProductSpecRow[]}) {
+  if (!rows.length) return null;
+
+  return (
+    <dl className="merchant-product-specs" aria-label="Product specifications">
+      {rows.map(({label, value}) => (
+        <div className="merchant-product-spec" key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
     </dl>
   );
 }
@@ -1941,6 +1964,24 @@ const PRODUCT_VARIANT_FRAGMENT = `#graphql
     }
     weight
     weightUnit
+    stoneOriginType: metafield(namespace: "custom", key: "stone_origin_type") {
+      value
+    }
+    centerStoneWeight: metafield(namespace: "custom", key: "center_stone_weight") {
+      value
+    }
+    totalStoneWeight: metafield(namespace: "custom", key: "total_stone_weight") {
+      value
+    }
+    dimensions: metafield(namespace: "custom", key: "dimensions") {
+      value
+    }
+    certificateReport: metafield(namespace: "custom", key: "certificate_report") {
+      value
+    }
+    soldAs: metafield(namespace: "custom", key: "sold_as") {
+      value
+    }
   }
 ` as const;
 
@@ -1970,6 +2011,26 @@ const PRODUCT_FRAGMENT = `#graphql
       value
     }
     variantName: metafield(namespace: "custom", key: "variant_name") {
+      value
+    }
+    # Merchant-verified specifications. Missing values stay off the PDP; see
+    # merchantProductSpecRows. Never derive these facts from title or price.
+    stoneOriginType: metafield(namespace: "custom", key: "stone_origin_type") {
+      value
+    }
+    centerStoneWeight: metafield(namespace: "custom", key: "center_stone_weight") {
+      value
+    }
+    totalStoneWeight: metafield(namespace: "custom", key: "total_stone_weight") {
+      value
+    }
+    dimensions: metafield(namespace: "custom", key: "dimensions") {
+      value
+    }
+    certificateReport: metafield(namespace: "custom", key: "certificate_report") {
+      value
+    }
+    soldAs: metafield(namespace: "custom", key: "sold_as") {
       value
     }
     # Keeps other products of this group out of the recommendation rail and

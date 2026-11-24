@@ -7,7 +7,11 @@
  * only while the structured Weight row is rendering it.
  */
 import assert from 'node:assert/strict';
-import {stripDuplicatedSpecLines, variantWeightLabel} from './productSpecs.ts';
+import {
+  merchantProductSpecRows,
+  stripDuplicatedSpecLines,
+  variantWeightLabel,
+} from './productSpecs.ts';
 
 // Verbatim from 2-39-ct-cushion-diamond-engagement-ring-in-14k-solid-gold-edr1-2
 const DIAMOND =
@@ -72,5 +76,27 @@ assert.equal(variantWeightLabel(-1, 'GRAMS'), null);
 assert.equal(variantWeightLabel(Number.NaN, 'GRAMS'), null);
 assert.equal(variantWeightLabel(1.75, 'GRAMS'), 'Approx. 1.75g');
 assert.equal(variantWeightLabel(0.2, 'OUNCES'), 'Approx. 0.2oz');
+
+// Merchant specs are explicit only. Variant values override product defaults,
+// whitespace-only values disappear, and no field is generated from context.
+assert.deepEqual(
+  merchantProductSpecRows(
+    {
+      stoneOriginType: {value: 'Lab-grown diamond'},
+      centerStoneWeight: {value: '2.00 ct'},
+      totalStoneWeight: {value: '2.49 ct'},
+      certificateReport: {value: 'IGI report included'},
+      soldAs: {value: '   '},
+    },
+    {centerStoneWeight: {value: '2.10 ct'}},
+  ),
+  [
+    {label: 'Stone', value: 'Lab-grown diamond'},
+    {label: 'Center weight', value: '2.10 ct'},
+    {label: 'Total weight', value: '2.49 ct'},
+    {label: 'Certificate / report', value: 'IGI report included'},
+  ],
+);
+assert.deepEqual(merchantProductSpecRows({}, null), []);
 
 console.log('productSpecs: all checks passed');

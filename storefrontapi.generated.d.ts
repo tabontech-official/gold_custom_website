@@ -3164,6 +3164,18 @@ export type ProductVariantFragment = Pick<
   unitPrice?: StorefrontAPI.Maybe<
     Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
   >;
+  stoneOriginType?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  centerStoneWeight?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  totalStoneWeight?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  dimensions?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  certificateReport?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
 };
 
 export type ProductFragment = Pick<
@@ -3184,6 +3196,18 @@ export type ProductFragment = Pick<
   faqs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantLabel?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  stoneOriginType?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  centerStoneWeight?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  totalStoneWeight?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  dimensions?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+  certificateReport?: StorefrontAPI.Maybe<
+    Pick<StorefrontAPI.Metafield, 'value'>
+  >;
+  soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
   variantGroup?: StorefrontAPI.Maybe<{
     references?: StorefrontAPI.Maybe<{
@@ -3270,6 +3294,24 @@ export type ProductFragment = Pick<
               unitPrice?: StorefrontAPI.Maybe<
                 Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
               >;
+              stoneOriginType?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
+              centerStoneWeight?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
+              totalStoneWeight?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
+              dimensions?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
+              certificateReport?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
+              soldAs?: StorefrontAPI.Maybe<
+                Pick<StorefrontAPI.Metafield, 'value'>
+              >;
             }
           >;
           swatch?: StorefrontAPI.Maybe<
@@ -3307,6 +3349,20 @@ export type ProductFragment = Pick<
       unitPrice?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
       >;
+      stoneOriginType?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      centerStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      totalStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      dimensions?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      certificateReport?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
     }
   >;
   adjacentVariants: Array<
@@ -3331,6 +3387,20 @@ export type ProductFragment = Pick<
       unitPrice?: StorefrontAPI.Maybe<
         Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
       >;
+      stoneOriginType?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      centerStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      totalStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      dimensions?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      certificateReport?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
     }
   >;
   seo: Pick<StorefrontAPI.Seo, 'description' | 'title'>;
@@ -3369,6 +3439,20 @@ export type ProductQuery = {
         Pick<StorefrontAPI.Metafield, 'value'>
       >;
       variantName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      stoneOriginType?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      centerStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      totalStoneWeight?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      dimensions?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
+      certificateReport?: StorefrontAPI.Maybe<
+        Pick<StorefrontAPI.Metafield, 'value'>
+      >;
+      soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
       groupName?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
       variantGroup?: StorefrontAPI.Maybe<{
         references?: StorefrontAPI.Maybe<{
@@ -3457,6 +3541,24 @@ export type ProductQuery = {
                   unitPrice?: StorefrontAPI.Maybe<
                     Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
                   >;
+                  stoneOriginType?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
+                  centerStoneWeight?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
+                  totalStoneWeight?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
+                  dimensions?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
+                  certificateReport?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
+                  soldAs?: StorefrontAPI.Maybe<
+                    Pick<StorefrontAPI.Metafield, 'value'>
+                  >;
                 }
               >;
               swatch?: StorefrontAPI.Maybe<
@@ -3494,6 +3596,22 @@ export type ProductQuery = {
           unitPrice?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
           >;
+          stoneOriginType?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          centerStoneWeight?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          totalStoneWeight?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          dimensions?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          certificateReport?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         }
       >;
       adjacentVariants: Array<
@@ -3518,6 +3636,22 @@ export type ProductQuery = {
           unitPrice?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.MoneyV2, 'amount' | 'currencyCode'>
           >;
+          stoneOriginType?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          centerStoneWeight?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          totalStoneWeight?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          dimensions?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          certificateReport?: StorefrontAPI.Maybe<
+            Pick<StorefrontAPI.Metafield, 'value'>
+          >;
+          soldAs?: StorefrontAPI.Maybe<Pick<StorefrontAPI.Metafield, 'value'>>;
         }
       >;
       seo: Pick<StorefrontAPI.Seo, 'description' | 'title'>;
@@ -4301,7 +4435,7 @@ interface GeneratedQueryTypes {
     return: PolicyQuery;
     variables: PolicyQueryVariables;
   };
-  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    productType\n    # Drives the Picture Pendant photo upload — see isPicturePendantProduct.\n    tags\n    descriptionHtml\n    description\n    # VideoObject.uploadDate. See buildVideoJsonLd\'s caller for why this\n    # stands in for the real upload date.\n    publishedAt\n    encodedVariantExistence\n    encodedVariantAvailability\n    category {\n      name\n    }\n    faqs: metafield(namespace: "custom", key: "ai_faq") {\n      value\n    }\n    variantLabel: metafield(namespace: "custom", key: "variant_label") {\n      value\n    }\n    variantName: metafield(namespace: "custom", key: "variant_name") {\n      value\n    }\n    # Keeps other products of this group out of the recommendation rail and\n    # the bundle partner — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    variantGroup: metafield(namespace: "custom", key: "varianthandle") {\n      references(first: 30) {\n        nodes {\n          ... on Product {\n            handle\n            availableForSale\n            variantName: metafield(namespace: "custom", key: "variant_name") {\n              value\n            }\n          }\n        }\n      }\n    }\n    media(first: 25) {\n      nodes {\n        __typename\n        id\n        alt\n        mediaContentType\n        previewImage {\n          url\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n        ... on Video {\n          sources {\n            url\n            mimeType\n          }\n        }\n        ... on ExternalVideo {\n          embedUrl\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n    weight\n    weightUnit\n  }\n\n\n': {
+  '#graphql\n  query Product(\n    $country: CountryCode\n    $handle: String!\n    $language: LanguageCode\n    $selectedOptions: [SelectedOptionInput!]!\n  ) @inContext(country: $country, language: $language) {\n    product(handle: $handle) {\n      ...Product\n    }\n  }\n  #graphql\n  fragment Product on Product {\n    id\n    title\n    vendor\n    handle\n    productType\n    # Drives the Picture Pendant photo upload — see isPicturePendantProduct.\n    tags\n    descriptionHtml\n    description\n    # VideoObject.uploadDate. See buildVideoJsonLd\'s caller for why this\n    # stands in for the real upload date.\n    publishedAt\n    encodedVariantExistence\n    encodedVariantAvailability\n    category {\n      name\n    }\n    faqs: metafield(namespace: "custom", key: "ai_faq") {\n      value\n    }\n    variantLabel: metafield(namespace: "custom", key: "variant_label") {\n      value\n    }\n    variantName: metafield(namespace: "custom", key: "variant_name") {\n      value\n    }\n    # Merchant-verified specifications. Missing values stay off the PDP; see\n    # merchantProductSpecRows. Never derive these facts from title or price.\n    stoneOriginType: metafield(namespace: "custom", key: "stone_origin_type") {\n      value\n    }\n    centerStoneWeight: metafield(namespace: "custom", key: "center_stone_weight") {\n      value\n    }\n    totalStoneWeight: metafield(namespace: "custom", key: "total_stone_weight") {\n      value\n    }\n    dimensions: metafield(namespace: "custom", key: "dimensions") {\n      value\n    }\n    certificateReport: metafield(namespace: "custom", key: "certificate_report") {\n      value\n    }\n    soldAs: metafield(namespace: "custom", key: "sold_as") {\n      value\n    }\n    # Keeps other products of this group out of the recommendation rail and\n    # the bundle partner — see groupProducts.\n    groupName: metafield(namespace: "custom", key: "group_name") {\n      value\n    }\n    variantGroup: metafield(namespace: "custom", key: "varianthandle") {\n      references(first: 30) {\n        nodes {\n          ... on Product {\n            handle\n            availableForSale\n            variantName: metafield(namespace: "custom", key: "variant_name") {\n              value\n            }\n          }\n        }\n      }\n    }\n    media(first: 25) {\n      nodes {\n        __typename\n        id\n        alt\n        mediaContentType\n        previewImage {\n          url\n        }\n        ... on MediaImage {\n          image {\n            id\n            url\n            altText\n            width\n            height\n          }\n        }\n        ... on Video {\n          sources {\n            url\n            mimeType\n          }\n        }\n        ... on ExternalVideo {\n          embedUrl\n        }\n      }\n    }\n    options {\n      name\n      optionValues {\n        name\n        firstSelectableVariant {\n          ...ProductVariant\n        }\n        swatch {\n          color\n          image {\n            previewImage {\n              url\n            }\n          }\n        }\n      }\n    }\n    selectedOrFirstAvailableVariant(selectedOptions: $selectedOptions, ignoreUnknownOptions: true, caseInsensitiveMatch: true) {\n      ...ProductVariant\n    }\n    adjacentVariants (selectedOptions: $selectedOptions) {\n      ...ProductVariant\n    }\n    seo {\n      description\n      title\n    }\n  }\n  #graphql\n  fragment ProductVariant on ProductVariant {\n    availableForSale\n    compareAtPrice {\n      amount\n      currencyCode\n    }\n    id\n    image {\n      __typename\n      id\n      url\n      altText\n      width\n      height\n    }\n    price {\n      amount\n      currencyCode\n    }\n    product {\n      title\n      handle\n    }\n    selectedOptions {\n      name\n      value\n    }\n    sku\n    title\n    unitPrice {\n      amount\n      currencyCode\n    }\n    weight\n    weightUnit\n    stoneOriginType: metafield(namespace: "custom", key: "stone_origin_type") {\n      value\n    }\n    centerStoneWeight: metafield(namespace: "custom", key: "center_stone_weight") {\n      value\n    }\n    totalStoneWeight: metafield(namespace: "custom", key: "total_stone_weight") {\n      value\n    }\n    dimensions: metafield(namespace: "custom", key: "dimensions") {\n      value\n    }\n    certificateReport: metafield(namespace: "custom", key: "certificate_report") {\n      value\n    }\n    soldAs: metafield(namespace: "custom", key: "sold_as") {\n      value\n    }\n  }\n\n\n': {
     return: ProductQuery;
     variables: ProductQueryVariables;
   };
