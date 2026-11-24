@@ -1,7 +1,7 @@
 import {Link} from 'react-router';
 import {Image, Money, useAnalytics} from '@shopify/hydrogen';
 import {cdnLoader} from '~/lib/cdnImage';
-import {analyticsProduct, type AnalyticsProductNode} from '~/lib/analytics';
+import {analyticsProduct} from '~/lib/analytics';
 import type {
   ProductItemFragment,
   RecommendedProductFragment,
@@ -9,22 +9,8 @@ import type {
 import {buildProductPath, productCanonicalPath} from '~/lib/categories';
 import {formatUsd, savingsFor} from '~/lib/discount';
 import {promotionPricing} from '~/lib/promotionPricing';
-import {useWishlistToggle} from '~/hooks/useWishlistToggle';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
-
-function HeartIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 export function ProductItem({
   product,
@@ -134,11 +120,6 @@ export function ProductItem({
             </div>
           );
         })}
-
-        {/* On sale cards the heart sits just below the corner ribbon. */}
-        <div className="product-wishlist-control">
-          <WishlistButton handle={product.handle} product={product} />
-        </div>
       </div>
 
       {savings && (
@@ -188,9 +169,16 @@ export function ProductItem({
             />
           </div>
         )}
-        {savings && (
+        {savings ? (
           <div className="product-card-savings">
             You save {formatUsd(savings.amount)}
+          </div>
+        ) : (
+          <div
+            className="product-card-savings is-placeholder"
+            aria-hidden="true"
+          >
+            Price saving
           </div>
         )}
       </div>
@@ -198,11 +186,10 @@ export function ProductItem({
     </article>
   );
 }
-
 type CardBadge = {
   label: string;
   tone: 'sale' | 'best-seller' | 'new-arrival';
-  /** Bottom-right is Sale; bottom-left is the accolade. Top-right is the heart. */
+  /** Bottom-right is Sale; bottom-left is the accolade. */
   slot: 'bottom-left' | 'bottom-right';
 };
 
@@ -274,59 +261,5 @@ function WishlistQuickAdd({product}: {product: any}) {
     >
       {variant.availableForSale ? 'Add to bag →' : 'Sold out'}
     </AddToCartButton>
-  );
-}
-
-// Heart toggle. Posts to /wishlist and flips optimistically while the request
-// is in flight so the shopper never waits on the server. Root revalidates on
-// the POST, so the header count and every other card stay in sync.
-function WishlistButton({
-  handle,
-  product,
-}: {
-  handle: string;
-  product?: AnalyticsProductNode;
-}) {
-  const {fetcher, active} = useWishlistToggle(handle);
-  const {publish} = useAnalytics();
-
-  /**
-   * Only the add half is reported. `active` is the pre-click state whenever the
-   * fetcher is idle, so a click while it is false is an add — and GA4 has an
-   * `add_to_wishlist` but no removal counterpart, so a de-select is simply not
-   * an event either tool models.
-   */
-  const trackWishlistAdd = () => {
-    if (active || !product) return;
-    publish('custom_ga4', {
-      event: 'add_to_wishlist',
-      products: [analyticsProduct(product)],
-      metaEvent: 'AddToWishlist',
-    });
-  };
-
-  // `role="presentation"` strips the form landmark, not the button. A page
-  // showing nine cards was publishing nine anonymous `form` regions into the
-  // accessibility tree — an agent scanning landmarks got a wall of
-  // indistinguishable "form" entries and no way to tell them apart. There is
-  // nothing here to navigate to: the whole form is one toggle, and that button
-  // keeps its own label and `aria-pressed`.
-  return (
-    <fetcher.Form
-      method="post"
-      action="/wishlist"
-      role="presentation"
-      onSubmit={trackWishlistAdd}
-    >
-      <input type="hidden" name="handle" value={handle} />
-      <button
-        type="submit"
-        className={`product-wishlist ${active ? 'is-active' : ''}`}
-        aria-label={active ? 'Remove from wishlist' : 'Add to wishlist'}
-        aria-pressed={active}
-      >
-        <HeartIcon />
-      </button>
-    </fetcher.Form>
   );
 }

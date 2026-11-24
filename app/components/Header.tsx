@@ -331,7 +331,10 @@ function BlackFridayCountdown() {
   return (
     <div className="black-friday-timer-bar">
       <span className="black-friday-timer-message">
-        Black Friday ends Monday
+        <span className="black-friday-timer-long">Black Friday ends Monday</span>
+        <span className="black-friday-timer-short">
+          Black Friday sale ends Monday
+        </span>
       </span>
       <div
         className="black-friday-timer-units"
@@ -348,7 +351,8 @@ function BlackFridayCountdown() {
         ))}
       </div>
       <Link to="/blackfriday" className="black-friday-timer-cta">
-        Explore Deals
+        <span className="black-friday-timer-long">Explore Deals</span>
+        <span className="black-friday-timer-short">Deals</span>
       </Link>
     </div>
   );

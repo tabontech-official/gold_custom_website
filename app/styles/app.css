@@ -1060,18 +1060,47 @@ button.reset:hover:not(:has(> *)) {
   background: #7a1f2b;
   text-decoration: none;
 }
+.black-friday-timer-short {
+  display: none;
+}
 @media (max-width: 48em) {
   .black-friday-timer-bar {
-    flex-wrap: wrap;
-    gap: 0.3rem 0.7rem;
-    padding: 0.25rem 0.75rem;
+    flex-wrap: nowrap;
+    gap: 0.55rem;
+    min-height: 2.25rem;
+    padding: 0.2rem 0.5rem;
     font-size: 0.7rem;
+    white-space: nowrap;
+  }
+  .black-friday-timer-long,
+  .black-friday-timer-label {
+    display: none;
+  }
+  .black-friday-timer-short {
+    display: inline;
+  }
+  .black-friday-timer-units {
+    gap: 0;
   }
   .black-friday-timer-unit {
-    min-width: 2.25rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+  }
+  .black-friday-timer-unit:not(:last-child)::after {
+    content: ':';
+    padding: 0 0.12rem;
+  }
+  .black-friday-timer-value {
+    display: inline;
+    width: auto;
+    min-height: 0;
+    border: 0;
+    font-size: 0.72rem;
   }
   .black-friday-timer-cta {
-    padding: 0.4rem 0.55rem;
+    padding: 0.35rem 0.55rem;
     font-size: 0.65rem;
   }
 }
@@ -7897,6 +7926,7 @@ html.header-primary-hidden
 .product-card-price:hover,
 .product-card-price:visited,
 .product-card-price:focus {
+  min-height: 1.5rem;
   text-align: center;
   font-weight: 500;
   font-size: 0.95rem;
@@ -7905,51 +7935,6 @@ html.header-primary-hidden
   text-decoration: none;
 }
 
-/* Heart — plain icon, always visible top-right of the image */
-.product-wishlist-control {
-  position: absolute;
-  top: 0.55rem;
-  right: 0.55rem;
-  z-index: 2;
-}
-
-.product-wishlist-control form {
-  margin: 0;
-  max-width: none;
-}
-
-.product-wishlist {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.6rem;
-  height: 2.6rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-ink);
-  cursor: pointer;
-  transition:
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.product-wishlist svg {
-  width: 1.6rem;
-  height: 1.6rem;
-}
-
-.product-wishlist:hover {
-  color: var(--color-gold-dark);
-  transform: scale(1.08);
-}
-
-.product-wishlist.is-active {
-  color: var(--color-sale);
-}
-
-/* heart is a void outline; it fills only once saved */
-.product-wishlist.is-active svg path,
 .product-page-wishlist.is-active svg path {
   fill: currentColor;
 }
@@ -11918,6 +11903,45 @@ html.header-primary-hidden
   z-index: 80;
   transform-origin: top right;
   animation: collection-sort-in 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (max-width: 47.99em) {
+  .collection-toolbar {
+    flex-wrap: nowrap;
+    gap: 0.6rem;
+  }
+
+  .collection-filter-trigger {
+    order: 1;
+  }
+
+  /* Applied filters are already represented by removable chips below. Keeping
+     a second Clear control in this one-line phone bar forces Sort to wrap. */
+  .collection-toolbar .collection-toolbar-clear {
+    display: none;
+  }
+
+  .collection-sort-select {
+    order: 2;
+    position: static;
+  }
+
+  .collection-toolbar .share-wrap {
+    flex: 0 0 auto;
+    margin-left: auto;
+    order: 3;
+  }
+
+  /* Anchor to the full toolbar, not the narrow Sort button. This keeps every
+     option inside the phone viewport at all supported widths. */
+  .collection-sort-popover {
+    left: var(--section-pad);
+    min-width: 0;
+    right: var(--section-pad);
+    top: calc(100% + 0.35rem);
+    width: auto;
+    transform-origin: top center;
+  }
 }
 
 @keyframes collection-sort-in {
@@ -16474,10 +16498,6 @@ html.header-primary-hidden
   font-weight: 700;
 }
 
-.has-sale-ribbon .product-wishlist-control {
-  top: 5.4rem;
-}
-
 @media (max-width: 45em) {
   .product-sale-ribbon {
     width: 75px;
@@ -16490,10 +16510,6 @@ html.header-primary-hidden
     width: 112px;
     height: 28px;
     font-size: 0.42rem;
-  }
-
-  .has-sale-ribbon .product-wishlist-control {
-    top: 4.5rem;
   }
 }
 
@@ -16528,6 +16544,11 @@ html.header-primary-hidden
   white-space: nowrap;
 }
 
+/* Keep non-sale cards level with sale cards without showing a fake saving. */
+.product-card-savings.is-placeholder {
+  visibility: hidden;
+}
+
 .product-savings {
   display: block;
   margin-top: 0.2rem;
@@ -16558,5 +16579,90 @@ html.header-primary-hidden
 
   body:has(.collection-toolbar) .page-body {
     padding-top: calc(var(--announce-h) + 3.65rem);
+  }
+}
+
+/* Mobile collection controls: one calm, iOS-like glass bar. Kept after the
+   sticky-position rules so the header stack cannot undo its layout. */
+@media (max-width: 47.99em) {
+  body:has(.collection-toolbar) .collection-toolbar {
+    display: flex;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: 0.4rem 0 1rem !important;
+    padding: 0.22rem;
+    overflow: visible;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 14px;
+    background: rgba(248, 248, 250, 0.78);
+    box-shadow:
+      0 8px 24px rgba(15, 23, 42, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: blur(18px) saturate(145%);
+    backdrop-filter: blur(18px) saturate(145%);
+  }
+
+  .collection-toolbar .collection-filter-trigger,
+  .collection-toolbar .collection-sort-select,
+  .collection-toolbar .share-wrap {
+    flex: 0 0 33.333%;
+    width: 33.333%;
+    max-width: 33.333%;
+    min-width: 0;
+  }
+
+  .collection-toolbar .collection-sort-select,
+  .collection-toolbar .share-wrap {
+    border-left: 1px solid rgba(60, 60, 67, 0.13);
+  }
+
+  .collection-toolbar .collection-filter-trigger,
+  .collection-toolbar .collection-sort-trigger,
+  .collection-toolbar .share-text-trigger {
+    justify-content: center;
+    width: 100%;
+    min-height: 2.55rem;
+    padding: 0.45rem 0.25rem;
+    color: #1c1c1e;
+    font-family: var(--font-body);
+    font-size: clamp(0.68rem, 3.25vw, 0.78rem);
+    font-weight: 700;
+    letter-spacing: 0.055em;
+  }
+
+  .collection-toolbar .collection-filter-trigger svg,
+  .collection-toolbar .collection-sort-trigger svg,
+  .collection-toolbar .share-text-trigger svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .collection-toolbar .collection-sort-popover {
+    left: 0.45rem;
+    right: 0.45rem;
+    top: calc(100% + 0.5rem);
+    width: auto;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 14px;
+    background: rgba(250, 250, 252, 0.94);
+    box-shadow: 0 18px 48px rgba(15, 23, 42, 0.18);
+    -webkit-backdrop-filter: blur(22px) saturate(150%);
+    backdrop-filter: blur(22px) saturate(150%);
+  }
+}
+
+@media (max-width: 22em) {
+  .collection-toolbar .collection-filter-trigger svg,
+  .collection-toolbar .collection-sort-trigger svg,
+  .collection-toolbar .share-text-trigger svg {
+    display: none;
+  }
+
+  .collection-toolbar .collection-filter-trigger,
+  .collection-toolbar .collection-sort-trigger,
+  .collection-toolbar .share-text-trigger {
+    gap: 0;
+    letter-spacing: 0.035em;
   }
 }

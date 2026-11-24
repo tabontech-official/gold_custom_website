@@ -58,7 +58,7 @@ export function BlackFridayFeature({
               alt={imageAlt}
               width={736}
               height={736}
-              loading="lazy"
+              loading="eager"
               decoding="async"
             />
           </picture>

@@ -41,6 +41,9 @@ import {groupProducts} from '~/lib/productGroups';
 import {TRUST_CLAIMS, claimLine} from '~/lib/trustClaims';
 import {policyClaims, policySeoDescription, type SitePolicies} from '~/lib/sitePolicies';
 
+/** One-switch seasonal takeover: restores the Shopify hero when set false. */
+const BLACK_FRIDAY_HOMEPAGE = true;
+
 export const meta: Route.MetaFunction = ({data, matches}) => {
   const origin = siteOrigin(rootDataFrom(matches));
   const policies = (rootDataFrom(matches) as any)?.sitePolicies as SitePolicies | undefined;
@@ -62,7 +65,7 @@ export const meta: Route.MetaFunction = ({data, matches}) => {
       url: origin,
       jsonLd: data?.faqs?.length ? [buildFaqJsonLd(data.faqs)] : undefined,
     }),
-    ...heroPreloadTags(data?.hero ?? null),
+    ...(BLACK_FRIDAY_HOMEPAGE ? [] : heroPreloadTags(data?.hero ?? null)),
   ];
 };
 
@@ -194,12 +197,14 @@ async function loadCriticalData({context}: Route.LoaderArgs) {
     context.storefront.query(SHOP_BY_CATEGORIES_QUERY, {
       cache: CacheContent(),
     }),
-    context.storefront
-      .query(HERO_CONTENT_QUERY, {cache: CacheContent()})
-      .catch((error: Error) => {
-        console.error(error);
-        return null;
-      }),
+    BLACK_FRIDAY_HOMEPAGE
+      ? Promise.resolve(null)
+      : context.storefront
+          .query(HERO_CONTENT_QUERY, {cache: CacheContent()})
+          .catch((error: Error) => {
+            console.error(error);
+            return null;
+          }),
     context.storefront
       .query(FAQS_QUERY, {cache: CacheContent()})
       .catch((error: Error) => {
@@ -359,7 +364,7 @@ export default function Homepage() {
   const root = useRouteLoaderData<any>('root');
   return (
     <div className="home">
-      <Hero content={data.hero} />
+      {!BLACK_FRIDAY_HOMEPAGE && <Hero content={data.hero} />}
       <BlackFridayFeature
         imageSrc="/black%20friday%20sale%20cover.jpg"
         desktopImageSrc="/Burgundy%20Geometric%20Diamond%20Jewellery%20Set%20desktop.png"
