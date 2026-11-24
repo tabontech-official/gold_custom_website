@@ -963,6 +963,7 @@ export default function Product() {
               partner={bundlePartner}
             />
           )}
+          <GoogleReviewsSection productPage />
         </div>
 
         {/* Wrapper exists for mobile only: it is `display: contents` below 48em
@@ -1018,8 +1019,6 @@ export default function Product() {
                 onPhotoChange={needsPhoto ? setPhotoUrl : undefined}
               />
             </div>
-
-            <GoogleReviewsSection />
 
             <div className="product-details-card pdp-card">
               <DescriptionAccordions html={descriptionHtml} headingTag="h5" />
@@ -1121,27 +1120,31 @@ function ProductWishlistButton({handle}: {handle: string}) {
   );
 }
 
-/**
- * The store's promises, under the buy box.
- *
- * The copy lives in ~/lib/trustClaims so this and the collection strip cannot
- * drift apart — and so a policy change is one edit, not a hunt. A badge here
- * once outlived the policy it described; see that file.
- */
+const PRODUCT_TRUST_LABELS = {
+  shipping: 'Free Standard Shipping',
+  usa: 'Made in U.S.A.',
+  warranty: 'Manufacturing Warranty',
+  support: 'Free Support',
+};
+
 function ProductTrustBadges({policies}: {policies?: SitePolicies}) {
+  const claims = (policies ? policyClaims(policies) : TRUST_CLAIMS).filter(
+    (claim) => claim.icon !== 'returns',
+  );
   return (
     <div
       className="product-trust-badges pdp-card"
       aria-label="Product trust badges"
     >
       <div className="product-trust-badge-grid">
-        {(policies ? policyClaims(policies) : TRUST_CLAIMS).map((claim) => (
-          <div className="product-trust-badge" key={claim.title}>
+        {claims.map((claim) => (
+          <div className="product-trust-badge" key={claim.icon}>
             <span className="product-trust-icon">
               <TrustClaimIconArt name={claim.icon} />
             </span>
-            <span className="product-trust-title">{claim.title}</span>
-            <span className="product-trust-sub">{claim.sub}</span>
+            <span className="product-trust-title">
+              {PRODUCT_TRUST_LABELS[claim.icon]}
+            </span>
           </div>
         ))}
       </div>

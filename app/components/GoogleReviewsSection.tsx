@@ -3,8 +3,13 @@ import {useEffect, useRef} from 'react';
 const ELFSIGHT_SCRIPT_ID = 'elfsight-platform-script';
 const ELFSIGHT_SCRIPT_SRC = 'https://elfsightcdn.com/platform.js';
 const ELFSIGHT_WIDGET_ID = 'elfsight-app-40ff83f5-944e-4864-91a0-16bd2dddc311';
+const REVIEW_PREVIEW_CONTROL = '.es-carousel-item .es-text-shortener-control-open';
 
-export function GoogleReviewsSection() {
+export function GoogleReviewsSection({
+  productPage = false,
+}: {
+  productPage?: boolean;
+}) {
   const stage = useRef<HTMLDivElement>(null);
 
   /**
@@ -47,60 +52,38 @@ export function GoogleReviewsSection() {
     return () => observer.disconnect();
   }, []);
 
-  /**
-   * Elfsight renders its own "Google Reviews" heading, which duplicates the
-   * one this page already has. There is no config for it and no stable class
-   * to target, so it is found by its text.
-   *
-   * The scan is coalesced into one animation frame. It used to run on EVERY
-   * mutation, and each run was `querySelectorAll('*')` plus a `textContent`
-   * read over the whole subtree — an O(nodes) walk. Elfsight mounts several
-   * hundred nodes and then keeps mutating them (lazy avatars, carousel
-   * transforms, star fills), so the observer was re-walking the entire widget
-   * dozens of times per second on the main thread. That is most of why the
-   * section felt slow to appear: the work was ours, not theirs.
-   */
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    const element = stage.current;
+    if (!element) return;
 
-    const section = document.querySelector('.google-reviews-section');
-    if (!section) return;
-
-    let frame = 0;
-
-    const applyReviewLayout = () => {
-      frame = 0;
-      section.querySelectorAll<HTMLElement>('*').forEach((element) => {
-        const text = element.textContent?.trim();
-        if (text === 'Google Reviews' || text === 'What Our Customers Say') {
-          element.classList.add('google-reviews-hidden-heading');
-        }
-      });
+    const labelReviewControls = () => {
+      for (const control of element.querySelectorAll(REVIEW_PREVIEW_CONTROL)) {
+        // Keep Elfsight's keyboard handlers and full-review dialog attached.
+        const label = control.firstChild;
+        if (label?.nodeValue === 'Read more') label.nodeValue = 'Load more';
+      }
     };
 
-    const scheduleScan = () => {
-      if (frame) return;
-      frame = requestAnimationFrame(applyReviewLayout);
-    };
-
-    applyReviewLayout();
-
-    const observer = new MutationObserver(scheduleScan);
-    observer.observe(section, {childList: true, subtree: true});
-
-    return () => {
-      observer.disconnect();
-      if (frame) cancelAnimationFrame(frame);
-    };
+    labelReviewControls();
+    const observer = new MutationObserver(labelReviewControls);
+    observer.observe(element, {childList: true, subtree: true});
+    return () => observer.disconnect();
   }, []);
 
   return (
     <section
-      className="home-section google-reviews-section"
+      className={
+        productPage
+          ? 'google-reviews-section product-google-reviews'
+          : 'home-section google-reviews-section'
+      }
       aria-label="Google reviews"
     >
       <div className="section-inner">
-        <div className="google-reviews-stage" ref={stage}>
+        <div
+          className={`google-reviews-stage${productPage ? ' pdp-card' : ''}`}
+          ref={stage}
+        >
           {/* No aria-live: Elfsight mounts and rotates hundreds of nodes in
               here, and a live region read every one of them aloud. */}
           <div className={ELFSIGHT_WIDGET_ID} data-elfsight-app-lazy="" />

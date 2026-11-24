@@ -4366,28 +4366,120 @@ button.announcement-link {
   text-align: center;
 }
 
-.google-reviews-section {
-  background: transparent;
-}
-
-.google-reviews-section .section-inner {
-  padding-top: 0;
+.home-section.google-reviews-section {
+  padding-block: clamp(1.25rem, 3vw, 2.5rem);
 }
 
 .google-reviews-stage {
-  width: 100%;
-  min-height: 24rem;
+  --review-edge: rgb(28 25 23 / 9%);
+  display: flow-root;
+  min-inline-size: 0;
+  min-block-size: 16rem;
+  padding: clamp(0.5rem, 1.5vw, 1rem);
+  border: 1px solid var(--review-edge);
+  border-radius: 1.25rem;
+  background: linear-gradient(155deg, #fafaf9, #f3f3f2);
+  box-shadow: 0 6px 24px rgb(28 25 23 / 5%);
 }
 
-.google-reviews-hidden-heading {
+/* Elfsight's role prefixes keep the skin scoped to this widget. */
+.google-reviews-stage [class*='WidgetTitle__Container'] {
   display: none !important;
 }
 
-.google-reviews-stage [class*='WidgetTitle'],
-.google-reviews-stage [class*='Header__Title'],
-.google-reviews-stage [class*='HeaderTitle'],
-.google-reviews-stage [class*='Title'][class*='Header'] {
+.google-reviews-stage [class*='HeaderComponent__Top'] {
+  margin-block-end: 0.625rem !important;
+}
+
+.google-reviews-stage [class*='HeaderComponent__StyledHeader'],
+.google-reviews-stage [class*='ReviewBackground__Container'] {
+  border: 1px solid var(--review-edge);
+  border-radius: 0.875rem !important;
+  background-color: #fff !important;
+  box-shadow: 0 1px 2px rgb(28 25 23 / 4%);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+
+.google-reviews-stage [class*='HeaderComponent__StyledHeader'] {
+  padding: 0.625rem 0.875rem !important;
+}
+
+.google-reviews-stage [class*='HeaderHeading__Text'] {
+  font-size: 0.9375rem !important;
+  font-weight: 650 !important;
+}
+
+.google-reviews-stage [class*='HeaderWriteReviewButton__WriteReviewButton'] {
+  min-block-size: 2.5rem;
+  padding: 0.375rem 0.875rem !important;
+  border-radius: 999px !important;
+}
+
+.google-reviews-stage .es-carousel-item .es-review-background-container {
+  box-sizing: border-box;
+  block-size: 10rem;
+  padding: 0.75rem !important;
+}
+
+.google-reviews-stage .es-carousel-item .es-review-author-block-container {
+  margin-block-end: 0.375rem !important;
+}
+
+.google-reviews-stage .es-carousel-item :is(
+  .es-review-author-block-avatar-link,
+  .es-review-info-container,
+  .es-review-content :is(img, video, picture),
+  .es-review-content > :has(img, video, picture)
+) {
   display: none !important;
+}
+
+.google-reviews-stage .es-carousel-item .es-text-shortener {
+  display: -webkit-box !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  block-size: 2.7em;
+  line-height: 1.35;
+  overflow: hidden;
+}
+
+.google-reviews-stage .es-carousel-item .es-text-shortener-control-open {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 1.75rem;
+  margin-block-start: 0.25rem;
+  padding-inline: 0.625rem;
+  border: 1px solid var(--review-edge);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.google-reviews-stage .es-carousel-arrow-control-container-previous {
+  left: 0.25rem !important;
+}
+
+.google-reviews-stage .es-carousel-arrow-control-container-next {
+  right: 0.25rem !important;
+}
+
+.google-reviews-stage :is(a, button, [role='button']):focus-visible {
+  outline: 2px solid #675337;
+  outline-offset: 2px;
+}
+
+.product-google-reviews .section-inner {
+  padding-inline: 0;
+}
+
+@media (max-width: 40em) {
+  .google-reviews-stage {
+    border-radius: 1rem;
+  }
+
+  .google-reviews-stage [class*='HeaderComponent__StyledHeader'] {
+    padding-inline: 0.625rem !important;
+  }
 }
 
 /* Reserves the carousel's height so the lazy-loaded widget doesn't shift the
@@ -8640,13 +8732,6 @@ html.header-primary-hidden
     order: 4;
   }
 
-  /* This section sits after the purchase card in the markup, but its wrapper
-     dissolves on mobile. Give it the buy card's order so source order keeps
-     Google Reviews immediately after the Buy button and before trust badges. */
-  .google-reviews-section {
-    order: 4;
-  }
-
   /* Straight after the buy box: the delivery, exchange and warranty
      promises belong next to Add to bag, where the decision is made. At 7
      they sat under the whole description, a long scroll past the button. */
@@ -9785,15 +9870,6 @@ html.header-primary-hidden
   overflow-wrap: anywhere;
 }
 
-.product-trust-sub {
-  color: var(--color-ink-soft);
-  font-size: clamp(0.58rem, 3.8cqi, 0.66rem);
-  font-weight: 400;
-  line-height: 1.2;
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
 @media (max-width: 66em) {
   .product-trust-badges {
     margin-left: 0;
@@ -10247,11 +10323,15 @@ html.header-primary-hidden
    the thumbnail rail. Both read --pgg-stage-offset, so the three of them
    move together if the rail ever changes width. */
 .fbt {
+  container-type: inline-size;
+  margin-top: clamp(0.25rem, 1vw, 0.75rem);
+}
+
+.fbt,
+.product-google-reviews {
   align-self: stretch;
   box-sizing: border-box;
-  container-type: inline-size;
   margin-left: var(--pgg-stage-offset);
-  margin-top: clamp(0.25rem, 1vw, 0.75rem);
   max-width: 100%;
   min-width: 0;
 }
@@ -10342,7 +10422,8 @@ html.header-primary-hidden
 }
 
 @media (max-width: 66em) {
-  .fbt {
+  .fbt,
+  .product-google-reviews {
     margin-left: 0;
   }
 
@@ -10352,14 +10433,10 @@ html.header-primary-hidden
 }
 
 @media (max-width: 48em) {
-  /* The gallery column dissolves on mobile (display: contents), so this
-     needs its own place in the ordered stack: directly above the description
-     card (order 7), which .product-main dissolving puts in the same stack.
-     The thumbnail rail is hidden at this width, so there is nothing to
-     clear. */
-  .fbt {
+  /* Keep the bundle and reviews together before the description on mobile. */
+  .fbt,
+  .product-google-reviews {
     order: 6;
-    margin-left: 0;
   }
 
   .fbt.pdp-card {
