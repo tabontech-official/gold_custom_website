@@ -42,7 +42,7 @@ export function promotionPricing(product: Product, variant?: Variant | null) {
     !/\b(bracelets?|bangles?|pendants?|charms?|earrings?|rings?)\b/i.test(
       description,
     );
-  const percent = chain ? 15 : value > 400 ? 10 : 0;
+  const percent = value >= 450 ? (chain ? 15 : 10) : 0;
   if (!percent || price.currencyCode !== 'USD')
     return {price, compareAtPrice: null, promotional: false};
   const cents = Math.round(value * 100);

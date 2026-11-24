@@ -10,7 +10,15 @@ const product = (title: string, amount: string, compareAt?: string) => ({
 });
 assert.equal(
   promotionPricing(product('14K Rope Chain', '200'))?.price.amount,
-  '170.00',
+  '200',
+);
+assert.equal(
+  promotionPricing(product('14K Rope Chain', '449.99'))?.promotional,
+  false,
+);
+assert.equal(
+  promotionPricing(product('14K Rope Chain', '450'))?.price.amount,
+  '382.50',
 );
 assert.equal(
   promotionPricing(product('14K Rope Chain', '500'))?.price.amount,
@@ -50,8 +58,16 @@ assert.equal(
   '450.00',
 );
 assert.equal(
-  promotionPricing(product('Ring', '400.01'))?.price.amount,
-  '360.01',
+  promotionPricing(product('Ring', '449.99'))?.price.amount,
+  '449.99',
+);
+assert.equal(
+  promotionPricing(product('Ring', '449.99'))?.promotional,
+  false,
+);
+assert.equal(
+  promotionPricing(product('Ring', '450'))?.price.amount,
+  '405.00',
 );
 const source = product('Rope Chain', '999.99');
 assert.equal(promotionPricing(source)?.price.amount, '849.99');
@@ -59,7 +75,7 @@ assert.equal(source.selectedOrFirstAvailableVariant.price.amount, '999.99');
 assert.equal(
   promotionPricing(source, {price: {amount: '200', currencyCode: 'USD'}})?.price
     .amount,
-  '170.00',
+  '200',
 );
 assert.equal(promotionPricing(product('Chain', '0'))?.promotional, false);
 console.log(
