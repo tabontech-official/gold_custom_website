@@ -31,31 +31,22 @@ export type TrustClaim = {
   icon: TrustClaimIcon;
 };
 
-/**
- * Standard U.S. shipping is free from this order total up. Keep this aligned
- * with the confirmed storefront policy. If the rate changes, change this one
- * number: badges, announcement bar, homepage ticker, SEO, contact page and
- * product schema all read it.
- */
-export const FREE_SHIPPING_THRESHOLD_USD = 99;
+export const SHIPPING_SUMMARY =
+  'Free standard U.S. shipping on every order, with no minimum.';
+export const RETURNS_SUMMARY =
+  'Request an exchange or store credit for a manufacturing defect within 14 days of delivery.';
+export const TRANSIT_DAMAGE_POLICY =
+  'Gold Custom does not reimburse damage caused during shipping except where required by law.';
 
-/**
- * Titles must be true on their own. On phones the announcement bar shows the
- * title alone (the qualifier is hidden for space), so a bare "Free U.S.
- * Shipping" promised it on every order and "14 Day Returns" read as a cash
- * refund the policy doesn't give.
- */
 export const TRUST_CLAIMS: TrustClaim[] = [
   {
-    title: `Free U.S. Shipping $${FREE_SHIPPING_THRESHOLD_USD}+`,
-    sub: 'Standard, insured with tracking',
+    title: 'Free Standard U.S. Shipping',
+    sub: 'No minimum order',
     icon: 'shipping',
   },
-  // Matches the refund policy: 14 days, exchange or store credit, return
-  // shipping on the customer.
   {
-    title: '14-Day Exchanges (Excludes Custom-Sized)',
-    sub: 'Or store credit',
+    title: 'Manufacturing Defect Returns',
+    sub: '14 days to request an exchange or store credit',
     icon: 'returns',
   },
   {title: 'Made in U.S.A', sub: 'From our factory to you', icon: 'usa'},

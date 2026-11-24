@@ -3,9 +3,6 @@ import {getSeoMeta, type SeoConfig, type WithCache} from '@shopify/hydrogen';
 // bare `node`, which resolves neither the `~` alias nor an extensionless
 // path. Same convention the test files themselves use.
 import {toText} from './description.ts';
-import {FREE_SHIPPING_THRESHOLD_USD} from './trustClaims.ts';
-
-export {FREE_SHIPPING_THRESHOLD_USD};
 
 // schema-dts is a transitive dep of @shopify/hydrogen, not a direct one — take
 // the JSON-LD type from the SeoConfig contract so we don't import it directly.
@@ -30,7 +27,7 @@ export const SITE = {
    */
   // Promises here follow trustClaims.ts and the published policies — no
   // warranty clause, since no policy offers one.
-  description: `Shop 10K & 14K gold jewelry, rings, chains and charms. Free US shipping $${FREE_SHIPPING_THRESHOLD_USD}+, 14-day exchanges or store credit.`,
+  description: 'Shop 10K & 14K gold jewelry. Free standard U.S. shipping on all orders. Returns for manufacturing defects.',
   logo: 'https://cdn.shopify.com/s/files/1/0806/9568/9464/files/gold-custom-logo.png?v=1795073155',
   /**
    * Fallback for any page with no image of its own.
@@ -697,29 +694,8 @@ export function websiteJsonLd(origin: string): JsonLd {
   } as JsonLd;
 }
 
-/**
- * Free standard U.S. shipping starts at FREE_SHIPPING_THRESHOLD_USD (defined
- * in trustClaims.ts, transcribed from checkout's rates). Schema has no way to
- * express "free above a threshold" that Google reads, so a flat
- * `shippingRate: 0` on a $40 charm would simply be a false claim. The node is
- * therefore attached only to items that individually clear the threshold,
- * where it is unconditionally true; cheaper items get no `shippingDetails`
- * rather than a wrong one.
- *
- * The on-page trust badge reads the same constant, so the two can't drift —
- * Google cross-checks structured data against the visible page, and a
- * mismatch is worse than an omission.
- */
-
-/**
- * Handling + transit time for a standard (non-custom) US order, as given by
- * the merchant: ships the next business day, arrives 1-2 days after that —
- * "2 or 3 days" door-to-door domestic. Custom/engraved pieces run longer (see
- * the PDP's "Important Note"), but schema.org has no way to express a
- * per-item exception here, so this states the standard case.
- */
-const STANDARD_HANDLING_DAYS = {minValue: 1, maxValue: 1} as const;
-const STANDARD_TRANSIT_DAYS = {minValue: 1, maxValue: 2} as const;
+const STANDARD_HANDLING_DAYS = {minValue: 1, maxValue: 2} as const;
+const STANDARD_TRANSIT_DAYS = {minValue: 4, maxValue: 5} as const;
 
 export function offerShippingDetails(price: {
   amount: string;
@@ -728,8 +704,9 @@ export function offerShippingDetails(price: {
   const amount = Number(price.amount);
   const qualifies =
     price.currencyCode === 'USD' &&
+    price.amount.trim() !== '' &&
     Number.isFinite(amount) &&
-    amount >= FREE_SHIPPING_THRESHOLD_USD;
+    amount >= 0;
   if (!qualifies) return undefined;
 
   return {
@@ -799,6 +776,7 @@ export const MERCHANT_RETURN_POLICY = {
   applicableCountry: 'US',
   returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
   merchantReturnDays: 14,
+  merchantReturnLink: `${SITE.origin}/policies/refund-policy`,
   returnMethod: 'https://schema.org/ReturnByMail',
   returnFees: 'https://schema.org/ReturnFeesCustomerResponsibility',
   refundType: [

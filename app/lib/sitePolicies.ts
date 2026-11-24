@@ -1,4 +1,4 @@
-import {TRUST_CLAIMS} from './trustClaims.ts';
+import {RETURNS_SUMMARY, SHIPPING_SUMMARY, TRUST_CLAIMS} from './trustClaims.ts';
 
 export type SitePolicies = {
   shipping: string;
@@ -16,8 +16,8 @@ export const SITE_POLICIES_QUERY = `#graphql
 ` as const;
 
 const fallbackPolicies: SitePolicies = {
-  shipping: `${TRUST_CLAIMS[0].title} — ${TRUST_CLAIMS[0].sub}`,
-  returns: `${TRUST_CLAIMS[1].title} — ${TRUST_CLAIMS[1].sub}`,
+  shipping: SHIPPING_SUMMARY,
+  returns: RETURNS_SUMMARY,
   warranty: 'Contact us for warranty information.',
   madeInUSA: `${TRUST_CLAIMS[2].title} — ${TRUST_CLAIMS[2].sub}`,
 };
@@ -58,17 +58,8 @@ export function parseSitePolicies(response: any): SitePolicies {
   }
 
   return {
-    shipping:
-      values.shippingsentence ??
-      values.shipping ??
-      values.shippingpolicy ??
-      fallbackPolicies.shipping,
-    returns:
-      values.returnssentence ??
-      values.returns ??
-      values.returnspolicy ??
-      values.returnpolicy ??
-      fallbackPolicies.returns,
+    shipping: fallbackPolicies.shipping,
+    returns: fallbackPolicies.returns,
     warranty:
       values.warrantysentence ??
       values.warranty ??
@@ -93,14 +84,7 @@ export function policyClaims(policies: SitePolicies) {
 }
 
 export function policySeoDescription(policies: SitePolicies) {
-  const shippingThreshold = policies.shipping.match(
-    /\$\s*([\d,]+(?:\.\d{1,2})?)\s*\+/,
-  )?.[1];
-  const shipping = shippingThreshold
-    ? `Free U.S. shipping $${shippingThreshold}+.`
-    : policies.shipping.split(/[.!?](?:\s|$)/, 1)[0].trim() + '.';
-  const returns = policies.returns.split(/[.!?](?:\s|$)/, 1)[0].trim();
-  const description = `${shipping} ${policies.madeInUSA} ${returns} ${policies.warranty}`;
+  const description = `${policies.shipping} ${policies.returns}`;
   if (description.length <= 155) return description;
   return `${description.slice(0, 152).replace(/\s+\S*$/, '')}…`;
 }

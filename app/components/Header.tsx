@@ -8,6 +8,8 @@ import {
   useNavigate,
   useRouteLoaderData,
 } from 'react-router';
+import {policyClaims, type SitePolicies} from '~/lib/sitePolicies';
+import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import type {RootLoader} from '~/root';
 import {
   Image,
@@ -19,8 +21,6 @@ import {
 import type {HeaderQuery, CartApiQueryFragment} from 'storefrontapi.generated';
 import {useAside} from '~/components/Aside';
 import {AppointmentModal} from '~/components/AppointmentModal';
-import {policyClaims, type SitePolicies} from '~/lib/sitePolicies';
-import {TRUST_CLAIMS} from '~/lib/trustClaims';
 import {PHONE} from '~/lib/seo';
 import {
   MEGA_MENU,
@@ -172,48 +172,32 @@ function useScrolledPastAnnouncement(
   }, [ref]);
 }
 
-/**
- * The standing promises, cycled one at a time in the announcement strip once
- * the sign-up offer is dismissed. No close button — there is nothing left to
- * dismiss, and the bar is now part of the page's furniture.
- *
- * Copy comes from TRUST_CLAIMS so the strip cannot promise something the
- * product page and the refund policy don't (see trustClaims.ts), plus the
- * layaway line the refund policy already names.
- */
 function AnnouncementPromises() {
   const root = useRouteLoaderData<RootLoader>('root');
   const policies = root?.sitePolicies as SitePolicies | undefined;
-  // Title always, qualifier only where there is room — the same
-  // .announcement-long/.announcement-short split the offer line uses. "14 Day
-  // Returns — Exchange or store credit · Return shipping fees apply" cannot
-  // fit one phone line, and this strip is a single line by design.
   const messages = [
-    ...(policies ? policyClaims(policies) : TRUST_CLAIMS).map(
-      (claim) => [claim.title, claim.sub] as const,
+    ...(policies ? policyClaims(policies) : TRUST_CLAIMS).map((claim) =>
+      claim.icon === 'shipping'
+        ? {title: 'Free standard shipping on all orders', sub: ''}
+        : claim,
     ),
-    ['Layaway Available', 'Pay over time with Partial.ly'] as const,
+    {title: 'Layaway Available', sub: 'Pay over time with Partial.ly'},
   ];
   const [index, setIndex] = useState(0);
+
   useEffect(() => {
-    const id = setInterval(
+    const timer = setInterval(
       () => setIndex((current) => (current + 1) % messages.length),
       5000,
     );
-    return () => clearInterval(id);
+    return () => clearInterval(timer);
   }, [messages.length]);
 
+  const {title, sub} = messages[index];
   return (
-    // `key` restarts the fade on every change — same one-line, uppercase,
-    // centred treatment as the offer it replaces.
     <p className="announcement-text announcement-promise" key={index}>
-      {messages[index][0]}
-      {messages[index][1] && (
-        <>
-          <span className="announcement-long">{' — '}</span>
-          <span className="announcement-long">{messages[index][1]}</span>
-        </>
-      )}
+      {title}
+      {sub && <span className="announcement-long">{` — ${sub}`}</span>}
     </p>
   );
 }
@@ -227,13 +211,6 @@ export function Header({
   const {shop} = header;
   const topSentinelRef = useRef<HTMLDivElement>(null);
   useScrolledPastAnnouncement(topSentinelRef);
-  // Starts open so SSR and the first client render match; the dismissal is
-  // read after mount, which is the only place sessionStorage exists.
-  const [announcementOpen, setAnnouncementOpen] = useState(true);
-  useEffect(() => {
-    if (sessionStorage.getItem('gc-sale-announce-dismissed'))
-      setAnnouncementOpen(false);
-  }, []);
   const hideStickyRow = useHideOnScrollDown();
   // ponytail: CDN fallback until the logo is assigned in Shopify admin
   // (Settings > Brand) — then shop.brand takes over.
@@ -261,77 +238,19 @@ export function Header({
         ref={topSentinelRef}
       />
       <BlackFridayCountdown />
-      {/* Tier 1 — one offer, one action, one dismiss. Dismissing swaps the
-          message, it does NOT remove the bar: the strip is also where the
-          store's standing promises (shipping, returns, layaway, warranty) are
-          read, and closing the sign-up offer used to take those away with it,
-          leaving the page jumping up by a whole row. Same bar, same gold, same
-          height — different words. sessionStorage rather than localStorage so
-          a returning visitor sees the offer again. */}
-      <div
-        className={`announcement-bar${announcementOpen ? ' announcement-bar--sale' : ''}`}
-        aria-live="polite"
-      >
-        {announcementOpen ? (
-          <>
-            <Link
-              className="sale-announcement-category sale-announcement-category--left"
-              to="/collections/engagement-rings"
-              prefetch="intent"
-            >
-              Engagement Rings <span aria-hidden="true">↗</span>
-            </Link>
-            <Link
-              className="announcement-text announcement-sale-text"
-              to="/blackfriday"
-              prefetch="intent"
-            >
-              <span className="sale-announcement-headline">
-                Black Friday Sales Are Live
-              </span>
-              <span className="sale-announcement-offer">
-                Up to <strong>50% Off</strong>
-              </span>
-            </Link>
-            <Link
-              className="sale-announcement-category sale-announcement-category--right"
-              to="/collections/diamond-stud-earrings"
-              prefetch="intent"
-            >
-              Diamond Earrings <span aria-hidden="true">↗</span>
-            </Link>
-            <button
-              type="button"
-              className="announcement-close"
-              aria-label="Dismiss announcement"
-              onClick={() => {
-                setAnnouncementOpen(false);
-                sessionStorage.setItem('gc-sale-announce-dismissed', '1');
-              }}
-            >
-              &times;
-            </button>
-          </>
-        ) : (
-          /* The two standing actions appear only AFTER the offer is closed.
-             While the discount is up it is the one thing the bar is asking
-             for, and a row of three competing links is how you get none of
-             them clicked. */
-          <>
-            <AppointmentModal
-              triggerLabel="Book Appointment"
-              triggerClassName="announcement-link announcement-side announcement-side--start"
-            />
-            <AnnouncementPromises />
-            <NavLink
-              className="announcement-link announcement-side announcement-side--end"
-              prefetch="intent"
-              to="/showroom"
-            >
-              Visit Showroom
-            </NavLink>
-          </>
-        )}
+      <div className="announcement-bar">
+        <AppointmentModal
+          triggerLabel="Book Appointment"
+          triggerClassName="announcement-link announcement-side announcement-side--start"
+        />
+        <AnnouncementPromises />
+        <NavLink
+          className="announcement-link announcement-side announcement-side--end"
+          prefetch="intent"
+          to="/showroom"
+        >
+          Visit Showroom
+        </NavLink>
       </div>
 
       {/* Tier 2 — search + region | logo | account + cart */}

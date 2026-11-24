@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {parseSitePolicies, policySeoDescription} from './sitePolicies.ts';
 
 const fallback = parseSitePolicies(null);
-assert.ok(fallback.shipping.includes('$99'));
-assert.ok(fallback.returns);
+assert.match(fallback.shipping, /no minimum/);
+assert.match(fallback.returns, /manufacturing defect/);
 assert.ok(fallback.warranty);
 assert.ok(fallback.madeInUSA);
 
@@ -17,14 +17,14 @@ const parsed = parseSitePolicies({
     ],
   },
 });
-assert.equal(parsed.shipping, 'Ships free on qualifying orders');
-assert.equal(parsed.returns, '14-day returns for store credit');
+assert.equal(parsed.shipping, fallback.shipping);
+assert.equal(parsed.returns, fallback.returns);
 assert.equal(parsed.warranty, 'One year limited warranty');
 assert.equal(parsed.madeInUSA, 'Made in the United States');
-assert.match(policySeoDescription(parsed), /One year limited warranty/);
+assert.match(policySeoDescription(parsed), /manufacturing defect/);
 
 const partial = parseSitePolicies({metaobject: {fields: [{key: 'shipping', value: 'Only shipping changed'}]}});
-assert.equal(partial.shipping, 'Only shipping changed');
+assert.equal(partial.shipping, fallback.shipping);
 assert.equal(partial.returns, fallback.returns);
 
 const rich = parseSitePolicies({
@@ -52,15 +52,10 @@ const liveFieldShape = parseSitePolicies({
     ],
   },
 });
-assert.equal(liveFieldShape.shipping, 'Free U.S. Shipping $99+ testttt');
-assert.equal(liveFieldShape.returns, '14-day exchanges or store credit');
+assert.equal(liveFieldShape.shipping, fallback.shipping);
+assert.equal(liveFieldShape.returns, fallback.returns);
 assert.equal(liveFieldShape.warranty, 'Manufacturing defects only');
 assert.equal(liveFieldShape.madeInUSA, 'Made in U.S.A.');
-const liveSeoDescription = policySeoDescription({
-  ...liveFieldShape,
-  shipping: 'Free U.S. Shipping $99+ — Standard, insured with tracking',
-  returns: '14-day exchanges or store credit. Custom and sized pieces are final sale.',
-  warranty: 'Warranty covers manufacturing defects, not physical damage.',
-});
-assert.match(liveSeoDescription, /\$99\+/);
+const liveSeoDescription = policySeoDescription(liveFieldShape);
+assert.doesNotMatch(liveSeoDescription, /\$99/);
 assert.ok(liveSeoDescription.length <= 155);

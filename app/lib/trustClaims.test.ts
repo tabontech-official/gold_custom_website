@@ -1,13 +1,5 @@
-/**
- * Self-check: every promise the storefront prints agrees with the published
- * policies and with checkout. Run with `node app/lib/trustClaims.test.ts`.
- *
- * Shared claims stay aligned with the confirmed $99 shipping threshold and
- * exchange terms for items that are not custom-sized.
- */
 import assert from 'node:assert/strict';
 import {
-  FREE_SHIPPING_THRESHOLD_USD,
   TRUST_CLAIMS,
   claimLine,
 } from './trustClaims.ts';
@@ -16,26 +8,15 @@ import {MERCHANT_RETURN_POLICY, SITE} from './seo.ts';
 const lines = TRUST_CLAIMS.map(claimLine);
 const everything = [...lines, SITE.description];
 
-// Shipping: the threshold is stated, in the title itself — on phones the
-// announcement bar shows titles alone.
 const shipping = TRUST_CLAIMS.find((claim) => claim.icon === 'shipping');
-assert.ok(shipping, 'a shipping claim exists');
-assert.ok(
-  shipping.title.includes(`$${FREE_SHIPPING_THRESHOLD_USD}`),
-  `shipping title names the $${FREE_SHIPPING_THRESHOLD_USD} threshold: ${shipping.title}`,
-);
-assert.ok(SITE.description.includes(`$${FREE_SHIPPING_THRESHOLD_USD}`));
+assert.match(shipping?.title ?? '', /free standard u\.s\. shipping/i);
+assert.match(shipping?.sub ?? '', /no minimum/i);
+assert.match(SITE.description, /on all orders/i);
 
-// Returns: the policy's window and its terms (exchange or store credit), again
-// in the title.
 const returns = TRUST_CLAIMS.find((claim) => claim.icon === 'returns');
-assert.ok(returns, 'a returns claim exists');
-assert.ok(
-  returns.title.includes(String(MERCHANT_RETURN_POLICY.merchantReturnDays)),
-);
-assert.match(returns.title, /exchange/i);
-assert.match(returns.title, /excludes custom-sized/i);
-assert.match(returns.sub, /store credit/i);
+assert.match(returns?.title ?? '', /manufacturing defect/i);
+assert.match(returns?.sub ?? '', /exchange or store credit/i);
+assert.ok(returns?.sub.includes(String(MERCHANT_RETURN_POLICY.merchantReturnDays)));
 
 // Nothing the policies don't back.
 for (const text of everything) {
@@ -46,10 +27,7 @@ for (const text of everything) {
   // Neither the refund policy nor the terms of service offers a warranty. If
   // one is published, restore the claim (see trustClaims.ts) and drop this.
   assert.doesNotMatch(text, /warrant/i, `no warranty (no policy): ${text}`);
-  // Any dollar amount is the checkout threshold, never a stale one.
-  for (const amount of text.match(/\$\d+/g) ?? []) {
-    assert.equal(amount, `$${FREE_SHIPPING_THRESHOLD_USD}`, text);
-  }
+  assert.doesNotMatch(text, /\$\d+/);
 }
 
 // The site-wide description stays inside the ~125 characters social previews

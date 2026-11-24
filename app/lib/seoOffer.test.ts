@@ -13,7 +13,6 @@
  */
 import assert from 'node:assert/strict';
 import {
-  FREE_SHIPPING_THRESHOLD_USD,
   MERCHANT_RETURN_POLICY,
   cleanSku,
   metaDescription,
@@ -60,38 +59,21 @@ const truncated = metaDescription('supercalifragilistic '.repeat(20));
 assert.ok(truncated.endsWith('…'));
 assert.ok(!truncated.includes('supercalifragilistic…'.slice(0, 5) + '…'));
 
-// --- free shipping: only claimed where it is unconditionally true ----------
-
-// At and above the threshold the order qualifies on its own, so the claim holds.
-const atThreshold = offerShippingDetails({amount: '99.00', currencyCode: 'USD'});
-assert.equal(atThreshold?.shippingRate.value, 0);
-assert.equal(atThreshold?.shippingDestination.addressCountry, 'US');
+// Every valid USD price gets free standard U.S. shipping.
+const shipping = offerShippingDetails({amount: '40.00', currencyCode: 'USD'});
+assert.equal(shipping?.shippingRate.value, 0);
+assert.equal(shipping?.shippingDestination.addressCountry, 'US');
+assert.equal(shipping?.deliveryTime.handlingTime.minValue, 1);
+assert.equal(shipping?.deliveryTime.handlingTime.maxValue, 2);
+assert.equal(shipping?.deliveryTime.transitTime.minValue, 4);
+assert.equal(shipping?.deliveryTime.transitTime.maxValue, 5);
+assert.equal(shipping?.deliveryTime.handlingTime.unitCode, 'DAY');
+assert.ok(offerShippingDetails({amount: '0', currencyCode: 'USD'}));
 assert.ok(offerShippingDetails({amount: '1375.0', currencyCode: 'USD'}));
-
-// deliveryTime rides along with every shippingDetails — required by Google's
-// structured data check, and must state both legs, not just a total.
-// Merchant-given figure: "2 or 3 days" door-to-door.
-assert.equal(atThreshold?.deliveryTime.handlingTime.minValue, 1);
-assert.equal(atThreshold?.deliveryTime.handlingTime.maxValue, 1);
-assert.equal(atThreshold?.deliveryTime.transitTime.minValue, 1);
-assert.equal(atThreshold?.deliveryTime.transitTime.maxValue, 2);
-assert.equal(atThreshold?.deliveryTime.handlingTime.unitCode, 'DAY');
-
-// Below it, free shipping depends on the rest of the cart, which this schema
-// cannot express — so claim nothing rather than something false.
-assert.equal(offerShippingDetails({amount: '98.99', currencyCode: 'USD'}), undefined);
-assert.equal(offerShippingDetails({amount: '40.00', currencyCode: 'USD'}), undefined);
-
-// The promise is US-only; a CAD price of 200 does not earn it.
 assert.equal(offerShippingDetails({amount: '200.00', currencyCode: 'CAD'}), undefined);
-
-// Junk price data must not accidentally qualify. `Number('')` is 0 and
-// `Number('abc')` is NaN — neither may pass the >= check.
 assert.equal(offerShippingDetails({amount: '', currencyCode: 'USD'}), undefined);
 assert.equal(offerShippingDetails({amount: 'abc', currencyCode: 'USD'}), undefined);
-
-// Standard U.S. shipping is free at $99 and above.
-assert.equal(FREE_SHIPPING_THRESHOLD_USD, 99);
+assert.equal(offerShippingDetails({amount: '-1', currencyCode: 'USD'}), undefined);
 
 // --- returns: must match the refund policy, which is NOT a cash refund -----
 
