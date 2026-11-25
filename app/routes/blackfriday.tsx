@@ -9,6 +9,8 @@ import {buildProductPath} from '~/lib/categories';
 import {cdnLoader} from '~/lib/cdnImage';
 import {PRODUCT_ITEM_FRAGMENT} from '~/lib/fragments';
 import {groupProducts} from '~/lib/productGroups';
+import {useDragScroll} from '~/lib/dragScroll';
+import {useRef} from 'react';
 import {
   absoluteUrl,
   breadcrumbJsonLd,
@@ -305,7 +307,7 @@ export default function BlackFridayPage() {
               </h2>
               <span aria-hidden="true" className="bf-divider" />
             </header>
-            <div className="bf-grid">
+            <BfRail>
               {s.products.map((product) => (
                 <div className="bf-card" key={product.id}>
                   <ProductItem
@@ -323,7 +325,7 @@ export default function BlackFridayPage() {
                   </Link>
                 </div>
               ))}
-            </div>
+            </BfRail>
             <div className="bf-section-foot">
               <Link
                 className="bf-btn bf-btn--ghost"
@@ -427,3 +429,14 @@ const BLACK_FRIDAY_RINGS_QUERY = `#graphql
   }
   ${PRODUCT_ITEM_FRAGMENT}
 ` as const;
+
+/** Section card rail: mouse drag scrolls it; the native scrollbar is hidden in CSS. */
+function BfRail({children}: {children: React.ReactNode}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useDragScroll(ref);
+  return (
+    <div className="bf-grid" ref={ref}>
+      {children}
+    </div>
+  );
+}

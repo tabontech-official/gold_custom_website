@@ -449,9 +449,28 @@
   margin: 0 calc(-1 * var(--section-pad, 1rem));
   padding: 0.25rem var(--section-pad, 1rem) 0.75rem;
   overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding: 0 var(--section-pad, 1rem);
   overscroll-behavior-x: contain;
+  /* Same rail feel as .dragscroll-viewport on the homepage: smooth wheel/
+     programmatic scrolling, touch arbitrates direction, no snap (snap made
+     drags and flicks stop and jump). */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y pinch-zoom;
+  cursor: grab;
+  scrollbar-width: none;
+}
+.bf-grid::-webkit-scrollbar {
+  display: none;
+}
+.bf-grid.is-dragging {
+  cursor: grabbing;
+  scroll-behavior: auto;
+  user-select: none;
+}
+.bf-grid.is-dragging img,
+.bf-grid.is-dragging a {
+  -webkit-user-drag: none;
+  user-select: none;
 }
 .bf-grid > * {
   scroll-snap-align: start;
