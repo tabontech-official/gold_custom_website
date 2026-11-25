@@ -8,6 +8,7 @@ import {
   galleryLeadImage,
   mediaForSelectedOptions,
   mediaOptionTag,
+  variantForFilterSelection,
 } from './variantMedia.ts';
 
 const options = [
@@ -45,6 +46,30 @@ assert.equal(
   media.length,
 );
 assert.equal(mediaForSelectedOptions([], options, []).length, 0);
+
+const filterOptions = [
+  {
+    name: 'Metal',
+    optionValues: [
+      {name: '10K Yellow Gold', firstSelectableVariant: {id: 'yellow-10'}},
+      {name: '14K Yellow Gold', firstSelectableVariant: {id: 'yellow-14'}},
+      {name: '10K White Gold', firstSelectableVariant: {id: 'white-10'}},
+      {name: '14K White Gold', firstSelectableVariant: {id: 'white-14'}},
+    ],
+  },
+];
+assert.equal(
+  variantForFilterSelection(filterOptions, ['White Gold'], ['14K'])?.id,
+  'white-14',
+);
+assert.equal(
+  variantForFilterSelection(filterOptions, ['White Gold'], [])?.id,
+  'white-10',
+);
+assert.equal(
+  variantForFilterSelection(filterOptions, [], ['10K'])?.id,
+  'yellow-10',
+);
 
 // A variant whose own image belongs to the other metal (real data: EDR9-4's
 // white variant points at the yellow photo) must not lead the gallery.

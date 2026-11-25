@@ -17,6 +17,51 @@ const TAG = /t4option(\d+)_(\d+)/i;
 
 export type TaggedMedia = {alt?: string | null};
 
+const SPECIFIC_METALS = [
+  'yellow gold',
+  'white gold',
+  'rose gold',
+  'tri-color gold',
+  'two-tone gold',
+];
+
+/**
+ * Pick the first selectable variant whose authored Metal value matches the
+ * active collection filters. Shopify filters return products, not variants,
+ * so without this the grid keeps showing each product's default (usually
+ * yellow-gold) variant even under a White Gold filter.
+ */
+export function variantForFilterSelection<T>(
+  options: Array<{
+    name?: string | null;
+    optionValues?: Array<{
+      name?: string | null;
+      firstSelectableVariant?: T | null;
+    }> | null;
+  }>,
+  metals: string[],
+  karats: string[],
+): T | undefined {
+  const wantedMetals = metals
+    .map((value) => value.toLowerCase())
+    .filter((value) => SPECIFIC_METALS.includes(value));
+  const wantedKarats = karats.map((value) => value.toLowerCase());
+  if (!wantedMetals.length && !wantedKarats.length) return undefined;
+
+  const values = options
+    .filter((option) => /^(metal|gold purity|material)$/i.test(option.name?.trim() ?? ''))
+    .flatMap((option) => option.optionValues ?? []);
+  const match = values.find((value) => {
+    const label = value.name?.toLowerCase() ?? '';
+    const metalMatches =
+      !wantedMetals.length || wantedMetals.some((metal) => label.includes(metal));
+    const karatMatches =
+      !wantedKarats.length || wantedKarats.some((karat) => label.includes(karat));
+    return metalMatches && karatMatches && value.firstSelectableVariant;
+  });
+  return match?.firstSelectableVariant ?? undefined;
+}
+
 /** The option/value indices a media item is tagged for, or null when untagged. */
 export function mediaOptionTag(
   alt?: string | null,

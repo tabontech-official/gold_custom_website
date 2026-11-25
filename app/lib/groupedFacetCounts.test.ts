@@ -25,6 +25,7 @@ function product(
     id,
     groupName: group === null ? null : {value: group},
     options: {metal: metals},
+    metal: [...new Set(metals.map((value) => value.replace(/^\d+K\s+/i, '')))],
     karat,
     carat: [],
     style: [],

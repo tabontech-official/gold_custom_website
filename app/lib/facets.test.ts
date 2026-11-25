@@ -10,6 +10,7 @@ import {
   indexProduct,
   karatsOf,
   matchesFacets,
+  metalsOf,
   parseFacetFilter,
   type FacetSource,
 } from './facets.ts';
@@ -30,6 +31,36 @@ const product = (
 });
 
 // ── Karat ───────────────────────────────────────────────────────────────────
+// Shopify combines color and purity in one option. The storefront presents
+// them as independent Metal and Karat controls.
+assert.deepEqual(
+  metalsOf(
+    product('Gold Ring', [
+      ['metal', ['10K Yellow Gold', '14K Yellow Gold', '14K White Gold']],
+    ]),
+  ),
+  ['White Gold', 'Yellow Gold'],
+);
+assert.deepEqual(
+  metalsOf(product('14K Rose Gold Ring', [['Title', ['Default Title']]])),
+  ['Rose Gold'],
+);
+assert.deepEqual(
+  metalsOf(product('10K Diamond Stud Earrings', [['Title', ['Default Title']]])),
+  ['Gold'],
+);
+assert.deepEqual(
+  metalsOf(product('10K Tri-Color Gold Virgin Mary Stud Earrings')),
+  ['Tri-Color Gold'],
+);
+assert.deepEqual(metalsOf(product('10K Solid Gold Rope Chain')), ['Solid Gold']);
+assert.deepEqual(metalsOf(product('10K Semi-Solid Rope Chain')), [
+  'Semi-Solid Gold',
+]);
+assert.deepEqual(metalsOf(product('10K Hollow Gold Figaro Chain')), [
+  'Hollow Gold',
+]);
+
 // The options are what can be bought: both karats, not just the title's.
 assert.deepEqual(
   karatsOf(
@@ -105,6 +136,10 @@ assert.deepEqual(parseFacetFilter({karat: '14K'}), {
   key: 'karat',
   value: '14K',
 });
+assert.deepEqual(parseFacetFilter({metal: 'White Gold'}), {
+  key: 'metal',
+  value: 'White Gold',
+});
 assert.equal(parseFacetFilter({variantOption: {name: 'metal'}}), null);
 assert.equal(parseFacetFilter({available: true}), null);
 assert.equal(parseFacetFilter('14K'), null);
@@ -131,11 +166,13 @@ const index = [
 ];
 const k14 = {key: 'karat', value: '14K'} as const;
 const k10 = {key: 'karat', value: '10K'} as const;
+const white = {key: 'metal', value: 'White Gold'} as const;
 const rope = {key: 'style', value: 'Rope'} as const;
 // OR within a facet, AND across.
 assert.equal(index.filter((p) => matchesFacets(p, [k14])).length, 2);
 assert.equal(index.filter((p) => matchesFacets(p, [k14, k10])).length, 3);
 assert.equal(index.filter((p) => matchesFacets(p, [k10, rope])).length, 1);
+assert.equal(index.filter((p) => matchesFacets(p, [white, k14])).length, 1);
 
 const groups = facetGroups(index, [k14]);
 const karat = groups.find((g) => g.id === 'facet.karat')!;

@@ -22,10 +22,11 @@
  * Plain TS with no app imports, so `node app/lib/facets.test.ts` runs it.
  */
 
-export type FacetKey = 'karat' | 'carat' | 'style';
+export type FacetKey = 'metal' | 'karat' | 'carat' | 'style';
 
 /** Sidebar order and labels. */
 export const FACETS: {key: FacetKey; label: string}[] = [
+  {key: 'metal', label: 'Metal'},
   {key: 'karat', label: 'Karat'},
   {key: 'carat', label: 'Carat'},
   {key: 'style', label: 'Style'},
@@ -146,6 +147,49 @@ export type IndexedProduct = {
 
 const KARAT = /\b(10|14|18|22|24)\s?k(?:t|arat)?\b/gi;
 const KARAT_OPTION = /^(metal|gold purity|material)$/i;
+const METAL =
+  /\b(tri[ -]?color gold|two[ -]?tone gold|yellow gold|white gold|rose gold|platinum|sterling silver)\b/gi;
+
+const METAL_LABELS: Record<string, string> = {
+  'yellow gold': 'Yellow Gold',
+  'white gold': 'White Gold',
+  'rose gold': 'Rose Gold',
+  'tri-color gold': 'Tri-Color Gold',
+  'tri color gold': 'Tri-Color Gold',
+  'two-tone gold': 'Two-Tone Gold',
+  'two tone gold': 'Two-Tone Gold',
+  platinum: 'Platinum',
+  'sterling silver': 'Sterling Silver',
+};
+
+/** Every material/color offered, without repeating its karat in the label. */
+export function metalsOf(product: Pick<FacetSource, 'title' | 'options'>) {
+  const metals = (text: string) =>
+    [...text.matchAll(METAL)].map(
+      (match) => METAL_LABELS[match[1].toLowerCase()],
+    );
+  const fromOptions = product.options
+    .filter((option) => KARAT_OPTION.test(option.name.trim()))
+    .flatMap((option) => option.optionValues.map((value) => value.name));
+  let found = metals(fromOptions.join(' '));
+  if (!found.length) found = metals(product.title);
+  const confirmedGold =
+    /\bgold\b/i.test(product.title) || karatsOf(product).length > 0;
+  if (!found.length && confirmedGold) {
+    if (/\bsemi[ -]?solid\b/i.test(product.title)) {
+      found = ['Semi-Solid Gold'];
+    } else if (/\bhollow\b/i.test(product.title)) {
+      found = ['Hollow Gold'];
+    } else if (/\bsolid\b/i.test(product.title)) {
+      found = ['Solid Gold'];
+    }
+  }
+  // Some products confirm a gold karat but provide no color or construction.
+  // Keep them available under a generic value rather than omitting them from
+  // Metal while Karat continues to count them.
+  if (!found.length && confirmedGold) found = ['Gold'];
+  return [...new Set(found)].sort();
+}
 
 /** Every karat the product is sold in, e.g. ["10K", "14K"]. */
 export function karatsOf(product: Pick<FacetSource, 'title' | 'options'>) {
@@ -199,6 +243,7 @@ export function indexProduct(product: FacetSource): IndexedProduct {
     id: product.id,
     groupName: product.groupName,
     options,
+    metal: metalsOf(product),
     karat: karatsOf(product),
     carat: carat ? [carat] : [],
     style: [...new Set(styles)].sort(),
@@ -232,7 +277,7 @@ export function matchesFacets(
     const wanted = active.filter((filter) => filter.key === key);
     if (
       wanted.length &&
-      !wanted.some((filter) => product[key].includes(filter.value))
+      !wanted.some((filter) => (product[key] ?? []).includes(filter.value))
     ) {
       return false;
     }
@@ -260,7 +305,7 @@ export function facetGroups(
     const matching = new Map<string, IndexedProduct[]>();
     for (const product of index) {
       if (!matchesFacets(product, active, key)) continue;
-      for (const value of product[key]) {
+      for (const value of product[key] ?? []) {
         const list = matching.get(value);
         if (list) list.push(product);
         else matching.set(value, [product]);

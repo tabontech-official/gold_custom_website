@@ -179,7 +179,11 @@ export function CollectionFilterSidebar({
     (filter) =>
       filter.type !== 'PRICE_RANGE' &&
       filter.values.length > 0 &&
-      !/availability/i.test(filter.label),
+      !/availability/i.test(filter.label) &&
+      // Collection pages derive Metal as color/material only, alongside a
+      // separate Karat group. Shopify's raw Metal facet combines both into
+      // labels such as "14K White Gold" and would duplicate the same choice.
+      !(deferredFilters && /^metal$/i.test(filter.label.trim())),
   );
   const priceBounds = getPriceBounds(
     filters.find((filter) => filter.type === 'PRICE_RANGE'),

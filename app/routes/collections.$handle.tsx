@@ -946,6 +946,13 @@ export default function Collection() {
     useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const isListView = searchParams.get('view') === 'list';
+  const activeFacetFilters = getFacetFiltersFromParam(searchParams);
+  const selectedMetals = activeFacetFilters
+    .filter((filter) => filter.key === 'metal')
+    .map((filter) => filter.value);
+  const selectedKarats = activeFacetFilters
+    .filter((filter) => filter.key === 'karat')
+    .map((filter) => filter.value);
   // The metafield JSON is the source of truth. Any FAQ block still sitting in
   // a description is stripped out of the prose regardless, so it can never
   // render twice, and is used only where that collection has no metafield yet
@@ -1072,6 +1079,8 @@ export default function Collection() {
                             key={product.id}
                             product={product}
                             collectionHandle={collection.handle}
+                            selectedMetals={selectedMetals}
+                            selectedKarats={selectedKarats}
                             loading={index < DEFAULT_COLUMNS ? 'eager' : 'lazy'}
                           />
                         ))}
@@ -1330,6 +1339,49 @@ const FACET_CARDS_QUERY = `#graphql
     nodes(ids: $ids) {
       ... on Product {
         ...ProductItem
+        options {
+          name
+          optionValues {
+            name
+            firstSelectableVariant {
+              id
+              availableForSale
+              selectedOptions {
+                name
+                value
+              }
+              image {
+                id
+                url
+                altText
+                width
+                height
+              }
+              price {
+                amount
+                currencyCode
+              }
+              compareAtPrice {
+                amount
+                currencyCode
+              }
+            }
+          }
+        }
+        media(first: 25) {
+          nodes {
+            alt
+            ... on MediaImage {
+              image {
+                id
+                url
+                altText
+                width
+                height
+              }
+            }
+          }
+        }
       }
     }
   }

@@ -11,12 +11,20 @@ import {formatUsd, savingsFor} from '~/lib/discount';
 import {promotionPricing} from '~/lib/promotionPricing';
 import {AddToCartButton, AddedToBagLabel} from '~/components/AddToCartButton';
 import {useAside} from '~/components/Aside';
+import {
+  galleryLeadImage,
+  mediaForSelectedOptions,
+  mediaOptionTag,
+  variantForFilterSelection,
+} from '~/lib/variantMedia';
 
 export function ProductItem({
   product,
   loading,
   className,
   collectionHandle,
+  selectedMetals = [],
+  selectedKarats = [],
   showQuickAdd = false,
   sizes = '(min-width: 45em) 400px, calc(100vw - 3rem)',
 }: {
@@ -38,6 +46,9 @@ export function ProductItem({
    * (sliders, search, wishlist) the flat path redirects to the canonical URL.
    */
   collectionHandle?: string;
+  /** Active collection facets used to choose the card's matching variant. */
+  selectedMetals?: string[];
+  selectedKarats?: string[];
   /** Wishlist cards can add their first available variant without leaving the page. */
   showQuickAdd?: boolean;
 }) {
@@ -47,12 +58,21 @@ export function ProductItem({
   // flat path anyway when the card's query didn't ask for category, so a
   // fragment missing those fields degrades to the old behaviour rather than
   // producing a broken link.
-  const productUrl = collectionHandle
+  const filterVariant: any = variantForFilterSelection<any>(
+    product.options ?? [],
+    selectedMetals,
+    selectedKarats,
+  );
+  const baseProductUrl = collectionHandle
     ? buildProductPath(collectionHandle, product.handle)
     : productCanonicalPath(product);
-  const image = product.featuredImage;
+  const variantId = filterVariant?.id?.split('/').pop();
+  const productUrl = variantId
+    ? `${baseProductUrl}?variant=${encodeURIComponent(variantId)}`
+    : baseProductUrl;
+  const image = cardImageForVariant(product, filterVariant);
   const badges = cardBadges(product);
-  const pricing = promotionPricing(product);
+  const pricing = promotionPricing(product, filterVariant);
   const savings = savingsFor(
     pricing?.price.amount,
     pricing?.compareAtPrice?.amount,
@@ -186,6 +206,25 @@ export function ProductItem({
     </article>
   );
 }
+
+function cardImageForVariant(product: any, variant: any) {
+  if (!variant) return product.featuredImage;
+  const media = mediaForSelectedOptions<any>(
+    (product.media?.nodes ?? []) as any[],
+    product.options ?? [],
+    variant.selectedOptions ?? [],
+  );
+  const leadUrl = galleryLeadImage(media, variant.image?.url);
+  const lead = leadUrl
+    ? media.find((item: any) => item.image?.url === leadUrl)?.image
+    : undefined;
+  const tagged = media.find(
+    (item: any) => item.image && mediaOptionTag(item.alt),
+  )?.image;
+  const first = media.find((item: any) => item.image)?.image;
+  return lead ?? tagged ?? variant.image ?? first ?? product.featuredImage;
+}
+
 type CardBadge = {
   label: string;
   tone: 'sale' | 'best-seller' | 'new-arrival';
