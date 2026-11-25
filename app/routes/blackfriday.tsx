@@ -222,14 +222,14 @@ export default function BlackFridayPage() {
         <div className="bf-hero-copy">
           <p className="bf-kicker">
             <span aria-hidden="true" className="bf-kicker-line" />
-            Gold Custom · 2026
+            Gold Custom
             <span aria-hidden="true" className="bf-kicker-line" />
           </p>
           <h1 id="bf-hero-title" className="bf-hero-title">
             <span className="bf-hero-title-gold">Black</span>
             <span>Friday</span>
           </h1>
-          <p className="bf-hero-tagline">The Black Friday Edit</p>
+          <p className="bf-hero-tagline">The Black Friday</p>
           <p className="bf-hero-lede">
             Engagement rings, gold chains, earrings and bracelets from the Gold
             Custom collection, gathered on one page.
