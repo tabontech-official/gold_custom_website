@@ -14,6 +14,7 @@ const useClientLayoutEffect =
  */
 export function CollectionStickyHead({children}: {children: ReactNode}) {
   const ref = useRef<HTMLDivElement>(null);
+  const placeholderRef = useRef<HTMLDivElement>(null);
 
   useClientLayoutEffect(() => {
     const el = ref.current;
@@ -47,17 +48,19 @@ export function CollectionStickyHead({children}: {children: ReactNode}) {
   useEffect(() => {
     const el = ref.current;
     const sentinel = sentinelRef.current;
-    if (!el || !sentinel) return;
+    const placeholder = placeholderRef.current;
+    if (!el || !sentinel || !placeholder) return;
     let observer: IntersectionObserver | undefined;
     const observe = () => {
       observer?.disconnect();
       const pin = parseFloat(getComputedStyle(el).top) || 0;
       observer = new IntersectionObserver(
-        ([entry]) =>
-          el.classList.toggle(
-            'is-stuck',
-            !entry.isIntersecting && entry.boundingClientRect.top < pin,
-          ),
+        ([entry]) => {
+          const stuck =
+            !entry.isIntersecting && entry.boundingClientRect.top < pin;
+          el.classList.toggle('is-stuck', stuck);
+          placeholder.classList.toggle('is-active', stuck);
+        },
         {rootMargin: `-${Math.ceil(pin)}px 0px 0px 0px`},
       );
       observer.observe(sentinel);
@@ -74,6 +77,11 @@ export function CollectionStickyHead({children}: {children: ReactNode}) {
   return (
     <>
       <div ref={sentinelRef} aria-hidden="true" />
+      <div
+        ref={placeholderRef}
+        className="collection-sticky-placeholder"
+        aria-hidden="true"
+      />
       <div className="collection-sticky-head" ref={ref}>
         {children}
       </div>

@@ -306,6 +306,7 @@ export function Header({
   );
 }
 
+const BLACK_FRIDAY_START = Date.parse('2026-11-27T00:00:00-05:00');
 const BLACK_FRIDAY_END = Date.parse('2026-12-01T00:00:00-08:00');
 
 function BlackFridayCountdown() {
@@ -318,6 +319,10 @@ function BlackFridayCountdown() {
     return () => window.clearInterval(interval);
   }, []);
   if (remaining === null || remaining === 0) return null;
+  const saleIsActive = BLACK_FRIDAY_END - remaining >= BLACK_FRIDAY_START;
+  const saleMessage = saleIsActive
+    ? 'Black Friday Sale Is Live.'
+    : 'Early Access Black Friday Sale Is Live.';
   const days = Math.floor(remaining / 86400000);
   const hours = Math.floor((remaining / 3600000) % 24);
   const minutes = Math.floor((remaining / 60000) % 60);
@@ -331,10 +336,8 @@ function BlackFridayCountdown() {
   return (
     <div className="black-friday-timer-bar">
       <span className="black-friday-timer-message">
-        <span className="black-friday-timer-long">Black Friday ends Monday</span>
-        <span className="black-friday-timer-short">
-          Black Friday sale ends Monday
-        </span>
+        <span className="black-friday-timer-long">{saleMessage}</span>
+        <span className="black-friday-timer-short">{saleMessage}</span>
       </span>
       <div
         className="black-friday-timer-units"

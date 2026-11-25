@@ -7029,6 +7029,10 @@ html.header-primary-hidden
   z-index: 55;
 }
 
+.collection-sticky-placeholder {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .collection-toolbar,
   .collection-sticky-head {
@@ -16622,6 +16626,66 @@ html.header-primary-hidden
 /* Mobile collection controls: one calm, iOS-like glass bar. Kept after the
    sticky-position rules so the header stack cannot undo its layout. */
 @media (max-width: 47.99em) {
+  /* Keep the mobile collection stack on one positioning path. Scroll-state
+     classes normally translate the header and the two sticky collection
+     rows, which makes their compositor layers chase one another and visibly
+     shake. Their sticky offsets are already constant, so leave the entire
+     stack in place while a collection is open. */
+  html.page-scrolled
+    body:has(.collection .collection-toolbar)
+    :is(
+      .announcement-bar,
+      .header-primary,
+      .collection-sticky-head,
+      .collection-toolbar
+    ) {
+    translate: none;
+  }
+
+  body:has(.collection .collection-toolbar) .header-primary,
+  body:has(.collection .collection-toolbar) .collection-sticky-head,
+  body:has(.collection .collection-toolbar) .collection-toolbar {
+    transform: none !important;
+    transition: none;
+    will-change: auto;
+  }
+
+  /* Once the category rail reaches its sticky edge, move it and the toolbar
+     onto fixed layers. Mobile Safari can repaint sticky descendants a pixel
+     apart while scrolling. Fixed layers stay locked to the viewport. The
+     placeholders retain the same document space during the switch. */
+  .collection-sticky-placeholder.is-active {
+    display: block;
+    height: var(--sticky-head-height, 0px);
+  }
+
+  body:has(.collection .collection-toolbar) .collection-sticky-head.is-stuck {
+    left: 0;
+    position: fixed !important;
+    right: 0;
+    top: calc(var(--announce-h) + 3.65rem) !important;
+  }
+
+  body:has(.collection .collection-toolbar)
+    .collection-sticky-head.is-stuck
+    + .home-section
+    .collection-toolbar {
+    left: var(--section-pad);
+    margin: 0 !important;
+    position: fixed !important;
+    right: var(--section-pad);
+    top: calc(
+      var(--announce-h) + 3.65rem + var(--sticky-head-height, 0px) - 1px
+    ) !important;
+  }
+
+  body:has(.collection .collection-toolbar)
+    .collection-sticky-head.is-stuck
+    + .home-section
+    .collection-layout {
+    padding-top: calc(var(--toolbar-height, 3.1rem) + 1.4rem);
+  }
+
   /* Reserve the fixed header's space before the in-flow sale timer. */
   body:has(.collection .collection-toolbar) > .black-friday-timer-bar {
     margin-top: calc(var(--announce-h) + 3.65rem);
@@ -16640,6 +16704,8 @@ html.header-primary-hidden
     padding: 0.22rem;
     overflow: visible;
     border: 1px solid rgba(255, 255, 255, 0.72);
+    border-left: 0;
+    border-right: 0;
     border-radius: 14px;
     background: rgba(248, 248, 250, 0.78);
     box-shadow:
