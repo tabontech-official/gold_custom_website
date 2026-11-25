@@ -15515,6 +15515,43 @@ html.header-primary-hidden
   list-style: none;
 }
 
+@media (width < 48em) {
+  .home {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  /* Let the homepage set the gap once, including around shared sections. */
+  .home > .home-section {
+    padding-block: 0;
+  }
+
+  .home > .market-bar {
+    margin-bottom: 0;
+  }
+
+  .home > .hero + .black-friday-feature {
+    border-top: 0;
+  }
+
+  .tiktok-feed-section .reputon-tiktok-widget :is(
+    .reputon-carousel,
+    .reputon-carousel-container
+  ) {
+    padding-block: 0;
+  }
+
+  .tiktok-feed-section .reputon-tiktok-widget .reputon-reviews-head {
+    gap: 12px;
+    padding-block: 8px;
+  }
+
+  .tiktok-feed-section .reputon-carousel-container > :has(> .reputon-bottom-navigation-btns) {
+    gap: 6px;
+  }
+}
+
 .social-follow-item {
   position: relative;
   /* Not `stretch`: a stretched item would grow taller than its 48px link and
@@ -16585,6 +16622,15 @@ html.header-primary-hidden
 /* Mobile collection controls: one calm, iOS-like glass bar. Kept after the
    sticky-position rules so the header stack cannot undo its layout. */
 @media (max-width: 47.99em) {
+  /* Reserve the fixed header's space before the in-flow sale timer. */
+  body:has(.collection .collection-toolbar) > .black-friday-timer-bar {
+    margin-top: calc(var(--announce-h) + 3.65rem);
+  }
+
+  body:has(.collection .collection-toolbar) > .black-friday-timer-bar ~ .page-wrapper .page-body {
+    padding-top: 0;
+  }
+
   body:has(.collection-toolbar) .collection-toolbar {
     display: flex;
     align-items: stretch;
