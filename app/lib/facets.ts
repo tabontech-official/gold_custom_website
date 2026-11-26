@@ -13,6 +13,11 @@
  *          not weights: 0.24 / 0.245 / 0.25 as separate boxes is useless.
  *   Style  the merchant's own style collections the product is in
  *          (STYLE_COLLECTIONS) — their taxonomy, not guesses from titles.
+ *   Length chain / bracelet length band from the title ("24-Inch", "22 Inches",
+ *          "18in"), and
+ *   Width  its link width band ("5mm", "3.8MM"). Every sized chain and
+ *          bracelet states both in its title; diamond pieces that don't get
+ *          neither, so they drop out under these two rather than guess.
  *
  * In the URL they ride the same `filter` param as Shopify's facets, as
  * {"karat":"14K"}, so the sidebar's links, chips and "Clear all" and the
@@ -22,13 +27,21 @@
  * Plain TS with no app imports, so `node app/lib/facets.test.ts` runs it.
  */
 
-export type FacetKey = 'metal' | 'karat' | 'carat' | 'style';
+export type FacetKey =
+  | 'metal'
+  | 'karat'
+  | 'carat'
+  | 'length'
+  | 'width'
+  | 'style';
 
 /** Sidebar order and labels. */
 export const FACETS: {key: FacetKey; label: string}[] = [
   {key: 'metal', label: 'Metal'},
   {key: 'karat', label: 'Karat'},
   {key: 'carat', label: 'Carat'},
+  {key: 'length', label: 'Length'},
+  {key: 'width', label: 'Width'},
   {key: 'style', label: 'Style'},
 ];
 
@@ -210,7 +223,9 @@ const CARAT = /(\d*\.\d+|\d+)\s?ct\b/i;
 // real weight in the catalogue is a 10.79 ct picture pendant.
 const MAX_CARAT = 25;
 
-export const CARAT_BANDS: [below: number, label: string][] = [
+type Bands = [below: number, label: string][];
+
+export const CARAT_BANDS: Bands = [
   [0.5, 'Under 0.50 ct'],
   [1, '0.50–0.99 ct'],
   [2, '1.00–1.99 ct'],
@@ -218,16 +233,68 @@ export const CARAT_BANDS: [below: number, label: string][] = [
   [Infinity, '3.00 ct & up'],
 ];
 
+/** The band `value` falls in, or null when it isn't a believable reading. */
+function bandOf(value: number, bands: Bands, max: number, min = 0) {
+  if (!(value > min && value <= max)) return null;
+  return bands.find(([below]) => value < below)![1];
+}
+
 /** The diamond-weight band the title names, or null. */
 export function caratBandOf(product: Pick<FacetSource, 'title'>) {
   const match = CARAT.exec(product.title);
-  const weight = match ? Number(match[1]) : NaN;
-  if (!(weight > 0 && weight <= MAX_CARAT)) return null;
-  return CARAT_BANDS.find(([below]) => weight < below)![1];
+  return bandOf(match ? Number(match[1]) : NaN, CARAT_BANDS, MAX_CARAT);
+}
+
+// Only titles naming the piece itself — a "32.51MM Star Pendant" is a pendant
+// size, not a link width, and pendants are not shopped by it.
+const SIZED_PIECE = /\b(chains?|bracelets?|necklaces?|anklets?|bangles?)\b/i;
+// "24 Inch", "24-Inch", "22 Inches", "18in", "9.5-Inch". The catalogue also has
+// "20 Inchhain" (a typo), so no word boundary after "inch".
+const LENGTH = /(\d+(?:\.\d+)?)(?:\s*-?\s*inch|in\b)/i;
+// "5mm", "3.8MM", "10.5mm". Real range: 1 mm box chain to 36 mm classic link.
+const WIDTH = /(\d*\.\d+|\d+)\s?mm\b/i;
+
+// Upper bounds exclusive; every label covers exactly what falls in it. The
+// first three are wrist sizes (7–9.5 in), the rest neck sizes (14–40 in), so
+// one list serves chains, bracelets and pages that mix both.
+export const LENGTH_BANDS: Bands = [
+  [8, 'Under 8 in'],
+  [9, '8–8.5 in'],
+  [10, '9–9.5 in'],
+  [17, '10–16 in'],
+  [21, '17–20 in'],
+  [25, '21–24 in'],
+  [29, '25–28 in'],
+  [Infinity, '29 in & up'],
+];
+
+export const WIDTH_BANDS: Bands = [
+  [3, 'Under 3 mm'],
+  [5, '3–4.9 mm'],
+  [7, '5–6.9 mm'],
+  [10, '7–9.9 mm'],
+  [15, '10–14.9 mm'],
+  [Infinity, '15 mm & up'],
+];
+
+/** Chain / bracelet length band the title names, or null. */
+export function lengthBandOf(product: Pick<FacetSource, 'title'>) {
+  if (!SIZED_PIECE.test(product.title)) return null;
+  const match = LENGTH.exec(product.title);
+  return bandOf(match ? Number(match[1]) : NaN, LENGTH_BANDS, 60, 4);
+}
+
+/** Chain / bracelet link-width band the title names, or null. */
+export function widthBandOf(product: Pick<FacetSource, 'title'>) {
+  if (!SIZED_PIECE.test(product.title)) return null;
+  const match = WIDTH.exec(product.title);
+  return bandOf(match ? Number(match[1]) : NaN, WIDTH_BANDS, 40);
 }
 
 export function indexProduct(product: FacetSource): IndexedProduct {
   const carat = caratBandOf(product);
+  const length = lengthBandOf(product);
+  const width = widthBandOf(product);
   const styles = (product.collections?.nodes ?? [])
     .map((collection) => STYLE_COLLECTIONS[collection.handle])
     .filter(Boolean);
@@ -246,6 +313,8 @@ export function indexProduct(product: FacetSource): IndexedProduct {
     metal: metalsOf(product),
     karat: karatsOf(product),
     carat: carat ? [carat] : [],
+    length: length ? [length] : [],
+    width: width ? [width] : [],
     style: [...new Set(styles)].sort(),
   };
 }
@@ -285,7 +354,12 @@ export function matchesFacets(
   return true;
 }
 
-const CARAT_ORDER = CARAT_BANDS.map(([, label]) => label);
+/** Banded facets list smallest first, not alphabetically. */
+const BAND_ORDER: Partial<Record<FacetKey, string[]>> = {
+  carat: CARAT_BANDS.map(([, label]) => label),
+  length: LENGTH_BANDS.map(([, label]) => label),
+  width: WIDTH_BANDS.map(([, label]) => label),
+};
 
 /**
  * Sidebar groups, in the shape CollectionFilterSidebar takes for Shopify's
@@ -314,9 +388,10 @@ export function facetGroups(
     const counts = new Map(
       [...matching].map(([value, products]) => [value, group(products).length]),
     );
+    const order = BAND_ORDER[key];
     const values = [...counts.keys()].sort((a, b) =>
-      key === 'carat'
-        ? CARAT_ORDER.indexOf(a) - CARAT_ORDER.indexOf(b)
+      order
+        ? order.indexOf(a) - order.indexOf(b)
         : a.localeCompare(b, 'en', {numeric: true}),
     );
     return {

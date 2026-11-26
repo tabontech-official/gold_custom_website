@@ -9,9 +9,11 @@ import {
   facetGroups,
   indexProduct,
   karatsOf,
+  lengthBandOf,
   matchesFacets,
   metalsOf,
   parseFacetFilter,
+  widthBandOf,
   type FacetSource,
 } from './facets.ts';
 
@@ -210,6 +212,57 @@ const carats = facetGroups(
 assert.deepEqual(
   carats.values.map((v) => v.label),
   ['Under 0.50 ct', '1.00–1.99 ct', '3.00 ct & up'],
+);
+
+// ── Length / Width ──────────────────────────────────────────────────────────
+// Every way the catalogue writes them, from real titles: [title, length, width].
+const SIZES: [string, string | null, string | null][] = [
+  ['10K Yellow Gold 5mm Square Miami Cuban Chain 22 Inch', '21–24 in', '5–6.9 mm'],
+  ['10K 1.8mm 24-Inch Miami Cuban Chain', '21–24 in', 'Under 3 mm'],
+  ['10K Ice Gold Chain 4.4MM 22 Inches', '21–24 in', '3–4.9 mm'],
+  ['10K Gold 3.4mm Diamond Curb Chain - 24 Inch - Semi-Solid', '21–24 in', '3–4.9 mm'],
+  ['10K Yellow Gold 5mm Classic Link Chain 20 Inchhain', '17–20 in', '5–6.9 mm'],
+  ['10K Semi-Solid 4.4MM 40 Inch Franco Chain', '29 in & up', '3–4.9 mm'],
+  ['10K 1.5MM Solid Diamond Cut 14-Inch Rope Chain', '10–16 in', 'Under 3 mm'],
+  ['10K/14K 7MM Solid Gold 9.5-Inch Miami Cuban Bracelet', '9–9.5 in', '7–9.9 mm'],
+  ['10K Solid Gold 2.5mm Miami Cuban Bracelet - 7.5 Inch', 'Under 8 in', 'Under 3 mm'],
+  ['10K 36MM 8-Inch Classic Link Bracelet | Gold Bracelet', '8–8.5 in', '15 mm & up'],
+  ['10K Monaco Nameplate Bracelet 13.5MM - 9 Inch', '9–9.5 in', '10–14.9 mm'],
+  // Length without width: "18in", after a carat weight.
+  ['10K Yellow Gold Diamond Cuban Link Chain 6.15CT | 18in', '17–20 in', null],
+  // Neither stated: no guess, the piece drops out under these two filters.
+  ['14K 2.76CT Diamond Tennis Bracelet - Yellow Gold', null, null],
+  // "in" as a word is not inches; a pendant's mm is not a link width.
+  ['10K Round Diamond Tennis Necklace in White Gold', null, null],
+  ['10K/14K 32.51MM Solid Gold Star CZ Accent Pendant', null, null],
+];
+for (const [title, length, width] of SIZES) {
+  assert.deepEqual(
+    [lengthBandOf(product(title)), widthBandOf(product(title))],
+    [length, width],
+    title,
+  );
+}
+// Bands list shortest first, and a band filter narrows like any other facet.
+const sized = [
+  '10K 3.2mm 22-Inch Flat Mariner Chain',
+  '10K 6MM 8-Inch Franco Bracelet | Gold Bracelet',
+  '10K Chino Link 7mm 18-Inch Chain',
+].map((title) => indexProduct(product(title)));
+const sizeGroups = facetGroups(sized, []);
+assert.deepEqual(
+  sizeGroups.find((g) => g.id === 'facet.length')!.values.map((v) => v.label),
+  ['8–8.5 in', '17–20 in', '21–24 in'],
+);
+assert.deepEqual(
+  sizeGroups.find((g) => g.id === 'facet.width')!.values.map((v) => v.label),
+  ['3–4.9 mm', '5–6.9 mm', '7–9.9 mm'],
+);
+assert.deepEqual(
+  sized
+    .filter((p) => matchesFacets(p, [{key: 'length', value: '17–20 in'}]))
+    .map((p) => p.id),
+  ['10K Chino Link 7mm 18-Inch Chain'],
 );
 
 console.log('facets.test.ts: ok');

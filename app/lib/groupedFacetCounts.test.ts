@@ -28,6 +28,8 @@ function product(
     metal: [...new Set(metals.map((value) => value.replace(/^\d+K\s+/i, '')))],
     karat,
     carat: [],
+    length: [],
+    width: [],
     style: [],
   };
 }
