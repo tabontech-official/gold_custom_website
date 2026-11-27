@@ -31,6 +31,7 @@ function product(
     length: [],
     width: [],
     style: [],
+    type: [],
   };
 }
 

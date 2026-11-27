@@ -12282,6 +12282,141 @@ html.header-primary-hidden
   color: var(--color-gold-dark);
 }
 
+/* A collection's own sub-types (CollectionSubTypes), directly under the
+   filter bar: one row of iOS-style pills, native horizontal scroll (momentum
+   and snap on phones, trackpad/shift-wheel on desktop). In normal flow, not
+   in the sticky head or the bar, so none of their height math moves. */
+.collection-toolbar:has(+ .collection-subtypes) {
+  margin-bottom: 0.75rem;
+}
+
+.collection-subtypes {
+  margin-bottom: 0.75rem;
+}
+
+.subtype-pills {
+  display: flex;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  /* Room for the focus ring, which the scroller would otherwise clip. */
+  padding: 0.25rem 0;
+  scroll-behavior: smooth;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.subtype-pills::-webkit-scrollbar {
+  display: none;
+}
+
+.subtype-pills li {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+}
+
+.subtype-pill {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(60, 60, 67, 0.16);
+  border-radius: 999px;
+  color: var(--color-ink);
+  display: inline-flex;
+  /* Same type as the category strip's labels above (.subnav-icon-label). */
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  min-height: 2.25rem;
+  padding: 0 1.05rem;
+  text-decoration: none;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 120ms ease;
+  user-select: none;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (hover: hover) {
+  .subtype-pill:hover {
+    border-color: rgba(60, 60, 67, 0.36);
+    text-decoration: none;
+  }
+}
+
+/* The press-in iOS controls give. */
+.subtype-pill:active {
+  transform: scale(0.96);
+}
+
+.subtype-pill.is-active {
+  background: #1c1c1e;
+  border-color: #1c1c1e;
+  color: #fff;
+}
+
+.subtype-pill:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subtype-pills {
+    scroll-behavior: auto;
+  }
+
+  .subtype-pill {
+    transition: none;
+  }
+
+  .subtype-pill:active {
+    transform: none;
+  }
+}
+
+/* Desktop: a full-width row of .collection-layout's grid, like the bar and
+   the chip row. The grid's 2.5rem row gap would leave a hole under the bar,
+   so the row pulls up into it. */
+@media (min-width: 60em) {
+  .collection-layout > .collection-subtypes {
+    grid-column: 1 / -1;
+    margin-top: -1.75rem;
+  }
+}
+
+/* Phones: edge to edge, the same bleed .collection-toolbar uses, with the
+   gutter given back as scroll padding so the first and last pills still
+   clear the screen edge. A soft fade on the right says "there is more". */
+@media (max-width: 47.99em) {
+  .collection-subtypes {
+    background: var(--color-bg-soft);
+    margin-inline: calc(-1 * var(--section-pad));
+  }
+
+  .subtype-pills {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      #000 calc(100% - 1.5rem),
+      transparent
+    );
+    mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+    padding-inline: var(--section-pad);
+    scroll-padding-inline: var(--section-pad);
+  }
+
+  /* Apple's minimum touch target. */
+  .subtype-pill {
+    min-height: 2.5rem;
+    padding: 0 1.1rem;
+  }
+}
+
 /* Horizontal product / category sliders */
 .slider-section {
   padding: 2.5rem 0;

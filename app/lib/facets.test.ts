@@ -265,4 +265,54 @@ assert.deepEqual(
   ['10K Chino Link 7mm 18-Inch Chain'],
 );
 
+// ── Type (sub-type tags) ────────────────────────────────────────────────────
+// Real tags from the hoop-earrings collection, including the lower-case
+// "presidential" and a stray space.
+const tagged = (title: string, tags: string[]) => ({
+  ...product(title),
+  tags,
+});
+const hoops = [
+  tagged('10K Twisted Hoop Earrings', ['Twisted Earrings', 'Video Edit']),
+  tagged('14K Presidential Hoops', ['presidential Earrings ']),
+  tagged('Diamond Heart Hoops', ['Heart Earrings', 'Diamond Hoop Earrings']),
+  tagged('10K Beaded Hoop Earrings', ['Fold Ring']),
+].map((p) => indexProduct(p, 'hoop-earrings'));
+assert.deepEqual(
+  hoops.map((p) => p.type),
+  [['Twisted'], ['Presidential'], ['Diamond', 'Heart'], []],
+);
+assert.deepEqual(parseFacetFilter({type: 'Heart'}), {
+  key: 'type',
+  value: 'Heart',
+});
+assert.deepEqual(
+  hoops
+    .filter((p) => matchesFacets(p, [{key: 'type', value: 'Heart'}]))
+    .map((p) => p.id),
+  ['Diamond Heart Hoops'],
+);
+
+// Another collection's rules don't apply, and no handle means no Type.
+assert.deepEqual(
+  indexProduct(tagged('Hoop', ['Twisted Earrings']), 'stud-earrings').type,
+  [],
+);
+assert.deepEqual(indexProduct(tagged('Hoop', ['Twisted Earrings'])).type, []);
+
+// Diamond studs: the untitled "UN-" pieces sort by their shape tags, the
+// rest by title words.
+const diamondStuds = [
+  tagged('10K 0.50ct Diamond earrings - UN-0176', ['round', 'Fold Ring']),
+  tagged('10K 0.25ct Diamond earrings - UN-0127', ['square']),
+  tagged('14K 0.71CT Princess Diamond Stud Earrings', []),
+  tagged('10K 0.43CT Diamond Flower Cluster Stud Earrings', []),
+  tagged('14K 1.50CT Diamond Stud Earrings in Yellow Gold', ['Fashion']),
+  tagged('10K 0.30ct Diamond earrings - UN-0600', ['Diamond Rose Gold Earrings']),
+].map((p) => indexProduct(p, 'diamond-stud-earrings'));
+assert.deepEqual(
+  diamondStuds.map((p) => p.type),
+  [['Round'], ['Square'], ['Square'], ['Cluster', 'Flower'], [], ['Rose Gold']],
+);
+
 console.log('facets.test.ts: ok');

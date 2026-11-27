@@ -2776,7 +2776,7 @@ export type CollectionFacetIndexQuery = {
   collection?: StorefrontAPI.Maybe<{
     products: {
       nodes: Array<
-        Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title'> & {
+        Pick<StorefrontAPI.Product, 'id' | 'handle' | 'title' | 'tags'> & {
           groupName?: StorefrontAPI.Maybe<
             Pick<StorefrontAPI.Metafield, 'value'>
           >;
@@ -4453,7 +4453,7 @@ interface GeneratedQueryTypes {
     return: ParentCollectionContentQuery;
     variables: ParentCollectionContentQueryVariables;
   };
-  '#graphql\n  query CollectionFacetIndex(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(\n        first: 250,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          id\n          handle\n          title\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          options {\n            name\n            optionValues {\n              name\n            }\n          }\n          # Style is membership of the style collections. Twelve is the most\n          # any product is in today.\n          collections(first: 30) {\n            nodes {\n              handle\n            }\n          }\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
+  '#graphql\n  query CollectionFacetIndex(\n    $handle: String!\n    $country: CountryCode\n    $language: LanguageCode\n    $filters: [ProductFilter!]\n    $sortKey: ProductCollectionSortKeys\n    $reverse: Boolean\n    $after: String\n  ) @inContext(country: $country, language: $language) {\n    collection(handle: $handle) {\n      products(\n        first: 250,\n        after: $after,\n        filters: $filters,\n        sortKey: $sortKey,\n        reverse: $reverse\n      ) {\n        nodes {\n          id\n          handle\n          title\n          groupName: metafield(namespace: "custom", key: "group_name") {\n            value\n          }\n          options {\n            name\n            optionValues {\n              name\n            }\n          }\n          # Style is membership of the style collections. Twelve is the most\n          # any product is in today.\n          collections(first: 30) {\n            nodes {\n              handle\n            }\n          }\n          # Type: the sub-type rules in facets SUB_TYPES.\n          tags\n        }\n        pageInfo {\n          hasNextPage\n          endCursor\n        }\n      }\n    }\n  }\n': {
     return: CollectionFacetIndexQuery;
     variables: CollectionFacetIndexQueryVariables;
   };

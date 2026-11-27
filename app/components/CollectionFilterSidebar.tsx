@@ -118,6 +118,9 @@ export function CollectionFilterSidebar({
   // from ShareButtons and how the page builds its share content (same
   // pattern as ProductForm's `wishlistButton`). Absent on /search.
   shareButton,
+  // Rendered directly under the filter bar, full width (the collection's
+  // sub-type pills). Absent on /search.
+  belowToolbar,
   deferredFilters,
   deferredCounts,
   // Every group starts open (engagement rings page), instead of long ones closed.
@@ -128,6 +131,7 @@ export function CollectionFilterSidebar({
   showCounts?: boolean;
   showAppliedChips?: boolean;
   shareButton?: ReactNode;
+  belowToolbar?: ReactNode;
   /** Groups that arrive after the page — the storefront's own facets. */
   deferredFilters?: Promise<Filter[]>;
   /**
@@ -168,6 +172,14 @@ export function CollectionFilterSidebar({
   const [searchParams] = useSearchParams();
   const activeFilterParams = searchParams.getAll('filter');
   const activeSet = new Set(activeFilterParams.map(normalize));
+  // The sub-collection pills (CollectionSubTypes) ride the `filter` param
+  // too, but picking one is choosing where you are, not filtering: no chip,
+  // not in the count, and "Clear all" keeps it.
+  const isSubTypeParam = (param: string) =>
+    facetFromParam(param)?.key === 'type';
+  const shownFilterParams = activeFilterParams.filter(
+    (param) => !isSubTypeParam(param),
+  );
   // Resolved against whichever list this route passed, so a `sort` param the
   // current route cannot honour falls back to that route's default rather
   // than displaying a label the results don't reflect.
@@ -191,7 +203,7 @@ export function CollectionFilterSidebar({
 
   // Active filter chips: match each `filter` param back to its facet label
   // so the toolbar can show what's applied, e.g. "Metal: 14K Gold ×".
-  const activeChips = activeFilterParams.map((param) => {
+  const activeChips = shownFilterParams.map((param) => {
     if (isPriceParam(param)) {
       const price = getActivePrice(new URLSearchParams([['filter', param]]));
       return {
@@ -270,6 +282,9 @@ export function CollectionFilterSidebar({
   function clearHref() {
     const params = new URLSearchParams(searchParams);
     params.delete('filter');
+    for (const value of activeFilterParams.filter(isSubTypeParam)) {
+      params.append('filter', value);
+    }
     stripPagination(params);
     const query = params.toString();
     return query ? `?${query}` : '?';
@@ -355,15 +370,15 @@ export function CollectionFilterSidebar({
         >
           <FilterIcon />
           <span>Filters</span>
-          {activeFilterParams.length > 0 && (
+          {shownFilterParams.length > 0 && (
             <span className="collection-filter-count">
-              {activeFilterParams.length}
+              {shownFilterParams.length}
             </span>
           )}
         </button>
-        {activeFilterParams.length > 0 && (
+        {shownFilterParams.length > 0 && (
           <Link
-            aria-label={`Clear all filters (${activeFilterParams.length})`}
+            aria-label={`Clear all filters (${shownFilterParams.length})`}
             className="collection-toolbar-clear"
             preventScrollReset
             title="Clear all filters"
@@ -407,6 +422,8 @@ export function CollectionFilterSidebar({
           )}
         </div>
       </div>
+
+      {belowToolbar}
 
       {showAppliedChips && activeChips.length > 0 && (
         <div className="collection-active-filters">

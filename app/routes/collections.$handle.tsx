@@ -38,12 +38,16 @@ import {
   getSortFromParam,
 } from '~/lib/collectionFilter';
 import {
+  SUB_TYPES,
+  SUB_TYPE_ALL_LABEL,
   facetGroups,
   indexProduct,
   matchesFacets,
   type FacetFilter,
+  type FacetSource,
   type IndexedProduct,
 } from '~/lib/facets';
+import {CollectionSubTypes} from '~/components/CollectionSubTypes';
 import {
   cardCounts,
   filterGroupKey,
@@ -627,7 +631,11 @@ async function loadFacetIndex(
     });
     const products = data?.collection?.products;
     if (!products) break;
-    index.push(...products.nodes.map(indexProduct));
+    index.push(
+      ...products.nodes.map((product: FacetSource) =>
+        indexProduct(product, variables.handle),
+      ),
+    );
     after = products.pageInfo.hasNextPage ? products.pageInfo.endCursor : null;
   } while (after);
   return index;
@@ -886,10 +894,12 @@ async function loadCriticalData({context, params, request}: Route.LoaderArgs) {
     // Sidebar groups. Not awaited when no facet is on, so an unfiltered page
     // never waits on the index — the three groups stream in beside the grid.
     // Counted in cards, the way the grid groups them.
+    // Type is left out: it is picked from the pill row (CollectionSubTypes),
+    // and a sidebar copy of the same choice would just repeat it.
     facets: facetIndex.then((index) =>
       facetGroups(index, facetFilters, (products) =>
         groupForGrid(handle, products),
-      ),
+      ).filter((group) => group.id !== 'facet.type'),
     ),
     // Card counts for Shopify's own facets (Metal), streamed the same way.
     // Not for crawlers, which would otherwise wait on the extra index walks.
@@ -1024,6 +1034,12 @@ export default function Collection() {
             deferredFilters={facets}
             deferredCounts={facetCounts}
             expandAll={collection.handle.endsWith('engagement-rings')}
+            belowToolbar={
+              <CollectionSubTypes
+                types={SUB_TYPES[collection.handle] ?? []}
+                allLabel={SUB_TYPE_ALL_LABEL[collection.handle] ?? 'All'}
+              />
+            }
             shareButton={
               <ShareButtons
                 title={collection.title}
@@ -1318,6 +1334,8 @@ const FACET_INDEX_QUERY = `#graphql
               handle
             }
           }
+          # Type: the sub-type rules in facets SUB_TYPES.
+          tags
         }
         pageInfo {
           hasNextPage

@@ -18,6 +18,9 @@
  *   Width  its link width band ("5mm", "3.8MM"). Every sized chain and
  *          bracelet states both in its title; diamond pieces that don't get
  *          neither, so they drop out under these two rather than guess.
+ *   Type   a collection's own sub-types, from product tags the merchant
+ *          applies (SUB_TYPES). Picked from the pill row under the filter bar,
+ *          not from the sidebar.
  *
  * In the URL they ride the same `filter` param as Shopify's facets, as
  * {"karat":"14K"}, so the sidebar's links, chips and "Clear all" and the
@@ -33,7 +36,8 @@ export type FacetKey =
   | 'carat'
   | 'length'
   | 'width'
-  | 'style';
+  | 'style'
+  | 'type';
 
 /** Sidebar order and labels. */
 export const FACETS: {key: FacetKey; label: string}[] = [
@@ -43,7 +47,113 @@ export const FACETS: {key: FacetKey; label: string}[] = [
   {key: 'length', label: 'Length'},
   {key: 'width', label: 'Width'},
   {key: 'style', label: 'Style'},
+  {key: 'type', label: 'Type'},
 ];
+
+/**
+ * One pill: a product is this type when it carries any of `tags` (matched
+ * ignoring case and stray spaces) or its title matches `title`. Tags are the
+ * merchant's call; the title pattern catches products nobody tagged yet.
+ */
+export type SubType = {label: string; tags: string[]; title?: RegExp};
+
+/**
+ * Collection handle → its sub-types, in pill order. Worked out per
+ * collection (indexProduct's `collectionHandle`), so "Heart" under hoops and
+ * "Heart" under diamond studs are each that page's own rule. Tag a product in
+ * the admin and it shows up under that pill — no collection to maintain. A
+ * product matching none still shows under "All", it just has no pill.
+ */
+export const SUB_TYPES: Record<string, SubType[]> = {
+  'hoop-earrings': [
+    {label: 'Twisted', tags: ['Twisted Earrings']},
+    {label: 'Bamboo', tags: ['Bamboo Earrings']},
+    {label: 'Heart', tags: ['Heart Earrings']},
+    {label: 'Huggie', tags: ['Huggie Earrings']},
+    {label: 'Diamond', tags: ['Diamond Hoop Earrings']},
+    {label: 'Presidential', tags: ['presidential Earrings']},
+  ],
+  // "Stud Earrings" itself is on every product here, so it is the All pill.
+  'stud-earrings': [
+    {label: 'Centenario', tags: ['Centenario Earrings']},
+    {label: 'Last Supper', tags: ['Last Supper Earrings']},
+    {label: 'Money', tags: ['Money Stud Earrings']},
+    {label: 'House', tags: ['House Earrings']},
+    {label: 'Map', tags: ['Map Earrings']},
+    {label: 'Floral', tags: ['Floral Earrings']},
+    {label: 'Heart', tags: ['Heart Stud Earrings']},
+  ],
+  // 390 of the 531 are "10K 0.50ct Diamond earrings - UN-0176" — no shape in
+  // the title — but they already carry shape tags (round/square/heart/star),
+  // so tags + title words sort 93% of the collection with no new tagging.
+  // The first tag of each is the store's own "Diamond … Earrings" type tag; the
+  // older shape tags and title words stay so untagged pieces still sort (only
+  // 6 carry "Diamond Round Earrings" yet, 214 are round).
+  // Counts from the catalogue on 2026-11-27; a piece can be in two types.
+  'diamond-stud-earrings': [
+    {label: 'Star', tags: ['Diamond Star Earrings', 'star'], title: /\bstar\b/i}, // 9
+    {
+      label: 'Flower',
+      tags: ['Flower Diamond Stud Earrings', 'Flower'],
+      title: /\b(flower|floral)\b/i,
+    }, // 50
+    {
+      label: 'Heart',
+      tags: ['Diamond Heart Earrings', 'heart'],
+      title: /\bheart\b/i,
+    }, // 50
+    {
+      label: 'Square',
+      tags: ['Diamond Square Earrings', 'square'],
+      title: /\b(square|princess)\b/i,
+    }, // 189
+    {
+      label: 'Round',
+      tags: ['Diamond Round Earrings', 'round', 'Round Diamond Studs'],
+      title: /\bround\b/i,
+    }, // 214
+    {
+      label: 'Rose Gold',
+      tags: ['Diamond Rose Gold Earrings'],
+      title: /\brose gold\b/i,
+    }, // 13
+    {
+      label: 'Solitaire',
+      tags: ['Diamond Solitaire Earrings', 'Four-Prong Studs'],
+      title: /\b(solitaire|four-prong|basket)\b/i,
+    }, // 13
+    {
+      label: 'Cluster',
+      tags: ['Diamond Cluster Earrings', 'Cluster Earrings'],
+      title: /\bcluster\b/i,
+    }, // 59
+  ],
+};
+
+/** Name of the leading "everything" pill; collection titles run too long. */
+export const SUB_TYPE_ALL_LABEL: Record<string, string> = {
+  'hoop-earrings': 'All Hoops',
+  'stud-earrings': 'All Studs',
+  'diamond-stud-earrings': 'All Diamond Studs',
+};
+
+const tagKey = (tag: string) => tag.trim().toLowerCase();
+
+/** The collection's sub-types this product belongs to (SUB_TYPES). */
+export function subTypesOf(
+  product: Pick<FacetSource, 'title' | 'tags'>,
+  collectionHandle: string,
+): string[] {
+  const tags = new Set((product.tags ?? []).map(tagKey));
+  return (SUB_TYPES[collectionHandle] ?? [])
+    .filter(
+      (type) =>
+        type.tags.some((tag) => tags.has(tagKey(tag))) ||
+        (type.title?.test(product.title) ?? false),
+    )
+    .map((type) => type.label)
+    .sort();
+}
 
 /**
  * Style collection → Style value. Shared labels on purpose: Cuban chains,
@@ -146,6 +256,7 @@ export type FacetSource = {
   groupName?: {value?: string | null} | null;
   options: {name: string; optionValues: {name: string}[]}[];
   collections?: {nodes: {handle: string}[]} | null;
+  tags?: string[] | null;
 };
 
 /** A product reduced to what filtering needs. */
@@ -291,7 +402,14 @@ export function widthBandOf(product: Pick<FacetSource, 'title'>) {
   return bandOf(match ? Number(match[1]) : NaN, WIDTH_BANDS, 40);
 }
 
-export function indexProduct(product: FacetSource): IndexedProduct {
+/**
+ * `collectionHandle`: the collection being indexed, for its own sub-types
+ * (Type). Without it a product has no Type.
+ */
+export function indexProduct(
+  product: FacetSource,
+  collectionHandle?: string,
+): IndexedProduct {
   const carat = caratBandOf(product);
   const length = lengthBandOf(product);
   const width = widthBandOf(product);
@@ -316,6 +434,7 @@ export function indexProduct(product: FacetSource): IndexedProduct {
     length: length ? [length] : [],
     width: width ? [width] : [],
     style: [...new Set(styles)].sort(),
+    type: collectionHandle ? subTypesOf(product, collectionHandle) : [],
   };
 }
 
