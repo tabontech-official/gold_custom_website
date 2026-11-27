@@ -915,11 +915,14 @@ export default function Product() {
                 />
               </div>
               <MerchantProductSpecs rows={merchantSpecs} />
-              <ShopPayInstallments
-                price={selectedVariant?.price}
-                variant={selectedVariant}
-                pricing={installmentsPricing}
-              />
+              {/* Shop Pay installments only from $300 (store's call). */}
+              {Number(selectedVariant?.price?.amount) >= 300 && (
+                <ShopPayInstallments
+                  price={selectedVariant?.price}
+                  variant={selectedVariant}
+                  pricing={installmentsPricing}
+                />
+              )}
               <ProductForm
                 productOptions={productOptions}
                 selectedVariant={selectedVariant}
